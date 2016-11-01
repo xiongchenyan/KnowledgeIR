@@ -10,12 +10,12 @@ output:
     cv_res
 """
 
-from scholarranking.letor.kfold_cv_run import RanklibRunner
-from scholarranking.letor.kfold_partition import kfold_svm_data
+from knowledge4ir.letor.kfold_cv_run import RanklibRunner
+from knowledge4ir.letor.kfold_partition import kfold_svm_data
 import sys
 import os
 import logging
-from scholarranking.utils import set_basic_log, load_py_config
+from knowledge4ir.utils import set_basic_log, load_py_config
 
 q_st = 1
 q_ed = 100

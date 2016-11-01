@@ -29,16 +29,16 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from scholarranking.utils import S2PATH
-from scholarranking.utils import (
+from knowledge4ir.utils import S2PATH
+from knowledge4ir.utils import (
     dump_trec_out_from_ranking_score,
 )
-from scholarranking.utils.evaluation import GDEVAL_PATH
+from knowledge4ir.utils.evaluation import GDEVAL_PATH
 
 
 
 class RanklibRunner(Configurable):
-    ranklib = Unicode(S2PATH + '/scholarranking/letor/RankLib.jar',
+    ranklib = Unicode(S2PATH + '/knowledge4ir/letor/RankLib.jar',
                       help='the location of ranklib jar'
                       ).tag(config=True)
     nb_fold = Int(5, help='fold number k').tag(config=True)
@@ -46,7 +46,7 @@ class RanklibRunner(Configurable):
     out_dir = Unicode(help='output dir').tag(config=True)
     model_id = Unicode('4', help='model id as defined in ranklib, -1==ranksvm, -2==hybrid').tag(config=True)
     qrel = Unicode(help='qrel path').tag(config=True)
-    ranksvm = Unicode(S2PATH + '/scholarranking/letor/rank_svm',
+    ranksvm = Unicode(S2PATH + '/knowledge4ir/letor/rank_svm',
                       help='the location of ranksvm bin file'
                       ).tag(config=True)
     ranksvm_c = Float(0.1, help='C of ranksvm').tag(config=True)
@@ -305,7 +305,7 @@ class RanklibRunner(Configurable):
 
 if __name__ == '__main__':
     import sys
-    from scholarranking.utils import load_py_config, set_basic_log
+    from knowledge4ir.utils import load_py_config, set_basic_log
 
     set_basic_log()
     if 2 > len(sys.argv):
