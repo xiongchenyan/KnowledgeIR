@@ -82,7 +82,7 @@ class FbDumpReader(KeyFileReader):
 
 if __name__ == '__main__':
     # unit test
-    from scholarranking.utils.freebase.FbDumpBasic import FbDumpParser
+    from knowledge4ir.utils.freebase.FbDumpBasic import FbDumpParser
     if 3 != len(sys.argv):
         print "unit test reader and FbDumpParser"
         print "2 para: dump gzip + output"

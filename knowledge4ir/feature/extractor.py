@@ -14,37 +14,21 @@ import logging
 import random
 
 from traitlets import (
-    Int, List, Instance, Dict, Unicode, Bool
+    Int, List, Dict, Unicode, Bool
 )
 from traitlets.config import Configurable
 
-from scholarranking.letor.data_prepare import LeToRDataPreparer
-from scholarranking.utils import (
-    set_log_with_elastic,
+from knowledge4ir.feature.boe_embedding import LeToRBOEEmbFeatureExtractor
+from knowledge4ir.feature.ir_fusion import (
+    LeToRIRFusionFeatureExtractor,
+)
+from knowledge4ir.utils import load_query_info
+from knowledge4ir.utils import (
     load_trec_ranking_with_score,
     load_trec_labels_dict,
     load_py_config,
 )
-from scholarranking.letor.feature import LeToRFeatureExtractor
-from scholarranking.letor.feature.classic import (
-    LeToRVenueFeatureExtractor,
-    LeToRCitationFeatureExtractor,
-    LeToRIRFusionFeatureExtractor,
-)
-from scholarranking.letor.feature.boe import (
-    LeToRBOEFeatureExtractor,
-    LeToRBOEIRFusionFeatureExtractor,
-)
-from scholarranking.letor.feature.soft_boe import LeToRSoftBOEFeatureExtractor
-from scholarranking.letor.feature.boe_exp import LeToRBOEExpFeatureExtractor
-from scholarranking.letor.feature.boe_embedding import LeToRBOEEmbFeatureExtractor
-from scholarranking.letor.feature.boe_les import LeToRBOELesFeatureExtractor
-from scholarranking.letor.feature.ir_exp import LeToRIRExpFeatureExtractor
-from scholarranking.letor.feature.click import LeToRClickFeatureExtractor
-from scholarranking.letor.feature.e_ir import LeToREIRFeatureExtractor
-from scholarranking.letor.feature.boe_kg import LeToRBOEKgFeatureExtractor
-from scholarranking.letor.feature.ensemble import LeToREnsembleFeatureExtractor
-from scholarranking.letor.feature.normalize import per_q_normalize
+
 
 class LeToRFeatureExtractCenter(Configurable):
     """
@@ -56,9 +40,9 @@ class LeToRFeatureExtractCenter(Configurable):
     q_doc_candidate_in = Unicode(help="q doc candidate in, trec format").tag(config=True)
     rank_top_k = Int(100, help="top k candidate docs to extract features").tag(config=True)
     l_feature_group = List(Unicode, default_value=['IRFusion'],
-                           help='feature groups to extract: IRFusion, IRExp, Click\
-                            Boe, BoeIRFusion, Venue, Citation, \
-                            BoeSoft, BoeExp, BoeEmb, BoeLes, EIR, BoeKg, Ensmb'
+                           help='feature groups to extract: IRFusion,\
+                            BoeIRFusion, \
+                            BoeEmb'
                            ).tag(config=True)
     out_name = Unicode(help='feature out file name').tag(config=True)
     normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
@@ -78,32 +62,7 @@ class LeToRFeatureExtractCenter(Configurable):
         super(LeToRFeatureExtractCenter, cls).class_print_help(inst)
         print "Feature group: IRFusion"
         LeToRIRFusionFeatureExtractor.class_print_help(inst)
-        print "Feature group: IRExp"
-        LeToRIRExpFeatureExtractor.class_print_help(inst)
-        print "Feature group: Citation"
-        LeToRCitationFeatureExtractor.class_print_help(inst)
-        print "Feature group: Venue"
-        LeToRVenueFeatureExtractor.class_print_help(inst)
-        print "Feature group: Boe"
-        LeToRBOEFeatureExtractor.class_print_help(inst)
-        print "Feature group: BoeIRFusion"
-        LeToRBOEIRFusionFeatureExtractor.class_print_help(inst)
-        print "Feature group: BoeSoft"
-        LeToRSoftBOEFeatureExtractor.class_print_help(inst)
-        print "Feature group: BoeExp"
-        LeToRBOEExpFeatureExtractor.class_print_help(inst)
-        print 'Feature group: BoeEmb'
         LeToRBOEEmbFeatureExtractor.class_print_help(inst)
-        print 'Feature group: BoeLes'
-        LeToRBOELesFeatureExtractor.class_print_help(inst)
-        print 'Feature group: Click'
-        LeToRClickFeatureExtractor.class_print_help(inst)
-        print 'Feature group: EIR'
-        LeToREIRFeatureExtractor.class_print_help(inst)
-        print 'Feature group: BoeKg'
-        LeToRBOEKgFeatureExtractor.class_print_help(inst)
-        print 'Feature group: Ensmb'
-        LeToREnsembleFeatureExtractor.class_print_help(inst)
         # to add those needed the config
 
     def update_config(self, config):
@@ -118,7 +77,7 @@ class LeToRFeatureExtractCenter(Configurable):
         :return:
         """
         self._h_qrel = load_trec_labels_dict(self.qrel_in)
-        self._h_qid_q_info = LeToRDataPreparer.load_query_info(self.q_info_in)
+        self._h_qid_q_info = load_query_info(self.q_info_in)
 
         l_q_ranking_score = load_trec_ranking_with_score(self.q_doc_candidate_in)
 
@@ -136,31 +95,9 @@ class LeToRFeatureExtractCenter(Configurable):
         if 'IRFusion' in self.l_feature_group:
             self._l_feature_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
         if "IRExp" in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRIRExpFeatureExtractor(**kwargs))
-        if 'Citation' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRCitationFeatureExtractor(**kwargs))
-        if 'Venue' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRVenueFeatureExtractor(**kwargs))
-        if 'Boe' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRBOEFeatureExtractor(**kwargs))
-        if 'BoeIRFusion' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRBOEIRFusionFeatureExtractor(**kwargs))
-        if 'BoeSoft' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRSoftBOEFeatureExtractor(**kwargs))
-        if 'BoeExp' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRBOEExpFeatureExtractor(**kwargs))
-        if 'BoeEmb' in self.l_feature_group:
             self._l_feature_extractor.append(LeToRBOEEmbFeatureExtractor(**kwargs))
-        if 'BoeLes' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRBOELesFeatureExtractor(**kwargs))
-        if 'Click' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRClickFeatureExtractor(**kwargs))
-        if 'EIR' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToREIRFeatureExtractor(**kwargs))
-        if 'BoeKg' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRBOEKgFeatureExtractor(**kwargs))
-        if 'Ensmb' in self.l_feature_group:
-            self._l_feature_extractor.append(LeToREnsembleFeatureExtractor(**kwargs))
+        # if 'BoeLes' in self.l_feature_group:
+        #     self._l_feature_extractor.append(LeToREIRFeatureExtractor(**kwargs))
 
     def pipe_extract(self):
         """
@@ -198,23 +135,22 @@ class LeToRFeatureExtractCenter(Configurable):
                 break
 
         # normalize
-        if self.normalize:
-            l_qid, l_docno, l_h_feature = self._normalize(l_qid, l_docno, l_h_feature)
+        # if self.normalize:
+        #     l_qid, l_docno, l_h_feature = self._normalize(l_qid, l_docno, l_h_feature)
         # dump results
         logging.info('total [%d] pair extracted, dumping...', len(l_h_feature))
         self._dump_svm_res_lines(l_qid, l_docno, l_h_feature)
         logging.info('feature extraction finished, results at [%s]', self.out_name)
         return
 
-    def _normalize(self, l_qid, l_docno, l_h_feature):
-        l_svm_data = [{'qid': l_qid[i], 'feature': l_h_feature[i], 'comment': l_docno[i]}
-                      for i in xrange(len(l_qid))]
-        l_svm_data = per_q_normalize(l_svm_data)
-        l_qid = [data['qid'] for data in l_svm_data]
-        l_h_feature = [data['feature'] for data in l_svm_data]
-        l_docno = [data['comment'] for data in l_svm_data]
-        return l_qid, l_docno, l_h_feature
-
+    # def _normalize(self, l_qid, l_docno, l_h_feature):
+    #     l_svm_data = [{'qid': l_qid[i], 'feature': l_h_feature[i], 'comment': l_docno[i]}
+    #                   for i in xrange(len(l_qid))]
+    #     l_svm_data = per_q_normalize(l_svm_data)
+    #     l_qid = [data['qid'] for data in l_svm_data]
+    #     l_h_feature = [data['feature'] for data in l_svm_data]
+    #     l_docno = [data['comment'] for data in l_svm_data]
+    #     return l_qid, l_docno, l_h_feature
 
     def _extract(self, qid, docno, h_doc_info):
         """
@@ -365,12 +301,12 @@ class LeToRFeatureExtractCenter(Configurable):
 
 if __name__ == '__main__':
     import sys
-    from scholarranking.utils import set_basic_log
+    from knowledge4ir.utils import set_basic_log
 
     set_basic_log(logging.INFO)
     if 2 != len(sys.argv):
         print 'I extract features for target query doc pairs, with prepared data for q and doc, ' \
-              'and qrels to fillin'
+              'and qrels to fill in'
         LeToRFeatureExtractCenter.class_print_help()
         sys.exit()
 

@@ -182,7 +182,7 @@ def ana_corpus_partition(in_name, out_name, linker):
 
 if __name__ == '__main__':
     import sys
-    from scholarranking.utils import load_py_config, set_basic_log
+    from knowledge4ir.utils import load_py_config, set_basic_log
     set_basic_log()
 
     if 2 > len(sys.argv):

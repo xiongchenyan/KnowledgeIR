@@ -5,7 +5,7 @@ import sys
 import logging
 import logging.handlers
 from traitlets.config import PyFileConfigLoader
-from scholarranking.utils.base_conf import S2PATH
+from knowledge4ir.utils.base_conf import ROOT_PATH
 import os
 import json
 import math
@@ -438,3 +438,17 @@ def load_doc_ana(in_name, s_target=None):
 
     logging.info('loaded ana for [%d] documents', len(h_d_e))
     return h_d_e
+
+
+def load_query_info(in_name):
+    """
+    read what is output in batch_get_query_info
+    :param in_name:
+    :return:
+    """
+    l_lines = open(in_name).read().splitlines()
+    l_vcol = [line.split('\t') for line in l_lines]
+    l_qid = [vcol[0] for vcol in l_vcol]
+    l_h_q_info = [json.loads(vcol[-1]) for vcol in l_vcol]
+
+    return dict(zip(l_qid, l_h_q_info))
