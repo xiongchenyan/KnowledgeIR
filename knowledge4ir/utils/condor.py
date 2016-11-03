@@ -3,6 +3,8 @@ condor ope
 """
 
 import subprocess
+import logging
+import json
 
 
 def get_cx_job():
@@ -15,4 +17,5 @@ def qsub_job(l_cmd):
     out_str = subprocess.check_output(l_cmd)
     l_job_id = [line.strip('.').split()[-1]
                 for line in out_str.splitlines() if 'submitted to cluster' in line]
+    logging.info('submit %s to %s', json.dumps(l_cmd), l_job_id[0])
     return l_job_id[0]

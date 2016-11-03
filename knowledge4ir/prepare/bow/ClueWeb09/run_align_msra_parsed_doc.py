@@ -27,8 +27,7 @@ if not os.path.exists(out_dir):
 for text_name in l_doc_text_name:
     out_name = os.path.join(out_dir, ntpath.basename(text_name))
     l_cmd = ['qsub', 'python', 'align_msra_parsed_doc.py', text_name, url_name, out_name]
-    job_id = qsub_job(l_cmd)
-    print "submitted %s job %s" % (json.dumps(l_cmd), job_id)
+    qsub_job(l_cmd)
 
 
 print "all submitted"

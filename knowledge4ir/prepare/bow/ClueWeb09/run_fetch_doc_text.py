@@ -5,6 +5,7 @@ condor run
 import sys
 from knowledge4ir.utils.condor import qsub_job
 import os
+import json
 import ntpath
 
 if 4 != len(sys.argv):
@@ -21,7 +22,7 @@ for dir_name, sub_dirs, f_names in os.walk(sys.argv[2]):
             os.makedirs(out_dir)
 
         l_cmd = ['python', 'fetch_doc_text.py', sys.argv[1], doc_text_in, out_name]
-        print qsub_job(l_cmd)
+        qsub_job(l_cmd)
 
 print "done"
 
