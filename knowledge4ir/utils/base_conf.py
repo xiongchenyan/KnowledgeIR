@@ -9,8 +9,6 @@ from os import path
 ROOT_PATH = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 GDEVAL_PATH = ROOT_PATH + '/knowledge4ir/utils/gdeval.pl'
 TMP_DIR = ROOT_PATH + '/tmp/S2Ranking/'
-
 DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
-
-TARGET_TEXT_FIELDS = ['title', 'bodyText',
-                      ]
+TARGET_TEXT_FIELDS = ['title', 'bodyText',]
+TagMe_Key = 'cad23c26-6f1f-4164-a62e-fc5107c031ab-843339462'
