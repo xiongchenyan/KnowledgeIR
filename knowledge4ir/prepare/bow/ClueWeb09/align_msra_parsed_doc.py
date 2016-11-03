@@ -14,8 +14,6 @@ sys.setdefaultencoding('UTF8')
 
 
 def align_doc_url(doc_text_in, doc_url_in, out_name):
-    s_url_no = set([line.split('\t')[0] for line in open(doc_text_in)])
-    logging.info('%d doc text total', len(s_url_no))
     h_url_no = {}
     err_cnt = 0
     for line in open(doc_url_in):
@@ -23,13 +21,12 @@ def align_doc_url(doc_text_in, doc_url_in, out_name):
         if len(cols) != 2:
             err_cnt += 1
         url, docno = '\t'.join(cols[:-1]), cols[-1]
-        if url in s_url_no:
-            h_url_no[url] = docno
+        h_url_no[url] = docno
     logging.info('%d doc url in this partition %d err url', len(h_url_no), err_cnt)
     out = open(out_name, "w")
     cnt = 0
     err_cnt = 0
-    for line in open(doc_text_in):
+    for line_cnt, line in enumerate(open(doc_text_in)):
         line = line.strip()
         cols = line.split('\t')
         if len(cols) != 3:
@@ -41,6 +38,8 @@ def align_doc_url(doc_text_in, doc_url_in, out_name):
             docno = h_url_no[url]
             print >> out, docno + "\t" + url.replace('\t', '') + '\t' + text
             cnt += 1
+        if not ( line_cnt % 10000):
+            logging.info('read [%d] doc text', line_cnt)
     out.close()
     logging.info("finished [%s][%s] with [%d] found, [%d] text err",
                  doc_text_in, doc_url_in, cnt, err_cnt)
