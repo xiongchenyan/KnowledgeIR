@@ -31,10 +31,10 @@ def align_doc_url(doc_text_in, doc_url_in, out_name):
     for line in open(doc_text_in):
         line = line.strip()
         cols = line.split('\t')
-        if len(cols) != 2:
+        if len(cols) != 3:
             logging.warning(line)
 
-        url, text = '\t'.join(cols[:-1]), cols[-1]
+        url, text = '\t'.join(cols[:-2]), cols[-1]
         if url in h_url_no:
             docno = h_url_no[url]
             print >> out, docno + "\t" + line
