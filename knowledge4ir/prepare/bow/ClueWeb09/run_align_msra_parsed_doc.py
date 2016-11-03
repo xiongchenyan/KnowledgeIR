@@ -32,11 +32,9 @@ for url_name in l_doc_url_name:
         os.makedirs(out_dir)
     for text_name in l_doc_text_name:
         out_name = os.path.join(out_dir, text_name)
-        l_job_id = qsub_job(['qsub', 'python', 'align_msra_parsed_doc.py',
+        job_id = qsub_job(['qsub', 'python', 'align_msra_parsed_doc.py',
                                     text_name, url_name, out_name])
-        print "submitted [%s] jobs for [%s][%s]" % (json.dumps(l_job_id),
-                                                   url_name,
-                                                   text_name)
+        print "submitted %s job for [%s][%s]" % (job_id, url_name, text_name)
 
 
 print "all submitted"
