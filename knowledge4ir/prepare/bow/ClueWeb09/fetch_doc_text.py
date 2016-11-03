@@ -22,7 +22,7 @@ sys.setdefaultencoding('UTF8')
 def fetch_doc_text(trec_rank_in, doc_text_in, out_name):
     l_q_ranking = load_trec_ranking_with_score(trec_rank_in)
     ll_docno = [[docno for docno, __ in rank] for __, rank in l_q_ranking]
-    s_target_docno = set(sum([], ll_docno))
+    s_target_docno = set(sum(ll_docno, []))
     logging.info('[%d] target docno', len(s_target_docno))
     err_cnt = 0
     cnt = 0
