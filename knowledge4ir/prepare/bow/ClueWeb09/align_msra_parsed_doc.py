@@ -16,12 +16,14 @@ sys.setdefaultencoding('UTF8')
 def align_doc_url(doc_text_in, doc_url_in, out_name):
     h_url_no = {}
     err_cnt = 0
-    for line in open(doc_url_in):
+    for line_cnt, line in enumerate(open(doc_url_in)):
         cols = line.strip().split('\t')
         if len(cols) != 2:
             err_cnt += 1
         url, docno = '\t'.join(cols[:-1]), cols[-1]
         h_url_no[url] = docno
+        if not (line_cnt % 1000):
+            logging.info('load [%d] url doc mapping', len(line_cnt))
     logging.info('%d doc url in this partition %d err url', len(h_url_no), err_cnt)
     out = open(out_name, "w")
     cnt = 0

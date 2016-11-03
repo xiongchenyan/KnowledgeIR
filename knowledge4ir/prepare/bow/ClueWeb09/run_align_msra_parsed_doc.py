@@ -10,7 +10,7 @@ import ntpath
 import json
 
 if 4 != len(sys.argv):
-    print "3 para: doc text tokenized parsed dir + doc urldir + out dir"
+    print "3 para: doc text tokenized parsed dir + doc url + out dir"
     sys.exit()
 
 l_doc_text_name = []
