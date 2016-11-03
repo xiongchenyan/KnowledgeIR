@@ -10,4 +10,5 @@ ROOT_PATH = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 GDEVAL_PATH = ROOT_PATH + '/knowledge4ir/utils/gdeval.pl'
 TMP_DIR = ROOT_PATH + '/tmp/S2Ranking/'
 
+DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 
