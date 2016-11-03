@@ -32,9 +32,9 @@ for text_name in l_doc_text_name:
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         out_name = os.path.join(out_dir, text_name)
-        job_id = qsub_job(['qsub', 'python', 'align_msra_parsed_doc.py',
-                           text_name, url_name, out_name])
-        print "submitted %s job for [%s][%s]" % (job_id, url_name, text_name)
+        l_cmd = ['qsub', 'python', 'align_msra_parsed_doc.py', text_name, url_name, out_name]
+        job_id = qsub_job(l_cmd)
+        print "submitted %s job %s" % (json.dumps(l_cmd), job_id)
 
 
 print "all submitted"
