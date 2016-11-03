@@ -29,11 +29,11 @@ def fetch_doc_text(trec_rank_in, doc_text_in, out_name):
     out = open(out_name, 'w')
     for line in open(doc_text_in):
         cols = line.strip().split('\t')
-        if len(cols) != 3:
+        if len(cols) < 2:
             logging.warning('text format error %s', json.dumps(cols))
             err_cnt += 1
             continue
-        docno, url, text = cols
+        docno, text = cols[0], cols[-1]
         if docno in s_target_docno:
             logging.info('find [%s]', docno)
             h = dict()
