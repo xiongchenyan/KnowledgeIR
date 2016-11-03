@@ -43,7 +43,7 @@ def fetch_doc_text(trec_rank_in, doc_text_in, out_name):
             print >>out, docno + '\t' + json.dumps(h)
             cnt += 1
     out.close()
-    logging.info('finished [%s], found [%d], err [%d]', cnt, err_cnt)
+    logging.info('finished [%s], found [%d], err [%d]', doc_text_in, cnt, err_cnt)
 
 
 if __name__ == '__main__':
