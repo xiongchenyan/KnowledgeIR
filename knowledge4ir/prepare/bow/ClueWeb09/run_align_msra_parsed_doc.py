@@ -24,9 +24,9 @@ for dir_name, sub_dirs, file_names in os.walk(sys.argv[2]):
 print "working with [%d] text files [%d] url files" % (len(l_doc_text_name), len(l_doc_url_name))
 
 for url_name in l_doc_url_name:
-    while len(get_cx_job()) > 10:
+    while len(get_cx_job()) > 100:
+        print "waiting for 100+ cx jobs"
         time.sleep(10)
-        print "waiting..."
     out_dir = os.path.join(sys.argv[3], ntpath.basename(url_name))
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
