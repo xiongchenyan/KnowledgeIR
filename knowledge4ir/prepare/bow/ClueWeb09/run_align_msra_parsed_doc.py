@@ -23,17 +23,17 @@ for dir_name, sub_dirs, file_names in os.walk(sys.argv[2]):
 
 print "working with [%d] text files [%d] url files" % (len(l_doc_text_name), len(l_doc_url_name))
 
-for url_name in l_doc_url_name:
+for text_name in l_doc_text_name:
     while len(get_cx_job()) > 100:
         print "waiting for 100+ cx jobs"
         time.sleep(10)
-    out_dir = os.path.join(sys.argv[3], ntpath.basename(url_name))
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    for text_name in l_doc_text_name:
+    for url_name in l_doc_url_name:
+        out_dir = os.path.join(sys.argv[3], ntpath.basename(url_name))
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
         out_name = os.path.join(out_dir, text_name)
         job_id = qsub_job(['qsub', 'python', 'align_msra_parsed_doc.py',
-                                    text_name, url_name, out_name])
+                           text_name, url_name, out_name])
         print "submitted %s job for [%s][%s]" % (job_id, url_name, text_name)
 
 
