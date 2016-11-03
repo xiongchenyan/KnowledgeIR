@@ -175,7 +175,7 @@ def set_basic_log(log_level=logging.INFO):
     root.addHandler(ch)
 
 
-def set_log_with_elastic(log_level, out_dir=S2PATH+'/tmp/log/'):
+def set_log_with_elastic(log_level, out_dir=ROOT_PATH+'/tmp/log/'):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
