@@ -21,10 +21,8 @@ def align_doc_url(doc_text_in, doc_url_in, out_name):
     for line in open(doc_url_in):
         cols = line.strip().split('\t')
         if len(cols) != 2:
-            logging.warning('url format error [%s]', line)
             err_cnt += 1
-            continue
-        url, docno = cols[0], cols[-1]
+        url, docno = '\t'.join(cols[:-1]), cols[-1]
         if url in s_url_no:
             h_url_no[url] = docno
     logging.info('%d doc url in this partition %d err url', len(h_url_no), err_cnt)
