@@ -2,12 +2,12 @@
 condor run msra pasred doc
 """
 
-import subprocess
 import os
 import sys
 from knowledge4ir.utils.condor import get_cx_job, qsub_job
 import time
 import ntpath
+import json
 
 if 4 != len(sys.argv):
     print "3 para: doc text tokenized parsed dir + doc url dir + out dir"
@@ -34,6 +34,9 @@ for url_name in l_doc_url_name:
         out_name = os.path.join(out_dir, text_name)
         l_job_id = qsub_job(['qsub', 'python', 'align_msra_parsed_doc.py',
                                     text_name, url_name, out_name])
+        print "submitted [%s] jobs for [%s][%s]" % (json.dumps(l_job_id),
+                                                   url_name,
+                                                   text_name)
 
 
 print "all submitted"
