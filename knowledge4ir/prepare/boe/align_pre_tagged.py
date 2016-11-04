@@ -33,7 +33,7 @@ def align_ana(ana_in, h_doc_info, out_name):
             p += 8
         cnt += 1
         h_doc_info[docno].update({'tagme': l_ana})
-        print >> out, docno + '\t' + json.dumps(h_doc_info)
+        print >> out, docno + '\t' + json.dumps(h_doc_info[docno])
         if not (cnt % 100):
             logging.info('aligned [%d] doc', cnt)
     out.close()
