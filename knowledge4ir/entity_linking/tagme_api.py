@@ -24,7 +24,7 @@ class TagMeAPILinker(Configurable):
         super(TagMeAPILinker, self).__init__(**kwargs)
         logging.info('load wiki 2 fb dict...')
         self.h_wiki_id_fb = dict([line.split('\t')[:2] for line in open(self.wiki_fb_dict)])
-        logging.info('wiki 2 fb dict loaded')
+        logging.info('wiki 2 fb dict [%d] id pairs loaded', len(self.h_wiki_id_fb))
 
     def link(self, text):
         paras = {'text': text, 'gcube-token':TagMe_Key}
