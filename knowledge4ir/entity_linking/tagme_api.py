@@ -40,8 +40,9 @@ class TagMeAPILinker(Configurable):
         l_ana = []
         for tag in l_tagme_ana:
             if 'title' not in tag:
-                logging.warn('tagme returned [%s]', json.dumps(tag))
-            name = tag['title']
+                name = tag['spot']
+            else:
+                name = tag['title']
             wid = str(tag['id'])
             st = tag['start']
             ed = tag['end']
