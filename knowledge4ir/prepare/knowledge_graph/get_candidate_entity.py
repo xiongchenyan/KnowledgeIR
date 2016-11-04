@@ -49,6 +49,8 @@ class GetCandidateEntity(Configurable):
 
 if __name__ == '__main__':
     from knowledge4ir.utils import load_py_config
+    from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if len(sys.argv) != 2:
         print "1 para: config"
         GetCandidateEntity.class_print_help()
