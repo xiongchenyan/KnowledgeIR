@@ -10,8 +10,8 @@ output:
     cv_res
 """
 
-from knowledge4ir.letor.kfold_cv_run import RanklibRunner
-from knowledge4ir.letor.kfold_partition import kfold_svm_data
+from knowledge4ir.cv.kfold_cv_run import RanklibRunner
+from knowledge4ir.cv.kfold_partition import kfold_svm_data
 import sys
 import os
 import logging

@@ -10,7 +10,8 @@ output:
 """
 
 from sklearn.cross_validation import KFold
-import os, json
+import os
+import json
 import logging
 default_K = 5
 
