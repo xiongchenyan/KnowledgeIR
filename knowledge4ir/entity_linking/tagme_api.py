@@ -40,7 +40,7 @@ class TagMeAPILinker(Configurable):
         l_ana = []
         for tag in l_tagme_ana:
             name = tag['title']
-            wid = tag['id']
+            wid = str(tag['id'])
             st = tag['start']
             ed = tag['end']
             rho = tag['rho']
