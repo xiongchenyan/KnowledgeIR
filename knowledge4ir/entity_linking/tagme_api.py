@@ -42,7 +42,7 @@ class TagMeAPILinker(Configurable):
             name = tag['title']
             wid = tag['id']
             st = tag['start']
-            ed = tag['ed']
+            ed = tag['end']
             rho = tag['rho']
             lp = tag['link_probability']
             if wid in self.h_wiki_id_fb:
