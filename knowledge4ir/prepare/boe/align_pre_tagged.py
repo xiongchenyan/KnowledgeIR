@@ -36,7 +36,7 @@ def align_ana(ana_in, h_doc_info, out_name):
                 else:
                     logging.warn('tagged cols mixed', json.dumps(cols[p: p + 8]))
             except ValueError:
-                logging.warn('tagged cols mixed', json.dumps(cols[p: p + 8]))
+                logging.warn('tagged cols %s mixed', json.dumps(cols[p: p + 8]))
             p += 8
         cnt += 1
         h = dict(h_doc_info[docno])
