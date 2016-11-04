@@ -33,12 +33,15 @@ from knowledge4ir.utils import ROOT_PATH
 from knowledge4ir.utils import (
     dump_trec_out_from_ranking_score,
 )
-from knowledge4ir.utils import GDEVAL_PATH
-from knowledge4ir.utils import RANKSVM_PATH
+from knowledge4ir.utils import (
+    GDEVAL_PATH,
+    RANKLIB_PATH,
+    RANKSVM_PATH,
+)
 
 
 class RanklibRunner(Configurable):
-    ranklib = Unicode(ROOT_PATH + '/knowledge4ir/letor/RankLib.jar',
+    ranklib = Unicode(RANKLIB_PATH,
                       help='the location of ranklib jar'
                       ).tag(config=True)
     nb_fold = Int(5, help='fold number k').tag(config=True)
@@ -46,7 +49,7 @@ class RanklibRunner(Configurable):
     out_dir = Unicode(help='output dir').tag(config=True)
     model_id = Unicode('4', help='model id as defined in ranklib, -1==ranksvm, -2==hybrid').tag(config=True)
     qrel = Unicode(help='qrel path').tag(config=True)
-    ranksvm = Unicode(ROOT_PATH + '/knowledge4ir/model/rank_svm',
+    ranksvm = Unicode(RANKSVM_PATH,
                       help='the location of ranksvm bin file'
                       ).tag(config=True)
     ranksvm_c = Float(0.1, help='C of ranksvm').tag(config=True)
