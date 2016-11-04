@@ -39,6 +39,7 @@ class CommonEntityLinker(Configurable):
         l_name_id_score = [line.split('\t') for line in l_lines]
         h_name_score = {}
         for name, mid, score in l_name_id_score:
+            score = float(score)
             if score < 10:
                 continue
             # if name != name.upper():
