@@ -105,7 +105,8 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
 
         return h_feature
 
-    def _build_cosine_mtx(self, l_q_e, l_doc_e, emb_model):
+    @classmethod
+    def _build_cosine_mtx(cls, l_q_e, l_doc_e, emb_model):
         """
         build a q-d entity cosine similarity matrix
         :param l_q_e: query entities
@@ -115,18 +116,18 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
         """
         sim_mtx = np.zeros((len(l_q_e), len(l_doc_e)))
         for i in xrange(len(l_q_e)):
-            if l_q_e[i] not in emb_model:
-                continue
             q_e = l_q_e[i]
             for j in xrange(len(l_doc_e)):
-                if l_doc_e[j] not in emb_model:
-                    continue
                 d_e = l_doc_e[j]
-                sim_mtx[i, j] = emb_model.similarity(q_e, d_e)
+                if q_e == d_e:
+                    sim_mtx[i, j] = 1.0
+                if (q_e in emb_model) & (d_e in emb_model):
+                    sim_mtx[i, j] = emb_model.similarity(q_e, d_e)
         return sim_mtx
 
     def _soft_embedding_sim(self, m_sim_mtx):
         """
+        Not in use not 11/04/2016
         soft matching weights
         exactly matched document's entities have been exclude before calculating the similarity matrix
         :param m_sim_mtx: q-e <-> doc-e similarity matrix
@@ -142,7 +143,6 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             l_top_k.sort(reversed=True)
             for k in xrange(self.top_k_soft):
                 l_sim.append(['Top%d' % (k + 1), l_top_k[k]])
-
         return l_sim
 
     def _mean_bin(self, m_sim_mtx):
@@ -202,11 +202,9 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                 l_bin_score.append(('Top_%d' % k, 0))
         return l_bin_score
 
-
     def _bin_similarity(self, v_sim):
         """
         log bin
-        bin using [-1, -0.5), [-0.5, 0), [0, 0.5), [0.5, 1), [1,1.01)
         :param v_sim_mtx:
         :return:
         """
@@ -233,7 +231,11 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             return l_bins
         bin_size = self.bin_range / (self.nb_bin - 1)
         for i in xrange(self.nb_bin - 1):
-            l_bins.append(l_bins[i] - bin_size)
+            bound = l_bins[i] - bin_size
+            if bound == 0:
+                bound = 0.00000001
+            l_bins.append(bound)
+        logging.info('using bin [%s]', json.dumps(l_bins))
         return l_bins
 
 
