@@ -82,25 +82,29 @@ class CommonEntityLinker(Configurable):
         while st < len(l_term):
             matched = False
             for ed in xrange(self.max_surface_len):
-                this_phrase = ' '.join(l_term[st: st + self.max_surface_len - ed])
-                if this_phrase in self.h_surface_name:
-                    l_annotation.append([self.h_surface_name[this_phrase],
-                                         offset, offset + len(this_phrase),
-                                         this_phrase])
-                    st += self.max_surface_len - ed
-                    offset += len(this_phrase) + 1
-                    matched = True
-                    break
-                if stemming:
-                    stemmed_phrase = self._phrase_stem(this_phrase)
-                    if stemmed_phrase in self.h_surface_name:
-                        l_annotation.append([self.h_surface_name[stemmed_phrase],
+                phrase = ' '.join(l_term[st: st + self.max_surface_len - ed])
+                l_candidate_phrase = [phrase, phrase.title(), phrase.upper()]
+                for this_phrase in l_candidate_phrase:
+                    if this_phrase in self.h_surface_name:
+                        l_annotation.append([self.h_surface_name[this_phrase],
                                              offset, offset + len(this_phrase),
-                                             stemmed_phrase])
+                                             this_phrase])
                         st += self.max_surface_len - ed
                         offset += len(this_phrase) + 1
                         matched = True
                         break
+                    if stemming:
+                        stemmed_phrase = self._phrase_stem(this_phrase)
+                        if stemmed_phrase in self.h_surface_name:
+                            l_annotation.append([self.h_surface_name[stemmed_phrase],
+                                                 offset, offset + len(this_phrase),
+                                                 stemmed_phrase])
+                            st += self.max_surface_len - ed
+                            offset += len(this_phrase) + 1
+                            matched = True
+                            break
+                if matched:
+                    break
 
             if not matched:
                 offset += len(l_term[st]) + 1
