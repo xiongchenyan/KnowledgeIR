@@ -25,12 +25,15 @@ def align_ana(ana_in, h_doc_info, out_name):
         p = 0
         l_ana = []
         while p + 8 <= len(cols):
-            st = int(cols[p + 2])
-            ed = int(cols[p + 3])
-            rho = float(cols[p + 4])
-            name = cols[p + 7]
-            fb_id = cols[p + 6]
-            l_ana.append([fb_id, st, ed, {'score': rho}, name])
+            try:
+                st = int(cols[p + 2])
+                ed = int(cols[p + 3])
+                rho = float(cols[p + 4])
+                name = cols[p + 7]
+                fb_id = cols[p + 6]
+                l_ana.append([fb_id, st, ed, {'score': rho}, name])
+            except ValueError:
+                logging.warn('tagged cols mixed', json.dumps(cols[p: p + 8]))
             p += 8
         cnt += 1
         h = dict(h_doc_info[docno])
