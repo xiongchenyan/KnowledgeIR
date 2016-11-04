@@ -109,7 +109,7 @@ class CommonEntityLinker(Configurable):
             if not matched:
                 offset += len(l_term[st]) + 1
                 st += 1
-        return l_annotation, ' '.join(l_term)
+        return l_annotation
 
     @classmethod
     def _phrase_stem(cls, phrase):

@@ -63,7 +63,7 @@ class Annotator(Configurable):
             d_info[self.linker_type] = {}
             for field in self.target_fields:
                 if field in d_info:
-                    l_ana, __ = self.linker.link(d_info[field])
+                    l_ana = self.linker.link(d_info[field])
                     api_cnt += 1
                     if not api_cnt % 5:
                         if self.linker_type == 'tagme':
