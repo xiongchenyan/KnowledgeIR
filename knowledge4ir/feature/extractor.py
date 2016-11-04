@@ -41,7 +41,6 @@ class LeToRFeatureExtractCenter(Configurable):
     rank_top_k = Int(100, help="top k candidate docs to extract features").tag(config=True)
     l_feature_group = List(Unicode, default_value=['IRFusion'],
                            help='feature groups to extract: IRFusion,\
-                            BoeIRFusion, \
                             BoeEmb'
                            ).tag(config=True)
     out_name = Unicode(help='feature out file name').tag(config=True)
@@ -94,7 +93,7 @@ class LeToRFeatureExtractCenter(Configurable):
         """
         if 'IRFusion' in self.l_feature_group:
             self._l_feature_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
-        if "IRExp" in self.l_feature_group:
+        if "BoeEmb" in self.l_feature_group:
             self._l_feature_extractor.append(LeToRBOEEmbFeatureExtractor(**kwargs))
         # if 'BoeLes' in self.l_feature_group:
         #     self._l_feature_extractor.append(LeToREIRFeatureExtractor(**kwargs))
