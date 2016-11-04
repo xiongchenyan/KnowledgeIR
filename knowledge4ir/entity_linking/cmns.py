@@ -41,8 +41,8 @@ class CommonEntityLinker(Configurable):
         for name, mid, score in l_name_id_score:
             if score < 10:
                 continue
-            if name != name.upper():
-                name = name.lower()
+            # if name != name.upper():
+            #     name = name.lower()
             if name in s_stopwords:
                 continue
             if name not in h_name_score:
