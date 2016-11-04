@@ -57,13 +57,13 @@ class Annotator(Configurable):
             d_info[self.linker_type] = {}
             for field in self.target_fields:
                 if field in d_info:
-                    l_ana = self.linker.link(d_info[field])
+                    l_ana, __ = self.linker.link(d_info[field])
                     d_info[self.linker_type][field] = l_ana
             print >> out, d_id + '\t' + json.dumps(d_info)
             if not line_cnt % 100:
                 logging.info('annotated [%d] data', line_cnt)
         out.close()
-        logging.info('finished [%d] data annotation', line_cnt)
+        logging.info('finished [%d] data annotation', line_cnt + 1)
 
 
 if __name__ == '__main__':
