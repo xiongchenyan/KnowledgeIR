@@ -459,9 +459,11 @@ def load_doc_info(in_name):
     :param in_name:
     :return:
     """
+    logging.info('start loading doc info %s', in_name)
     l_lines = open(in_name).read().splitlines()
+    logging.info('total [%d] docs', len(l_lines))
     l_vcol = [line.split('\t') for line in l_lines]
     l_docno = [vcol[0] for vcol in l_vcol]
     l_h_doc_info = [json.loads(vcol[-1]) for vcol in l_vcol]
-
+    logging.info('loaded [%d] doc info', len(l_h_doc_info))
     return dict(zip(l_docno, l_h_doc_info))
