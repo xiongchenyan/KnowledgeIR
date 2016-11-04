@@ -65,7 +65,7 @@ class Annotator(Configurable):
                 if field in d_info:
                     l_ana = self.linker.link(d_info[field])
                     api_cnt += 1
-                    if not api_cnt % 5:
+                    if not (api_cnt % 5):
                         if self.linker_type == 'tagme':
                             time.sleep(1)
                     d_info[self.linker_type][field] = l_ana
