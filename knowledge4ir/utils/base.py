@@ -465,5 +465,6 @@ def load_doc_info(in_name):
     l_vcol = [line.split('\t') for line in l_lines]
     l_docno = [vcol[0] for vcol in l_vcol]
     l_h_doc_info = [json.loads(vcol[-1]) for vcol in l_vcol]
-    logging.info('loaded [%d] doc info', len(l_h_doc_info))
-    return dict(zip(l_docno, l_h_doc_info))
+    h_doc_info = dict(zip(l_docno, l_h_doc_info))
+    logging.info('loaded [%d] doc info', len(h_doc_info))
+    return h_doc_info

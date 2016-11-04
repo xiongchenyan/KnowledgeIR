@@ -33,18 +33,19 @@ def align_ana(ana_in, h_doc_info, out_name):
             l_ana.append([fb_id, st, ed, {'score': rho}, name])
             p += 8
         cnt += 1
-        h_doc_info[docno].update({'tagme': l_ana})
         h = dict(h_doc_info[docno])
         h.update({'tagme': l_ana})
         print >> out, docno + '\t' + json.dumps(h)
         s_dumped_docno.add(docno)
         if not (cnt % 100):
             logging.info('aligned [%d] doc', cnt)
+    logging.info('[%d/%d] has tag me ana', cnt, len(h_doc_info))
     for docno, h_info in h_doc_info.items():
         if docno not in s_dumped_docno:
             print >> out, docno + '\t' + json.dumps(h_doc_info[docno])
+            cnt += 1
     out.close()
-    logging.info('total aligned [%d/%d] doc', cnt, len(h_doc_info))
+    logging.info('total dumped [%d/%d] doc', cnt, len(h_doc_info))
     return
 
 
