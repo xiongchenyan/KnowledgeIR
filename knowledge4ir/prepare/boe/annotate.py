@@ -13,6 +13,7 @@ output:
 
 from traitlets.config import Configurable
 from knowledge4ir.entity_linking.cmns import CommonEntityLinker
+from knowledge4ir.entity_linking.tagme_api import TagMeAPILinker
 from traitlets import (
     Unicode,
     Int,
@@ -22,6 +23,8 @@ from knowledge4ir.utils import TARGET_TEXT_FIELDS
 import json
 import logging
 import sys
+import time
+
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
@@ -36,6 +39,8 @@ class Annotator(Configurable):
         super(Annotator, self).__init__(**kwargs)
         if self.linker_type == 'cmns':
             self.linker = CommonEntityLinker(**kwargs)
+        elif self.linker_type == 'tagme':
+            self.linker = TagMeAPILinker(**kwargs)
         else:
             raise NotImplementedError
 
@@ -51,6 +56,7 @@ class Annotator(Configurable):
             out_name = self.out_name
         logging.info('start annotating [%s]', in_name)
         out = open(out_name, 'w')
+        api_cnt = 0
         for line_cnt, line in enumerate(open(in_name)):
             d_id, d_info = line.split('\t')
             d_info = json.loads(d_info)
@@ -58,8 +64,13 @@ class Annotator(Configurable):
             for field in self.target_fields:
                 if field in d_info:
                     l_ana, __ = self.linker.link(d_info[field])
+                    api_cnt += 1
+                    if not api_cnt % 5:
+                        if self.linker_type == 'tagme':
+                            time.sleep(1)
                     d_info[self.linker_type][field] = l_ana
             print >> out, d_id + '\t' + json.dumps(d_info)
+
             if not line_cnt % 100:
                 logging.info('annotated [%d] data', line_cnt)
         out.close()
