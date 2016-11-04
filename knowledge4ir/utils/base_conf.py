@@ -11,3 +11,4 @@ GDEVAL_PATH = ROOT_PATH + '/knowledge4ir/utils/gdeval.pl'
 TMP_DIR = ROOT_PATH + '/tmp/S2Ranking/'
 DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 TARGET_TEXT_FIELDS = ['title', 'bodyText',]
+MS_ENTITY_KEY = '3c552f84af52430482da7285e4da8ad9'
