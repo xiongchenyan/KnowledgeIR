@@ -15,6 +15,7 @@ from knowledge4ir.utils import load_doc_info
 def align_ana(ana_in, h_doc_info, out_name):
     out = open(out_name, 'w')
     cnt = 0
+    s_dumped_docno = set()
     for line in open(ana_in):
         docno = line.split()[0]
         if docno not in h_doc_info:
@@ -33,9 +34,15 @@ def align_ana(ana_in, h_doc_info, out_name):
             p += 8
         cnt += 1
         h_doc_info[docno].update({'tagme': l_ana})
-        print >> out, docno + '\t' + json.dumps(h_doc_info[docno])
+        h = dict(h_doc_info[docno])
+        h.update({'tagme': l_ana})
+        print >> out, docno + '\t' + json.dumps(h)
+        s_dumped_docno.add(docno)
         if not (cnt % 100):
             logging.info('aligned [%d] doc', cnt)
+    for docno, h_info in h_doc_info.items():
+        if docno not in s_dumped_docno:
+            print >> out, docno + '\t' + json.dumps(h_doc_info[docno])
     out.close()
     logging.info('total aligned [%d/%d] doc', cnt, len(h_doc_info))
     return
