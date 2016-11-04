@@ -452,3 +452,16 @@ def load_query_info(in_name):
     l_h_q_info = [json.loads(vcol[-1]) for vcol in l_vcol]
 
     return dict(zip(l_qid, l_h_q_info))
+
+
+def load_doc_info(in_name):
+    """
+    :param in_name:
+    :return:
+    """
+    l_lines = open(in_name).read().splitlines()
+    l_vcol = [line.split('\t') for line in l_lines]
+    l_docno = [vcol[0] for vcol in l_vcol]
+    l_h_doc_info = [json.loads(vcol[-1]) for vcol in l_vcol]
+
+    return dict(zip(l_docno, l_h_doc_info))
