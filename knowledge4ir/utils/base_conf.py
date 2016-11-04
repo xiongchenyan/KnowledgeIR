@@ -8,6 +8,7 @@ this is sth to be used for impoet
 from os import path
 ROOT_PATH = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 GDEVAL_PATH = ROOT_PATH + '/knowledge4ir/utils/gdeval.pl'
+RANKSVM_PATH = ROOT_PATH + '/knowledge4ir/model/rank_svm'
 TMP_DIR = ROOT_PATH + '/tmp/S2Ranking/'
 DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 TARGET_TEXT_FIELDS = ['title', 'bodyText',]
