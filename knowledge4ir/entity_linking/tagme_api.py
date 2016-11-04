@@ -39,6 +39,8 @@ class TagMeAPILinker(Configurable):
         l_tagme_ana = h_res['annotations']
         l_ana = []
         for tag in l_tagme_ana:
+            if 'title' not in tag:
+                logging.warn('tagme returned [%s]', json.dumps(tag))
             name = tag['title']
             wid = str(tag['id'])
             st = tag['start']
@@ -48,7 +50,7 @@ class TagMeAPILinker(Configurable):
             if wid in self.h_wiki_id_fb:
                 fid = self.h_wiki_id_fb[wid]
             else:
-                logging.warn('wid [%s] not in wiki id dict', wid)
+                # logging.warn('wid [%s] not in wiki id dict', wid)
                 continue
             ana = [fid, st, ed, {'lp': lp, 'score': rho}, name]
             l_ana.append(ana)
