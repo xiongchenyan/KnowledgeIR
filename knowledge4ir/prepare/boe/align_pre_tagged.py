@@ -34,7 +34,14 @@ def align_ana(ana_in, h_doc_info, out_name):
             p += 8
         cnt += 1
         h = dict(h_doc_info[docno])
-        h.update({'tagme': l_ana})
+        h_tagme = {'bodyText': l_ana}
+        title_len = 0
+        if 'title' in h_doc_info[docno]:
+            title_len = len(h_doc_info['title'])
+        l_title_ana = [ana for ana in l_ana if ana[2] <= title_len]
+        h_tagme['title'] = l_title_ana
+        h['tagme'] = h_tagme
+
         print >> out, docno + '\t' + json.dumps(h)
         s_dumped_docno.add(docno)
         if not (cnt % 100):
