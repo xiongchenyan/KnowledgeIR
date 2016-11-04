@@ -31,7 +31,10 @@ def align_ana(ana_in, h_doc_info, out_name):
                 rho = float(cols[p + 4])
                 name = cols[p + 7]
                 fb_id = cols[p + 6]
-                l_ana.append([fb_id, st, ed, {'score': rho}, name])
+                if fb_id.startswith('/m/'):
+                    l_ana.append([fb_id, st, ed, {'score': rho}, name])
+                else:
+                    logging.warn('tagged cols mixed', json.dumps(cols[p: p + 8]))
             except ValueError:
                 logging.warn('tagged cols mixed', json.dumps(cols[p: p + 8]))
             p += 8
