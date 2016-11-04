@@ -47,6 +47,8 @@ def main(doc_info_in, ana_in, out_name):
 
 
 if __name__ == '__main__':
+    from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if 4 != len(sys.argv):
         print "I align tagme results for doc info"
         print "3 para: doc info in + ana in + out_name"
