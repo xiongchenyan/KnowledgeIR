@@ -237,7 +237,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             if bound == 0:
                 bound = 0.00000001
             l_bins.append(bound)
-        logging.info('using bin [%s]', json.dumps(l_bins))
+        # logging.info('using bin [%s]', json.dumps(l_bins))
         return l_bins
 
 
