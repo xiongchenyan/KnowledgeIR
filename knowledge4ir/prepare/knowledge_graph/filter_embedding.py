@@ -42,7 +42,7 @@ def filter_embedding(word2vec_in, voc_in, out_name):
 
         t = line.split()[0]
         if t in s_voc:
-            print >> out, line.strip()
+            print >> out, ' '.join(line.strip().split())
 
     out.close()
     print 'finished'
