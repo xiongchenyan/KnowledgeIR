@@ -24,6 +24,8 @@ import math
 
 
 class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
+    tagger = Unicode('tagme', help='tagger used, as in q info and d info'
+                     ).tag(config=True)
     l_target_fields = List(Unicode,
                            default_value=[],
                            help='doc fields to use'
@@ -77,8 +79,8 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     def _extract_for_one_emb(self, h_q_info, h_doc_info, emb_model, emb_name=""):
         h_feature = {}
 
-        l_e = [ana[0] for ana in h_q_info['ana'] if ana[0] in emb_model]
-        for field, l_ana in h_doc_info['ana'].items():
+        l_e = [ana[0] for ana in h_q_info[self.tagger]['query'] if ana[0] in emb_model]
+        for field, l_ana in h_doc_info[self.tagger].items():
             if field not in self.l_target_fields:
                 continue
             l_doc_e = [ana[0] for ana in l_ana if ana[0] in emb_model]
