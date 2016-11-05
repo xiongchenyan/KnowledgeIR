@@ -26,6 +26,7 @@ def filter_embedding(word2vec_in, voc_in, out_name):
         if 0 == (line_cnt % 1000):
             print "checked %d line [%d] kept" % (line_cnt, in_cnt)
         t = line.split()[0]
+        print "this line term is [%s]" % t
         if t in s_voc:
             in_cnt += 1
 
