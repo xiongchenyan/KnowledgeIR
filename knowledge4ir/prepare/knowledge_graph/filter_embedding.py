@@ -11,7 +11,7 @@ import sys
 
 
 def filter_embedding(word2vec_in, voc_in, out_name):
-    s_voc = set([line.split('\t')[0] for line in open(voc_in)])
+    s_voc = set([line.strip().split('\t')[0] for line in open(voc_in)])
     print "%d vocabulary" % len(s_voc)
 
     total_cnt, dim = 0, 0
@@ -26,7 +26,6 @@ def filter_embedding(word2vec_in, voc_in, out_name):
         if 0 == (line_cnt % 1000):
             print "checked %d line [%d] kept" % (line_cnt, in_cnt)
         t = line.split()[0]
-        print "this line term is [%s]" % t
         if t in s_voc:
             in_cnt += 1
 
