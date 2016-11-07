@@ -17,8 +17,6 @@ import os
 import logging
 from knowledge4ir.utils import set_basic_log, load_py_config
 
-q_st = 1
-q_ed = 100
 
 set_basic_log(logging.INFO)
 
@@ -43,6 +41,12 @@ if not os.path.exists(cv_dir):
 conf = load_py_config(sys.argv[2])
 runner = RanklibRunner(config=conf)
 with_dev = runner.with_dev
+
+# default to use all qid's in the svm data
+l_qid = [int(line.split()[0]) for line in open(svm_in).read().splitlines()]
+q_st = min(l_qid)
+q_ed = max(l_qid)
+logging.info('q range: [%d-%d] total [%d]', q_st, q_ed, len(l_qid))
 kfold_svm_data(svm_in, q_st, q_ed, kfold_dir, conf.RanklibRunner.nb_fold, with_dev)
 runner.cross_validation(kfold_dir, cv_dir)
 
