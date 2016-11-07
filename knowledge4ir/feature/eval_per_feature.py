@@ -21,8 +21,6 @@ import subprocess
 import json
 import logging
 
-qrel_path=""
-
 
 def form_rank(svm_in, feature_d):
     h_q_ranking = {}
