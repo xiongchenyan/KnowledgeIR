@@ -34,6 +34,7 @@ class RunMulKFold(Configurable):
     def submit(self):
         for feature_name in self.l_feature_names:
             for model_config in self.l_model_configs:
+                logging.info('submitting %s-%s', feature_name, model_config)
                 out_name = feature_name + '.' + model_config
                 l_cmd = ['python', 'kfold_pipe.py',
                          os.path.join(self.feature_dir, feature_name),
