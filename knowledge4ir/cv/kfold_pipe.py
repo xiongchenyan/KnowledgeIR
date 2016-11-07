@@ -43,7 +43,7 @@ runner = RanklibRunner(config=conf)
 with_dev = runner.with_dev
 
 # default to use all qid's in the svm data
-l_qid = [int(line.split()[0]) for line in open(svm_in).read().splitlines()]
+l_qid = [int(line.split()[1].replace('qid:', '')) for line in open(svm_in).read().splitlines()]
 q_st = min(l_qid)
 q_ed = max(l_qid)
 logging.info('q range: [%d-%d] total [%d]', q_st, q_ed, len(l_qid))
