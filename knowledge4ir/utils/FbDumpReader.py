@@ -40,6 +40,12 @@ class KeyFileReader(Configurable):
         return key.strip(self.splitter)
 
     def read(self, in_name):
+        """
+
+        :param in_name: the gz of Freebase dump
+        :return: yield triples lv_col for an entity a time.
+            lv_col = [[head, predicate, tail], ...]
+        """
         lv_col = []  # one object's all triples
         current_key = None
         if self.is_gzip:
