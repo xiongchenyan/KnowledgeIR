@@ -19,6 +19,7 @@ from traitlets import (
 from traitlets.config import Configurable
 
 from knowledge4ir.feature.boe_embedding import LeToRBOEEmbFeatureExtractor
+from knowledge4ir.feature.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
 from knowledge4ir.feature.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
 )
@@ -41,7 +42,7 @@ class LeToRFeatureExtractCenter(Configurable):
     rank_top_k = Int(100, help="top k candidate docs to extract features").tag(config=True)
     l_feature_group = List(Unicode, default_value=['IRFusion'],
                            help='feature groups to extract: IRFusion,\
-                            BoeEmb'
+                            BoeEmb, Word2VecHist'
                            ).tag(config=True)
     out_name = Unicode(help='feature out file name').tag(config=True)
     normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
@@ -61,7 +62,10 @@ class LeToRFeatureExtractCenter(Configurable):
         super(LeToRFeatureExtractCenter, cls).class_print_help(inst)
         print "Feature group: IRFusion"
         LeToRIRFusionFeatureExtractor.class_print_help(inst)
+        print "Feature group: BoeEmb"
         LeToRBOEEmbFeatureExtractor.class_print_help(inst)
+        print "Feature group: Word2vecHist"
+        LeToRWord2vecHistFeatureExtractor.class_print_help(inst)
         # to add those needed the config
 
     def update_config(self, config):
@@ -95,6 +99,8 @@ class LeToRFeatureExtractCenter(Configurable):
             self._l_feature_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
         if "BoeEmb" in self.l_feature_group:
             self._l_feature_extractor.append(LeToRBOEEmbFeatureExtractor(**kwargs))
+        if "Word2vecHist" in self.l_feature_group:
+            self._l_feature_extractor.append(LeToRWord2vecHistFeatureExtractor(**kwargs))
         # if 'BoeLes' in self.l_feature_group:
         #     self._l_feature_extractor.append(LeToREIRFeatureExtractor(**kwargs))
 
