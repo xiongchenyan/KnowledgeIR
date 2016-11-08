@@ -386,25 +386,32 @@ def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None):
     return l_exp_term
 
 
-def bin_similarity(l_sim, l_bins):
+def bin_similarity(l_sim, l_bins, bin_func='log'):
     l_bin_nb = [0] * len(l_bins)
     for p in xrange(len(l_sim)):
         for bin_p in xrange(len(l_bins)):
             if l_sim[p] >= l_bins[bin_p]:
                 l_bin_nb[bin_p] += 1
                 break
-    l_bin_nb = [math.log(max(score, 1e-10)) for score in l_bin_nb]
+    if bin_func == 'log':
+        l_bin_nb = [math.log(max(score, 1e-10)) for score in l_bin_nb]
+    elif bin_func == 'norm_tf':
+        z = float(sum(l_bin_nb))
+        if z:
+            l_bin_nb = [score / z for score in l_bin_nb]
     l_names = ['bin_%d' % i for i in xrange(len(l_bins))]
     return zip(l_names, l_bin_nb)
 
 
-def form_bins(nb_bin):
+def form_bins(nb_bin, bin_range=1):
     l_bins = [1]
     if nb_bin == 1:
         return l_bins
-    bin_size = 1.0 / (nb_bin - 1)
+    bin_size = bin_range / (nb_bin - 1)
     for i in xrange(nb_bin - 1):
-        l_bins.append(l_bins[i] - bin_size)
+        bound = l_bins[i] - bin_size
+        l_bins.append(bound)
+    # logging.info('using bin [%s]', json.dumps(l_bins))
     return l_bins
 
 
