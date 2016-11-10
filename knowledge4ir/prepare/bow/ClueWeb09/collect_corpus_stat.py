@@ -22,7 +22,9 @@ def collect_corpus_stat(corpus_dir, out_pre):
         for fname in file_names:
             in_name = os.path.join(dir_name, fname)
             print 'start [%s]' % in_name
-            for line in open(in_name):
+            for line_cnt, line in enumerate(open(in_name)):
+                if not line_cnt % 1000:
+                    print "%d lines" % line_cnt
                 l_t = line.strip().split()
                 for t in l_t[:10]:
                     if t not in h_title_df:
@@ -38,8 +40,8 @@ def collect_corpus_stat(corpus_dir, out_pre):
                 total_df += 1
             print '[%s] finished' % in_name
 
-    title_out = open(out_pre + '.title_df', 'w')
-    body_out = open(out_pre + '.body_df', 'w')
+    title_out = open(out_pre + '.title', 'w')
+    body_out = open(out_pre + '.bodyText', 'w')
     corpus_out = open(out_pre + '.stat', 'w')
     print "dumping..."
     pickle.dump(h_title_df, title_out)
