@@ -83,7 +83,7 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
 
     def extract_doc_feature(self,docno, h_doc_info):
         h_feature = {}
-        if 'is_wiki' in self.l_model:
+        if 'is_wiki' in self.s_model:
             score = 0
             if 'enwp' in docno:
                 score = 1
