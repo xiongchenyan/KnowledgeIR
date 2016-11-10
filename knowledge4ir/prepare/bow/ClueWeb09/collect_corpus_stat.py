@@ -25,7 +25,7 @@ def collect_corpus_stat(corpus_dir, out_pre):
             for line_cnt, line in enumerate(open(in_name)):
                 if not line_cnt % 1000:
                     print "%d lines" % line_cnt
-                l_t = line.strip().split()
+                l_t = ' '.join(line.strip().split('\t')[2:]).split()
                 for t in l_t[:10]:
                     if t not in h_title_df:
                         h_title_df[t] = 1
