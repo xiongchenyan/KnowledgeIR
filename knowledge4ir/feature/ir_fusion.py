@@ -38,19 +38,6 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
         # logging.info('doc_info %s', json.dumps(h_doc_info))
         if 'term_vectors' not in h_doc_info:
             logging.warn('doc [%s] has no term vector', docno)
-        if query == h_q_info['query']:
-            h_old_feature = {}
-            # title_old_ts = None
-            for target_field in self.l_text_fields:
-                term_stat = calc_term_stat(h_q_info, h_doc_info, target_field)
-                # if target_field == 'title':
-                #     title_old_ts = term_stat
-                l_name_score = term_stat.mul_scores()
-                for name, score in l_name_score:
-                    if name in self.s_model:
-                        feature_name = self.feature_name_pre + name.title() + target_field.title()
-                        h_old_feature[feature_name] = score
-            return h_old_feature
 
         h_tf = text2lm(query.lower())
         # title_ts = None
