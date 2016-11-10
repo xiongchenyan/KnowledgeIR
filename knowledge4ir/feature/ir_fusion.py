@@ -1,15 +1,10 @@
 """
 classic features
 """
-import math
-
 from traitlets import List, Unicode
 
 from knowledge4ir.feature import (
-    calc_term_stat,
     LeToRFeatureExtractor,
-    fetch_corpus_stat,
-    fetch_doc_lm,
     TermStat
 )
 import logging
@@ -45,8 +40,6 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
         # logging.info('extracting IR fusion for q [%s], doc [%s]', query, docno)
         # logging.info('q_info %s', json.dumps(h_q_info))
         # logging.info('doc_info %s', json.dumps(h_doc_info))
-        if 'term_vectors' not in h_doc_info:
-            logging.warn('doc [%s] has no term vector', docno)
 
         h_tf = text2lm(query.lower())
         # title_ts = None
