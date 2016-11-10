@@ -15,6 +15,8 @@ from knowledge4ir.feature import (
 import logging
 import json
 from knowledge4ir.utils.nlp import text2lm
+from knowledge4ir.utils import load_corpus_stat
+from knowledge4ir.utils import TARGET_TEXT_FIELDS
 
 
 class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
@@ -22,14 +24,21 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
     extract the IR fusion features
     """
     feature_name_pre = Unicode('IRFusion')
-    l_text_fields = List(Unicode, default_value=[]).tag(config=True)
+    l_text_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
     l_model = List(Unicode,
                    default_value=['lm_dir', 'bm25', 'coordinate', 'tf_idf']
                    ).tag(config=True)
-    
+    corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
+
     def __init__(self, **kwargs):
         super(LeToRIRFusionFeatureExtractor, self).__init__(**kwargs)
         self.s_model = set(self.l_model)
+        l_field_h_df, self.h_corpus_stat = load_corpus_stat(
+            self.corpus_stat_pre, self.l_text_fields)
+        self.h_field_h_df = dict(l_field_h_df)
+        for field in self.l_text_fields:
+            assert field in self.h_corpus_stat
+            assert field in self.h_field_h_df
 
     def extract_for_text(self, query, docno, h_q_info, h_doc_info):
         h_feature = {}
@@ -38,25 +47,17 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
         # logging.info('doc_info %s', json.dumps(h_doc_info))
         if 'term_vectors' not in h_doc_info:
             logging.warn('doc [%s] has no term vector', docno)
-        if query == h_q_info['query']:
-            h_old_feature = {}
-            # title_old_ts = None
-            for target_field in self.l_text_fields:
-                term_stat = calc_term_stat(h_q_info, h_doc_info, target_field)
-                # if target_field == 'title':
-                #     title_old_ts = term_stat
-                l_name_score = term_stat.mul_scores()
-                for name, score in l_name_score:
-                    if name in self.s_model:
-                        feature_name = self.feature_name_pre + name.title() + target_field.title()
-                        h_old_feature[feature_name] = score
-            return h_old_feature
 
         h_tf = text2lm(query.lower())
         # title_ts = None
         for field in self.l_text_fields:
-            total_df, avg_doc_len = fetch_corpus_stat(h_q_info, field)
-            h_doc_tf, h_doc_df = fetch_doc_lm(h_doc_info, field)
+            total_df = self.h_corpus_stat[field]['total_df']
+            avg_doc_len = self.h_corpus_stat[field]['average_len']
+            h_doc_df = self.h_field_h_df[field]
+            h_doc_tf = {}
+            if field in h_doc_info:
+                h_doc_tf = text2lm(h_doc_info[field].lower())
+
             term_stat = TermStat()
             term_stat.set_from_raw(h_tf, h_doc_tf, h_doc_df, total_df, avg_doc_len)
             # if field == 'title':
@@ -80,7 +81,20 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
 
         return h_feature
 
+    def extract_doc_feature(self,docno, h_doc_info):
+        h_feature = {}
+        if 'is_wiki' in self.s_model:
+            score = 0
+            if 'enwp' in docno:
+                score = 1
+            h_feature[self.feature_name_pre + 'IsWiki'] = score
+        return h_feature
+
     def extract(self, qid, docno, h_q_info, h_doc_info):
         query = h_q_info['query']
-        return self.extract_for_text(query, docno, h_q_info, h_doc_info)
+        h_feature = self.extract_for_text(query, docno, h_q_info, h_doc_info)
+        h_feature.update(self.extract_doc_feature(docno, h_q_info))
+        return h_feature
+
+
 
