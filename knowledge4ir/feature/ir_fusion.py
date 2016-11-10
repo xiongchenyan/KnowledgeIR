@@ -81,7 +81,20 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
 
         return h_feature
 
+    def extract_doc_feature(self,docno, h_doc_info):
+        h_feature = {}
+        if 'is_wiki' in self.l_model:
+            score = 0
+            if 'enwp' in docno:
+                score = 1
+            h_feature[self.feature_name_pre + 'IsWiki'] = score
+        return h_feature
+
     def extract(self, qid, docno, h_q_info, h_doc_info):
         query = h_q_info['query']
-        return self.extract_for_text(query, docno, h_q_info, h_doc_info)
+        h_feature = self.extract_for_text(query, docno, h_q_info, h_doc_info)
+        h_feature.update(self.extract_doc_feature(docno, h_q_info))
+        return h_feature
+
+
 
