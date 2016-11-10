@@ -46,7 +46,10 @@ def collect_corpus_stat(corpus_dir, out_pre):
     print "dumping..."
     pickle.dump(h_title_df, title_out)
     pickle.dump(h_body_df, body_out)
-    pickle.dump({'total_df': total_df, 'average_len': float(total_tf) / float(total_df)}, corpus_out)
+    h_corpus_stat = dict()
+    h_corpus_stat['title'] = {'total_df': total_df, 'average_len':10}
+    h_corpus_stat['bodyText'] = {'total_df': total_df, 'average_len':float(total_tf) / float(total_df)}
+    pickle.dump(h_corpus_stat, corpus_out)
     print "finished"
     return
 
