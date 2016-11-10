@@ -198,7 +198,9 @@ class TermStat(Configurable):
                 / (self.v_tf + bm25_para.k1 * (1 - bm25_para.b + bm25_para.b * self.doc_len /
                                                self.avg_doc_len))
 
-        v_idf_q = np.log((self.total_df - self.v_q_df + 0.5) / (self.v_q_df + 0.5))
+        v_mid = (self.total_df - self.v_q_df + 0.5) / (self.v_q_df + 0.5)
+        v_mid = np.maximum(v_mid, 1.0)
+        v_idf_q = np.log(v_mid)
         v_idf_q = np.maximum(v_idf_q, 0)
         score = v_mid.dot(v_q * v_idf_q)
         return score
