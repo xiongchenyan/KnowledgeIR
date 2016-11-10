@@ -33,12 +33,15 @@ def prepare_textual_fields(dump_in, target_in, out_name):
         desp = parser.get_desp(l_v_col)
         name = parser.get_name(l_v_col)
         alias = parser.get_alias(l_v_col)
+        l_type = parser.get_type(l_v_col)
+        type_str = ' '.join([t.split('/')[-1] for t in l_type])
 
         h = dict()
         h['id'] = mid
         h['desp'] = desp
         h['name'] = name
         h['alias'] = alias
+        # h['type_str'] = type_str
 
         print >> out, json.dumps(h)
 
