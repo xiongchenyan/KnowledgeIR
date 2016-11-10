@@ -18,18 +18,20 @@ from knowledge4ir.utils import (
 
 
 def prepare_textual_fields(dump_in, target_in, out_name):
-    s_target = set([line.split()[0] for line in open(target_in)])
-
+    s_target = set([line.strip().split()[0] for line in open(target_in)])
+    logging.info('[%s] target', len(s_target))
     reader = FbDumpReader()
 
     parser = FbDumpParser()
     out = open(out_name, 'w')
+    in_cnt = 0
     for cnt, l_v_col in enumerate(reader.read(dump_in)):
         mid = parser.get_obj_id(l_v_col)
         if 0 == (cnt % 10000):
-            logging.info('processed %d obj', cnt)
+            logging.info('processed %d obj [%d] in', cnt, in_cnt)
         if mid not in s_target:
             continue
+        in_cnt += 1
         desp = parser.get_desp(l_v_col)
         name = parser.get_name(l_v_col)
         alias = parser.get_alias(l_v_col)
