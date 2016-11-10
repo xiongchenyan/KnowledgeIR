@@ -9,6 +9,8 @@ from knowledge4ir.utils.base_conf import ROOT_PATH
 import os
 import json
 import math
+from knowledge4ir.utils.base_conf import TARGET_TEXT_FIELDS
+import pickle
 
 
 def load_qid_query(in_name):
@@ -475,3 +477,18 @@ def load_doc_info(in_name):
     h_doc_info = dict(zip(l_docno, l_h_doc_info))
     logging.info('loaded [%d] doc info', len(h_doc_info))
     return h_doc_info
+
+
+def load_corpus_stat(in_pre, l_field=TARGET_TEXT_FIELDS):
+    l_field_h_df = []
+    logging.info('start loading corpus stat from [%s], target field %s',
+                 in_pre, json.dumps(l_field))
+    for field in l_field:
+        if os.path.exists(in_pre + '.' + field):
+            logging.info('loading df from [%s]', in_pre + '.' + field)
+            h_df = pickle.load(open(in_pre + '.' + field))
+            l_field_h_df.append((field, h_df))
+
+    h_corpus_stat = pickle.load(open(in_pre + '.stat'))
+    logging.info('corpus stats loaded')
+    return l_field_h_df, h_corpus_stat
