@@ -89,8 +89,8 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
                 if cnt:
                     for sim in h_sim_score:
                         h_sim_score[sim] /= cnt
-
-                h_feature[self.feature_name_pre + e_field.title() + field.title()] = score
+                for sim, score in h_sim_score.items():
+                    h_feature[self.feature_name_pre + e_field.title() + field.title() + sim.title()] = score
 
         return h_feature
 
