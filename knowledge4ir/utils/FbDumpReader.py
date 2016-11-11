@@ -82,7 +82,7 @@ class FbDumpReader(KeyFileReader):
     
     def read(self, in_name):
         for lv_col in super(FbDumpReader, self).read(in_name):
-            logging.info("get vcols: %s", json.dumps(lv_col))
+            # logging.info("get vcols: %s", json.dumps(lv_col))
             lv_col = [v_col for v_col in lv_col if len(v_col) >= 3]
             yield lv_col
 

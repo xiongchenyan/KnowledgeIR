@@ -62,7 +62,7 @@ class FbDumpParser(Configurable):
     
     @staticmethod
     def get_id_for_col(col):
-        logging.debug('getting id from [%s]', col)
+        logging.info('getting id from [%s]', col)
         target = FbDumpParser.discard_prefix(col)
         if len(target) < 2:
             return ""
