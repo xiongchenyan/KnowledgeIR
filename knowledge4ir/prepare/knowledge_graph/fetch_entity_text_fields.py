@@ -26,12 +26,14 @@ def prepare_textual_fields(dump_in, target_in, out_name):
     parser = FbDumpParser()
     out = open(out_name, 'w')
     in_cnt = 0
+    m_cnt = 0
     for cnt, l_v_col in enumerate(reader.read(dump_in)):
         mid = parser.get_obj_id(l_v_col)
         if not (cnt % 10000):
-            logging.info('processed %d obj [%d] in', cnt, in_cnt)
+            logging.info('processed %d obj [%d/%d] in', cnt, in_cnt, m_cnt)
         if not mid:
             continue
+        m_cnt += 1
         if mid not in s_target:
             logging.info('[%s] not target', mid)
             continue
