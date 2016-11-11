@@ -35,9 +35,9 @@ def prepare_textual_fields(dump_in, target_in, out_name):
             continue
         m_cnt += 1
         if mid not in s_target:
-            logging.info('[%s] not target', mid)
+            # logging.info('[%s] not target', mid)
             continue
-        logging.info('get [%s]', mid)
+        # logging.info('get [%s]', mid)
         in_cnt += 1
         desp = parser.get_desp(l_v_col)
         name = parser.get_name(l_v_col)
