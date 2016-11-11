@@ -27,9 +27,10 @@ def prepare_textual_fields(dump_in, target_in, out_name):
     in_cnt = 0
     for cnt, l_v_col in enumerate(reader.read(dump_in)):
         mid = parser.get_obj_id(l_v_col)
-        if 0 == (cnt % 10000):
+        if not (cnt % 10000):
             logging.info('processed %d obj [%d] in', cnt, in_cnt)
         if mid not in s_target:
+            logging.info('[%s] not target', mid)
             continue
         in_cnt += 1
         desp = parser.get_desp(l_v_col)
