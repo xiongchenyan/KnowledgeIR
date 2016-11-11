@@ -78,10 +78,11 @@ class KeyFileReader(Configurable):
 
 
 class FbDumpReader(KeyFileReader):
-    is_gzip = Bool(False).tag(config=True)
+    is_gzip = Bool(True).tag(config=True)
     
     def read(self, in_name):
         for lv_col in super(FbDumpReader, self).read(in_name):
+            logging.info("get vcols: %s", json.dumps(lv_col))
             lv_col = [v_col for v_col in lv_col if len(v_col) >= 3]
             yield lv_col
 
