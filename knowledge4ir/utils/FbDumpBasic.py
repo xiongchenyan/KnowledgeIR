@@ -26,6 +26,7 @@ refactored for current code base
 
 import json
 from traitlets.config import Configurable
+import logging
 
 
 TYPE_EDGE = "<http://rdf.freebase.com/ns/type.object.type>"
@@ -44,6 +45,7 @@ class FbDumpParser(Configurable):
     @staticmethod
     def get_obj_id(l_v_col):
         if not l_v_col:
+            logging.warn('put in an empty vcol to parser')
             return ""
         return FbDumpParser.get_id_for_col(l_v_col[0][0])
     
@@ -60,6 +62,7 @@ class FbDumpParser(Configurable):
     
     @staticmethod
     def get_id_for_col(col):
+        logging.debug('getting id from [%s]', col)
         target = FbDumpParser.discard_prefix(col)
         if len(target) < 2:
             return ""
