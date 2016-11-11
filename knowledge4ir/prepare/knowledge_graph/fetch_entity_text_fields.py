@@ -18,8 +18,9 @@ from knowledge4ir.utils import (
 
 
 def prepare_textual_fields(dump_in, target_in, out_name):
-    s_target = set([line.strip().split()[0] for line in open(target_in)])
-    logging.info('[%s] target', len(s_target))
+    l_target = [line.strip().split()[0] for line in open(target_in)]
+    s_target = set(l_target)
+    logging.info('[%s] target, starting %s', len(s_target), l_target[0])
     reader = FbDumpReader()
 
     parser = FbDumpParser()

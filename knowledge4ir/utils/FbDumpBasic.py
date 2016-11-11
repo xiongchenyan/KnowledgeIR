@@ -57,8 +57,8 @@ class FbDumpParser(Configurable):
             return col    
         mid = col.strip("<").strip(">")
         v_col = mid.split("/")
-        target = v_col[len(v_col)-1]
-        return '/' + target.replace('.','/')
+        target = v_col[-1]
+        return '/' + target.replace('.', '/')
     
     @staticmethod
     def get_id_for_col(col):
