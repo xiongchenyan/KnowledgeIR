@@ -73,7 +73,7 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
                     if e_field not in self.h_entity_texts[e]:
                         continue
                     e_text = self.h_entity_texts[e][e_field]
-                    h_tf = text2lm(e_text.lower())
+                    h_tf = text2lm(e_text, clean=True)
                     cnt += 1
                     term_stat = TermStat()
                     term_stat.set_from_raw(h_tf, h_doc_tf, h_doc_df, total_df, avg_doc_len)
