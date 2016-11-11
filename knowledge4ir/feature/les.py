@@ -73,6 +73,8 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
                     if e_field not in self.h_entity_texts[e]:
                         continue
                     e_text = self.h_entity_texts[e][e_field]
+                    if type(e_text) == list:
+                        e_text = ' '.join(e_text)
                     h_tf = text2lm(e_text, clean=True)
                     cnt += 1
                     term_stat = TermStat()
