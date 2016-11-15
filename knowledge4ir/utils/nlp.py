@@ -35,10 +35,11 @@ def rm_stopword(text):
     return ' '.join([t for t in text.split() if t.lower() not in s_stopwords])
 
 
-def text2lm(text):
-    # text = raw_clean(text)
-    # text = rm_stopword(text)
-    # text = text.lower()
+def text2lm(text, clean=False):
+    if clean:
+        text = raw_clean(text)
+        text = rm_stopword(text)
+        text = text.lower()
     l_term = text.split()
     return term2lm(l_term)
 

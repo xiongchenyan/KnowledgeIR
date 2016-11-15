@@ -18,27 +18,39 @@ from knowledge4ir.utils import (
 
 
 def prepare_textual_fields(dump_in, target_in, out_name):
-    s_target = set([line.split()[0] for line in open(target_in)])
-
+    l_target = [line.strip().split()[0] for line in open(target_in)]
+    s_target = set(l_target)
+    logging.info('[%s] target, starting %s', len(s_target), l_target[0])
     reader = FbDumpReader()
 
     parser = FbDumpParser()
     out = open(out_name, 'w')
+    in_cnt = 0
+    m_cnt = 0
     for cnt, l_v_col in enumerate(reader.read(dump_in)):
         mid = parser.get_obj_id(l_v_col)
-        if 0 == (cnt % 10000):
-            logging.info('processed %d obj', cnt)
-        if mid not in s_target:
+        if not (cnt % 10000):
+            logging.info('processed %d obj [%d/%d] in', cnt, in_cnt, m_cnt)
+        if not mid:
             continue
+        m_cnt += 1
+        if mid not in s_target:
+            # logging.info('[%s] not target', mid)
+            continue
+        # logging.info('get [%s]', mid)
+        in_cnt += 1
         desp = parser.get_desp(l_v_col)
         name = parser.get_name(l_v_col)
         alias = parser.get_alias(l_v_col)
+        l_type = parser.get_type(l_v_col)
+        type_str = ' '.join([t.split('/')[-1] for t in l_type])
 
         h = dict()
         h['id'] = mid
         h['desp'] = desp
         h['name'] = name
         h['alias'] = alias
+        # h['type_str'] = type_str
 
         print >> out, json.dumps(h)
 
