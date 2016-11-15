@@ -48,7 +48,7 @@ def perfect_merge(eva_a_in, eva_b_in):
         prob = p * 0.1
         l_q_best_eva, best_ndcg, best_err = pick_best(l_q_eva_a, l_q_eva_b, prob)
         # print "%.2f,amean,%.6f,%.6f" % (prob, best_ndcg, best_err)
-        print '%.2f,relative,' % prob +  \
+        print '%.2f%%,relative,' % prob +  \
               "{0:.02f}%".format((best_ndcg / max(ndcg_a, ndcg_b) - 1) * 100) + "," + \
               "{0:.02f}%".format((best_err / max(err_a, err_b) - 1) * 100)
     return
