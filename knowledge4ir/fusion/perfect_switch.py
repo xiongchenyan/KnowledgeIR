@@ -27,10 +27,13 @@ def pick_best(l_qid_eva_a, l_qid_eva_b, prob=1.0):
         worst_err = min(err, err_b)
         if random.random() <= prob:
             l_qid_best_eva.append([qid, (best_ndcg, best_err)])
+            mean_ndcg += best_ndcg
+            mean_err += best_err
         else:
             l_qid_best_eva.append([qid, (worst_ndcg, worst_err)])
-        mean_ndcg += best_ndcg
-        mean_err += best_err
+            mean_ndcg += worst_ndcg
+            mean_err += worst_err
+
     if l_qid_best_eva:
         mean_ndcg /= len(l_qid_best_eva)
         mean_err /= len(l_qid_best_eva)
@@ -44,9 +47,10 @@ def perfect_merge(eva_a_in, eva_b_in):
     for p in xrange(11):
         prob = p * 0.1
         l_q_best_eva, best_ndcg, best_err = pick_best(l_q_eva_a, l_q_eva_b, prob)
-        print "%.2f,amean,%.6f,%.6f" % (prob, best_ndcg, best_err)
-        print '%.2f,relative,%.4f,%.4f' % (prob, best_ndcg / max(ndcg_a, ndcg_b) - 1,
-                                           best_err / max(err_a, err_b) - 1)
+        # print "%.2f,amean,%.6f,%.6f" % (prob, best_ndcg, best_err)
+        print '%.2f,relative,' % prob +  \
+              "{0:.0f}%".format((best_ndcg / max(ndcg_a, ndcg_b) - 1) * 100) + \
+              "{0:.0f}%".format((best_err / max(err_a, err_b) - 1) * 100)
     return
 
 
