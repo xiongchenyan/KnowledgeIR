@@ -20,13 +20,15 @@ def calc_q_link_accuracy(q_info_in, q_manual_info_in):
     h_qid_manual_info = load_query_info(q_manual_info_in)
     h_q_f1 = {}
     for qid, h_info in h_qid_info.items():
+
         l_e = []
         if 'tagme' in h_info:
             l_e = [ana[0] for ana in h_info['tagme']['query']]
         elif 'cmns' in h_info:
             l_e = [ana[0] for ana in h_info['cmns']['query']]
-
-        l_label_e = [ana[0] for ana in h_qid_manual_info[qid]['manual']['query']]
+        l_label_e = []
+        if qid in h_qid_manual_info:
+            l_label_e = [ana[0] for ana in h_qid_manual_info[qid]['manual']['query']]
         if len(l_e) == 0 & len(l_label_e) == 0:
             h_q_f1[qid] = 1
             continue
