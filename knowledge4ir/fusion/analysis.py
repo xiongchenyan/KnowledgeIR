@@ -31,8 +31,8 @@ class FusionAnalysis(Configurable):
         self.out_dir = os.path.join(self.out_dir, ntpath.basename(self.target_eva.split('.')[0]))
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
-        self.h_q_eva = load_gdeval_res(self.target_eva)[0]
-        self.h_base_q_eva = load_gdeval_res(self.base_eva)[0]
+        self.h_q_eva = dict(load_gdeval_res(self.target_eva)[0])
+        self.h_base_q_eva = dict(load_gdeval_res(self.base_eva)[0])
 
     def q_rel_ndcg_with_info(self):
         """
