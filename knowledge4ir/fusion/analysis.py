@@ -39,12 +39,15 @@ class FusionAnalysis(Configurable):
         dump query level ndcg and relative ndcg with q info
         :return:
         """
+        lines = []
         out = open(self.out_dir + '/rel_ndcg', 'w')
         for qid, (ndcg, err) in self.h_q_eva.items():
             rel = ndcg - self.h_base_q_eva[qid][0]
-            print >> out, qid + '\t%f\t%f\t%s' % (
+            lines.append(qid + '\t%f\t%f\t%s' % (
                 ndcg, rel, json.dumps(self.h_q_info[qid])
-            )
+            ))
+        lines.sort(key=lambda item: float(item.split('\t')[2]))
+        print >> out, '\n'.join(lines)
         out.close()
         logging.info('rel ndcg dumped')
 
