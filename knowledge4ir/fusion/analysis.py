@@ -57,7 +57,7 @@ if __name__ == '__main__':
     if 2 != len(sys.argv):
         print "generate analysis data"
         print "1 para: config"
-        FusionAnalysis().class_print_help()
+        FusionAnalysis.class_print_help()
         sys.exit()
 
     conf = load_py_config(sys.argv[1])
