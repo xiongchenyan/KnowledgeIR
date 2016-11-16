@@ -16,6 +16,7 @@ from knowledge4ir.utils import load_gdeval_res, load_query_info
 import os
 import json
 import logging
+import ntpath
 
 
 class FusionAnalysis(Configurable):
@@ -27,6 +28,7 @@ class FusionAnalysis(Configurable):
     def __init__(self, **kwargs):
         super(FusionAnalysis, self).__init__(**kwargs)
         self.h_q_info = load_query_info(self.q_info)
+        self.out_dir = os.path.join(self.out_dir, ntpath.basename(self.target_eva.split('.')[0]))
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
         self.h_q_eva = load_gdeval_res(self.target_eva)[0]
