@@ -65,7 +65,7 @@ def pick_via_q_linking_accuracy(l_qid_eva_a, l_qid_eva_b, h_q_f1, f1_bar=1.0):
 
     if l_qid_best_eva:
         mean_ndcg /= sum([item[1][0] for item in l_qid_best_eva]) / float(len(l_qid_best_eva))
-        mean_err /= sum([item[1][1] for item in l_qid_best_eva]) / loat(len(l_qid_best_eva))
+        mean_err /= sum([item[1][1] for item in l_qid_best_eva]) / float(len(l_qid_best_eva))
 
     return l_qid_best_eva, mean_ndcg, mean_err
 
