@@ -39,7 +39,10 @@ def calc_q_link_accuracy(q_info_in, q_manual_info_in):
             prec = overlap / len(s_e)
         if s_true:
             recall = overlap / len(s_true)
-        f1 = 2.0 * prec * recall / ( prec + recall )
+        if prec == 0 | recall == 0:
+            f1 = 0
+        else:
+            f1 = 2.0 * prec * recall / ( prec + recall )
         h_q_f1[qid] = f1
 
     return h_q_f1
