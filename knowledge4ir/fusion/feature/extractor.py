@@ -43,6 +43,12 @@ class QAttentionFeatureExtractCenter(Configurable):
         if 'q_ana' in s_feature_group:
             self.l_extractor.append(QAttAnaFeatureExtractor(**kwargs))
 
+    @classmethod
+    def class_print_help(cls, inst=None):
+        super(QAttentionFeatureExtractCenter, cls).class_print_help(inst)
+        print "feature group: q_ana"
+        QAttAnaFeatureExtractor.class_print_help(inst)
+
     def pipe_extract(self, q_info_in=None, out_name=None):
         if not q_info_in:
             q_info_in = self.q_info_in
@@ -86,8 +92,6 @@ class QAttentionFeatureExtractCenter(Configurable):
         out.close()
         logging.info('[%d] data point feature dumped to [%s]', len(l_y), out_name)
         return
-
-
 
 
 if __name__ == '__main__':
