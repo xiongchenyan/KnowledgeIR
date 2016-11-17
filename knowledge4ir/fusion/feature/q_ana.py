@@ -93,7 +93,7 @@ class QAttAnaFeatureExtractor(QAttFeatureExtractor):
         h_feature = dict()
         l_lp = [0] * len(l_ana)
         if 'tagme' in h_info:
-            l_lp = [ana[3]['lp'] for ana in h_info['tagme']]
+            l_lp = [ana[3]['lp'] for ana in h_info['tagme']['query']]
         h_feature[self.feature_name_pre + 'MaxLp'] = max(l_lp)
         h_feature[self.feature_name_pre + 'MeanLp'] = sum(l_lp) / max(1, len(l_lp))
         h_feature[self.feature_name_pre + 'MinLp'] = min(l_lp)
