@@ -94,6 +94,8 @@ class QAttAnaFeatureExtractor(QAttFeatureExtractor):
         l_lp = [0] * (max(len(l_ana), 1))
         if 'tagme' in h_info:
             l_lp = [ana[3]['lp'] for ana in h_info['tagme']['query']]
+        if not l_lp:
+            l_lp = [0]
         h_feature[self.feature_name_pre + 'MaxLp'] = max(l_lp)
         h_feature[self.feature_name_pre + 'MeanLp'] = sum(l_lp) / max(1, len(l_lp))
         h_feature[self.feature_name_pre + 'MinLp'] = min(l_lp)
@@ -104,6 +106,8 @@ class QAttAnaFeatureExtractor(QAttFeatureExtractor):
         l_score = [0] * (max(len(l_ana), 1))
         if 'tagme' in h_info:
             l_score = [ana[3]['score'] for ana in h_info['tagme']['query']]
+        if not l_score:
+            l_score = [0]
         h_feature[self.feature_name_pre + 'MaxScore'] = max(l_score)
         h_feature[self.feature_name_pre + 'MeanScore'] = sum(l_score) / max(1, len(l_score))
         h_feature[self.feature_name_pre + 'MinScore'] = min(l_score)
