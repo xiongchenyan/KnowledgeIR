@@ -91,7 +91,7 @@ class QAttAnaFeatureExtractor(QAttFeatureExtractor):
 
     def _lp(self, qid, h_info, l_ana):
         h_feature = dict()
-        l_lp = [0] * len(l_ana)
+        l_lp = [0] * (max(len(l_ana), 1))
         if 'tagme' in h_info:
             l_lp = [ana[3]['lp'] for ana in h_info['tagme']['query']]
         h_feature[self.feature_name_pre + 'MaxLp'] = max(l_lp)
@@ -101,7 +101,7 @@ class QAttAnaFeatureExtractor(QAttFeatureExtractor):
 
     def _score(self, qid, h_info, l_ana):
         h_feature = dict()
-        l_score = [0] * len(l_ana)
+        l_score = [0] * (max(len(l_ana), 1))
         if 'tagme' in h_info:
             l_score = [ana[3]['score'] for ana in h_info['tagme']['query']]
         h_feature[self.feature_name_pre + 'MaxScore'] = max(l_score)
