@@ -30,6 +30,6 @@ for q, (ndcg, err) in l_q_eva_a:
         pos += 1
     else:
         neg += 1
-    print >> q + '\t%d' % y
+    print >> out, q + '\t%d' % y
 out.close()
 print "finished with [%d] + [%d] -" % (pos, neg)
