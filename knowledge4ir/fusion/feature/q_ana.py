@@ -103,7 +103,7 @@ class QAttAnaFeatureExtractor(QAttFeatureExtractor):
         h_feature = dict()
         l_score = [0] * len(l_ana)
         if 'tagme' in h_info:
-            l_score = [ana[3]['score'] for ana in h_info['tagme']]
+            l_score = [ana[3]['score'] for ana in h_info['tagme']['query']]
         h_feature[self.feature_name_pre + 'MaxScore'] = max(l_score)
         h_feature[self.feature_name_pre + 'MeanScore'] = sum(l_score) / max(1, len(l_score))
         h_feature[self.feature_name_pre + 'MinScore'] = min(l_score)
