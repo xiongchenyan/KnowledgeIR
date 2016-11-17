@@ -86,7 +86,7 @@ class QAttAnaFeatureExtractor(QAttFeatureExtractor):
         h_feature[self.feature_name_pre + 'RefOverlap'] = overlap_cnt
         h_feature[self.feature_name_pre + 'RefBoolAnd'] = int(overlap_cnt == len(s_e))
         h_feature[self.feature_name_pre + 'RefBoolOr'] = int(overlap_cnt>0)
-        h_feature[self.feature_name_pre + 'RefFrac'] = overlap_cnt / max(1, float(s_e))
+        h_feature[self.feature_name_pre + 'RefFrac'] = overlap_cnt / max(1, float(len(s_e)))
         return h_feature
 
     def _lp(self, qid, h_info, l_ana):
