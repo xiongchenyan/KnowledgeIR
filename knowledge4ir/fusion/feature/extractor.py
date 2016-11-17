@@ -29,7 +29,7 @@ class QAttentionFeatureExtractCenter(Configurable):
     out_name = Unicode(help='out name').tag(config=True)
     label_in = Unicode(help='qid label').tag(config=True)
     feature_group = List(Unicode, default_value=['q_ana'],
-                         help='')
+                         help='').tag(config=True)
 
     def __init__(self, **kwargs):
         super(QAttentionFeatureExtractCenter, self).__init__(**kwargs)
@@ -62,7 +62,7 @@ class QAttentionFeatureExtractCenter(Configurable):
         l_qid = []
         for qid, h_info in l_q_info:
             h_feature = self._extract(qid, h_info)
-            y = 0
+            y = -1
             if qid in self.h_label:
                 y = self.h_label[qid]
             l_h_feature.append(h_feature)
