@@ -107,7 +107,7 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
             h_doc_df = self.h_field_h_df[field]
             l_h_scores = []
             l_e_tf = []
-            for e, e_tf in h_doc_e_lm.itmes():
+            for e, e_tf in h_doc_e_lm.items():
                 h_scores = {}
                 l_e_tf.append(e_tf)
                 h_e_texts = h_doc_e_texts.get(e, {})
