@@ -95,7 +95,11 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
     def _prepare_doc_e_texts(self, l_e):
         h_doc_e_texts = {}
         for e in l_e:
-            h_doc_e_texts[e] = self.h_entity_texts.get(e, {})
+            h_fields = self.h_entity_texts.get(e, {})
+            for key in h_fields.keys():
+                if type(h_fields[key]) == list:
+                    h_fields[key] = ' '.join(h_fields[key])
+            h_doc_e_texts[e] = h_fields
         return h_doc_e_texts
 
     def _extract_q_doc_e_textual_features(self, query, l_h_doc_e_lm, h_doc_e_texts):
@@ -113,7 +117,7 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
                 h_e_texts = h_doc_e_texts.get(e, {})
                 for e_field in self.l_entity_fields:
                     text = h_e_texts.get(e_field, "")
-                    e_lm = text2lm(text)
+                    e_lm = text2lm(text, clean=True)
                     term_stat = TermStat()
                     term_stat.set_from_raw(q_lm, e_lm, h_doc_df, total_df, avg_doc_len)
                     l_sim_score = term_stat.mul_scores()
