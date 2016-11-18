@@ -71,7 +71,7 @@ class LeToRFeatureExtractCenter(Configurable):
         print "Feature group: Les"
         LeToRLesFeatureExtractor.class_print_help(inst)
         print "Feature group: DocE"
-        LeToRDocEntityFeatureExtractorC.class_print_help(ints)
+        LeToRDocEntityFeatureExtractorC.class_print_help(inst)
         # to add those needed the config
 
     def update_config(self, config):
