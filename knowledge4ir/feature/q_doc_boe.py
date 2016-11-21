@@ -159,7 +159,10 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
     @classmethod
     def _wsum_pool_entity_sim(cls, l_h_scores, l_e_tf):
         h_wsum = {}
+        z = sum(l_e_tf)
         for h_scores, w in zip(l_h_scores, l_e_tf):
+            if z:
+                w /= float(z)
             for key, score in h_scores.items():
                 h_wsum[key] = score * w + h_wsum.get(key, 0)
         return h_wsum
