@@ -318,7 +318,7 @@ if __name__ == '__main__':
     import sys
     from knowledge4ir.utils import set_basic_log
 
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
     if 2 != len(sys.argv):
         print 'I extract features for target query doc pairs, with prepared data for q and doc, ' \
               'and qrels to fill in'

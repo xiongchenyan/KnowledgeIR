@@ -133,7 +133,7 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
 
             for name, score in h_pooled_scores.items():
                 h_feature[self.feature_name_pre + field.title() + name] = score
-        logging.debug(json.dumps(h_feature))
+        # logging.debug(json.dumps(h_feature))
         return h_feature
 
     def _merge_entity_sim(self, l_h_scores, l_e_tf):
