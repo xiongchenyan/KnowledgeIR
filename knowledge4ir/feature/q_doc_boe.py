@@ -30,6 +30,8 @@ from knowledge4ir.utils import (
     term2lm,
 )
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
+import logging
+import json
 
 
 class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
@@ -131,7 +133,7 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
 
             for name, score in h_pooled_scores.items():
                 h_feature[self.feature_name_pre + field.title() + name] = score
-
+        logging.debug(json.dumps(h_feature))
         return h_feature
 
     def _merge_entity_sim(self, l_h_scores, l_e_tf):
@@ -153,7 +155,7 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         h_max = {}
         for h_scores in l_h_scores:
             for key, score in h_scores.items():
-                h_max[key] = max(score, h_max.get(key, None))
+                h_max['Max' + key] = max(score, h_max.get(key, None))
         return h_max
 
     @classmethod
@@ -161,10 +163,10 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         h_wsum = {}
         z = sum(l_e_tf)
         for h_scores, w in zip(l_h_scores, l_e_tf):
-            if z:
+            if z != 0:
                 w /= float(z)
             for key, score in h_scores.items():
-                h_wsum[key] = score * w + h_wsum.get(key, 0)
+                h_wsum['Wsum' + key] = score * w + h_wsum.get(key, 0)
         return h_wsum
 
     def _extract_q_doc_e_ref_rank_feature(self, qid, l_h_doc_e_lm):
