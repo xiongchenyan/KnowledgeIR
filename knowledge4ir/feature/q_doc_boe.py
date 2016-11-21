@@ -176,17 +176,18 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         l_s_top1 = [set([item[0] for item in ranking[:1]]) for ranking in l_q_rank]
         l_s_top10 = [set([item[0] for item in ranking[:10]]) for ranking in l_q_rank]
         for field, h_doc_e_lm in zip(self.l_text_fields, l_h_doc_e_lm):
-            for p in xrange(len(self.l_ref_rank_name)):
-                top1_cnt = 0
-                top10_cnt = 0
-                for e in h_doc_e_lm.keys():
-                    if e in l_s_top1[p]:
-                        top1_cnt += 1
-                    if e in l_s_top10[p]:
-                        top10_cnt += 1
-                feature_name = self.feature_name_pre + field.title() + self.l_ref_rank_name[p].title()
-                h_feature[feature_name + 'Top1'] = top1_cnt
-                h_feature[feature_name + 'Top10'] = top10_cnt
+            if field == 'bodyText':
+                for p in xrange(len(self.l_ref_rank_name)):
+                    top1_cnt = 0
+                    top10_cnt = 0
+                    for e in h_doc_e_lm.keys():
+                        if e in l_s_top1[p]:
+                            top1_cnt += 1
+                        if e in l_s_top10[p]:
+                            top10_cnt += 1
+                    feature_name = self.feature_name_pre + self.l_ref_rank_name[p].title()
+                    h_feature[feature_name + 'Top01'] = top1_cnt
+                    h_feature[feature_name + 'Top10'] = top10_cnt
 
         return h_feature
 
