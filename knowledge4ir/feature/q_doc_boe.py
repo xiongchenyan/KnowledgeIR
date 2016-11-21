@@ -58,12 +58,17 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         self.h_corpus_stat = {}
         self.h_field_df = {}
         self._load_corpus_stat()
-        self.h_entity_texts = load_entity_texts(self.entity_text_in)
+        self.h_entity_texts = {}
+        if self.entity_text_in:
+            self.h_entity_texts = load_entity_texts(self.entity_text_in)
         self.l_h_q_ref_ranking = [dict(load_trec_ranking_with_score(ranking_in))
                                   for ranking_in in self.l_ref_rank]
         self.s_model = set(self.l_model)
 
     def _load_corpus_stat(self):
+        if not self.corpus_stat_pre:
+            logging.info('no corpus stat to load')
+            return
         l_field_h_df, self.h_corpus_stat = load_corpus_stat(
             self.corpus_stat_pre, self.l_text_fields)
         self.h_field_h_df = dict(l_field_h_df)
@@ -105,6 +110,8 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         return h_doc_e_texts
 
     def _extract_q_doc_e_textual_features(self, query, l_h_doc_e_lm, h_doc_e_texts):
+        if not self.h_entity_texts:
+            return {}
         h_feature = {}
         q_lm = text2lm(query)
         for field, h_doc_e_lm in zip(self.l_text_fields, l_h_doc_e_lm):
