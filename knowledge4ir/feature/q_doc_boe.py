@@ -81,10 +81,9 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         query = h_q_info['query']
         l_h_doc_e_lm = self._form_doc_e_lm(h_doc_info)
         l_e = sum([h.keys() for h in l_h_doc_e_lm], [])
+        h_doc_e_texts = self._prepare_doc_e_texts(l_e)
 
-        if self.entity_text_in:
-            h_doc_e_texts = self._prepare_doc_e_texts(l_e)
-            h_feature.update(self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts))
+        h_feature.update(self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts))
 
         h_feature.update(self._extract_q_doc_e_ref_rank_feature(qid, l_h_doc_e_lm))
 
