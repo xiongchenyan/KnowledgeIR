@@ -7,7 +7,8 @@ from traitlets import List, Unicode
 
 from knowledge4ir.feature import (
     LeToRFeatureExtractor,
-    TermStat
+    TermStat,
+    load_entity_texts,
 )
 import logging
 import json
@@ -31,7 +32,7 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
 
     def __init__(self, **kwargs):
         super(LeToRLesFeatureExtractor, self).__init__(**kwargs)
-        self.h_entity_texts = self._load_entity_texts()
+        self.h_entity_texts = load_entity_texts(self.entity_text_in)
         self.s_model = set(self.l_model)
         l_field_h_df, self.h_corpus_stat = load_corpus_stat(
             self.corpus_stat_pre, self.l_text_fields)
@@ -40,16 +41,16 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
             assert field in self.h_corpus_stat
             assert field in self.h_field_h_df
 
-    def _load_entity_texts(self):
-        h = {}
-        logging.info('loading entity texts from [%s]', self.entity_text_in)
-        for line_cnt, line in enumerate(open(self.entity_text_in)):
-            h_e = json.loads(line)
-            h[h_e['id']] = h_e
-            if not line_cnt % 1000:
-                logging.info('loaded [%d] entities texts', line_cnt)
-        logging.info('finished loading [%d] entities texts', len(h))
-        return h
+    # def _load_entity_texts(self):
+    #     h = {}
+    #     logging.info('loading entity texts from [%s]', self.entity_text_in)
+    #     for line_cnt, line in enumerate(open(self.entity_text_in)):
+    #         h_e = json.loads(line)
+    #         h[h_e['id']] = h_e
+    #         if not line_cnt % 1000:
+    #             logging.info('loaded [%d] entities texts', line_cnt)
+    #     logging.info('finished loading [%d] entities texts', len(h))
+    #     return h
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         h_feature = {}
