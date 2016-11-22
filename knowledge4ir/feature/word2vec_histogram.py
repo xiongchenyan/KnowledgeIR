@@ -116,6 +116,7 @@ class LeToRWord2vecHistFeatureExtractor(LeToRFeatureExtractor):
                 d_e = l_doc_w[j]
                 if q_e == d_e:
                     sim_mtx[i, j] = 1.0
+                    continue
                 if (q_e in emb_model) & (d_e in emb_model):
                     sim_mtx[i, j] = emb_model.similarity(q_e, d_e)
         return sim_mtx
