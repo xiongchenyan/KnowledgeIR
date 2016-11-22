@@ -55,6 +55,8 @@ for o_cnt, l_v_col in enumerate(reader.read(sys.argv[1])):
     for term in desp.lower().split():
         print >> desp_out, oid + ' ' + term
     for type_s in l_type:
+        if type_s == '/common/topic':
+            continue
         print >> type_out, oid + ' ' + type_s
     for __, n_e in l_neighbor:
         print >> neighbor_out, oid + ' ' + n_e
