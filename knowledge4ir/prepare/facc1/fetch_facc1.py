@@ -18,7 +18,7 @@ if 4 != len(sys.argv):
 
 
 l_q_rank = load_trec_ranking_with_score(sys.argv[1])
-s_docno = set(sum([[docno for docno, __ in rank] for _, rank in l_q_rank], []))
+s_docno = set(sum([[docno for docno, __ in rank[:100]] for _, rank in l_q_rank], []))
 
 out = open(sys.argv[3], 'w')
 for line in open(sys.argv[2]):
