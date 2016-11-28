@@ -52,6 +52,9 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
     corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
     l_ref_rank = List(Unicode, help='query reference entity ranking').tag(config=True)
     l_ref_rank_name = List(Unicode, help='query reference rank name').tag(config=True)
+    l_top_k = List(Int, default_value=[1, 5, 10, 20, 100],
+                   help='ref rank overlap top k to consider'
+                   ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRDocEntityFeatureExtractorC, self).__init__(**kwargs)
@@ -185,22 +188,37 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         """
         h_feature = {}
         l_q_rank = [h_q_rank.get(qid, []) for h_q_rank in self.l_h_q_ref_ranking]
-        l_s_top1 = [set([item[0] for item in ranking[:1]]) for ranking in l_q_rank]
-        l_s_top10 = [set([item[0] for item in ranking[:10]]) for ranking in l_q_rank]
+        l_q_ref_rank_p = []
+        for q, rank in l_q_rank:
+            h = dict(zip([doc for doc, __ in rank], range(1, len(l_q_rank) + 1)))
+            l_q_ref_rank_p.append(h)
+
         for field, h_doc_e_lm in zip(self.l_text_fields, l_h_doc_e_lm):
             if field == 'bodyText':
-                for p in xrange(len(self.l_ref_rank_name)):
-                    top1_cnt = 0
-                    top10_cnt = 0
+                for ref_name, h_ref_rank_p in zip(self.l_ref_rank_name, l_q_ref_rank_p):
+                    l_e_rank_p = []
                     for e in h_doc_e_lm.keys():
-                        if e in l_s_top1[p]:
-                            top1_cnt += 1
-                        if e in l_s_top10[p]:
-                            top10_cnt += 1
-                    feature_name = self.feature_name_pre + self.l_ref_rank_name[p].title()
-                    h_feature[feature_name + 'Top01'] = top1_cnt
-                    h_feature[feature_name + 'Top10'] = top10_cnt
-
+                        p = h_ref_rank_p.get(e, 10000000)
+                        l_e_rank_p.append(p)
+                    l_top_k_cnt = self._count_topk(l_e_rank_p, self.l_top_k)
+                    for top_k, top_k_cnt in zip(self.l_top_k, l_top_k_cnt):
+                        feature_name = self.feature_name_pre + ref_name.title()
+                        h_feature[feature_name + 'Top%03d' % top_k] = top_k_cnt
         return h_feature
 
+
+    @classmethod
+    def _count_topk(cls, l_ranks, l_top_k):
+        l_top_k_cnt = []
+        l_p = sorted(l_ranks)
+        i = 0
+        l_top_k_cnt.append(0)
+        for p in l_p:
+            while p > l_top_k[i]:
+                l_top_k_cnt.append(l_top_k_cnt[-1])
+                i += 1
+            l_top_k_cnt[-1] += 1
+        while len(l_top_k_cnt) < len(l_top_k):
+            l_top_k_cnt.append(l_top_k_cnt[-1])
+        return l_top_k_cnt
 
