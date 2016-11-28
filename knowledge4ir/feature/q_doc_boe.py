@@ -214,9 +214,14 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         i = 0
         l_top_k_cnt.append(0)
         for p in l_p:
+            if i >= len(l_top_k):
+                break
             while p > l_top_k[i]:
-                l_top_k_cnt.append(l_top_k_cnt[-1])
                 i += 1
+                if i >= len(l_top_k):
+                    break
+                l_top_k_cnt.append(l_top_k_cnt[-1])
+
             l_top_k_cnt[-1] += 1
         while len(l_top_k_cnt) < len(l_top_k):
             l_top_k_cnt.append(l_top_k_cnt[-1])
