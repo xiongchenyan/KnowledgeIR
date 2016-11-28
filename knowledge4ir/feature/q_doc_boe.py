@@ -189,7 +189,7 @@ class LeToRDocEntityFeatureExtractorC(LeToRFeatureExtractor):
         h_feature = {}
         l_q_rank = [h_q_rank.get(qid, []) for h_q_rank in self.l_h_q_ref_ranking]
         l_q_ref_rank_p = []
-        for q, rank in l_q_rank:
+        for rank in l_q_rank:
             h = dict(zip([doc for doc, __ in rank], range(1, len(l_q_rank) + 1)))
             l_q_ref_rank_p.append(h)
 
