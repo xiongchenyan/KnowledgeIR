@@ -18,14 +18,12 @@ import json
 def load_multiple_svm_and_feature(svm_files_in):
     l_name_fields = open(svm_files_in).read().splitlines()
     l_names = [line.split('\t')[0] for line in l_name_fields]
-    l_fields = [line.split('\t')[1] for line in l_name_fields]
+    # l_fields = [line.split('\t')[1] for line in l_name_fields]
     ll_svm_data = [load_svm_feature(name) for name in l_names]
     l_h_feature_name = [json.load(open(name + '_feature_name')) for name in l_names]
     l_new_h_feature_name = []
-    for h_feature_name, field in zip(l_h_feature_name, l_fields):
-        h_new_feature_name = dict([(name.replace('BOEEmb_', 'BOEEmb_' + field), p)
-                                   for name, p in h_feature_name.items()])
-        l_new_h_feature_name.append(h_new_feature_name)
+    for h_feature_name in l_h_feature_name:
+        l_new_h_feature_name.append(h_feature_name)
     return ll_svm_data, l_new_h_feature_name
 
 
