@@ -35,7 +35,7 @@ import json
 
 class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
     feature_name_pre = Unicode('ERank')
-    l_text_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
+    l_text_fields = List(Unicode, default_value=['bodyText']).tag(config=True)
     l_model = List(Unicode,
                    default_value=['lm_dir', 'coordinate', 'tf_idf']
                    ).tag(config=True)
