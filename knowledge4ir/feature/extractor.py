@@ -20,8 +20,10 @@ from traitlets.config import Configurable
 
 from knowledge4ir.feature.boe_embedding import LeToRBOEEmbFeatureExtractor
 from knowledge4ir.feature.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
-from knowledge4ir.feature.q_doc_boe import LeToRDocEntityFeatureExtractorC
+from knowledge4ir.feature.q_de_ref_rank import LeToRQDocERefRankFeatureExtractorC
 from knowledge4ir.feature.les import LeToRLesFeatureExtractor
+from knowledge4ir.feature.q_de_histogram import LeToRQDocEHistFeatureExtractor
+from knowledge4ir.feature.q_de_text import LeToRQDocETextFeatureExtractorC
 from knowledge4ir.feature.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
 )
@@ -44,7 +46,7 @@ class LeToRFeatureExtractCenter(Configurable):
     rank_top_k = Int(100, help="top k candidate docs to extract features").tag(config=True)
     l_feature_group = List(Unicode, default_value=['IRFusion'],
                            help='feature groups to extract: IRFusion,\
-                            BoeEmb, Word2VecHist, Les, DocE'
+                            BoeEmb, Word2VecHist, Les, DocE, QDocEHist, QDocEText'
                            ).tag(config=True)
     out_name = Unicode(help='feature out file name').tag(config=True)
     normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
@@ -71,7 +73,11 @@ class LeToRFeatureExtractCenter(Configurable):
         print "Feature group: Les"
         LeToRLesFeatureExtractor.class_print_help(inst)
         print "Feature group: DocE"
-        LeToRDocEntityFeatureExtractorC.class_print_help(inst)
+        LeToRQDocERefRankFeatureExtractorC.class_print_help(inst)
+        print "Feature group: QDocEHist"
+        LeToRQDocEHistFeatureExtractor.class_print_help(inst)
+        print "Feature group: QDocEText"
+        LeToRQDocETextFeatureExtractorC.class_print_help(inst)
         # to add those needed the config
 
     def update_config(self, config):
@@ -110,7 +116,11 @@ class LeToRFeatureExtractCenter(Configurable):
         if "Les" in self.l_feature_group:
             self._l_feature_extractor.append(LeToRLesFeatureExtractor(**kwargs))
         if "DocE" in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRDocEntityFeatureExtractorC(**kwargs))
+            self._l_feature_extractor.append(LeToRQDocERefRankFeatureExtractorC(**kwargs))
+        if "QDocEHist" in self.l_feature_group:
+            self._l_feature_extractor.append(LeToRQDocEHistFeatureExtractor(**kwargs))
+        if "QDocEText" in self.l_feature_group:
+            self._l_feature_extractor.append(LeToRQDocETextFeatureExtractorC(**kwargs))
         # if 'BoeLes' in self.l_feature_group:
         #     self._l_feature_extractor.append(LeToREIRFeatureExtractor(**kwargs))
 
