@@ -68,7 +68,6 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
 
     def _load_corpus_stat(self):
         if not self.corpus_stat_pre:
-            logging.info('no corpus stat to load')
             return
         l_field_h_df, self.h_corpus_stat = load_corpus_stat(
             self.corpus_stat_pre, self.l_text_fields)

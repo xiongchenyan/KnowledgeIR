@@ -33,9 +33,9 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
             l_field_h_df, self.h_corpus_stat = load_corpus_stat(
                 self.corpus_stat_pre, self.l_text_fields)
             self.h_field_h_df = dict(l_field_h_df)
-        for field in self.l_text_fields:
-            assert field in self.h_corpus_stat
-            assert field in self.h_field_h_df
+            for field in self.l_text_fields:
+                assert field in self.h_corpus_stat
+                assert field in self.h_field_h_df
 
     def set_external_info(self, external_info):
         super(LeToRIRFusionFeatureExtractor, self).set_external_info(external_info)
