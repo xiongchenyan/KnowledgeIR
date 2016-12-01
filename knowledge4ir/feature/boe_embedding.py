@@ -62,7 +62,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
         if self.embedding_in:
             self.l_embedding_in.append(self.embedding_in)
             self.l_embedding_name.append('')
-        if self.l_embedding:
+        if self.l_embedding_name:
             logging.info('start loading embedding %s', json.dumps(self.l_embedding_in))
             self.l_embedding = [Word2Vec.load_word2vec_format(embedding_in)
                                 for embedding_in in self.l_embedding_in]
