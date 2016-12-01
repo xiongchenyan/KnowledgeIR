@@ -289,9 +289,9 @@ class AttLeToRFeatureExtractCenter(Configurable):
         l_qe_att_mtx, h_qe_att_hash = self._hash_and_pad_feature_matrix(ll_h_qe_att)
 
         l_new_features = []
-        for p in xrange(len(ll_h_qt_feature)):
-            l_new_features.append([ll_h_qt_feature[p], ll_h_qe_feature[p],
-                                   ll_h_qt_att[p], ll_h_qe_att[p]])
+        for p in xrange(len(l_qt_rank_mtx)):
+            l_new_features.append([l_qt_rank_mtx[p], l_qe_rank_mtx[p],
+                                   l_qt_att_mtx[p], l_qe_att_mtx[p]])
         h_feature_hash = {'qt': h_qt_feature_hash, 'qe': h_qe_feature_hash,
                           'qt_att': h_qt_att_hash, 'qe_att': h_qe_att_hash}
         logging.info('padding finished')
