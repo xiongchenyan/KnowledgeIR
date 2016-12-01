@@ -207,16 +207,16 @@ class AttLeToRFeatureExtractCenter(Configurable):
             for extractor in self.l_qw_dw_extractor + self.l_qw_de_extractor:
                 h_this_feature = extractor.extract(qid, docno, h_qt_info, h_doc_info)
                 h_feature.update(h_this_feature)
-                logging.info('[%s] feature get [%s]', extractor.feature_name_pre,
-                             json.dumps(h_this_feature))
+                # logging.info('[%s] feature get [%s]', extractor.feature_name_pre,
+                #              json.dumps(h_this_feature))
             l_h_qt_feature.append(h_feature)
         for h_qe_info in l_h_qe_info:
             h_feature = dict()
             for extractor in self.l_qe_de_extractor + self.l_qe_dw_extractor:
                 h_this_feature = extractor.extract(qid, docno, h_qe_info, h_doc_info)
                 h_feature.update(h_this_feature)
-                logging.info('[%s] feature get [%s]', extractor.feature_name_pre,
-                             json.dumps(h_this_feature))
+                # logging.info('[%s] feature get [%s]', extractor.feature_name_pre,
+                #              json.dumps(h_this_feature))
             l_h_qe_feature.append(h_feature)
 
         l_h_qt_att = []
