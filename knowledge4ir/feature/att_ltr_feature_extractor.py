@@ -303,7 +303,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         s_feature_name = set()
         for l_h_feature in ll_h_feature:
             for h_feature in l_h_feature:
-                s_feature_name.union(set(h_feature.keys()))
+                s_feature_name = s_feature_name.union(set(h_feature.keys()))
         l_name = list(s_feature_name)
         l_name.sort()
         h_feature_hash = dict(zip(l_name, range(len(l_name))))
