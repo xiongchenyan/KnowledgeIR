@@ -121,7 +121,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         if 'IRFusion' in self.l_qw_dw_feature:
             self.l_qw_dw_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
             logging.info('add IRFusion features to qw-dw')
-        if "BoeEmb" in self.l_qe_de_extractor:
+        if "BoeEmb" in self.l_qe_de_feature:
             self.l_qe_de_extractor.append(LeToRBOEEmbFeatureExtractor(**kwargs))
             logging.info('add BoeEmb features to qe-de')
         if "Les" in self.l_qe_dw_feature:
