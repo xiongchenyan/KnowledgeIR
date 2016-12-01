@@ -129,7 +129,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
             logging.info('add Les features to qe-dw')
         if "QDocEText" in self.l_qw_de_feature:
             self.l_qw_de_extractor.append(LeToRQDocETextFeatureExtractorC(**kwargs))
-            logging.info('add IRFusion features to qw-de')
+            logging.info('add QDocE features to qw-de')
 
     def pipe_extract(self):
         """
@@ -262,9 +262,10 @@ class AttLeToRFeatureExtractCenter(Configurable):
         # sort data in order
         l_qid, l_docno, l_features = self._reduce_data_to_qid(l_qid, l_docno, l_features)
 
-        l_features, h_feature_hash = self._pad_att_and_ranking_features(l_features)
+        l_features, h_feature_hash, h_feature_stat = self._pad_att_and_ranking_features(l_features)
 
         json.dump(h_feature_hash, open(self.out_name + '_feature_name', 'w'))
+        json.dump(h_feature_stat, open(self.out_name + '_feature_stat', 'w'))
         logging.info('ready to dump...')
         for i in xrange(len(l_qid)):
             qid = l_qid[i]
@@ -295,19 +296,21 @@ class AttLeToRFeatureExtractCenter(Configurable):
         ll_h_qt_att = [item[2] for item in l_features]
         ll_h_qe_att = [item[3] for item in l_features]
 
-        l_qt_rank_mtx, h_qt_feature_hash = self._hash_and_pad_feature_matrix(ll_h_qt_feature)
-        l_qe_rank_mtx, h_qe_feature_hash = self._hash_and_pad_feature_matrix(ll_h_qe_feature)
-        l_qt_att_mtx, h_qt_att_hash = self._hash_and_pad_feature_matrix(ll_h_qt_att)
-        l_qe_att_mtx, h_qe_att_hash = self._hash_and_pad_feature_matrix(ll_h_qe_att)
+        l_qt_rank_mtx, h_qt_feature_hash, l_qt_stat = self._hash_and_pad_feature_matrix(ll_h_qt_feature)
+        l_qe_rank_mtx, h_qe_feature_hash, l_qe_stat = self._hash_and_pad_feature_matrix(ll_h_qe_feature)
+        l_qt_att_mtx, h_qt_att_hash, l_qt_att_stat = self._hash_and_pad_feature_matrix(ll_h_qt_att)
+        l_qe_att_mtx, h_qe_att_hash, l_qe_att_stat = self._hash_and_pad_feature_matrix(ll_h_qe_att)
 
         l_new_features = []
         for p in xrange(len(l_qt_rank_mtx)):
             l_new_features.append([l_qt_rank_mtx[p], l_qe_rank_mtx[p],
                                    l_qt_att_mtx[p], l_qe_att_mtx[p]])
-        h_feature_hash = {'qt': h_qt_feature_hash, 'qe': h_qe_feature_hash,
+        h_feature_hash = {'qt_rank': h_qt_feature_hash, 'qe_rank': h_qe_feature_hash,
                           'qt_att': h_qt_att_hash, 'qe_att': h_qe_att_hash}
+        h_feature_stat = {'qt_rank': l_qt_stat, 'qe_rank': l_qe_stat,
+                          'qt_att': l_qt_att_stat, 'qe_att': l_qe_att_stat}
         logging.info('padding finished')
-        return l_new_features, h_feature_hash
+        return l_new_features, h_feature_hash, h_feature_stat
 
     @classmethod
     def _hash_and_pad_feature_matrix(cls, ll_h_feature):
@@ -329,7 +332,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
                     j = h_feature_hash[name]
                     mtx[i, j] = score
             l_feature_mtx.append(mtx.tolist())
-        return l_feature_mtx, h_feature_hash
+        return l_feature_mtx, h_feature_hash, [max_unit_dim, f_dim]
 
     def _reverse_q_doc_dict(self):
         h_doc_q_score = {}

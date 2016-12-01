@@ -360,7 +360,7 @@ def load_entity_texts(entity_text_in):
     for line_cnt, line in enumerate(open(entity_text_in)):
         h_e = json.loads(line)
         h[h_e['id']] = h_e
-        if not line_cnt % 1000:
+        if not line_cnt % 10000:
             logging.info('loaded [%d] entities texts', line_cnt)
     logging.info('finished loading [%d] entities texts', len(h))
     return h
