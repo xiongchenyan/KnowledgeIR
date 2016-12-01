@@ -9,9 +9,12 @@ import math
 import numpy as np
 from scipy import spatial
 from traitlets import (
-    Int, Float, Instance,
-    Unicode)
+    Int, Float, List, Unicode
+)
 from traitlets.config import Configurable
+from knowledge4ir.utils import load_corpus_stat
+from knowledge4ir.utils import TARGET_TEXT_FIELDS
+from gensim.models import Word2Vec
 
 
 BM25_K1 = 1.2
@@ -384,6 +387,43 @@ class LeToRFeatureExtractor(Configurable):
         :return: h_feature
         """
         raise NotImplementedError
+
+    def set_external_info(self, external_info):
+        logging.info('setting external info with shared storage')
+        return
+
+
+class LeToRFeatureExternalInfo(Configurable):
+    """
+    load external info, to be used by extractors
+    """
+    corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
+    entity_text_in = Unicode(help="entity texts in").tag(config=True)
+    l_text_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
+    l_embedding_in = List(Unicode, default_value=[],
+                          help="embedding data inputs, if more than one"
+                          ).tag(config=True)
+    l_embedding_name = List(Unicode, default_value=[],
+                            help="names of corresponding embedding, if more than one"
+                            ).tag(config=True)
+
+    def __init__(self, **kwargs):
+        super(LeToRFeatureExternalInfo, self).__init__(**kwargs)
+        logging.info('start loading external info...')
+        self.h_field_h_df = {}
+        if self.corpus_stat_pre:
+            l_field_h_df, self.h_corpus_stat = load_corpus_stat(
+                self.corpus_stat_pre, self.l_text_fields)
+            self.h_field_h_df = dict(l_field_h_df)
+        self.h_entity_texts = dict()
+        if self.entity_text_in:
+            self.h_entity_texts = load_entity_texts(self.entity_text_in)
+
+        logging.info('start loading embedding %s', json.dumps(self.l_embedding_in))
+        self.l_embedding = [Word2Vec.load_word2vec_format(embedding_in)
+                            for embedding_in in self.l_embedding_in]
+        logging.info('external info loaded')
+
 
 #
 # if __name__ == '__main__':

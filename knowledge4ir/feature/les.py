@@ -32,14 +32,24 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
 
     def __init__(self, **kwargs):
         super(LeToRLesFeatureExtractor, self).__init__(**kwargs)
-        self.h_entity_texts = load_entity_texts(self.entity_text_in)
+        if self.entity_text_in:
+            self.h_entity_texts = load_entity_texts(self.entity_text_in)
         self.s_model = set(self.l_model)
-        l_field_h_df, self.h_corpus_stat = load_corpus_stat(
-            self.corpus_stat_pre, self.l_text_fields)
-        self.h_field_h_df = dict(l_field_h_df)
+        self.h_field_h_df = {}
+        if self.corpus_stat_pre:
+            l_field_h_df, self.h_corpus_stat = load_corpus_stat(
+                self.corpus_stat_pre, self.l_text_fields)
+            self.h_field_h_df = dict(l_field_h_df)
         for field in self.l_text_fields:
             assert field in self.h_corpus_stat
             assert field in self.h_field_h_df
+
+    def set_external_info(self, external_info):
+        super(LeToRLesFeatureExtractor, self).set_external_info(external_info)
+        self.h_field_h_df = external_info.h_field_h_df
+        self.h_corpus_stat = external_info.h_corpus_stat
+        self.h_entity_texts = external_info.h_entity_texts
+        return
 
     # def _load_entity_texts(self):
     #     h = {}

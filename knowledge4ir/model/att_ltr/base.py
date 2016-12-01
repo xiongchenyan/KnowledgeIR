@@ -54,7 +54,7 @@ class AttLeToR(Configurable):
 
     nb_epoch = Int(100, help='nb of epoch').tag(configure=True)
 
-    def pointwise_read(self, in_name, batch_size=-1):
+    def pointwise_read(self, in_name):
         l_qt_rank = []
         l_qe_rank = []
         l_qt_att = []
@@ -97,8 +97,7 @@ class AttLeToR(Configurable):
     def pairwise_read(self, in_name):
         """
         will read all data in memory first
-        :param data_stream:
-        :param batch_size:
+        :param in_name:
         :return:
         """
 

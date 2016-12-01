@@ -37,6 +37,7 @@ from knowledge4ir.utils import (
     load_trec_labels_dict,
     load_py_config,
 )
+from knowledge4ir.feature import LeToRFeatureExternalInfo
 import numpy as np
 
 
@@ -77,11 +78,14 @@ class AttLeToRFeatureExtractCenter(Configurable):
         self.l_qe_de_extractor = []
 
         self._load_data()
+        self.external_info = LeToRFeatureExternalInfo(**kwargs)
         self._init_extractors(**kwargs)
 
     @classmethod
     def class_print_help(cls, inst=None):
         super(AttLeToRFeatureExtractCenter, cls).class_print_help(inst)
+        print "external info:"
+        LeToRFeatureExternalInfo.class_print_help(inst)
         print "Feature group: IRFusion"
         LeToRIRFusionFeatureExtractor.class_print_help(inst)
         print "Feature group: BoeEmb"
@@ -120,15 +124,19 @@ class AttLeToRFeatureExtractCenter(Configurable):
         """
         if 'IRFusion' in self.l_qw_dw_feature:
             self.l_qw_dw_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
+            self.l_qw_dw_extractor[-1].set_external_info(self.external_info)
             logging.info('add IRFusion features to qw-dw')
         if "BoeEmb" in self.l_qe_de_feature:
             self.l_qe_de_extractor.append(LeToRBOEEmbFeatureExtractor(**kwargs))
+            self.l_qe_de_extractor[-1].set_external_info(self.external_info)
             logging.info('add BoeEmb features to qe-de')
         if "Les" in self.l_qe_dw_feature:
             self.l_qe_dw_extractor.append(LeToRLesFeatureExtractor(**kwargs))
+            self.l_qe_dw_extractor[-1].set_external_info(self.external_info)
             logging.info('add Les features to qe-dw')
         if "QDocEText" in self.l_qw_de_feature:
             self.l_qw_de_extractor.append(LeToRQDocETextFeatureExtractorC(**kwargs))
+            self.l_qw_de_extractor[-1].set_external_info(self.external_info)
             logging.info('add QDocE features to qw-de')
 
     def pipe_extract(self):
@@ -196,9 +204,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         base_score = self._h_q_doc_score[qid][docno]
 
         l_h_qt_info = self._split_q_info(h_q_info, target='bow')
-        logging.info('[%d] terms', len(l_h_qt_info))
         l_h_qe_info = self._split_q_info(h_q_info, target='boe')
-        logging.info('[%d] entities', len(l_h_qe_info))
 
         l_h_qt_feature = []
         l_h_qe_feature = []

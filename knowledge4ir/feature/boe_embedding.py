@@ -67,6 +67,11 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                             for embedding_in in self.l_embedding_in]
         logging.info('[%d] embedding loaded', len(self.l_embedding_in))
 
+    def set_external_info(self, external_info):
+        super(LeToRBOEEmbFeatureExtractor, self).set_external_info(external_info)
+        self.l_embedding = external_info.l_embedding
+        self.l_embedding_name = external_info.l_embedding_name
+
     def extract(self, qid, docno, h_q_info, h_doc_info):
         h_feature = {}
         for name, embedding in zip(self.l_embedding_name, self.l_embedding):
