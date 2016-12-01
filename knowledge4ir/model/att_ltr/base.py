@@ -14,25 +14,22 @@ from traitlets import (
 import json
 import logging
 import numpy as np
-from keras.layers import (
-    Dense,
-    Merge,
-    Input,
-    Activation,
-    Flatten
-)
-from keras.models import (
-    Model,
-    Sequential,
-)
-from keras.callbacks import EarlyStopping
 from knowledge4ir.model.base import pair_docno
+from keras.callbacks import EarlyStopping
+from knowledge4ir.utils import (
+    group_scores_to_ranking,
+    GDEVAL_PATH,
+    dump_trec_ranking_with_score,
+    seg_gdeval_out,
+)
+import subprocess
 
 
 class AttLeToR(Configurable):
     train_in = Unicode().tag(configure=True)
     dev_in = Unicode().tag(configure=True)
     test_in = Unicode().tag(configure=True)
+    qrel = Unicode().tag(configure=True)
 
     out_dir = Unicode(help='output directory').tag(configure=True)
     l2_w = Float(0, help='l2 regulalizer').tag(configure=True)
@@ -54,14 +51,86 @@ class AttLeToR(Configurable):
 
     nb_epoch = Int(100, help='nb of epoch').tag(configure=True)
 
-    def pointwise_read(self, in_name):
+    def __init__(self, **kwargs):
+        super(AttLeToR, self).__init__(**kwargs)
+        self.l_model_names = [self.qt_rank_name, self.qe_rank_name, self.qt_att_name, self.qe_att_name]
+        self.l_input_dim = [(self.nb_q_t, self.qt_rank_feature_dim),
+                            (self.nb_q_e, self.qe_rank_feature_dim),
+                            (self.nb_q_t, self.qt_att_feature_dim),
+                            (self.nb_q_e, self.qe_att_feature_dim),
+                            ]
+        self.ranking_model = None
+        self.training_model = None
+
+    def init_model(self):
+        logging.info('initializing model')
+        self.ranking_model, self.training_model = self._build_model()
+        self.training_model.compile(
+            optimizer='rmsprop',
+            loss='hinge',
+            metric=['accuracy']
+        )
+        logging.info('ranking model summary')
+        self.ranking_model.summary()
+        logging.info('training model summary')
+        self.training_model.summary()
+        logging.info('model initialized')
+        return
+
+    def train(self, train_in=None, dev_in=None):
+        if train_in is None:
+            train_in = self.train_in
+        if dev_in is None:
+            dev_in = self.dev_in
+        train_x, train_y = self.pairwise_construct(train_in)
+        dev_x, dev_y = self.pairwise_construct(dev_in)
+        self.training_model.fit(
+            train_x, train_y,
+            batch_size=train_y.shape[0],
+            nb_epoch=self.nb_epoch,
+            validation_Data=(dev_x, dev_y),
+            callbacks=[EarlyStopping(monitor='val_loss', patience=2)]
+        )
+
+    def predict(self, test_in=None):
+        if not test_in:
+            test_in = self.test_in
+        assert self.training_model
+        logging.info('start predicting')
+        h_data, v_label = self.pointwise_construct(test_in)
+        l_qid, l_docno = self.get_qid_docno(test_in)
+        score = self.ranking_model.predict(h_data)
+        l_score = score.reshape(-1).tolist()
+        l_q_ranking = group_scores_to_ranking(l_qid, l_docno, l_score)
+        logging.info('predicted')
+        return l_q_ranking
+
+    def evaluate(self, test_in=None, out_pre=None):
+        if not out_pre:
+            out_pre = self.out_dir + '/run'
+        l_q_ranking = self.predict(test_in)
+        dump_trec_ranking_with_score(l_q_ranking, out_pre + '.trec')
+        eva_out = subprocess.check_output(['perl', GDEVAL_PATH, self.qrel, out_pre + '.trec'])
+        print >> open(out_pre + '.eval', eva_out.strip())
+        __, ndcg, err = seg_gdeval_out(eva_out, with_mean=True)
+        logging.info('evaluated ndcg:%f, err:%f', ndcg, err)
+        return ndcg
+
+    def _build_model(self):
+        """
+
+        :return: ranker, pairwise_trainer
+        """
+        yield NotImplementedError
+
+    def pointwise_construct(self, lines):
         l_qt_rank = []
         l_qe_rank = []
         l_qt_att = []
         l_qe_att = []
         l_y = []
 
-        for line in open(in_name):
+        for line in lines:
             h = json.loads(line)
             qid = h['q']
             docno = h['docno']
@@ -94,22 +163,28 @@ class AttLeToR(Configurable):
         logging.info('pointwise finished')
         return X, Y
 
-    def pairwise_read(self, in_name):
-        """
-        will read all data in memory first
-        :param in_name:
-        :return:
-        """
-
-        point_X, point_Y = self.pointwise_read(in_name, -1)
-
-        l_qid, l_docno = [], []
-        for line in open(in_name):
+    @classmethod
+    def get_qid_docno(cls, lines):
+        l_qid = []
+        l_docno = []
+        for line in lines:
             h = json.loads(line)
             qid = h['q']
             docno = h['docno']
             l_qid.append(qid)
             l_docno.append(docno)
+        return l_qid, l_docno
+
+    def pairwise_construct(self, lines):
+        """
+        will read all data in memory first
+        :param lines:
+        :return:
+        """
+
+        point_X, point_Y = self.pointwise_construct(lines, -1)
+
+        l_qid, l_docno = self.get_qid_docno(lines)
 
         v_paired_label, l_paired_qid, l_docno_pair, l_pos_pair = pair_docno(point_Y, l_qid, l_docno)
         logging.info('total [%d] pairwise pair', len(l_paired_qid))
@@ -139,7 +214,6 @@ class AttLeToR(Configurable):
         X[self.aux_pre + self.qe_rank_name] = aux_qe_rank_mtx
         X[self.aux_pre + self.qt_att_name] = aux_qt_att_mtx
         X[self.aux_pre + self.qe_att_name] = aux_qe_att_mtx
-
         Y = v_paired_label
 
         return X, Y
