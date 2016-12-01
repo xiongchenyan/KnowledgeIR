@@ -316,7 +316,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
                 for name, score in h_feature.items():
                     j = h_feature_hash[name]
                     mtx[i, j] = score
-            l_feature_mtx.append(mtx)
+            l_feature_mtx.append(mtx.tolist())
         return l_feature_mtx, h_feature_hash
 
     def _reverse_q_doc_dict(self):
