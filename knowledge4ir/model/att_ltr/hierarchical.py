@@ -13,6 +13,8 @@ from keras.layers import (
     Activation,
     Flatten,
     Convolution1D,
+    Lambda,
+
 )
 from keras.regularizers import (
     l2,
@@ -27,6 +29,7 @@ from traitlets import (
     Int,
     Unicode,
 )
+import keras.backend as K
 
 
 class HierarchicalAttLeToR(AttLeToR):
@@ -108,3 +111,62 @@ class HierarchicalAttLeToR(AttLeToR):
         return model
 
 
+class FlatLeToR(HierarchicalAttLeToR):
+    model_st=Int(0)
+    model_ed=Int(2)
+
+    def _init_inputs(self, is_aux=False):
+        l_inputs = []
+        for name, dim in zip(self.l_model_names[self.model_st:self.model_ed],
+                             self.l_input_dim[self.model_st:self.model_ed]):
+            if is_aux:
+                in_name = self.aux_pre + name
+            else:
+                in_name = name
+            input_layer = Input(shape=dim,
+                                name=in_name)
+            l_inputs.append(input_layer)
+
+        return l_inputs
+
+    def _init_model(self):
+        l_models = []
+        l_in_shape = self.l_input_dim[self.model_st:self.model_ed]
+        l_model_name = [name + '_model' for name in self.l_model_names[self.model_st:self.model_ed]]
+        l_nb_layer = [self.nb_rank_layer, self.nb_rank_layer]
+        for p in xrange(len(l_in_shape)):
+            model = self._init_one_neural_network(
+                l_in_shape[p],
+                l_model_name[p],
+                l_nb_layer[p]
+            )
+            l_models.append(model)
+        return l_models
+
+    def _align_to_rank_model(self, l_inputs, l_models):
+        l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
+        ranker_model = Merge(mode='concat', name='rank_merge')(l_aligned_models)
+        ranker_model = Lambda(lambda x: K.mean(x, axis=0))(ranker_model)
+        att_ranker = Model(input=l_inputs, output=ranker_model)
+        return att_ranker
+
+
+class QTermLeToR(HierarchicalAttLeToR):
+    model_ed=Int(1)
+
+    def _align_to_rank_model(self, l_inputs, l_models):
+        l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
+        ranker_model = Lambda(lambda x: K.mean(x, axis=0))(l_aligned_models[0])
+        att_ranker = Model(input=l_inputs, output=ranker_model)
+        return att_ranker
+
+
+class QEntityLeToR(HierarchicalAttLeToR):
+    model_st=Int(1)
+    model_ed=Int(2)
+
+    def _align_to_rank_model(self, l_inputs, l_models):
+        l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
+        ranker_model = Lambda(lambda x: K.mean(x, axis=0))(l_aligned_models[1])
+        att_ranker = Model(input=l_inputs, output=ranker_model)
+        return att_ranker
