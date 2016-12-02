@@ -77,9 +77,9 @@ class CrossValidator(Configurable):
         out_dir = os.path.join(self.out_dir, 'Fold%d' % k)
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        l_train_svm = filter_json_lines(self.l_total_data_lines, self.l_train_folds[k])
-        l_test_svm = filter_json_lines(self.l_total_data_lines, self.l_test_folds[k])
-        l_dev_svm = filter_json_lines(self.l_total_data_lines, self.l_dev_folds[k])
+        l_train_lines = filter_json_lines(self.l_total_data_lines, self.l_train_folds[k])
+        l_test_lines = filter_json_lines(self.l_total_data_lines, self.l_test_folds[k])
+        l_dev_lines = filter_json_lines(self.l_total_data_lines, self.l_dev_folds[k])
         best_ndcg = 0
         best_para = None
         dev_eva_out = open(out_dir + '/dev_para.eval', 'w')
@@ -87,8 +87,8 @@ class CrossValidator(Configurable):
         for h_para in self._dev_para_generator():
             logging.info('evaluating para %s', json.dumps(h_para))
             self.model.set_para(h_para)
-            self.model.train(l_train_svm)
-            l_q_ranking = self.model.predict(l_dev_svm)
+            self.model.train(l_train_lines, l_dev_lines)
+            l_q_ranking = self.model.predict(l_dev_lines)
             rank_out_name = out_dir + '/dev.trec'
             dump_trec_ranking_with_score(l_q_ranking, rank_out_name)
             eva_str = subprocess.check_output(
@@ -104,8 +104,8 @@ class CrossValidator(Configurable):
         logging.info('best ndcg %f with %s', best_ndcg, json.dumps(best_para))
         logging.info('start training total')
         self.model.set_para(best_para)
-        self.model.train(l_train_svm + l_dev_svm)
-        l_q_ranking = self.model.predict(l_test_svm)
+        self.model.train(l_train_lines + l_dev_lines)
+        l_q_ranking = self.model.predict(l_test_lines)
         rank_out_name = out_dir + '/trec'
         eva_out_name = out_dir + '/eval'
         dump_trec_ranking_with_score(l_q_ranking, rank_out_name)

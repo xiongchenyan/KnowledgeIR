@@ -85,17 +85,26 @@ class AttLeToR(Configurable):
     def train(self, train_lines=None, dev_lines=None):
         if train_lines is None:
             train_lines = open(self.train_in).read().splitlines()
-        if dev_lines is None:
-            dev_lines = open(self.dev_in).read().splitlines()
+        # if dev_lines is None:
+        #     dev_lines = open(self.dev_in).read().splitlines()
         train_x, train_y = self.pairwise_construct(train_lines)
-        dev_x, dev_y = self.pairwise_construct(dev_lines)
-        self.training_model.fit(
-            train_x, train_y,
-            batch_size=train_y.shape[0],
-            nb_epoch=self.nb_epoch,
-            validation_Data=(dev_x, dev_y),
-            callbacks=[EarlyStopping(monitor='val_loss', patience=2)]
-        )
+        if dev_lines:
+            dev_x, dev_y = self.pairwise_construct(dev_lines)
+            self.training_model.fit(
+                train_x, train_y,
+                batch_size=train_y.shape[0],
+                nb_epoch=self.nb_epoch,
+                validation_Data=(dev_x, dev_y),
+                callbacks=[EarlyStopping(monitor='val_loss', patience=10)]
+            )
+        else:
+            self.training_model.fit(
+                train_x, train_y,
+                batch_size=train_y.shape[0],
+                nb_epoch=self.nb_epoch,
+                callbacks=[EarlyStopping(monitor='loss', patience=10)]
+            )
+
 
     def predict(self, test_lines=None):
         if not test_lines:
