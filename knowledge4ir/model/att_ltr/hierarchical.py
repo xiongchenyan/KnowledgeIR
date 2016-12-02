@@ -33,6 +33,10 @@ class HierarchicalAttLeToR(AttLeToR):
     nb_middle_filters = Int(5).tag(config=True)
     activation = Unicode('tanh')
 
+    @classmethod
+    def class_print_help(cls, inst=None):
+        super(HierarchicalAttLeToR, cls).class_print_help(inst)
+
     def _build_model(self):
         l_inputs = self._init_inputs()
         l_aux_inputs = self._init_inputs(is_aux=True)
