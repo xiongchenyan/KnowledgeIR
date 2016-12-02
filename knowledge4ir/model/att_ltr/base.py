@@ -88,8 +88,10 @@ class AttLeToR(Configurable):
         # if dev_lines is None:
         #     dev_lines = open(self.dev_in).read().splitlines()
         train_x, train_y = self.pairwise_construct(train_lines)
+        logging.info('start training with [%d] pairs', train_y.shape[0])
         if dev_lines:
             dev_x, dev_y = self.pairwise_construct(dev_lines)
+            logging.info('with [%d] dev pairs', dev_y.shape[0])
             self.training_model.fit(
                 train_x, train_y,
                 batch_size=train_y.shape[0],
