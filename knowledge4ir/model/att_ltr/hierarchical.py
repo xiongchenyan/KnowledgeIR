@@ -132,7 +132,8 @@ class FlatLeToR(HierarchicalAttLeToR):
     def _init_model(self):
         l_models = []
         l_in_shape = self.l_input_dim[self.model_st:self.model_ed]
-        l_model_name = [name + '_model' for name in self.l_model_names[self.model_st:self.model_ed]]
+        l_model_name = [name + '_model'
+                        for name in self.l_model_names[self.model_st:self.model_ed]]
         l_nb_layer = [self.nb_rank_layer, self.nb_rank_layer]
         for p in xrange(len(l_in_shape)):
             model = self._init_one_neural_network(
@@ -146,9 +147,10 @@ class FlatLeToR(HierarchicalAttLeToR):
     def _align_to_rank_model(self, l_inputs, l_models):
         l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
         ranker_model = Merge(mode='concat', name='rank_merge')(l_aligned_models)
-        ranker_model = Lambda(lambda x: K.mean(x, axis=-1),
-                              output_shape=(1,)
-                              )(ranker_model)
+        # ranker_model = Lambda(lambda x: K.mean(x, axis=-1),
+        #                       output_shape=(1,)
+        #                       )(ranker_model)
+        ranker_model = Dense(output_dim=1)(ranker_model)
         att_ranker = Model(input=l_inputs, output=ranker_model)
         return att_ranker
 
