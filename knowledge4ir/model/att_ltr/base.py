@@ -145,8 +145,6 @@ class AttLeToR(Configurable):
 
         for line in lines:
             h = json.loads(line)
-            qid = h['q']
-            docno = h['docno']
             l_feature_matrices = h['feature']
             y = h['rel']
             qt_rank_mtx, qe_rank_mtx, qt_att_mtx, qe_att_mtx = l_feature_matrices
@@ -183,7 +181,7 @@ class AttLeToR(Configurable):
         for line in lines:
             h = json.loads(line)
             qid = h['q']
-            docno = h['docno']
+            docno = h['doc']
             l_qid.append(qid)
             l_docno.append(docno)
         return l_qid, l_docno
