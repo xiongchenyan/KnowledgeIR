@@ -30,7 +30,7 @@ from traitlets import (
 
 
 class HierarchicalAttLeToR(AttLeToR):
-    nb_middle_filters = Int(5)
+    nb_middle_filters = Int(5).tag(config=True)
     activation = Unicode('tanh')
 
     def _build_model(self):

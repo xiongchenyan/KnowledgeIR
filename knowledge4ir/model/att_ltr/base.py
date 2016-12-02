@@ -61,6 +61,9 @@ class AttLeToR(Configurable):
                             ]
         self.ranking_model = None
         self.training_model = None
+        
+    def class_print_help(cls, inst=None):
+        super(AttLeToR, cls).class_print_help(inst)
 
     def init_model(self):
         logging.info('initializing model')
