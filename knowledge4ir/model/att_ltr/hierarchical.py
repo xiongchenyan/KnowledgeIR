@@ -14,11 +14,14 @@ from keras.layers import (
     Flatten,
     Convolution1D,
 )
+from keras.regularizers import (
+    l2,
+)
 from keras.models import (
     Model,
     Sequential,
 )
-from keras.callbacks import EarlyStopping
+# from keras.callbacks import EarlyStopping
 from knowledge4ir.model.att_ltr import AttLeToR
 from traitlets import (
     Int,
@@ -26,7 +29,7 @@ from traitlets import (
 )
 
 
-class FlatAttLeToR(AttLeToR):
+class HierarchicalAttLeToR(AttLeToR):
     nb_middle_filters = Int(5)
     activation = Unicode('tanh')
 
@@ -79,8 +82,6 @@ class FlatAttLeToR(AttLeToR):
         att_ranker = Model(input=l_inputs, output=att_ranker)
         return att_ranker
 
-
-
     def _init_one_neural_network(self, in_shape, model_name, nb_layer,):
         model = Sequential(name=model_name)
         this_nb_filter = self.nb_middle_filters
@@ -92,13 +93,15 @@ class FlatAttLeToR(AttLeToR):
                                            filter_length=1,
                                            input_shape=in_shape,
                                            activation=self.activation,
-                                           bias=False
+                                           bias=False,
+                                           W_regularizer=l2(self.l2_w)
                 )
             else:
                 this_layer = Convolution1D(nb_filter=this_nb_filter,
                                            filter_length=1,
                                            activation=self.activation,
-                                           bias=False
+                                           bias=False,
+                                           W_regularizer=l2(self.l2_w)
                                            )
             model.add(this_layer)
         model.add(Flatten())

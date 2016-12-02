@@ -77,13 +77,18 @@ class AttLeToR(Configurable):
         logging.info('model initialized')
         return
 
-    def train(self, train_in=None, dev_in=None):
-        if train_in is None:
-            train_in = self.train_in
-        if dev_in is None:
-            dev_in = self.dev_in
-        train_x, train_y = self.pairwise_construct(train_in)
-        dev_x, dev_y = self.pairwise_construct(dev_in)
+    def set_para(self, h_para):
+        self.l2_w = h_para.get('l2_w', self.l2_w)
+        logging.info('set para l2_w=[%f]', self.l2_w)
+        return
+
+    def train(self, train_lines=None, dev_lines=None):
+        if train_lines is None:
+            train_lines = open(self.train_in).read().splitlines()
+        if dev_lines is None:
+            dev_lines = open(self.dev_in).read().splitlines()
+        train_x, train_y = self.pairwise_construct(train_lines)
+        dev_x, dev_y = self.pairwise_construct(dev_lines)
         self.training_model.fit(
             train_x, train_y,
             batch_size=train_y.shape[0],
@@ -92,23 +97,23 @@ class AttLeToR(Configurable):
             callbacks=[EarlyStopping(monitor='val_loss', patience=2)]
         )
 
-    def predict(self, test_in=None):
-        if not test_in:
-            test_in = self.test_in
+    def predict(self, test_lines=None):
+        if not test_lines:
+            test_lines = open(self.test_in).read().splitlines()
         assert self.training_model
         logging.info('start predicting')
-        h_data, v_label = self.pointwise_construct(test_in)
-        l_qid, l_docno = self.get_qid_docno(test_in)
+        h_data, v_label = self.pointwise_construct(test_lines)
+        l_qid, l_docno = self.get_qid_docno(test_lines)
         score = self.ranking_model.predict(h_data)
         l_score = score.reshape(-1).tolist()
         l_q_ranking = group_scores_to_ranking(l_qid, l_docno, l_score)
         logging.info('predicted')
         return l_q_ranking
 
-    def evaluate(self, test_in=None, out_pre=None):
+    def evaluate(self, test_lines=None, out_pre=None):
         if not out_pre:
             out_pre = self.out_dir + '/run'
-        l_q_ranking = self.predict(test_in)
+        l_q_ranking = self.predict(test_lines)
         dump_trec_ranking_with_score(l_q_ranking, out_pre + '.trec')
         eva_out = subprocess.check_output(['perl', GDEVAL_PATH, self.qrel, out_pre + '.trec'])
         print >> open(out_pre + '.eval', eva_out.strip())

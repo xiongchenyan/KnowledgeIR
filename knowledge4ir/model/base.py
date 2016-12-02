@@ -3,6 +3,7 @@ base functions
 """
 import logging
 import numpy as np
+import json
 
 
 def pair_docno(v_label, l_qid, l_docno):
@@ -37,7 +38,7 @@ def pair_docno(v_label, l_qid, l_docno):
     return v_paired_label, l_paired_qid, l_docno_pair, l_pos_pair
 
 
-def fix_kfold_partition(with_dev=False, k=10, st=1, ed=100):
+def fix_kfold_partition(with_dev=False, k=10, st=1, ed=200):
     l_train_folds = []
     l_dev_folds = []
     l_test_folds = []
@@ -63,3 +64,8 @@ def fix_kfold_partition(with_dev=False, k=10, st=1, ed=100):
 def filter_svm_data(l_svm_data, l_qid):
     s = set(l_qid)
     return [svm_data for svm_data in l_svm_data if svm_data['qid'] in s]
+
+
+def filter_json_lines(lines, l_qid):
+    s = set(l_qid)
+    return [line for line in lines if json.loads(line)['q'] in s]
