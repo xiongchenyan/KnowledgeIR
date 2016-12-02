@@ -44,6 +44,7 @@ class AttLeToR(Configurable):
     qe_rank_name = Unicode('qe_rank')
     qe_att_name = Unicode('qe_att')
     aux_pre = Unicode('aux_')
+    batch_size = Int(-1, help='batch size, if non-stochastic use -1').tag(config=True)
 
     nb_rank_layer = Int(1).tag(config=True)
     nb_att_layer = Int(1).tag(config=True)
@@ -89,12 +90,15 @@ class AttLeToR(Configurable):
         #     dev_lines = open(self.dev_in).read().splitlines()
         train_x, train_y = self.pairwise_construct(train_lines)
         logging.info('start training with [%d] pairs', train_y.shape[0])
+        batch_size = self.batch_size
+        if -1 == batch_size:
+            batch_size = train_y.shape[0]
         if dev_lines:
             dev_x, dev_y = self.pairwise_construct(dev_lines)
             logging.info('with [%d] dev pairs', dev_y.shape[0])
             self.training_model.fit(
                 train_x, train_y,
-                batch_size=train_y.shape[0],
+                batch_size=batch_size,
                 nb_epoch=self.nb_epoch,
                 validation_Data=(dev_x, dev_y),
                 callbacks=[EarlyStopping(monitor='val_loss', patience=10)]
@@ -102,7 +106,7 @@ class AttLeToR(Configurable):
         else:
             self.training_model.fit(
                 train_x, train_y,
-                batch_size=train_y.shape[0],
+                batch_size=batch_size,
                 nb_epoch=self.nb_epoch,
                 callbacks=[EarlyStopping(monitor='loss', patience=10)]
             )
