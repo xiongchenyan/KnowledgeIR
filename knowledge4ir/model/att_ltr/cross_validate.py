@@ -87,7 +87,7 @@ class CrossValidator(Configurable):
         for h_para in self._dev_para_generator():
             logging.info('evaluating para %s', json.dumps(h_para))
             self.model.set_para(h_para)
-            self.model.train(l_train_lines, l_dev_lines)
+            self.model.train(l_train_lines)
             l_q_ranking = self.model.predict(l_dev_lines)
             rank_out_name = out_dir + '/dev.trec'
             dump_trec_ranking_with_score(l_q_ranking, rank_out_name)
