@@ -26,19 +26,19 @@ import subprocess
 
 
 class AttLeToR(Configurable):
-    train_in = Unicode(help="opt: trainning input").tag(configure=True)
-    dev_in = Unicode(help="opt: dev input").tag(configure=True)
-    test_in = Unicode(help="opt: testing input").tag(configure=True)
-    qrel = Unicode(help="qrel input").tag(configure=True)
+    train_in = Unicode(help="opt: trainning input").tag(config=True)
+    dev_in = Unicode(help="opt: dev input").tag(config=True)
+    test_in = Unicode(help="opt: testing input").tag(config=True)
+    qrel = Unicode(help="qrel input").tag(config=True)
 
-    out_dir = Unicode(help='output directory').tag(configure=True)
-    l2_w = Float(0, help='l2 regulalizer').tag(configure=True)
-    nb_q_t = Int(help='q term len').tag(configure=True)
-    nb_q_e = Int(help='q e len').tag(configure=True)
-    qt_rank_feature_dim = Int(help='q term ranking feature dim').tag(configure=True)
-    qe_rank_feature_dim = Int(help='q entity ranking feature dim').tag(configure=True)
-    qt_att_feature_dim = Int(help='q term attention feature dim').tag(configure=True)
-    qe_att_feature_dim = Int(help='q entity attention feature dim').tag(configure=True)
+    out_dir = Unicode(help='output directory').tag(config=True)
+    l2_w = Float(0, help='l2 regulalizer').tag(config=True)
+    nb_q_t = Int(help='q term len').tag(config=True)
+    nb_q_e = Int(help='q e len').tag(config=True)
+    qt_rank_feature_dim = Int(help='q term ranking feature dim').tag(config=True)
+    qe_rank_feature_dim = Int(help='q entity ranking feature dim').tag(config=True)
+    qt_att_feature_dim = Int(help='q term attention feature dim').tag(config=True)
+    qe_att_feature_dim = Int(help='q entity attention feature dim').tag(config=True)
 
     qt_rank_name = Unicode('qt_rank')
     qt_att_name = Unicode('qt_att')
@@ -46,8 +46,8 @@ class AttLeToR(Configurable):
     qe_att_name = Unicode('qe_att')
     aux_pre = Unicode('aux_')
 
-    nb_rank_layer = Int(1).tag(configure=True)
-    nb_att_layer = Int(1).tag(configure=True)
+    nb_rank_layer = Int(1).tag(config=True)
+    nb_att_layer = Int(1).tag(config=True)
 
     nb_epoch = Int(100, help='nb of epoch').tag(configure=True)
 
@@ -61,10 +61,6 @@ class AttLeToR(Configurable):
                             ]
         self.ranking_model = None
         self.training_model = None
-
-    @classmethod
-    def class_print_help(cls, inst=None):
-        super(AttLeToR, cls).class_print_help(inst)
 
     def init_model(self):
         logging.info('initializing model')
