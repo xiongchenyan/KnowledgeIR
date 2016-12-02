@@ -38,6 +38,7 @@ class AttLeToR(Configurable):
     qe_rank_feature_dim = Int(help='q entity ranking feature dim').tag(config=True)
     qt_att_feature_dim = Int(help='q term attention feature dim').tag(config=True)
     qe_att_feature_dim = Int(help='q entity attention feature dim').tag(config=True)
+    early_stop_patient = Int(10, help='early stopping patients').tag(config=True)
 
     qt_rank_name = Unicode('qt_rank')
     qt_att_name = Unicode('qt_att')
@@ -101,14 +102,14 @@ class AttLeToR(Configurable):
                 batch_size=batch_size,
                 nb_epoch=self.nb_epoch,
                 validation_Data=(dev_x, dev_y),
-                callbacks=[EarlyStopping(monitor='val_loss', patience=10)]
+                callbacks=[EarlyStopping(monitor='val_loss', patience=self.early_stop_patient)]
             )
         else:
             self.training_model.fit(
                 train_x, train_y,
                 batch_size=batch_size,
                 nb_epoch=self.nb_epoch,
-                callbacks=[EarlyStopping(monitor='loss', patience=10)]
+                callbacks=[EarlyStopping(monitor='loss', patience=self.early_stop_patient)]
             )
 
     def predict(self, test_lines=None):
