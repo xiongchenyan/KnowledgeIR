@@ -147,10 +147,10 @@ class FlatLeToR(HierarchicalAttLeToR):
     def _align_to_rank_model(self, l_inputs, l_models):
         l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
         ranker_model = Merge(mode='concat', name='rank_merge')(l_aligned_models)
-        # ranker_model = Lambda(lambda x: K.mean(x, axis=-1),
-        #                       output_shape=(1,)
-        #                       )(ranker_model)
-        ranker_model = Dense(output_dim=1)(ranker_model)
+        ranker_model = Lambda(lambda x: K.mean(x, axis=None),
+                              output_shape=(1,)
+                              )(ranker_model)
+        # ranker_model = Dense(output_dim=1)(ranker_model)
         att_ranker = Model(input=l_inputs, output=ranker_model)
         return att_ranker
 
