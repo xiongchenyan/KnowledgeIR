@@ -7,7 +7,6 @@ The base class with input generators, and virtual methods
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
-    List,
     Int,
     Float,
 )
@@ -196,7 +195,7 @@ class AttLeToR(Configurable):
         :return:
         """
 
-        point_X, point_Y = self.pointwise_construct(lines, -1)
+        point_X, point_Y = self.pointwise_construct(lines)
 
         l_qid, l_docno = self.get_qid_docno(lines)
 
