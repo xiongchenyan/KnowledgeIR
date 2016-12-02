@@ -112,8 +112,8 @@ class HierarchicalAttLeToR(AttLeToR):
 
 
 class FlatLeToR(HierarchicalAttLeToR):
-    model_st=Int(0)
-    model_ed=Int(2)
+    model_st = Int(0)
+    model_ed = Int(2)
 
     def _init_inputs(self, is_aux=False):
         l_inputs = []
@@ -152,7 +152,7 @@ class FlatLeToR(HierarchicalAttLeToR):
 
 
 class QTermLeToR(HierarchicalAttLeToR):
-    model_ed=Int(1)
+    model_ed = Int(1)
 
     def _align_to_rank_model(self, l_inputs, l_models):
         l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
@@ -162,8 +162,8 @@ class QTermLeToR(HierarchicalAttLeToR):
 
 
 class QEntityLeToR(HierarchicalAttLeToR):
-    model_st=Int(1)
-    model_ed=Int(2)
+    model_st = Int(1)
+    model_ed = Int(2)
 
     def _align_to_rank_model(self, l_inputs, l_models):
         l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
