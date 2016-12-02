@@ -26,10 +26,10 @@ import subprocess
 
 
 class AttLeToR(Configurable):
-    train_in = Unicode().tag(configure=True)
-    dev_in = Unicode().tag(configure=True)
-    test_in = Unicode().tag(configure=True)
-    qrel = Unicode().tag(configure=True)
+    train_in = Unicode(help="opt: trainning input").tag(configure=True)
+    dev_in = Unicode(help="opt: dev input").tag(configure=True)
+    test_in = Unicode(help="opt: testing input").tag(configure=True)
+    qrel = Unicode(help="qrel input").tag(configure=True)
 
     out_dir = Unicode(help='output directory').tag(configure=True)
     l2_w = Float(0, help='l2 regulalizer').tag(configure=True)
