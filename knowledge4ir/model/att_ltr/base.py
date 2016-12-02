@@ -61,7 +61,8 @@ class AttLeToR(Configurable):
                             ]
         self.ranking_model = None
         self.training_model = None
-        
+
+    @classmethod
     def class_print_help(cls, inst=None):
         super(AttLeToR, cls).class_print_help(inst)
 
