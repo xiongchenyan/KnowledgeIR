@@ -83,6 +83,7 @@ class AttLeToR(Configurable):
         return
 
     def train(self, train_lines=None, dev_lines=None):
+        self.init_model()
         if train_lines is None:
             train_lines = open(self.train_in).read().splitlines()
         # if dev_lines is None:
@@ -104,7 +105,6 @@ class AttLeToR(Configurable):
                 nb_epoch=self.nb_epoch,
                 callbacks=[EarlyStopping(monitor='loss', patience=10)]
             )
-
 
     def predict(self, test_lines=None):
         if not test_lines:
