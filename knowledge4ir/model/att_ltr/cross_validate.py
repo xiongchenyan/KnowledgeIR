@@ -2,7 +2,12 @@
 cross validate hybrid model
 """
 
-from knowledge4ir.model.att_ltr.hierarchical import HierarchicalAttLeToR
+from knowledge4ir.model.att_ltr.hierarchical import (
+    HierarchicalAttLeToR,
+    FlatLeToR,
+    QTermLeToR,
+    QEntityLeToR,
+)
 from knowledge4ir.model import (
     fix_kfold_partition,
     filter_json_lines,
@@ -39,10 +44,15 @@ class CrossValidator(Configurable):
     nb_folds = Int(10, help="k").tag(config=True)
     q_st = Int(1)
     q_ed = Int(200)
+    model_name = Unicode('hierarchical',
+                    help='to cross validate model: hierarchical, '
+                         'qterm_flat, qentity_flat, flat'
+                    ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(CrossValidator, self).__init__(**kwargs)
-        self.model = HierarchicalAttLeToR(**kwargs)
+        self.model = None
+        self._init_model(**kwargs)
         self.l_train_folds, self.l_test_folds, self.l_dev_folds = fix_kfold_partition(
                 self.with_dev, self.nb_folds, self.q_st, self.q_ed
             )
@@ -50,10 +60,23 @@ class CrossValidator(Configurable):
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
 
+    def _init_model(self, **kwargs):
+        if self.model_name == 'hierarchical':
+            self.model = HierarchicalAttLeToR(**kwargs)
+        if self.model_name == 'qterm_flat':
+            self.model = QTermLeToR(**kwargs)
+        if self.model_name == 'qentity_flat':
+            self.model = QEntityLeToR(**kwargs)
+        if self.model_name == 'flat':
+            self.model = FlatLeToR(**kwargs)
+
     @classmethod
     def class_print_help(cls, inst=None):
         super(CrossValidator, cls).class_print_help(inst)
         HierarchicalAttLeToR.class_print_help(inst)
+        QTermLeToR.class_print_help(inst)
+        QEntityLeToR.class_print_help(inst)
+        QTermLeToR.class_print_help(inst)
 
     def train_test_fold(self, k):
         out_dir = os.path.join(self.out_dir, 'Fold%d' % k)

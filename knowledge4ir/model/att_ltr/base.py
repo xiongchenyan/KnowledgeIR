@@ -50,7 +50,7 @@ class AttLeToR(Configurable):
     nb_rank_layer = Int(1).tag(config=True)
     nb_att_layer = Int(1).tag(config=True)
 
-    nb_epoch = Int(100, help='nb of epoch').tag(configure=True)
+    nb_epoch = Int(100, help='nb of epoch').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttLeToR, self).__init__(**kwargs)
