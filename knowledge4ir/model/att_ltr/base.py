@@ -67,7 +67,7 @@ class AttLeToR(Configurable):
         self.training_model.compile(
             optimizer='rmsprop',
             loss='hinge',
-            metric=['accuracy']
+            # metric=['accuracy']
         )
         logging.info('ranking model summary')
         self.ranking_model.summary()
@@ -171,7 +171,7 @@ class AttLeToR(Configurable):
         X[self.qt_att_name] = np.array(l_qt_att)
         X[self.qe_att_name] = np.array(l_qe_att)
         Y = np.array(l_y)
-        logging.info('pointwise finished')
+        logging.info('[%d] pointwise data constructed finished', Y.shape[0])
         return X, Y
 
     @classmethod
