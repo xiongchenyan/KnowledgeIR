@@ -42,8 +42,8 @@ class CrossValidator(Configurable):
     qrel = Unicode(help='qrel in').tag(config=True)
 
     nb_folds = Int(10, help="k").tag(config=True)
-    q_st = Int(1)
-    q_ed = Int(200)
+    q_st = Int(1).tag(config=True)
+    q_ed = Int(200).tag(config=True)
     model_name = Unicode('hierarchical',
                     help='to cross validate model: hierarchical, '
                          'qterm_flat, qentity_flat, flat'
