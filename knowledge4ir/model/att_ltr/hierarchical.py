@@ -189,7 +189,7 @@ class FlatLeToR(HierarchicalAttLeToR):
 
         # model.add(Flatten())
         avg = Lambda(lambda x: K.mean(x, axis=1),
-                     # output_shape=(1,),
+                     output_shape=(1,),
                      )
         # avg.supports_masking = True
         model.add(avg)
