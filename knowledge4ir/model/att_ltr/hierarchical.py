@@ -186,7 +186,7 @@ class FlatLeToR(HierarchicalAttLeToR):
                 )
 
             model.add(this_layer)
-        # model.add(Flatten())
+        model.add(Flatten())
         avg = Lambda(lambda x: K.mean(x, axis=None),
                      output_shape=(1,),
                      )
