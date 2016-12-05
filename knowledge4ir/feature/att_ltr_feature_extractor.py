@@ -31,6 +31,9 @@ from knowledge4ir.feature.boe_embedding import LeToRBOEEmbFeatureExtractor
 from knowledge4ir.feature.les import LeToRLesFeatureExtractor
 from knowledge4ir.feature.q_de_text import LeToRQDocETextFeatureExtractorC
 from knowledge4ir.feature.ir_fusion import LeToRIRFusionFeatureExtractor
+from knowledge4ir.feature.attention.t_embedding import TermEmbeddingAttentionFeature
+from knowledge4ir.feature.attention.e_embedding import EntityEmbeddingAttentionFeature
+from knowledge4ir.feature.attention.e_text import EntityTextAttentionFeature
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
@@ -39,7 +42,6 @@ from knowledge4ir.utils import (
 )
 from knowledge4ir.feature import LeToRFeatureExternalInfo
 import numpy as np
-
 
 class AttLeToRFeatureExtractCenter(Configurable):
     """
@@ -63,6 +65,13 @@ class AttLeToRFeatureExtractCenter(Configurable):
     l_qe_de_feature = List(Unicode, default_value=['BoeEmb'],
                            ).tag(config=True)
 
+    l_qt_att_feature = List(Unicode, default_value=['Emb'],
+                            help='q term attention features: emb'
+                            ).tag(config=True)
+    l_qe_att_feature = List(Unicode, default_value=['Emb', 'Text'],
+                            help='q e attention feature: emb, text'
+                            ).tag(config=True)
+
     out_name = Unicode(help='feature out file name').tag(config=True)
 
     # normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
@@ -76,6 +85,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
         self.l_qw_de_extractor = []
         self.l_qe_dw_extractor = []
         self.l_qe_de_extractor = []
+        self.l_qt_att_extractor = []
+        self.l_qe_att_extractor = []
 
         self._load_data()
         self.external_info = LeToRFeatureExternalInfo(**kwargs)
@@ -94,6 +105,13 @@ class AttLeToRFeatureExtractCenter(Configurable):
         LeToRLesFeatureExtractor.class_print_help(inst)
         print "Feature group: QDocEText"
         LeToRQDocETextFeatureExtractorC.class_print_help(inst)
+
+        print "term attention feature group: Emb"
+        TermEmbeddingAttentionFeature.class_print_help(inst)
+        print "entity attention feature group: Emb"
+        EntityEmbeddingAttentionFeature.class_print_help(inst)
+        print "entity attention feature group: Text"
+        EntityTextAttentionFeature.class_print_help(inst)
 
     def update_config(self, config):
         super(AttLeToRFeatureExtractCenter, self).update_config(config)
@@ -138,6 +156,20 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qw_de_extractor.append(LeToRQDocETextFeatureExtractorC(**kwargs))
             self.l_qw_de_extractor[-1].set_external_info(self.external_info)
             logging.info('add QDocE features to qw-de')
+
+        if "Emb" in self.l_qt_att_feature:
+            self.l_qt_att_extractor.append(TermEmbeddingAttentionFeature(**kwargs))
+            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Emb features to term attention')
+        if "Emb" in self.l_qe_att_feature:
+            self.l_qe_att_extractor.append(EntityEmbeddingAttentionFeature(**kwargs))
+            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Emb features to entity attention')
+        if "Text" in self.l_qe_att_feature:
+            self.l_qe_att_extractor.append(EntityTextAttentionFeature(**kwargs))
+            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add text features to entity attention')
+
 
     def pipe_extract(self):
         """
@@ -203,8 +235,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
         """
         base_score = self._h_q_doc_score[qid][docno]
 
-        l_h_qt_info = self._split_q_info(h_q_info, target='bow')
-        l_h_qe_info = self._split_q_info(h_q_info, target='boe')
+        l_h_qt_info, l_t = self._split_q_info(h_q_info, target='bow')
+        l_h_qe_info, l_e = self._split_q_info(h_q_info, target='boe')
 
         l_h_qt_feature = []
         l_h_qe_feature = []
@@ -231,17 +263,30 @@ class AttLeToRFeatureExtractCenter(Configurable):
             l_h_qt_att.append({'b': 1})
         for i in xrange(len(l_h_qe_info)):
             l_h_qe_att.append({'b': 1})
+
+        for extractor in self.l_qt_att_extractor:
+            l_h_feature = extractor.extract(h_q_info, l_t)
+            for i in xrange(len(l_h_feature)):
+                l_h_qt_att[i].update(l_h_feature[i])
+
+        for extractor in self.l_qe_att_extractor:
+            l_h_feature = extractor.extract(h_q_info, l_e)
+            for i in xrange(len(l_h_feature)):
+                l_h_qe_att[i].update(l_h_feature[i])
         return l_h_qt_feature, l_h_qe_feature, l_h_qt_att, l_h_qe_att
 
     def _split_q_info(self, h_q_info, target):
         if target == 'bow':
+            l_t = []
             l_h_qt_info = []
             for t in h_q_info['query'].split():
                 h = {'query': t}
                 l_h_qt_info.append(h)
-            return l_h_qt_info
+                l_t.append(t)
+            return l_h_qt_info, l_t
         if target == 'boe':
             l_h_qe_info = []
+            l_e = []
             query = h_q_info['query']
             for tagger in ['tagme', 'cmns']:
                 if tagger not in h_q_info:
@@ -251,7 +296,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
                     h = {'query': query}
                     h[tagger] = {'query': [ana]}
                     l_h_qe_info.append(h)
-            return l_h_qe_info
+                    l_e.append(ana[0])
+            return l_h_qe_info, l_e
         raise NotImplementedError
 
     def _dump_feature(self, l_qid, l_docno, l_features):
