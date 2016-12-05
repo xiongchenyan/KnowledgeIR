@@ -187,13 +187,14 @@ class FlatLeToR(HierarchicalAttLeToR):
                 # )
 
             model.add(this_layer)
-        model.add(Flatten())
+        # model.add(Flatten())
+        model.add(Lambda(lambda x: K.mean(x, axis=None),
+                         output_shape=(1,)
+                         ))
         return model
 
     def _align_to_rank_model(self, l_inputs, l_models):
-        l_aligned_models = [Lambda(lambda x: K.mean(x, axis=None),
-                                   output_shape=(1,)
-                                   )(model(this_input))
+        l_aligned_models = [model(this_input)
                             for model, this_input in zip(l_models, l_inputs)]
         if len(l_aligned_models) > 1:
             ranker_model = Merge(mode='sum', name='rank_merge')(l_aligned_models)
