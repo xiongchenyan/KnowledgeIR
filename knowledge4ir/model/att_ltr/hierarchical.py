@@ -149,7 +149,7 @@ class FlatLeToR(HierarchicalAttLeToR):
 
     def _init_one_neural_network(self, in_shape, model_name, nb_layer,):
         model = Sequential(name=model_name)
-        # model.add(Masking(input_shape=in_shape, mask_value=0.))
+        model.add(Masking(input_shape=in_shape, mask_value=0.))
         this_nb_filter = self.nb_middle_filters
         for lvl in xrange(nb_layer):
             if lvl == nb_layer - 1:
@@ -191,7 +191,7 @@ class FlatLeToR(HierarchicalAttLeToR):
         avg = Lambda(lambda x: K.mean(x, axis=1),
                      output_shape=(1,),
                      )
-        # avg.supports_masking = True
+        avg.supports_masking = True
         model.add(avg)
         # model.add(GlobalAveragePooling1D())
         return model
