@@ -98,15 +98,17 @@ class HierarchicalAttLeToR(AttLeToR):
             if lvl == 0:
                 this_layer = Convolution1D(
                     this_nb_filter,
+                    1,
                     activation=self.activation,
                     bias=False,
                     W_regularizer=l2(self.l2_w),
-                    input_shape=in_shape
+                    input_shape=in_shape,
                 )
 
             else:
                 this_layer = Convolution1D(
                     this_nb_filter,
+                    1,
                     activation=self.activation,
                     bias=False,
                     W_regularizer=l2(self.l2_w),
