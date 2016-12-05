@@ -56,6 +56,7 @@ class AttLeToR(Configurable):
     def __init__(self, **kwargs):
         super(AttLeToR, self).__init__(**kwargs)
         self.l_model_names = [self.qt_rank_name, self.qe_rank_name, self.qt_att_name, self.qe_att_name]
+        self.l_input_dim = []
         if self.data_meta_in:
             self._load_meta_data()
         else:
