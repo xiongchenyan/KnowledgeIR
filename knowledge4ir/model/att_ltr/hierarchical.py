@@ -96,22 +96,22 @@ class HierarchicalAttLeToR(AttLeToR):
             else:
                 this_nb_filter = self.nb_middle_filters
             if lvl == 0:
-                this_layer = Convolution1D(
-                    this_nb_filter,
-                    1,
-                    activation=self.activation,
-                    bias=False,
-                    W_regularizer=l2(self.l2_w),
-                    input_shape=in_shape,
+                this_layer = TimeDistributed(
+                    Dense(this_nb_filter,
+                          activation=self.activation,
+                          bias=False,
+                          W_regularizer=l2(self.l2_w)
+                          ),
+                    input_shape=in_shape
                 )
 
             else:
-                this_layer = Convolution1D(
-                    this_nb_filter,
-                    1,
-                    activation=self.activation,
-                    bias=False,
-                    W_regularizer=l2(self.l2_w),
+                this_layer = TimeDistributed(
+                    Dense(this_nb_filter,
+                          activation=self.activation,
+                          bias=False,
+                          W_regularizer=l2(self.l2_w)
+                          ),
                     # input_shape=in_shape
                 )
             model.add(this_layer)
