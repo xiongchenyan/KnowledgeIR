@@ -169,7 +169,8 @@ class CrossValidator(Configurable):
                 h_para = {'l2_w': l2_w}
                 yield h_para
                 h_para = {}
-        yield h_para
+        else:
+            yield h_para
 
 
 if __name__ == '__main__':
