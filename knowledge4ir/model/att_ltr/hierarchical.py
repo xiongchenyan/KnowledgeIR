@@ -90,7 +90,7 @@ class HierarchicalAttLeToR(AttLeToR):
 
     def _init_one_neural_network(self, in_shape, model_name, nb_layer,):
         model = Sequential(name=model_name)
-        model = Input(shape=in_shape)
+        # model = Input(shape=in_shape)
         this_nb_filter = self.nb_middle_filters
         for lvl in xrange(nb_layer):
             if lvl == nb_layer - 1:
@@ -102,7 +102,7 @@ class HierarchicalAttLeToR(AttLeToR):
                           bias=False,
                           W_regularizer=l2(self.l2_w)
                           ),
-                    # input_shape=in_shape
+                    input_shape=in_shape
                 )
 
             else:
@@ -114,9 +114,10 @@ class HierarchicalAttLeToR(AttLeToR):
                           ),
                     # input_shape=in_shape
                 )
-            model = this_layer(model)
-        # model.add(Flatten())
-        model = Flatten()(model)
+            # model = this_layer(model)
+            model.add(this_layer)
+        model.add(Flatten())
+        # model = Flatten()(model)
         return model
 
 
