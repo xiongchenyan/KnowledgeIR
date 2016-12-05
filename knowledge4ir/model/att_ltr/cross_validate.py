@@ -43,8 +43,8 @@ class CrossValidator(Configurable):
     qrel = Unicode(help='qrel in').tag(config=True)
 
     nb_folds = Int(10, help="k").tag(config=True)
-    q_st = Int().tag(config=True)
-    q_ed = Int().tag(config=True)
+    q_st = Int(-1).tag(config=True)
+    q_ed = Int(-1).tag(config=True)
     model_name = Unicode('hierarchical',
                     help='to cross validate model: hierarchical, '
                          'qterm_flat, qentity_flat, flat'
@@ -56,7 +56,7 @@ class CrossValidator(Configurable):
         self._init_model(**kwargs)
 
         self.l_total_data_lines = open(self.data_in).read().splitlines()
-        if (self.q_st is None) | (self.q_ed is None):
+        if (self.q_st == -1) | (self.q_ed == -1):
             l_qid, __ = AttLeToR.get_qid_docno(self.l_total_data_lines)
             l_qid = [int(q) for q in l_qid]
             self.q_st = min(l_qid)
