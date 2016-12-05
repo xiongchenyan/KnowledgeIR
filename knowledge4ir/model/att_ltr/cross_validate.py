@@ -7,6 +7,7 @@ from knowledge4ir.model.att_ltr.hierarchical import (
     FlatLeToR,
     QTermLeToR,
     QEntityLeToR,
+    MaskHierarchicalAttLeToR,
 )
 from knowledge4ir.model.att_ltr import AttLeToR
 from knowledge4ir.model import (
@@ -47,7 +48,7 @@ class CrossValidator(Configurable):
     q_ed = Int(-1).tag(config=True)
     model_name = Unicode('hierarchical',
                     help='to cross validate model: hierarchical, '
-                         'qterm_flat, qentity_flat, flat'
+                         'qterm_flat, qentity_flat, flat, mask'
                     ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -78,6 +79,8 @@ class CrossValidator(Configurable):
             self.model = QEntityLeToR(**kwargs)
         if self.model_name == 'flat':
             self.model = FlatLeToR(**kwargs)
+        if self.model_name == 'mask':
+            self.model = MaskHierarchicalAttLeToR(**kwargs)
 
     @classmethod
     def class_print_help(cls, inst=None):
