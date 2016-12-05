@@ -154,8 +154,6 @@ class FlatLeToR(HierarchicalAttLeToR):
         for lvl in xrange(nb_layer):
             if lvl == nb_layer - 1:
                 this_nb_filter = 1
-
-            # )
             if lvl == 0:
                 # this_layer = Convolution1D(nb_filter=this_nb_filter,
                 #                            filter_length=1,
@@ -187,8 +185,8 @@ class FlatLeToR(HierarchicalAttLeToR):
                           W_regularizer=l2(self.l2_w)
                           )
                 )
-
             model.add(this_layer)
+
         model.add(Flatten())
         avg = Lambda(lambda x: K.mean(x, axis=None),
                      output_shape=(1,),
