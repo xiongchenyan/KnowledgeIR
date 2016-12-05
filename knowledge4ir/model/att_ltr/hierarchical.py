@@ -155,7 +155,7 @@ class FlatLeToR(HierarchicalAttLeToR):
             if lvl == nb_layer - 1:
                 this_nb_filter = 1
 
-            )
+            # )
             if lvl == 0:
                 # this_layer = Convolution1D(nb_filter=this_nb_filter,
                 #                            filter_length=1,
