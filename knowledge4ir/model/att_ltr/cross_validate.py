@@ -91,8 +91,8 @@ class CrossValidator(Configurable):
         QTermLeToR.class_print_help(inst)
 
     def train_test_fold(self, k):
-        logging.info('fold [%d] for [%s]', k, self.data_in)
         out_dir = os.path.join(self.out_dir, 'Fold%d' % k)
+        logging.info('fold [%d] for [%s]', k, out_dir)
         if not os.path.exists(out_dir):
             try:
                 os.makedirs(out_dir)
@@ -113,8 +113,9 @@ class CrossValidator(Configurable):
         return
 
     def train_dev_test_fold(self, k):
-        logging.info('fold [%d] for [%s]', k, self.data_in)
         out_dir = os.path.join(self.out_dir, 'Fold%d' % k)
+        logging.info('fold [%d] for [%s]', k, out_dir)
+
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         l_train_lines = filter_json_lines(self.l_total_data_lines, self.l_train_folds[k])
