@@ -189,7 +189,8 @@ class FlatLeToR(HierarchicalAttLeToR):
             model.add(this_layer)
         # model.add(Flatten())
         model.add(Lambda(lambda x: K.mean(x, axis=None),
-                         output_shape=(1,)
+                         output_shape=(1,),
+                         supports_masking=True,
                          ))
         return model
 
