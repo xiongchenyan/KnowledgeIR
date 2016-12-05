@@ -8,6 +8,7 @@ from knowledge4ir.model.att_ltr.hierarchical import (
     QTermLeToR,
     QEntityLeToR,
 )
+from knowledge4ir.model.att_ltr import AttLeToR
 from knowledge4ir.model import (
     fix_kfold_partition,
     filter_json_lines,
@@ -42,8 +43,8 @@ class CrossValidator(Configurable):
     qrel = Unicode(help='qrel in').tag(config=True)
 
     nb_folds = Int(10, help="k").tag(config=True)
-    q_st = Int(1).tag(config=True)
-    q_ed = Int(200).tag(config=True)
+    q_st = Int().tag(config=True)
+    q_ed = Int().tag(config=True)
     model_name = Unicode('hierarchical',
                     help='to cross validate model: hierarchical, '
                          'qterm_flat, qentity_flat, flat'
@@ -53,10 +54,18 @@ class CrossValidator(Configurable):
         super(CrossValidator, self).__init__(**kwargs)
         self.model = None
         self._init_model(**kwargs)
-        self.l_train_folds, self.l_test_folds, self.l_dev_folds = fix_kfold_partition(
-                self.with_dev, self.nb_folds, self.q_st, self.q_ed
-            )
+
         self.l_total_data_lines = open(self.data_in).read().splitlines()
+        if (self.q_st is None) | (self.q_ed is None):
+            l_qid, __ = AttLeToR.get_qid_docno(self.l_total_data_lines)
+            l_qid = [int(q) for q in l_qid]
+            self.q_st = min(l_qid)
+            self.q_ed = max(l_qid)
+            logging.info('q range [%d, %d]', self.q_st, self.q_ed)
+        self.l_train_folds, self.l_test_folds, self.l_dev_folds = fix_kfold_partition(
+            self.with_dev, self.nb_folds, self.q_st, self.q_ed
+        )
+
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
 

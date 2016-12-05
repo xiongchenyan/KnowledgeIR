@@ -14,6 +14,7 @@ from keras.layers import (
     Flatten,
     Convolution1D,
     Lambda,
+    Masking,
 
 )
 from keras.regularizers import (
@@ -30,6 +31,7 @@ from traitlets import (
     Unicode,
 )
 import keras.backend as K
+from keras.layers.wrappers import TimeDistributed
 
 
 class HierarchicalAttLeToR(AttLeToR):
@@ -112,8 +114,9 @@ class HierarchicalAttLeToR(AttLeToR):
 
 
 class FlatLeToR(HierarchicalAttLeToR):
-    model_st = Int(0)
-    model_ed = Int(2)
+    model_st = Int(0, help='start of the ranking model, 0 is qt ranker, 1 is qe ranker'
+                   ).tag(config=True)
+    model_ed = Int(2, help='end of the ranking model').tag(config=True)
 
     def _init_inputs(self, is_aux=False):
         l_inputs = []
@@ -144,11 +147,58 @@ class FlatLeToR(HierarchicalAttLeToR):
             l_models.append(model)
         return l_models
 
+    def _init_one_neural_network(self, in_shape, model_name, nb_layer,):
+        model = Sequential(name=model_name)
+        model.add(Masking(input_shape=in_shape, mask_value=0))
+        this_nb_filter = self.nb_middle_filters
+        for lvl in xrange(nb_layer):
+            if lvl == nb_layer - 1:
+                this_nb_filter = 1
+            this_layer = TimeDistributed(
+                Dense(this_nb_filter,
+                      # input_shape=in_shape,
+                      activation=self.activation,
+                      bias=False,
+                      W_regularizer=l2(self.l2_w)
+                      )
+            )
+            # if lvl == 0:
+                # this_layer = Convolution1D(nb_filter=this_nb_filter,
+                #                            filter_length=1,
+                #                            input_shape=in_shape,
+                #                            activation=self.activation,
+                #                            bias=False,
+                #                            W_regularizer=l2(self.l2_w)
+                #                            )
+
+            # else:
+                # this_layer = Convolution1D(nb_filter=this_nb_filter,
+                #                            filter_length=1,
+                #                            activation=self.activation,
+                #                            bias=False,
+                #                            W_regularizer=l2(self.l2_w)
+                #                            )
+                # this_layer = TimeDistributed(
+                #     Dense(this_nb_filter,
+                #           activation=self.activation,
+                #           bias=False,
+                #           W_regularizer=l2(self.l2_w)
+                #           )
+                # )
+
+            model.add(this_layer)
+        model.add(Flatten())
+        return model
+
     def _align_to_rank_model(self, l_inputs, l_models):
         l_aligned_models = [Lambda(lambda x: K.mean(x, axis=None),
                                    output_shape=(1,)
-                                   )(model(input)) for model, input in zip(l_models, l_inputs)]
-        ranker_model = Merge(mode='sum', name='rank_merge')(l_aligned_models)
+                                   )(model(this_input))
+                            for model, this_input in zip(l_models, l_inputs)]
+        if len(l_aligned_models) > 1:
+            ranker_model = Merge(mode='sum', name='rank_merge')(l_aligned_models)
+        else:
+            ranker_model = l_aligned_models[0]
         # ranker_model = Lambda(lambda x: K.mean(x, axis=None),
         #                       output_shape=(1,)
         #                       )(ranker_model)
