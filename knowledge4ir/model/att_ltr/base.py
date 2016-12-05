@@ -28,10 +28,11 @@ class AttLeToR(Configurable):
     train_in = Unicode(help="opt: trainning input").tag(config=True)
     dev_in = Unicode(help="opt: dev input").tag(config=True)
     test_in = Unicode(help="opt: testing input").tag(config=True)
-    qrel = Unicode(help="qrel input").tag(config=True)
 
     out_dir = Unicode(help='output directory').tag(config=True)
     l2_w = Float(0, help='l2 regulalizer').tag(config=True)
+
+    data_meta_in = Unicode(help='the dimension file from feature extraction').tag(config=True)
     nb_q_t = Int(help='q term len').tag(config=True)
     nb_q_e = Int(help='q e len').tag(config=True)
     qt_rank_feature_dim = Int(help='q term ranking feature dim').tag(config=True)
@@ -55,11 +56,14 @@ class AttLeToR(Configurable):
     def __init__(self, **kwargs):
         super(AttLeToR, self).__init__(**kwargs)
         self.l_model_names = [self.qt_rank_name, self.qe_rank_name, self.qt_att_name, self.qe_att_name]
-        self.l_input_dim = [(self.nb_q_t, self.qt_rank_feature_dim),
-                            (self.nb_q_e, self.qe_rank_feature_dim),
-                            (self.nb_q_t, self.qt_att_feature_dim),
-                            (self.nb_q_e, self.qe_att_feature_dim),
-                            ]
+        if self.data_meta_in:
+            self._load_meta_data()
+        else:
+            self.l_input_dim = [(self.nb_q_t, self.qt_rank_feature_dim),
+                                (self.nb_q_e, self.qe_rank_feature_dim),
+                                (self.nb_q_t, self.qt_att_feature_dim),
+                                (self.nb_q_e, self.qe_att_feature_dim),
+                                ]
         self.ranking_model = None
         self.training_model = None
 
@@ -82,6 +86,15 @@ class AttLeToR(Configurable):
         self.l2_w = h_para.get('l2_w', self.l2_w)
         logging.info('set para l2_w=[%f]', self.l2_w)
         return
+
+    def _load_meta_data(self):
+        h = json.load(open(self.data_meta_in))
+        for name in self.l_model_names:
+            assert name in h
+            self.l_input_dim.append(h[name])
+        logging.info('models %s, dimensions: %s',
+                     json.dumps(self.l_model_names),
+                     json.dumps(self.l_input_dim))
 
     def train(self, train_lines=None, dev_lines=None):
         self.init_model()
@@ -125,12 +138,12 @@ class AttLeToR(Configurable):
         logging.info('predicted')
         return l_q_ranking
 
-    def evaluate(self, test_lines=None, out_pre=None):
+    def evaluate(self, test_lines, qrel, out_pre=None):
         if not out_pre:
             out_pre = self.out_dir + '/run'
         l_q_ranking = self.predict(test_lines)
         dump_trec_ranking_with_score(l_q_ranking, out_pre + '.trec')
-        eva_out = subprocess.check_output(['perl', GDEVAL_PATH, self.qrel, out_pre + '.trec'])
+        eva_out = subprocess.check_output(['perl', GDEVAL_PATH, qrel, out_pre + '.trec'])
         print >> open(out_pre + '.eval', eva_out.strip())
         __, ndcg, err = seg_gdeval_out(eva_out, with_mean=True)
         logging.info('evaluated ndcg:%f, err:%f', ndcg, err)

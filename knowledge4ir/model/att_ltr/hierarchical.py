@@ -36,7 +36,7 @@ from keras.layers.wrappers import TimeDistributed
 
 class HierarchicalAttLeToR(AttLeToR):
     nb_middle_filters = Int(5).tag(config=True)
-    activation = Unicode('tanh').tag(config=True)
+    activation = Unicode('linear').tag(config=True)
 
     def _build_model(self):
         l_inputs = self._init_inputs()
