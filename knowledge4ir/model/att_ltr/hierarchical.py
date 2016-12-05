@@ -154,15 +154,9 @@ class FlatLeToR(HierarchicalAttLeToR):
         for lvl in xrange(nb_layer):
             if lvl == nb_layer - 1:
                 this_nb_filter = 1
-            this_layer = TimeDistributed(
-                Dense(this_nb_filter,
-                      # input_shape=in_shape,
-                      activation=self.activation,
-                      bias=False,
-                      W_regularizer=l2(self.l2_w)
-                      )
+
             )
-            # if lvl == 0:
+            if lvl == 0:
                 # this_layer = Convolution1D(nb_filter=this_nb_filter,
                 #                            filter_length=1,
                 #                            input_shape=in_shape,
@@ -170,21 +164,26 @@ class FlatLeToR(HierarchicalAttLeToR):
                 #                            bias=False,
                 #                            W_regularizer=l2(self.l2_w)
                 #                            )
+                this_layer = TimeDistributed(Dense(this_nb_filter,
+                          input_shape=in_shape,
+                          activation=self.activation,
+                          bias=False,
+                          W_regularizer=l2(self.l2_w)
+                          )
 
-            # else:
+            else:
                 # this_layer = Convolution1D(nb_filter=this_nb_filter,
                 #                            filter_length=1,
                 #                            activation=self.activation,
                 #                            bias=False,
                 #                            W_regularizer=l2(self.l2_w)
                 #                            )
-                # this_layer = TimeDistributed(
-                #     Dense(this_nb_filter,
-                #           activation=self.activation,
-                #           bias=False,
-                #           W_regularizer=l2(self.l2_w)
-                #           )
-                # )
+                this_layer = TimeDistributed(Dense(this_nb_filter,
+                          activation=self.activation,
+                          bias=False,
+                          W_regularizer=l2(self.l2_w)
+                          )
+                )
 
             model.add(this_layer)
         # model.add(Flatten())
