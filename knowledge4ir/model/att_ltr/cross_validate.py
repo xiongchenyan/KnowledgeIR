@@ -93,7 +93,10 @@ class CrossValidator(Configurable):
     def train_test_fold(self, k):
         out_dir = os.path.join(self.out_dir, 'Fold%d' % k)
         if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
+            try:
+                os.makedirs(out_dir)
+            except OSError:
+                logging.warn('out dir create conflicted')
         l_train_svm = filter_json_lines(self.l_total_data_lines, self.l_train_folds[k])
         l_test_svm = filter_json_lines(self.l_total_data_lines, self.l_test_folds[k])
         self.model.train(l_train_svm)
