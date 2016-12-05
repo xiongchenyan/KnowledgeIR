@@ -257,19 +257,20 @@ class FlatLeToR(HierarchicalAttLeToR):
 
 
 class QTermLeToR(HierarchicalAttLeToR):
+    model_st = Int(0)
     model_ed = Int(1)
 
-    def _align_to_rank_model(self, l_inputs, l_models):
-        l_aligned_models = [Lambda(lambda x: K.mean(x, axis=None),
-                                   output_shape=(1,)
-                                   )(model(input)) for model, input in zip(l_models, l_inputs)]
-        ranker_model = l_aligned_models[0]
-        # ranker_model = Lambda(lambda x: K.mean(x, axis=None),
-        #                       output_shape=(1,)
-        #                       )(ranker_model)
-        # ranker_model = Dense(output_dim=1)(ranker_model)
-        att_ranker = Model(input=l_inputs, output=ranker_model)
-        return att_ranker
+    # def _align_to_rank_model(self, l_inputs, l_models):
+    #     l_aligned_models = [Lambda(lambda x: K.mean(x, axis=None),
+    #                                output_shape=(1,)
+    #                                )(model(input)) for model, input in zip(l_models, l_inputs)]
+    #     ranker_model = l_aligned_models[0]
+    #     # ranker_model = Lambda(lambda x: K.mean(x, axis=None),
+    #     #                       output_shape=(1,)
+    #     #                       )(ranker_model)
+    #     # ranker_model = Dense(output_dim=1)(ranker_model)
+    #     att_ranker = Model(input=l_inputs, output=ranker_model)
+    #     return att_ranker
 
 
 class QEntityLeToR(QTermLeToR):
