@@ -164,11 +164,11 @@ class FlatLeToR(HierarchicalAttLeToR):
                 #                            )
                 this_layer = TimeDistributed(
                     Dense(this_nb_filter,
-                          input_shape=in_shape,
                           activation=self.activation,
                           bias=False,
                           W_regularizer=l2(self.l2_w)
-                          )
+                          ),
+                    input_shape=in_shape,
                 )
 
             else:
