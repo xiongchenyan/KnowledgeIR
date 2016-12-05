@@ -21,7 +21,7 @@ class EntityTextAttentionFeature(EntityAttentionFeature):
     l_model = List(Unicode,
                    default_value=['lm_dir', 'coordinate', 'tf_idf']
                    ).tag(config=True)
-    l_entity_fields = List(Unicode, default_value=['name', 'alias', 'desp'])
+    l_entity_fields = List(Unicode, default_value=['name', 'alias', 'desp']).tag(config=True)
     tagger = Unicode('tagme', help='tagger used, as in q info and d info'
                      ).tag(config=True)
 

@@ -66,10 +66,10 @@ class AttLeToRFeatureExtractCenter(Configurable):
                            ).tag(config=True)
 
     l_qt_att_feature = List(Unicode, default_value=['Emb'],
-                            help='q term attention features: emb'
+                            help='q term attention features: Emb'
                             ).tag(config=True)
     l_qe_att_feature = List(Unicode, default_value=['Emb', 'Text'],
-                            help='q e attention feature: emb, text'
+                            help='q e attention feature: Emb, Text'
                             ).tag(config=True)
 
     out_name = Unicode(help='feature out file name').tag(config=True)
