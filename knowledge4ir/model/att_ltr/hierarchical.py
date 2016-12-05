@@ -15,8 +15,8 @@ from keras.layers import (
     Convolution1D,
     Lambda,
     Masking,
-
 )
+from keras.layers.pooling import GlobalAveragePooling1D
 from keras.regularizers import (
     l2,
 )
@@ -187,12 +187,12 @@ class FlatLeToR(HierarchicalAttLeToR):
                 )
             model.add(this_layer)
 
-        model.add(Flatten())
-        avg = Lambda(lambda x: K.mean(x, axis=None),
-                     output_shape=(1,),
-                     )
-        avg.supports_masking = True
-        model.add(avg)
+        # model.add(Flatten())
+        # avg = Lambda(lambda x: K.mean(x, axis=None),
+        #              output_shape=(1,),
+        #              )
+        # avg.supports_masking = True
+        model.add(GlobalAveragePooling1D())
         return model
 
     def _align_to_rank_model(self, l_inputs, l_models):
