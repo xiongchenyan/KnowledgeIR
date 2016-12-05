@@ -188,10 +188,11 @@ class FlatLeToR(HierarchicalAttLeToR):
 
             model.add(this_layer)
         # model.add(Flatten())
-        model.add(Lambda(lambda x: K.mean(x, axis=None),
-                         output_shape=(1,),
-                         supports_masking=True,
-                         ))
+        avg = Lambda(lambda x: K.mean(x, axis=None),
+                     output_shape=(1,),
+                     )
+        avg.supports_masking = True
+        model.add(avg)
         return model
 
     def _align_to_rank_model(self, l_inputs, l_models):
