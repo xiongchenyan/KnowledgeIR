@@ -53,7 +53,7 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
 
     def _extract_per_t(self, h_q_info, t, q_emb, emb):
         h_sim = {}
-        if t not in emb:
+        if (t not in emb) | (q_emb is None):
             score = 0
         else:
             score = 1 - cosine(emb[t], q_emb)
@@ -63,7 +63,9 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
     def _calc_q_emb(self, h_q_info, emb):
         l_q_t = h_q_info['query'].split()
         l_emb = [emb[t] for t in l_q_t if t in emb]
-        q_emb = np.mean(np.array(l_emb), axis=0)
+        q_emb = None
+        if l_emb:
+            q_emb = np.mean(np.array(l_emb), axis=0)
         return q_emb
 
 

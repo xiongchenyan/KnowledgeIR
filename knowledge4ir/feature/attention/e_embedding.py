@@ -61,7 +61,7 @@ class EntityEmbeddingAttentionFeature(TermAttentionFeature):
 
     def _extract_per_e(self, h_q_info, e, qe_emb, emb):
         h_sim = {}
-        if e not in emb:
+        if (e not in emb) | (qe_emb is None):
             score = 0
         else:
             score = 1 - cosine(emb[e], qe_emb)
@@ -71,5 +71,7 @@ class EntityEmbeddingAttentionFeature(TermAttentionFeature):
     def _calc_e_emb(self, h_q_info, emb):
         l_e = [ana[0] for ana in h_q_info[self.tagger]['query']]
         l_emb = [emb[e] for e in l_e if e in emb]
-        e_emb = np.mean(np.array(l_emb), axis=0)
-        return e_emb
+        qe_emb = None
+        if l_emb:
+            qe_emb = np.mean(np.array(l_emb), axis=0)
+        return qe_emb
