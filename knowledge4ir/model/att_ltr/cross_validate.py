@@ -61,7 +61,7 @@ class CrossValidator(Configurable):
             l_qid = [int(q) for q in l_qid]
             self.q_st = min(l_qid)
             self.q_ed = max(l_qid)
-            logging.info('q range [%d, %d]', self.q_st, self.q_ed)
+        logging.info('q range [%d, %d]', self.q_st, self.q_ed)
         self.l_train_folds, self.l_test_folds, self.l_dev_folds = fix_kfold_partition(
             self.with_dev, self.nb_folds, self.q_st, self.q_ed
         )
