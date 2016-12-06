@@ -188,6 +188,7 @@ class CrossValidator(Configurable):
         print json.dumps(current_para)
         if current_p >= len(ll_paras):
             yield dict(current_para)
+            return
         if len(ll_paras[current_p]) > 0:
             for value in ll_paras[current_p]:
                 current_para[l_name[current_p]] = value
