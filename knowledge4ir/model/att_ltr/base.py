@@ -24,6 +24,20 @@ from knowledge4ir.utils import (
 import subprocess
 
 
+def dfs_para(ll_paras, l_name, current_p, current_para, l_res):
+    print current_p
+    print json.dumps(current_para)
+    if current_p >= len(ll_paras):
+        l_res.append(dict(current_para))
+        return
+    if len(ll_paras[current_p]) > 0:
+        for value in ll_paras[current_p]:
+            current_para[l_name[current_p]] = value
+            dfs_para(ll_paras, l_name, current_p + 1, current_para)
+    else:
+        dfs_para(ll_paras, l_name, current_p + 1, current_para)
+
+
 class AttLeToR(Configurable):
     train_in = Unicode(help="opt: trainning input").tag(config=True)
     dev_in = Unicode(help="opt: dev input").tag(config=True)

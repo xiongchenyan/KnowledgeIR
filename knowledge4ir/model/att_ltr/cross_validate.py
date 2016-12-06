@@ -58,11 +58,11 @@ class CrossValidator(Configurable):
         self.l_total_data_lines = []
         if self.data_in:
             self.l_total_data_lines = open(self.data_in).read().splitlines()
-        if (self.q_st == -1) | (self.q_ed == -1):
-            l_qid, __ = AttLeToR.get_qid_docno(self.l_total_data_lines)
-            l_qid = [int(q) for q in l_qid]
-            self.q_st = min(l_qid)
-            self.q_ed = max(l_qid)
+            if (self.q_st == -1) | (self.q_ed == -1):
+                l_qid, __ = AttLeToR.get_qid_docno(self.l_total_data_lines)
+                l_qid = [int(q) for q in l_qid]
+                self.q_st = min(l_qid)
+                self.q_ed = max(l_qid)
         logging.info('q range [%d, %d]', self.q_st, self.q_ed)
         self.l_train_folds, self.l_test_folds, self.l_dev_folds = fix_kfold_partition(
             self.with_dev, self.nb_folds, self.q_st, self.q_ed
@@ -174,20 +174,21 @@ class CrossValidator(Configurable):
         l_rank_layer_nb = self.h_dev_para.get('nb_rank_layer', [])
         # if len(l_l2_w) * len(l_att_layer_nb) * len(l_rank_layer_nb):
         h_mid = {}
-        for h_para in self._dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
-                                     ['l2_w', 'nb_att_layer', 'nb_rank_layer'],
-                                     0, h_mid,
-                                     ):
+        l_res_paras = []
+        self._dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
+                       ['l2_w', 'nb_att_layer', 'nb_rank_layer'],
+                       0, h_mid, l_res_paras)
+        for h_para in l_res_paras:
             yield h_para
 
         # yield h_para
 
     @classmethod
-    def _dfs_para(cls, ll_paras, l_name, current_p, current_para):
+    def _dfs_para(cls, ll_paras, l_name, current_p, current_para, l_res):
         print current_p
         print json.dumps(current_para)
         if current_p >= len(ll_paras):
-            yield dict(current_para)
+            l_res.append(dict(current_para))
             return
         if len(ll_paras[current_p]) > 0:
             for value in ll_paras[current_p]:
