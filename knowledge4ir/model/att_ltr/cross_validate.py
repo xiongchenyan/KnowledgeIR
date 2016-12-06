@@ -55,8 +55,9 @@ class CrossValidator(Configurable):
         super(CrossValidator, self).__init__(**kwargs)
         self.model = None
         self._init_model(**kwargs)
-
-        self.l_total_data_lines = open(self.data_in).read().splitlines()
+        self.l_total_data_lines = []
+        if self.data_in:
+            self.l_total_data_lines = open(self.data_in).read().splitlines()
         if (self.q_st == -1) | (self.q_ed == -1):
             l_qid, __ = AttLeToR.get_qid_docno(self.l_total_data_lines)
             l_qid = [int(q) for q in l_qid]
@@ -186,8 +187,8 @@ class CrossValidator(Configurable):
         if current_p >= len(ll_paras):
             yield dict(current_para)
         if ll_paras[current_p]:
-            for i in ll_paras[current_p]:
-                current_para[l_name[current_p]] = ll_paras[current_p][i]
+            for value in ll_paras[current_p]:
+                current_para[l_name[current_p]] = value
                 cls._dfs_para(ll_paras, l_name, current_p + 1, current_para)
         else:
             cls._dfs_para(ll_paras, l_name, current_p + 1, current_para)
