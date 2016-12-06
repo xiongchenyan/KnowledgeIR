@@ -9,6 +9,7 @@ from traitlets import (
     Unicode,
     Int,
     Float,
+    Bool,
 )
 import json
 import logging
@@ -22,6 +23,7 @@ from knowledge4ir.utils import (
     seg_gdeval_out,
 )
 import subprocess
+from sklearn.preprocessing import normalize
 
 
 def dfs_para(ll_paras, l_name, current_p, current_para, l_res):
@@ -59,6 +61,7 @@ class AttLeToR(Configurable):
     qe_att_name = Unicode('qe_att')
     aux_pre = Unicode('aux_')
     batch_size = Int(-1, help='batch size, if non-stochastic use -1').tag(config=True)
+    normalize = Bool(False, help='per query feature value normalize').tag(config=True)
 
     nb_rank_layer = Int(1).tag(config=True)
     nb_att_layer = Int(1).tag(config=True)
@@ -178,11 +181,12 @@ class AttLeToR(Configurable):
         l_qt_att = []
         l_qe_att = []
         l_y = []
-
+        l_qid = []
         for line in lines:
             h = json.loads(line)
             l_feature_matrices = h['feature']
             y = h['rel']
+            l_qid = h['q']
             qt_rank_mtx, qe_rank_mtx, qt_att_mtx, qe_att_mtx = l_feature_matrices
             l_qt_rank.append(qt_rank_mtx)
             l_qe_rank.append(qe_rank_mtx)
@@ -206,6 +210,10 @@ class AttLeToR(Configurable):
         X[self.qe_rank_name] = np.array(l_qe_rank)
         X[self.qt_att_name] = np.array(l_qt_att)
         X[self.qe_att_name] = np.array(l_qe_att)
+
+        if self.normalize:
+            X = self._per_q_normalize(X, l_qid)
+
         Y = np.array(l_y)
         logging.info('[%d] pointwise data constructed finished', Y.shape[0])
         return X, Y
@@ -265,8 +273,19 @@ class AttLeToR(Configurable):
 
         return X, Y
 
-
-
+    def _per_q_normalize(self, X, l_qid):
+        norm_x = {}
+        for key, mtx in X.items():
+            st = 0
+            for ed in xrange(1, len(l_qid) + 1):
+                if (l_qid[ed] != l_qid[ed - 1]) | (ed == len(l_qid)):
+                    this_mtx = mtx[st:ed, :, :].reshape((-1, mtx.shape[-1]))
+                    this_mtx = normalize(this_mtx, norm='max', axis=0)
+                    new_mtx = this_mtx.reshape(mtx[st:ed,:].shape)
+                    mtx[st:ed, :] = new_mtx
+                    st = ed
+            norm_x[key] = mtx
+        return norm_x
 
 
 
