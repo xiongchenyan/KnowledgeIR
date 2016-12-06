@@ -33,9 +33,9 @@ def dfs_para(ll_paras, l_name, current_p, current_para, l_res):
     if len(ll_paras[current_p]) > 0:
         for value in ll_paras[current_p]:
             current_para[l_name[current_p]] = value
-            dfs_para(ll_paras, l_name, current_p + 1, current_para)
+            dfs_para(ll_paras, l_name, current_p + 1, current_para, l_res)
     else:
-        dfs_para(ll_paras, l_name, current_p + 1, current_para)
+        dfs_para(ll_paras, l_name, current_p + 1, current_para, l_res)
 
 
 class AttLeToR(Configurable):
