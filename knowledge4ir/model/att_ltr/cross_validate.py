@@ -68,7 +68,10 @@ class CrossValidator(Configurable):
         )
 
         if not os.path.exists(self.out_dir):
-            os.makedirs(self.out_dir)
+            try:
+                os.makedirs(self.out_dir)
+            except OSError:
+                logging.warn('out dir create conflict')
 
     def _init_model(self, **kwargs):
         if self.model_name == 'hierarchical':
