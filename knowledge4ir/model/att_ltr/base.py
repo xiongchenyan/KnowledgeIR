@@ -277,7 +277,7 @@ class AttLeToR(Configurable):
         norm_x = {}
         for key, mtx in X.items():
             st = 0
-            for ed in xrange(1, len(l_qid) + 1):
+            for ed in xrange(1, len(l_qid)):
                 if l_qid[ed] != l_qid[ed - 1]:
                     this_mtx = mtx[st:ed, :, :].reshape((-1, mtx.shape[-1]))
                     this_mtx = normalize(this_mtx, norm='max', axis=0)
