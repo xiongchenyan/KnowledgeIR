@@ -38,7 +38,7 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
         :param l_t: terms
         :return: features for each term: l_h_feature
         """
-        assert self.word2vec
+        # assert self.word2vec
 
         l_h_feature = []
         emb = self.word2vec
