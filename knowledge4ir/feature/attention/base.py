@@ -36,14 +36,14 @@ class EntityAttentionFeature(Configurable):
 
 
 def form_avg_emb(l_node, emb):
-    l_vector = [emb[node] for node in l_node if node in l_node]
+    l_vector = [emb[node] for node in l_node if node in emb]
     if l_vector:
         return np.mean(np.array(l_vector), axis=0)
     return None
 
 
 def calc_query_entity_total_embedding(h_q_info, emb):
-    l_t = h_q_info['query'].split()
+    l_t = h_q_info['query'].lower().split()
     l_e = []
     for tagger in ['tagme', 'cmns']:
         if tagger in h_q_info:

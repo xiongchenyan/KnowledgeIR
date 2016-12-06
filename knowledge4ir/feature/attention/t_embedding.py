@@ -73,7 +73,7 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
         return h_sim
 
     def _calc_q_emb(self, h_q_info, emb):
-        l_q_t = h_q_info['query'].split()
+        l_q_t = h_q_info['query'].lower().split()
         q_emb = form_avg_emb(l_q_t, emb)
         return q_emb
 
