@@ -407,6 +407,7 @@ class LeToRFeatureExternalInfo(Configurable):
                             help="names of corresponding embedding, if more than one"
                             ).tag(config=True)
     word2vec_in = Unicode(help='word2vec in').tag(config=True)
+    joint_emb_in = Unicode(help="word-entity joint embedding in").tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExternalInfo, self).__init__(**kwargs)
@@ -428,6 +429,12 @@ class LeToRFeatureExternalInfo(Configurable):
         if self.word2vec_in:
             logging.info('loading word2vec [%s]', self.word2vec_in)
             self.word2vec = Word2Vec.load_word2vec_format(self.word2vec_in)
+        self.joint_emb = None
+        if self.joint_emb_in:
+            logging.info('loading joint embedding [%s]', self.joint_emb_in)
+            self.joint_emb = Word2Vec.load_word2vec_format(self.joint_emb_in)
+
+        logging.info('external info loaded')
 
 
 
