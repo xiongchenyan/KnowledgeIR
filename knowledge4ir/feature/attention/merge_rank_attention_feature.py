@@ -29,7 +29,8 @@ def merge_meta(rank_name_in, att_name_in, out_name):
 
 def merge_one_pair(rank_info, att_info):
     merge_info = deepcopy(rank_info)
-    merge_info['feature'][3:] = att_info['feature']
+    for p in [2, 3]:
+        merge_info['feature'][p] = att_info['feature'][p]
     return merge_info
 
 
@@ -45,8 +46,9 @@ def make_info_hash(in_name):
 def merge(rank_in, att_in, out_name):
     for suf in ['_feature_name', '_feature_stat']:
         merge_meta(rank_in + suf, att_in + suf, out_name + suf)
-
+        print suf + 'merged'
     h_att_info = make_info_hash(att_in)
+    print 'att info made'
     out = open(out_name, 'w')
     for line in open(rank_in):
         h = json.loads(line)
