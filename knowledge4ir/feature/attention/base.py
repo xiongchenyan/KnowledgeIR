@@ -50,3 +50,12 @@ def calc_query_entity_total_embedding(h_q_info, emb):
             l_e.extend([ana[0] for ana in h_q_info[tagger]['query']])
     l_total = l_t + l_e
     return form_avg_emb(l_total, emb)
+
+
+def mul_update(l_h_feature, l_this_h_feature):
+    if not l_h_feature:
+        l_h_feature = l_this_h_feature
+    else:
+        for p in xrange(len(l_h_feature)):
+            l_h_feature[p].update(l_this_h_feature[p])
+    return l_h_feature
