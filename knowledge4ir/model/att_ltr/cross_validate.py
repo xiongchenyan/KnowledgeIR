@@ -173,20 +173,22 @@ class CrossValidator(Configurable):
         l_att_layer_nb = self.h_dev_para.get('nb_att_layer', [])
         l_rank_layer_nb = self.h_dev_para.get('nb_rank_layer', [])
         # if len(l_l2_w) * len(l_att_layer_nb) * len(l_rank_layer_nb):
-
+        h_mid = {}
         for h_para in self._dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
                                      ['l2_w', 'nb_att_layer', 'nb_rank_layer'],
-                                     0, {},
+                                     0, h_mid,
                                      ):
             yield h_para
 
-        yield h_para
+        # yield h_para
 
     @classmethod
     def _dfs_para(cls, ll_paras, l_name, current_p, current_para):
+        print current_p
+        print json.dumps(current_para)
         if current_p >= len(ll_paras):
             yield dict(current_para)
-        if ll_paras[current_p]:
+        if len(ll_paras[current_p]) > 0:
             for value in ll_paras[current_p]:
                 current_para[l_name[current_p]] = value
                 cls._dfs_para(ll_paras, l_name, current_p + 1, current_para)
