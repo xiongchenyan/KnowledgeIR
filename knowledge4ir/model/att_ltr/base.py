@@ -278,12 +278,17 @@ class AttLeToR(Configurable):
         for key, mtx in X.items():
             st = 0
             for ed in xrange(1, len(l_qid) + 1):
-                if (l_qid[ed] != l_qid[ed - 1]) | (ed == len(l_qid)):
+                if l_qid[ed] != l_qid[ed - 1]:
                     this_mtx = mtx[st:ed, :, :].reshape((-1, mtx.shape[-1]))
                     this_mtx = normalize(this_mtx, norm='max', axis=0)
                     new_mtx = this_mtx.reshape(mtx[st:ed,:].shape)
                     mtx[st:ed, :] = new_mtx
                     st = ed
+            this_mtx = mtx[st:, :, :].reshape((-1, mtx.shape[-1]))
+            this_mtx = normalize(this_mtx, norm='max', axis=0)
+            new_mtx = this_mtx.reshape(mtx[st:,:].shape)
+            mtx[st:, :] = new_mtx
+
             norm_x[key] = mtx
         return norm_x
 
