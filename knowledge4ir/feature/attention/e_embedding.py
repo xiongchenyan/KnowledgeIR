@@ -48,18 +48,25 @@ class EntityEmbeddingAttentionFeature(TermAttentionFeature):
         :return: features for each term: l_h_feature
         """
         l_h_feature = []
+
+        q_te_join_emb = calc_query_entity_total_embedding(h_q_info, self.joint_embedding)
+        for e in l_e:
+            h_feature = {}
+            h_joint_feature = self._extract_per_e(h_q_info, e, q_te_join_emb, self.joint_embedding)
+            h_feature.update(dict(
+                [(item[0] + 'Joint', item[1]) for item in h_joint_feature.items()]
+            ))
+
+            h_feature = dict([(self.feature_name_pre + key, score)
+                              for key, score in h_feature.items()])
+            l_h_feature.append(h_feature)
+
         for name, emb in zip(self.l_embedding_name, self.l_embedding):
             # qe_emb = self._calc_e_emb(h_q_info, emb)
-            q_te_join_emb = calc_query_entity_total_embedding(h_q_info, self.joint_embedding)
             l_this_h_feature = []
             for e in l_e:
                 h_feature = {}
                 # h_feature.update(self._extract_per_e(h_q_info, e, qe_emb, emb))
-                h_joint_feature = self._extract_per_e(h_q_info, e, q_te_join_emb, emb)
-                h_feature.update(dict(
-                    [(item[0] + 'Joint', item[1]) for item in h_joint_feature.items()]
-                ))
-
                 h_feature = dict([(self.feature_name_pre + name + key, score)
                                   for key, score in h_feature.items()])
                 l_this_h_feature.append(h_feature)

@@ -168,13 +168,30 @@ class CrossValidator(Configurable):
 
     def _dev_para_generator(self):
         h_para = {}
-        if 'l2_w' in self.h_dev_para:
-            for l2_w in self.h_dev_para['l2_w']:
-                h_para = {'l2_w': l2_w}
-                yield h_para
-                h_para = {}
-        else:
+        l_l2_w  = self.h_dev_para.get('l2_w', [])
+        l_att_layer_nb = self.h_dev_para.get('nb_att_layer', [])
+        l_rank_layer_nb = self.h_dev_para.get('nb_rank_layer', [])
+        # if len(l_l2_w) * len(l_att_layer_nb) * len(l_rank_layer_nb):
+
+        for h_para in self._dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
+                                     ['l2_w', 'nb_att_layer', 'nb_rank_layer'],
+                                     0, {},
+                                     ):
             yield h_para
+
+        yield h_para
+
+    @classmethod
+    def _dfs_para(cls, ll_paras, l_name, current_p, current_para):
+        if current_p >= len(ll_paras):
+            yield dict(current_para)
+        if ll_paras[current_p]:
+            for i in ll_paras[current_p]:
+                current_para[l_name[current_p]] = ll_paras[current_p][i]
+                cls._dfs_para(ll_paras, l_name, current_p + 1, current_para)
+        else:
+            cls._dfs_para(ll_paras, l_name, current_p + 1, current_para)
+
 
 
 if __name__ == '__main__':

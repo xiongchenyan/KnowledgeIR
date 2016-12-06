@@ -50,7 +50,7 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
             # h_feature.update(self._extract_per_t(h_q_info, t, q_emb, emb))
             h_joint_feature = self._extract_per_t(h_q_info, t, q_te_joint_emb, self.joint_embedding)
             h_feature.update(dict(
-                [(item[0] + 'Join', item[1]) for item in h_joint_feature.items()]
+                [(item[0] + 'Joint', item[1]) for item in h_joint_feature.items()]
             ))
 
             h_feature = dict([(self.feature_name_pre + key, score) for key, score in h_feature.items()])
