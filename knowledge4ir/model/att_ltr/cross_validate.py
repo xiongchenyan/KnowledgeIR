@@ -9,7 +9,10 @@ from knowledge4ir.model.att_ltr.hierarchical import (
     QEntityLeToR,
     MaskHierarchicalAttLeToR,
 )
-from knowledge4ir.model.att_ltr import AttLeToR
+from knowledge4ir.model.att_ltr import (
+    AttLeToR,
+    dfs_para,
+)
 from knowledge4ir.model import (
     fix_kfold_partition,
     filter_json_lines,
@@ -175,9 +178,8 @@ class CrossValidator(Configurable):
         # if len(l_l2_w) * len(l_att_layer_nb) * len(l_rank_layer_nb):
         h_mid = {}
         l_res_paras = []
-        self._dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
-                       ['l2_w', 'nb_att_layer', 'nb_rank_layer'],
-                       0, h_mid, l_res_paras)
+        dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
+                 ['l2_w', 'nb_att_layer', 'nb_rank_layer'], 0, h_mid, l_res_paras)
         for h_para in l_res_paras:
             yield h_para
 
