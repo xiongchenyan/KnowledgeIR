@@ -132,7 +132,7 @@ class CrossValidator(Configurable):
         best_para = None
         dev_eva_out = open(out_dir + '/dev_para.eval', 'w')
         logging.info('start developing parameters')
-        for h_para in self._dev_para_generator():
+        for h_para in self._get_dev_para_list():
             logging.info('evaluating para %s', json.dumps(h_para))
             self.model.set_para(h_para)
             self.model.train(l_train_lines)
@@ -170,7 +170,7 @@ class CrossValidator(Configurable):
         else:
             self.train_test_fold(fold_k)
 
-    def _dev_para_generator(self):
+    def _get_dev_para_list(self):
         h_para = {}
         l_l2_w  = self.h_dev_para.get('l2_w', [])
         l_att_layer_nb = self.h_dev_para.get('nb_att_layer', [])
@@ -180,25 +180,7 @@ class CrossValidator(Configurable):
         l_res_paras = []
         dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
                  ['l2_w', 'nb_att_layer', 'nb_rank_layer'], 0, h_mid, l_res_paras)
-        for h_para in l_res_paras:
-            yield h_para
-
-        # yield h_para
-
-    @classmethod
-    def _dfs_para(cls, ll_paras, l_name, current_p, current_para, l_res):
-        print current_p
-        print json.dumps(current_para)
-        if current_p >= len(ll_paras):
-            l_res.append(dict(current_para))
-            return
-        if len(ll_paras[current_p]) > 0:
-            for value in ll_paras[current_p]:
-                current_para[l_name[current_p]] = value
-                cls._dfs_para(ll_paras, l_name, current_p + 1, current_para)
-        else:
-            cls._dfs_para(ll_paras, l_name, current_p + 1, current_para)
-
+        return l_res_paras
 
 
 if __name__ == '__main__':

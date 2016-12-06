@@ -25,8 +25,6 @@ import subprocess
 
 
 def dfs_para(ll_paras, l_name, current_p, current_para, l_res):
-    print current_p
-    print json.dumps(current_para)
     if current_p >= len(ll_paras):
         l_res.append(dict(current_para))
         return
