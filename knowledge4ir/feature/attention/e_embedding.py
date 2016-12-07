@@ -95,10 +95,22 @@ class EntityEmbeddingAttentionFeature(TermAttentionFeature):
             l_h_feature.append(h_feature)
         return l_h_feature
 
-    def _extract_raw_diff_per_t(self, e, q_emb, emb):
+    def _extract_raw_diff(self, h_q_info, l_e):
+        emb = self.l_embedding[0]
+        qe_emb = self._calc_e_emb(h_q_info, emb)
+        l_this_h_feature = []
+        for e in l_e:
+            h_feature = {}
+            h_feature.update(self._extract_raw_diff_per_e(e, qe_emb, emb))
+            h_feature = dict([(self.feature_name_pre + key, score)
+                              for key, score in h_feature.items()])
+            l_this_h_feature.append(h_feature)
+        return l_this_h_feature
+
+    def _extract_raw_diff_per_e(self, e, q_emb, emb):
         diff_v = np.random.rand(q_emb.shape[0])
         if (e in emb) & (q_emb is not None):
-            diff_v = emb[e] = q_emb
+            diff_v = emb[e] - q_emb
         l_diff = diff_v.tolist()
         h_sim = dict(zip(['diff%03d' % d for d in range(diff_v.shape[0])], l_diff))
         return h_sim
