@@ -109,7 +109,7 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
         if (t in emb) & (q_emb is not None):
             diff_v = emb[t] = q_emb
         l_diff = diff_v.tolist()
-        h_sim = dict(zip(['diff%03d' % d for d in range(len(l_diff))], l_diff))
+        h_sim = dict(zip(['diff%03d' % d for d in range(diff_v.shape[0])], l_diff))
         return h_sim
 
     def _calc_q_emb(self, h_q_info, emb):
