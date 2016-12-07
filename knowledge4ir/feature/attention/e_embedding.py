@@ -115,7 +115,7 @@ class EntityEmbeddingAttentionFeature(TermAttentionFeature):
             if (e in emb) & (q_emb is not None):
                 diff_v = emb[e] - q_emb
                 l_diff = diff_v.tolist()
-        h_sim = dict(zip(['diff%03d' % d for d in range(diff_v.shape[0])], l_diff))
+        h_sim = dict(zip(['diff%03d' % d for d in range(len(l_diff))], l_diff))
         return h_sim
 
     def _extract_cosine_per_e(self, h_q_info, e, qe_emb, emb):
