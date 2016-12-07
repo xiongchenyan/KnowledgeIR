@@ -89,7 +89,7 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
         l_this_h_feature = []
         for t in l_t:
             h_feature = {}
-            h_feature.update(self._extract_raw_diff_per_t(h_q_info, t, q_emb, emb))
+            h_feature.update(self._extract_raw_diff_per_t(t, q_emb, emb))
             h_feature = dict([(self.feature_name_pre + key, score)
                               for key, score in h_feature.items()])
             l_this_h_feature.append(h_feature)
