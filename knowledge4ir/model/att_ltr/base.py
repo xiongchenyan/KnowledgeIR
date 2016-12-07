@@ -141,7 +141,8 @@ class AttLeToR(Configurable):
                 train_x, train_y,
                 batch_size=batch_size,
                 nb_epoch=self.nb_epoch,
-                callbacks=[EarlyStopping(monitor='loss', patience=self.early_stop_patient)]
+                validation_split=0.1,
+                callbacks=[EarlyStopping(monitor='val_loss', patience=self.early_stop_patient)]
             )
 
     def predict(self, test_lines=None):
