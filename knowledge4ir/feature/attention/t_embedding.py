@@ -105,10 +105,13 @@ class TermEmbeddingAttentionFeature(TermAttentionFeature):
         return h_sim
 
     def _extract_raw_diff_per_t(self, t, q_emb, emb):
-        diff_v = np.random.rand(q_emb.shape[0])
-        if (t in emb) & (q_emb is not None):
-            diff_v = emb[t] - q_emb
-        l_diff = diff_v.tolist()
+        if q_emb is None:
+            l_diff = [-1] * 300
+        else:
+            l_diff = [-1] * 300
+            if (t in emb):
+                diff_v = emb[t] - q_emb
+                l_diff = diff_v.tolist()
         h_sim = dict(zip(['diff%03d' % d for d in range(diff_v.shape[0])], l_diff))
         return h_sim
 
