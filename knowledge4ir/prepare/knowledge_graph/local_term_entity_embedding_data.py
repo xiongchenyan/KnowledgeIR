@@ -17,7 +17,7 @@ if 3 != len(sys.argv):
     sys.exit()
 
 out = open(sys.argv[2], 'w')
-
+err_cnt = 0
 for cnt, line in enumerate(open(sys.argv[1])):
     d_info = '\t'.join(line.strip().split('\t')[1:])
     text = d_info.split('#')[0].strip()
@@ -26,8 +26,11 @@ for cnt, line in enumerate(open(sys.argv[1])):
     l_ana = []
     p = 0
     while p + 8 <= len(l_col):
-        ana = [l_col[p + 6], int(l_col[p + 2]), int(l_col[p + 3])]
-        l_ana.append(ana)
+        try:
+            ana = [l_col[p + 6], int(l_col[p + 2]), int(l_col[p + 3])]
+            l_ana.append(ana)
+        except TypeError:
+            err_cnt += 1
         p += 8
     print >> out, text
     e_text = ""
