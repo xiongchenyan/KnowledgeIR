@@ -26,7 +26,7 @@ for cnt, line in enumerate(open(sys.argv[1])):
     l_ana = []
     p = 0
     while p + 8 <= len(l_col):
-        ana = [l_col[p + 6], l_col[p + 2], l_col[p + 3]]
+        ana = [l_col[p + 6], int(l_col[p + 2]), int(l_col[p + 3])]
         l_ana.append(ana)
         p += 8
     print >> out, text
