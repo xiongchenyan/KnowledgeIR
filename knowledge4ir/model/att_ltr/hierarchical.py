@@ -37,6 +37,7 @@ from keras.layers.wrappers import TimeDistributed
 class HierarchicalAttLeToR(AttLeToR):
     nb_middle_filters = Int(5).tag(config=True)
     activation = Unicode('linear').tag(config=True)
+    att_activation = Unicode('linear').tag(config=True)
 
     def _build_model(self):
         l_inputs = self._init_inputs()
@@ -71,10 +72,15 @@ class HierarchicalAttLeToR(AttLeToR):
         l_model_name = [name + '_model' for name in self.l_model_names]
         l_nb_layer = [self.nb_rank_layer, self.nb_rank_layer, self.nb_att_layer, self.nb_att_layer]
         for p in xrange(len(l_in_shape)):
+            if p < 2:
+                activation = self.activation
+            else:
+                activation = self.att_activation
             model = self._init_one_neural_network(
                 l_in_shape[p],
                 l_model_name[p],
-                l_nb_layer[p]
+                l_nb_layer[p],
+                activation
             )
             l_models.append(model)
         return l_models
@@ -88,7 +94,7 @@ class HierarchicalAttLeToR(AttLeToR):
         att_ranker = Model(input=l_inputs, output=att_ranker)
         return att_ranker
 
-    def _init_one_neural_network(self, in_shape, model_name, nb_layer,):
+    def _init_one_neural_network(self, in_shape, model_name, nb_layer, activation='linear'):
         model = Sequential(name=model_name)
         for lvl in xrange(nb_layer):
             if lvl == nb_layer - 1:
@@ -99,7 +105,7 @@ class HierarchicalAttLeToR(AttLeToR):
                 this_layer = Convolution1D(nb_filter=this_nb_filter,
                                            filter_length=1,
                                            input_shape=in_shape,
-                                           activation=self.activation,
+                                           activation=activation,
                                            bias=False,
                                            W_regularizer=l2(self.l2_w)
                                            )
@@ -107,7 +113,7 @@ class HierarchicalAttLeToR(AttLeToR):
             else:
                 this_layer = Convolution1D(nb_filter=this_nb_filter,
                                            filter_length=1,
-                                           activation=self.activation,
+                                           activation=activation,
                                            bias=False,
                                            W_regularizer=l2(self.l2_w)
                                            )
