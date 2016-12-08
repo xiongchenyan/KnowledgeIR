@@ -29,7 +29,7 @@ for cnt, line in enumerate(open(sys.argv[1])):
         try:
             ana = [l_col[p + 6], int(l_col[p + 2]), int(l_col[p + 3])]
             l_ana.append(ana)
-        except TypeError:
+        except ValueError:
             err_cnt += 1
         p += 8
     print >> out, text
