@@ -19,7 +19,7 @@ if 3 != len(sys.argv):
 
 out = open(sys.argv[2], 'w')
 
-for cnt, line in open(sys.argv[1]):
+for cnt, line in enumerate(open(sys.argv[1])):
     d_info = json.loads(line.split('\t')[-1])
     text = d_info['bodyText']
     print >> out, text
