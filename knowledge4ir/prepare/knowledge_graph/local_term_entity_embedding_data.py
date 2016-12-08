@@ -21,7 +21,7 @@ out = open(sys.argv[2], 'w')
 for cnt, line in enumerate(open(sys.argv[1])):
     d_info = '\t'.join(line.strip().split('\t')[1:])
     text = d_info.split('#')[0]
-    ana_str = d_info.split('#')[-1]
+    ana_str = d_info.split('#')[-1].strip()
     l_col = ana_str.split('\t')
     l_ana = []
     p = 0
