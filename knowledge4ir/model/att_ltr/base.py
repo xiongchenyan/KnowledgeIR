@@ -280,10 +280,12 @@ class AttLeToR(Configurable):
             st = 0
             for ed in xrange(1, len(l_qid)):
                 if l_qid[ed] != l_qid[ed - 1]:
-                    this_mtx = mtx[st:ed, :, :].reshape((-1, mtx.shape[-1]))
-                    this_mtx = normalize(this_mtx, norm='max', axis=0)
-                    new_mtx = this_mtx.reshape(mtx[st:ed,:].shape)
-                    mtx[st:ed, :] = new_mtx
+                    # this_mtx = mtx[st:ed, :, :].reshape((-1, mtx.shape[-1]))
+                    # this_mtx = normalize(this_mtx, norm='max', axis=0)
+                    # new_mtx = this_mtx.reshape(mtx[st:ed,:].shape)
+                    for i in xrange(mtx.shape[1]):
+                        mtx[st:ed, i, :] = normalize(mtx[st:ed, i, :].reshape(ed-st, -1), axis=0).reshape(mtx[st:ed,i,:].shape)
+                    # mtx[st:ed, :] = new_mtx
                     st = ed
             this_mtx = mtx[st:, :, :].reshape((-1, mtx.shape[-1]))
             this_mtx = normalize(this_mtx, norm='max', axis=0)
