@@ -43,6 +43,6 @@ for cnt, line in enumerate(open(sys.argv[1])):
 
 out.close()
 
-
+print "%d err out of %d lines" % (err_cnt, cnt)
 
 
