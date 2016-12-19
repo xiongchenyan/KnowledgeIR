@@ -14,6 +14,8 @@ output:
 from gensim.models import Word2Vec
 import json
 import sys
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 def load_entity_names(text_in):
