@@ -38,6 +38,8 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     l_embedding_name = List(Unicode, default_value=[],
                             help="names of corresponding embedding, if more than one"
                             ).tag(config=True)
+    distance = Unicode('cos', help='distance function, cos|l1'
+                       ).tag(config=True)
     # l_soft_similarities = List(Unicode, default_value=['TopK',
     #                                                    'Mean',
     #                                                    ]
@@ -90,8 +92,8 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             if field not in self.l_target_fields:
                 continue
             l_doc_e = [ana[0] for ana in l_ana if ana[0] in emb_model]
-
-            m_sim_mtx = self._build_cosine_mtx(l_e, l_doc_e, emb_model)
+            m_sim_mtx = self._build_sim_mtx(l_e, l_doc_e, emb_model)
+            # m_sim_mtx = self._build_cosine_mtx(l_e, l_doc_e, emb_model)
             # logging.debug('sim mtx: %s', np.array2string(m_sim_mtx))
 
             l_total_bin_score = []
@@ -113,6 +115,13 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
 
         return h_feature
 
+    def _build_sim_mtx(self, l_q_e, l_doc_e, emb_model):
+        if self.distance == 'cos':
+            return self._build_cosine_mtx(l_q_e, l_doc_e, emb_model)
+        if self.distance == 'l1':
+            return self._build_l1_mtx(l_q_e, l_doc_e, emb_model)
+        raise NotImplementedError
+
     @classmethod
     def _build_cosine_mtx(cls, l_q_e, l_doc_e, emb_model):
         """
@@ -132,6 +141,27 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                     continue
                 if (q_e in emb_model) & (d_e in emb_model):
                     sim_mtx[i, j] = emb_model.similarity(q_e, d_e)
+        return sim_mtx
+
+    @classmethod
+    def _build_l1_mtx(cls, l_q_e, l_doc_e, emb_model):
+        """
+        build a q-d entity cosine similarity matrix
+        :param l_q_e: query entities
+        :param l_doc_e: doc entities
+        :param emb_model: embedding model loaded
+        :return: a matrix with cosine(q_e, doc_e)
+        """
+        sim_mtx = np.zeros((len(l_q_e), len(l_doc_e)))
+        for i in xrange(len(l_q_e)):
+            q_e = l_q_e[i]
+            for j in xrange(len(l_doc_e)):
+                d_e = l_doc_e[j]
+                if q_e == d_e:
+                    sim_mtx[i, j] = 1.0
+                    continue
+                if (q_e in emb_model) & (d_e in emb_model):
+                    sim_mtx[i, j] = np.mean(np.abs(emb_model[q_e] - emb_model[d_e]))
         return sim_mtx
 
     def _soft_embedding_sim(self, m_sim_mtx):
