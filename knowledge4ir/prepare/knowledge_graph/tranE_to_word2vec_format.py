@@ -15,7 +15,7 @@ if 4 != len(sys.argv):
 
 lines = open(sys.argv[1]).read().splitlines()
 total_cnt = int(lines[0])
-l_e = [line.split()[0].replace('.', '/') for line in lines[1:]]
+l_e = ['/' + line.split()[0].replace('.', '/') for line in lines[1:]]
 assert len(l_e) == total_cnt
 
 out = open(sys.argv[3], 'w')
