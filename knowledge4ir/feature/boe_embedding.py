@@ -161,7 +161,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                     sim_mtx[i, j] = 1.0
                     continue
                 if (q_e in emb_model) & (d_e in emb_model):
-                    sim_mtx[i, j] = np.mean(np.abs(emb_model[q_e] - emb_model[d_e]))
+                    sim_mtx[i, j] = 1.0 - np.mean(np.abs(emb_model[q_e] - emb_model[d_e]))
         return sim_mtx
 
     def _soft_embedding_sim(self, m_sim_mtx):
