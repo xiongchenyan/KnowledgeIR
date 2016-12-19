@@ -28,6 +28,8 @@ def load_entity_names(text_in):
 
 
 def get_top_sim_per_e(e, emb, h_e_name):
+    if e not in emb:
+        return []
     l_e = emb.most_similar([e], topn=10)
     lines = []
 
@@ -49,7 +51,9 @@ def get_top_sim(target_in, emb_in, text_in, out_name):
     out = open(out_name, 'w')
     for e in open(target_in):
         e = e.strip()
-        print >> out, '\n'.join(get_top_sim_per_e(e, emb, h_e_name))
+        res_lines = get_top_sim_per_e(e, emb, h_e_name)
+        if res_lines
+            print >> out, '\n'.join(res_lines)
     out.close()
     print "done"
 
