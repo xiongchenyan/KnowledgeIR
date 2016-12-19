@@ -62,10 +62,16 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
         if self.embedding_in:
             self.l_embedding_in.append(self.embedding_in)
             self.l_embedding_name.append('')
-        logging.info('start loading embedding %s', json.dumps(self.l_embedding_in))
-        self.l_embedding = [Word2Vec.load_word2vec_format(embedding_in)
-                            for embedding_in in self.l_embedding_in]
-        logging.info('[%d] embedding loaded', len(self.l_embedding_in))
+        if self.l_embedding_name:
+            logging.info('start loading embedding %s', json.dumps(self.l_embedding_in))
+            self.l_embedding = [Word2Vec.load_word2vec_format(embedding_in)
+                                for embedding_in in self.l_embedding_in]
+            logging.info('[%d] embedding loaded', len(self.l_embedding_in))
+
+    def set_external_info(self, external_info):
+        super(LeToRBOEEmbFeatureExtractor, self).set_external_info(external_info)
+        self.l_embedding = external_info.l_embedding
+        self.l_embedding_name = external_info.l_embedding_name
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         h_feature = {}

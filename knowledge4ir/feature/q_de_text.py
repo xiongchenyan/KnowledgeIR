@@ -34,7 +34,7 @@ import json
 
 
 class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
-    feature_name_pre = Unicode('ERank')
+    feature_name_pre = Unicode('QDocEText')
     l_text_fields = List(Unicode, default_value=['bodyText']).tag(config=True)
     l_model = List(Unicode,
                    default_value=['lm_dir', 'coordinate', 'tf_idf']
@@ -52,16 +52,22 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
     def __init__(self, **kwargs):
         super(LeToRQDocETextFeatureExtractorC, self).__init__(**kwargs)
         self.h_corpus_stat = {}
-        self.h_field_df = {}
+        self.h_field_h_df = {}
         self._load_corpus_stat()
         self.h_entity_texts = {}
         if self.entity_text_in:
             self.h_entity_texts = load_entity_texts(self.entity_text_in)
         self.s_model = set(self.l_model)
 
+    def set_external_info(self, external_info):
+        super(LeToRQDocETextFeatureExtractorC, self).set_external_info(external_info)
+        self.h_field_h_df = external_info.h_field_h_df
+        self.h_corpus_stat = external_info.h_corpus_stat
+        self.h_entity_texts = external_info.h_entity_texts
+        return
+
     def _load_corpus_stat(self):
         if not self.corpus_stat_pre:
-            logging.info('no corpus stat to load')
             return
         l_field_h_df, self.h_corpus_stat = load_corpus_stat(
             self.corpus_stat_pre, self.l_text_fields)

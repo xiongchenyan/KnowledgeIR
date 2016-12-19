@@ -28,12 +28,20 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
     def __init__(self, **kwargs):
         super(LeToRIRFusionFeatureExtractor, self).__init__(**kwargs)
         self.s_model = set(self.l_model)
-        l_field_h_df, self.h_corpus_stat = load_corpus_stat(
-            self.corpus_stat_pre, self.l_text_fields)
-        self.h_field_h_df = dict(l_field_h_df)
-        for field in self.l_text_fields:
-            assert field in self.h_corpus_stat
-            assert field in self.h_field_h_df
+        self.h_field_h_df = dict()
+        if self.corpus_stat_pre:
+            l_field_h_df, self.h_corpus_stat = load_corpus_stat(
+                self.corpus_stat_pre, self.l_text_fields)
+            self.h_field_h_df = dict(l_field_h_df)
+            for field in self.l_text_fields:
+                assert field in self.h_corpus_stat
+                assert field in self.h_field_h_df
+
+    def set_external_info(self, external_info):
+        super(LeToRIRFusionFeatureExtractor, self).set_external_info(external_info)
+        self.h_field_h_df = external_info.h_field_h_df
+        self.h_corpus_stat = external_info.h_corpus_stat
+        return
 
     def extract_for_text(self, query, docno, h_q_info, h_doc_info):
         h_feature = {}
