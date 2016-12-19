@@ -52,7 +52,7 @@ def get_top_sim(target_in, emb_in, text_in, out_name):
     for e in open(target_in):
         e = e.strip()
         res_lines = get_top_sim_per_e(e, emb, h_e_name)
-        if res_lines
+        if res_lines:
             print >> out, '\n'.join(res_lines)
     out.close()
     print "done"
