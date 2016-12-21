@@ -35,13 +35,14 @@ parser = FbDumpParser()
 h_res = {}
 for o_cnt, l_v_col in enumerate(reader.read(sys.argv[1])):
     if not o_cnt % 1000:
-        logging.info('[%d] record [%d] wiki obj', o_cnt, cnt)
+        logging.info('[%d] record [%d] target obj', o_cnt, cnt)
     oid = parser.get_obj_id(l_v_col)
     if not oid:
         continue
     if oid not in s_entity:
         continue
     h_res[oid] = l_v_col
+    cnt += 1
 
 logging.info('total [%d] entity triples get', len(h_res))
 json.dump(h_res, open(sys.argv[3], 'w'), indent=1)
