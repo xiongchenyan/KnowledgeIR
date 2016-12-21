@@ -33,6 +33,7 @@ reader = FbDumpReader()
 cnt = 0
 parser = FbDumpParser()
 h_res = {}
+out = open(sys.argv[3],'w')
 for o_cnt, l_v_col in enumerate(reader.read(sys.argv[1])):
     if not o_cnt % 1000:
         logging.info('[%d] record [%d] target obj', o_cnt, cnt)
@@ -41,11 +42,15 @@ for o_cnt, l_v_col in enumerate(reader.read(sys.argv[1])):
         continue
     if oid not in s_entity:
         continue
-    h_res[oid] = l_v_col
+    # h_res[oid] = l_v_col
+    h = dict()
+    h['id'] = oid
+    h['triples'] = l_v_col
+    print >> out, json.dumps(h)
     cnt += 1
 
-logging.info('total [%d] entity triples get', len(h_res))
-json.dump(h_res, open(sys.argv[3], 'w'), indent=1)
+logging.info('total [%d/%d] entity triples get', cnt, len(s_entity))
+# json.dump(h_res, open(sys.argv[3], 'w'), indent=1)
 
 logging.info('finished')
 
