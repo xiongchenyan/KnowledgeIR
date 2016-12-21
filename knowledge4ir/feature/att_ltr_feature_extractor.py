@@ -34,6 +34,7 @@ from knowledge4ir.feature.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.feature.attention.t_embedding import TermEmbeddingAttentionFeature
 from knowledge4ir.feature.attention.e_embedding import EntityEmbeddingAttentionFeature
 from knowledge4ir.feature.attention.e_text import EntityTextAttentionFeature
+from knowledge4ir.feature.attention.t_static import TermStaticAttentionFeature
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
@@ -42,6 +43,7 @@ from knowledge4ir.utils import (
 )
 from knowledge4ir.feature import LeToRFeatureExternalInfo
 import numpy as np
+
 
 class AttLeToRFeatureExtractCenter(Configurable):
     """
@@ -66,7 +68,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
                            ).tag(config=True)
 
     l_qt_att_feature = List(Unicode, default_value=['Emb'],
-                            help='q term attention features: Emb'
+                            help='q term attention features: Emb, Static'
                             ).tag(config=True)
     l_qe_att_feature = List(Unicode, default_value=['Emb', 'Text'],
                             help='q e attention feature: Emb, Text'
@@ -108,6 +110,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
 
         print "term attention feature group: Emb"
         TermEmbeddingAttentionFeature.class_print_help(inst)
+        print 'term attention feature group: Static'
+        TermStaticAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Emb"
         EntityEmbeddingAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Text"
@@ -161,6 +165,10 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qt_att_extractor.append(TermEmbeddingAttentionFeature(**kwargs))
             self.l_qt_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Emb features to term attention')
+        if "Emb" in self.l_qt_att_feature:
+            self.l_qt_att_extractor.append(TermStaticAttentionFeature(**kwargs))
+            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Static features to term attention')
         if "Emb" in self.l_qe_att_feature:
             self.l_qe_att_extractor.append(EntityEmbeddingAttentionFeature(**kwargs))
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
@@ -169,7 +177,6 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qe_att_extractor.append(EntityTextAttentionFeature(**kwargs))
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add text features to entity attention')
-
 
     def pipe_extract(self):
         """
