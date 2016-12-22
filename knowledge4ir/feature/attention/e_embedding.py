@@ -4,7 +4,7 @@
 
 
 from knowledge4ir.feature.attention import (
-    TermAttentionFeature,
+    EntityAttentionFeature,
     form_avg_emb,
     calc_query_entity_total_embedding,
     mul_update,
@@ -20,7 +20,7 @@ import numpy as np
 from scipy.spatial.distance import cosine
 
 
-class EntityEmbeddingAttentionFeature(TermAttentionFeature):
+class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
     feature_name_pre = Unicode('EAttEmb')
     l_embedding_in = List(Unicode, default_value=[],
                           help="embedding data inputs, if more than one"

@@ -11,10 +11,13 @@ from scipy import spatial
 from traitlets import (
     Int, Float, List, Unicode
 )
+import sys
 from traitlets.config import Configurable
 from knowledge4ir.utils import load_corpus_stat
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from gensim.models import Word2Vec
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 BM25_K1 = 1.2
@@ -408,6 +411,7 @@ class LeToRFeatureExternalInfo(Configurable):
                             ).tag(config=True)
     word2vec_in = Unicode(help='word2vec in').tag(config=True)
     joint_emb_in = Unicode(help="word-entity joint embedding in").tag(config=True)
+    entity_triple_in = Unicode(help="entity triple in").tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExternalInfo, self).__init__(**kwargs)
@@ -433,6 +437,10 @@ class LeToRFeatureExternalInfo(Configurable):
         if self.joint_emb_in:
             logging.info('loading joint embedding [%s]', self.joint_emb_in)
             self.joint_embedding = Word2Vec.load_word2vec_format(self.joint_emb_in)
+        self.h_e_triples = {}
+        if self.entity_triple_in:
+            logging.info('loading entity triples [%s]', self.entity_triple_in)
+            self.h_e_triples = load_packed_triples(self.entity_triple_in)
 
         logging.info('external info loaded')
 
@@ -452,6 +460,18 @@ class LeToRFeatureExternalInfo(Configurable):
 #
 #     print 'models test:'
 #     _unit_test_models(term_stat)
+
+def load_packed_triples(entity_triple_in):
+    h_e_triples = {}
+    for line in open(entity_triple_in):
+        h = json.loads(entity_triple_in)
+        e = h['id']
+        l_t = h['triples']
+        h_e_triples[e] = l_t
+    logging.info('loaded [%d] entity\' triples', len(h_e_triples))
+    return h_e_triples
+
+
 
 
 def load_query_info(in_name):
