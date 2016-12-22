@@ -464,13 +464,12 @@ class LeToRFeatureExternalInfo(Configurable):
 def load_packed_triples(entity_triple_in):
     h_e_triples = {}
     for line in open(entity_triple_in):
-        h = json.loads(entity_triple_in)
+        h = json.loads(line)
         e = h['id']
         l_t = h['triples']
         h_e_triples[e] = l_t
     logging.info('loaded [%d] entity\' triples', len(h_e_triples))
     return h_e_triples
-
 
 
 
