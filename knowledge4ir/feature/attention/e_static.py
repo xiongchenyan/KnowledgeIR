@@ -59,10 +59,10 @@ class EntityStaticAttentionFeature(EntityAttentionFeature):
         parser = FbDumpParser()
 
         l_alias = parser.get_alias(l_v_col)
-        h_feature[self.feature_name_pre + 'NbAlias'] = len(l_alias)
+        h_feature[self.feature_name_pre + 'NbAlias'] = math.log(max(len(l_alias), 1))
 
         l_types = parser.get_type(l_v_col)
-        h_feature[self.feature_name_pre + 'NbTypes'] = len(l_types)
+        h_feature[self.feature_name_pre + 'NbTypes'] = math.log(max(len(l_types), 1))
 
         desp = parser.get_desp(l_v_col)
         h_feature[self.feature_name_pre + 'DespLen'] = math.log(max(len(desp.split()), 1))
@@ -74,9 +74,9 @@ class EntityStaticAttentionFeature(EntityAttentionFeature):
         h_feature[self.feature_name_pre + 'HasNotable'] = has_notable
 
         l_neighbors = parser.get_neighbor(l_v_col)
-        h_feature[self.feature_name_pre + 'NbNeighbor'] = len(l_neighbors)
+        h_feature[self.feature_name_pre + 'NbNeighbor'] = math.log(max(len(l_neighbors), 1))
 
-        h_feature[self.feature_name_pre + 'NbTriples'] = len(l_v_col)
+        h_feature[self.feature_name_pre + 'NbTriples'] = math.log(max(len(l_v_col), 1))
 
         return h_feature
 
