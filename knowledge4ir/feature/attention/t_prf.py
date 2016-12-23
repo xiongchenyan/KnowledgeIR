@@ -50,7 +50,7 @@ class TermPrfAttentionFeature(TermAttentionFeature):
         l_h_feature = {}
 
         h_field_l_doc_lm = self._form_prf_field_lm(h_q_info['qid'])
-        prf_ranking = [item[:2] for item in self.h_q_rank_info.get(h_q_info['qid'], [])]
+        prf_ranking = [item[:2] for item in self.h_q_rank_info.get(h_q_info['qid'], [])][:self.prf_d]
         l_h_feature = self.extract_prf(self.feature_name_pre, l_t, prf_ranking, h_field_l_doc_lm[body_field])
         l_h_feature = mul_update(l_h_feature, self.extract_coverage(self.feature_name_pre, l_t, h_field_l_doc_lm))
         return l_h_feature
