@@ -16,6 +16,7 @@ from traitlets.config import Configurable
 from knowledge4ir.utils import load_corpus_stat
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from gensim.models import Word2Vec
+from knowledge4ir.utils import load_trec_ranking_with_info
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
@@ -412,6 +413,7 @@ class LeToRFeatureExternalInfo(Configurable):
     word2vec_in = Unicode(help='word2vec in').tag(config=True)
     joint_emb_in = Unicode(help="word-entity joint embedding in").tag(config=True)
     entity_triple_in = Unicode(help="entity triple in").tag(config=True)
+    prf_trec_in = Unicode(help='prf trec in').tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExternalInfo, self).__init__(**kwargs)
@@ -441,6 +443,10 @@ class LeToRFeatureExternalInfo(Configurable):
         if self.entity_triple_in:
             logging.info('loading entity triples [%s]', self.entity_triple_in)
             self.h_e_triples = load_packed_triples(self.entity_triple_in)
+        self.ll_q_rank_info = []
+        if self.prf_trec_in:
+            logging.info('loading prf trec with info')
+            self.ll_q_rank_info = load_trec_ranking_with_info(self.prf_trec_in)
 
         logging.info('external info loaded')
 

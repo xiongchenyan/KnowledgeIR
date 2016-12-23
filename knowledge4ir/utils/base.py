@@ -58,6 +58,25 @@ def load_trec_ranking_with_score(in_name):
     return ll_qid_ranked_doc
 
 
+def load_trec_ranking_with_info(in_name):
+    ll_qid_ranked_doc = []
+
+    this_qid = None
+
+    for line in open(in_name):
+        cols = line.strip().split()
+        qid = cols[0]
+        docno = cols[2]
+        score = float(cols[4])
+        h_info = json.loads('#'.join(line.split('#')[1:]))
+
+        if qid != this_qid:
+            ll_qid_ranked_doc.append([qid, []])
+            this_qid = qid
+        ll_qid_ranked_doc[-1][-1].append([docno, score, h_info])
+    return ll_qid_ranked_doc
+
+
 def dump_trec_ranking(ll_qid_ranked_doc, out_name):
     out = open(out_name, 'w')
     ll_mid = list(ll_qid_ranked_doc)
@@ -348,8 +367,7 @@ def seg_gdeval_out(eva_str, with_mean=True):
         return l_qid_eva
 
 
-# TODO
-def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None):
+def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None):
     """
     rm3 model
     if h_doc_df and total_df is None, will only use tf part
@@ -360,6 +378,7 @@ def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None):
     :param l_doc_h_tf: tf dict for each doc
     :param l_doc_h_df: df dict for each doc
     :param total_df: total df of the corpus
+    :param h_total_df: total df dict
     :return: expansion term with score in a list, [[term, exp score],...]
     """
     h_term_score = {}
@@ -372,6 +391,8 @@ def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None):
         h_df = {}
         if l_doc_h_df:
             h_df = l_doc_h_df[p]
+        if h_total_df:
+            h_df = h_total_df
         tf_z = float(sum([item[1] for item in h_tf.items()]))
         for term, tf in h_tf.items():
             exp_score = tf / tf_z * score
