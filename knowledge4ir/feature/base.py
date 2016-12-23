@@ -419,6 +419,7 @@ class LeToRFeatureExternalInfo(Configurable):
         super(LeToRFeatureExternalInfo, self).__init__(**kwargs)
         logging.info('start loading external info...')
         self.h_field_h_df = {}
+        self.h_corpus_stat = {}
         if self.corpus_stat_pre:
             l_field_h_df, self.h_corpus_stat = load_corpus_stat(
                 self.corpus_stat_pre, self.l_text_fields)

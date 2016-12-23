@@ -36,14 +36,14 @@ class TermPrfAttentionFeature(TermAttentionFeature):
 
     def __init__(self, **kwargs):
         super(TermPrfAttentionFeature, self).__init__(**kwargs)
-        self.h_field_h_df = {}
-        self.h_corpus_stat = {}
+        # self.h_field_h_df = {}
+        # self.h_corpus_stat = {}
         self.h_q_rank_info = {}
 
     def set_external_info(self, external_info):
         super(TermPrfAttentionFeature, self).set_external_info(external_info)
-        self.h_field_h_df = external_info.h_field_h_df
-        self.h_corpus_stat = external_info.h_corpus_stat
+        # self.h_field_h_df = external_info.h_field_h_df
+        # self.h_corpus_stat = external_info.h_corpus_stat
         self.h_q_rank_info = dict(external_info.ll_q_rank_info)
 
     def extract(self, h_q_info, l_t):
