@@ -117,7 +117,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                 if 'topk' in self.pool_func:
                     l_this_bin_score.extend(self._top_k_all(m_sim_mtx))
                 if len(l_sim_mtx) > 1:
-                    l_this_bin_score = [('D%03d' + item[0], item[1]) for item in l_this_bin_score]
+                    l_this_bin_score = [('D%03d' % d + item[0], item[1]) for item in l_this_bin_score]
                 l_total_bin_score.extend(l_this_bin_score)
 
             for bin_name, score in l_total_bin_score:
