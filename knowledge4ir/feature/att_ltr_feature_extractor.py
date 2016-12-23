@@ -168,7 +168,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qt_att_extractor.append(TermEmbeddingAttentionFeature(**kwargs))
             self.l_qt_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Emb features to term attention')
-        if "Emb" in self.l_qt_att_feature:
+        if "Static" in self.l_qt_att_feature:
             self.l_qt_att_extractor.append(TermStaticAttentionFeature(**kwargs))
             self.l_qt_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Static features to term attention')
