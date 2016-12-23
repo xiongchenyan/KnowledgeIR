@@ -20,6 +20,9 @@ from traitlets import (
     List,
     Float,
 )
+from knowledge4ir.utils import (
+    TARGET_TEXT_FIELDS,
+)
 import math
 
 
@@ -27,7 +30,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('tagme', help='tagger used, as in q info and d info'
                      ).tag(config=True)
     l_target_fields = List(Unicode,
-                           default_value=[],
+                           default_value=[TARGET_TEXT_FIELDS],
                            help='doc fields to use'
                            ).tag(config=True)
     embedding_in = Unicode(help='embedding data input (word2vec format) if only one',
@@ -38,7 +41,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     l_embedding_name = List(Unicode, default_value=[],
                             help="names of corresponding embedding, if more than one"
                             ).tag(config=True)
-    distance = Unicode('cos', help='distance function, cos|l1'
+    distance = Unicode('cos', help='distance function, cos|l1|l1-fine'
                        ).tag(config=True)
     # l_soft_similarities = List(Unicode, default_value=['TopK',
     #                                                    'Mean',
@@ -53,8 +56,8 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     bin_func = Unicode('log',
                        help="the func to apply on bin count: log|tf|norm_tf"
                        ).tag(config=True)
-    pool_func = List(Unicode, default_value=['max', 'mean', 'mean-all', 'topk'],
-                     help="pooling at query entities"
+    pool_func = List(Unicode, default_value=['max'],
+                     help="pooling at query entities 'max', 'mean', 'mean-all', 'topk'"
                      ).tag(config=True)
     bin_range = Float(1.0, help="the bin range to keep in bin").tag(config=True)
     log_min = Float(1e-10, help='log of zero bin').tag(config=True)
@@ -92,19 +95,30 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             if field not in self.l_target_fields:
                 continue
             l_doc_e = [ana[0] for ana in l_ana if ana[0] in emb_model]
-            m_sim_mtx = self._build_sim_mtx(l_e, l_doc_e, emb_model)
+            l_sim_mtx = []
+            if self.distance == 'l1-fine':
+                l_sim_mtx = self._build_fine_grained_l1_tensor(l_e, l_doc_e, emb_model)
+            else:
+                m_sim_mtx = self._build_sim_mtx(l_e, l_doc_e, emb_model)
+                l_sim_mtx.append(m_sim_mtx)
             # m_sim_mtx = self._build_cosine_mtx(l_e, l_doc_e, emb_model)
             # logging.debug('sim mtx: %s', np.array2string(m_sim_mtx))
 
             l_total_bin_score = []
-            if 'mean' in self.pool_func:
-                l_total_bin_score.extend(self._mean_bin(m_sim_mtx))
-            if 'max' in self.pool_func:
-                l_total_bin_score.extend(self._max_bin(m_sim_mtx))
-            if 'mean-all' in self.pool_func:
-                l_total_bin_score.extend(self._mean_all(m_sim_mtx))
-            if 'topk' in self.pool_func:
-                l_total_bin_score.extend(self._top_k_all(m_sim_mtx))
+            for d in xrange(len(l_sim_mtx)):
+                l_this_bin_score = []
+                m_sim_mtx = l_sim_mtx[d]
+                if 'mean' in self.pool_func:
+                    l_this_bin_score.extend(self._mean_bin(m_sim_mtx))
+                if 'max' in self.pool_func:
+                    l_this_bin_score.extend(self._max_bin(m_sim_mtx))
+                if 'mean-all' in self.pool_func:
+                    l_this_bin_score.extend(self._mean_all(m_sim_mtx))
+                if 'topk' in self.pool_func:
+                    l_this_bin_score.extend(self._top_k_all(m_sim_mtx))
+                if len(l_sim_mtx) > 1:
+                    l_this_bin_score = [('D%03d' + item[0], item[1]) for item in l_this_bin_score]
+                l_total_bin_score.extend(l_this_bin_score)
 
             for bin_name, score in l_total_bin_score:
                 feature_name = '_'.join([self.feature_name_pre,
@@ -146,11 +160,11 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     @classmethod
     def _build_l1_mtx(cls, l_q_e, l_doc_e, emb_model):
         """
-        build a q-d entity cosine similarity matrix
+        build a q-d entity l1 similarity matrix
         :param l_q_e: query entities
         :param l_doc_e: doc entities
         :param emb_model: embedding model loaded
-        :return: a matrix with cosine(q_e, doc_e)
+        :return: a matrix with l1 sim(q_e, doc_e)
         """
         sim_mtx = np.zeros((len(l_q_e), len(l_doc_e)))
         for i in xrange(len(l_q_e)):
@@ -163,6 +177,32 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                 if (q_e in emb_model) & (d_e in emb_model):
                     sim_mtx[i, j] = 1.0 - np.mean(np.abs(emb_model[q_e] - emb_model[d_e]))
         return sim_mtx
+
+    @classmethod
+    def _build_fine_grained_l1_tensor(cls, l_q_e, l_doc_e, emb_model):
+        """
+        build a q-d entity l1 similarity tensor, fine grained to each dimension of embedding
+        :param l_q_e: query entities
+        :param l_doc_e: doc entities
+        :param emb_model: embedding model loaded
+        :return: a tensofr with  embedding d: l1_sim(q_e, doc_e)
+        """
+        l_sim_mtx = []
+        for d in xrange(emb_model.vector_size):
+            sim_mtx = np.zeros((len(l_q_e), len(l_doc_e)))
+
+            for i in xrange(len(l_q_e)):
+                q_e = l_q_e[i]
+                for j in xrange(len(l_doc_e)):
+                    d_e = l_doc_e[j]
+                    if q_e == d_e:
+                        sim_mtx[i, j] = 1.0
+                        continue
+                    if (q_e in emb_model) & (d_e in emb_model):
+                        sim_mtx[i, j] = 1.0 - abs(emb_model[q_e][d] - emb_model[d_e][d])
+            l_sim_mtx.append(sim_mtx)
+
+        return l_sim_mtx
 
     def _soft_embedding_sim(self, m_sim_mtx):
         """
