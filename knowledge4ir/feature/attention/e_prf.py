@@ -54,7 +54,7 @@ class EntityPrfAttentionFeature(EntityAttentionFeature):
         for field in TARGET_TEXT_FIELDS:
             l_doc_lm = []
             for doc, score, h_info in l_rank_info[:self.prf_d]:
-                l_ana = h_info[self.tagger].get(field, [])
+                l_ana = h_info.get(self.tagger, {}).get(field, [])
                 l_e = [ana[0] for ana in l_ana]
                 lm = term2lm(l_e)
                 l_doc_lm.append(lm)
