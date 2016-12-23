@@ -263,6 +263,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         :return: h_feature
         """
         base_score = self._h_q_doc_score[qid][docno]
+        h_q_info['qid'] = qid
 
         l_h_qt_info, l_t = self._split_q_info(h_q_info, target='bow')
         l_h_qe_info, l_e = self._split_q_info(h_q_info, target='boe')

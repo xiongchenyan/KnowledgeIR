@@ -42,8 +42,8 @@ class EntityPrfAttentionFeature(EntityAttentionFeature):
 
     def extract(self, h_q_info, l_e):
         # l_h_feature = {}
-        h_field_l_doc_lm = self._form_prf_field_lm(h_q_info['q'])
-        prf_ranking = [item[:2] for item in self.h_q_rank_info.get(h_q_info['q'], [])]
+        h_field_l_doc_lm = self._form_prf_field_lm(h_q_info['qid'])
+        prf_ranking = [item[:2] for item in self.h_q_rank_info.get(h_q_info['qid'], [])]
         l_h_feature = TermPrfAttentionFeature.extract_prf(self.feature_name_pre, l_e, prf_ranking, h_field_l_doc_lm[body_field])
         l_h_feature = mul_update(l_h_feature, TermPrfAttentionFeature.extract_coverage(self.feature_name_pre, l_e, h_field_l_doc_lm))
         return l_h_feature
