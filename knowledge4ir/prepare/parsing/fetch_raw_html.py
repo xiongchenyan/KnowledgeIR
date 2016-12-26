@@ -38,6 +38,7 @@ def get_target_doc_per_file(fname, s_docno):
     try:
         for record in in_file:
             if 'warc-trec-id' not in record:
+                logging.warn('record has no trec id')
                 continue
             cnt += 1
             docno = record['warc-trec-id']
@@ -52,7 +53,7 @@ def get_target_doc_per_file(fname, s_docno):
             l_res.append(res)
     except AssertionError:
         logging.error('[%s] assertion error', fname)
-    logging.info('[%s] get [%d] target docs', fname, len(l_res))
+    logging.info('[%s] get [%d] target docs in [%d] doc', fname, len(l_res), cnt)
     return l_res
 
 
