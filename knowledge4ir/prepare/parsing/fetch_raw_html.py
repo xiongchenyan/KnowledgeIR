@@ -24,12 +24,14 @@ reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
 
+
 def get_target_doc_per_file(fname, s_docno):
     s_doc_pre = set(['-'.join(docno.split('-')[1:3]) for docno in s_docno])
 
     l_res = []
-
-    if ntpath.basename(fname).replace('.warc.gz', "") not in s_doc_pre:
+    cw09_pre = ntpath.basename(ntpath.dirname(fname)) + '-' + ntpath.basename(fname.replace('.warc.gz', ""))
+    cw12_pre = ntpath.basename(fname).replace('.warc.gz', "")
+    if (cw09_pre not in s_doc_pre) & (cw12_pre not in s_doc_pre):
         return l_res
 
     in_file = warc.open(fname)
@@ -37,6 +39,7 @@ def get_target_doc_per_file(fname, s_docno):
     cnt = 0
     try:
         for record in in_file:
+            print record
             if 'warc-trec-id' not in record:
                 logging.warn('record has no trec id')
                 continue
