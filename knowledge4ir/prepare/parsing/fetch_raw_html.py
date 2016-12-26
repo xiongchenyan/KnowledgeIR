@@ -16,6 +16,7 @@ output:
 """
 
 import warccw09
+import warc
 import os
 import ntpath
 import logging
@@ -23,9 +24,10 @@ import sys
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
-
+cw_version = '09'
 
 def get_target_doc_per_file(fname, s_docno):
+    global cw_version
     s_doc_pre = set(['-'.join(docno.split('-')[1:3]) for docno in s_docno])
 
     l_res = []
@@ -33,8 +35,10 @@ def get_target_doc_per_file(fname, s_docno):
     cw12_pre = ntpath.basename(fname).replace('.warc.gz', "")
     if (cw09_pre not in s_doc_pre) & (cw12_pre not in s_doc_pre):
         return l_res
-
-    in_file = warccw09.open(fname)
+    if cw_version == '09':
+        in_file = warccw09.open(fname)
+    else:
+        in_file = warc.open(fname)
     logging.info('start reading [%s]', fname)
     cnt = 0
     try:
@@ -48,9 +52,7 @@ def get_target_doc_per_file(fname, s_docno):
             if docno not in s_docno:
                 continue
             logging.info('get [%s]', docno)
-            res = ""
-            for line in record.payload:
-                res += line + ' '
+            res = record.payload
             res = ' '.join(res.split())
             l_res.append(res)
     except AssertionError:
@@ -59,7 +61,9 @@ def get_target_doc_per_file(fname, s_docno):
     return l_res
 
 
-def process_dir(in_dir, target_doc_in, out_name):
+def process_dir(in_dir, target_doc_in, out_name, this_cw_version):
+    global cw_version
+    cw_version = this_cw_version
     s_docno = set(open(target_doc_in).read().splitlines())
     logging.info('total [%d] target docno', len(s_docno))
     out = open(out_name, 'w')
@@ -75,8 +79,8 @@ if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
     set_basic_log(logging.DEBUG)
 
-    if 4 != len(sys.argv):
-        print "3 para: in_dir + target docno + output"
+    if 5 != len(sys.argv):
+        print "4 para: in_dir + target docno + output + cw version(09|12)"
         sys.exit(-1)
 
     process_dir(*sys.argv[1:])
