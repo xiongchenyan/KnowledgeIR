@@ -26,7 +26,6 @@ sys.setdefaultencoding('UTF8')
 
 cw_version = '09'
 
-
 def get_content(record, cw_v):
     if cw_v == '09':
         res = record.payload
@@ -82,18 +81,21 @@ def process_dir(in_dir, target_doc_in, out_name, this_cw_version):
     s_docno = set(open(target_doc_in).read().splitlines())
     logging.info('total [%d] target docno', len(s_docno))
     out = open(out_name, 'w')
+    total_cnt = 0
     for dir_name, sub_dirs, file_names in os.walk(in_dir):
         for fname in file_names:
             in_name = os.path.join(dir_name, fname)
             l_res = get_target_doc_per_file(in_name, s_docno)
             if l_res:
                 print >> out, '\n'.join(l_res)
+                total_cnt += len(l_res)
     out.close()
+    logging.info('finished, get [%d/%d] target docs', total_cnt, len(s_docno))
 
 
 if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     if 5 != len(sys.argv):
         print "4 para: in_dir + target docno + output + cw version(09|12)"
