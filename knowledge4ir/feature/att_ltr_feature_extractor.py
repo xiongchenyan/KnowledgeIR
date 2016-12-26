@@ -34,6 +34,10 @@ from knowledge4ir.feature.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.feature.attention.t_embedding import TermEmbeddingAttentionFeature
 from knowledge4ir.feature.attention.e_embedding import EntityEmbeddingAttentionFeature
 from knowledge4ir.feature.attention.e_text import EntityTextAttentionFeature
+from knowledge4ir.feature.attention.e_static import EntityStaticAttentionFeature
+from knowledge4ir.feature.attention.t_static import TermStaticAttentionFeature
+from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
+from knowledge4ir.feature.attention.e_prf import EntityPrfAttentionFeature
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
@@ -42,6 +46,7 @@ from knowledge4ir.utils import (
 )
 from knowledge4ir.feature import LeToRFeatureExternalInfo
 import numpy as np
+
 
 class AttLeToRFeatureExtractCenter(Configurable):
     """
@@ -66,10 +71,10 @@ class AttLeToRFeatureExtractCenter(Configurable):
                            ).tag(config=True)
 
     l_qt_att_feature = List(Unicode, default_value=['Emb'],
-                            help='q term attention features: Emb'
+                            help='q term attention features: Emb, Static, Prf'
                             ).tag(config=True)
-    l_qe_att_feature = List(Unicode, default_value=['Emb', 'Text'],
-                            help='q e attention feature: Emb, Text'
+    l_qe_att_feature = List(Unicode, default_value=['Emb',],
+                            help='q e attention feature: Emb, Text, Static, Prf'
                             ).tag(config=True)
 
     out_name = Unicode(help='feature out file name').tag(config=True)
@@ -108,10 +113,18 @@ class AttLeToRFeatureExtractCenter(Configurable):
 
         print "term attention feature group: Emb"
         TermEmbeddingAttentionFeature.class_print_help(inst)
+        print 'term attention feature group: Static'
+        TermStaticAttentionFeature.class_print_help(inst)
+        print 'term attention feature group: Prf'
+        TermPrfAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Emb"
         EntityEmbeddingAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Text"
         EntityTextAttentionFeature.class_print_help(inst)
+        print "entity attention feature group: Static"
+        EntityStaticAttentionFeature.class_print_help(inst)
+        print "entity attention feature group: Prf"
+        EntityPrfAttentionFeature.class_print_help(inst)
 
     def update_config(self, config):
         super(AttLeToRFeatureExtractCenter, self).update_config(config)
@@ -161,6 +174,14 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qt_att_extractor.append(TermEmbeddingAttentionFeature(**kwargs))
             self.l_qt_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Emb features to term attention')
+        if "Static" in self.l_qt_att_feature:
+            self.l_qt_att_extractor.append(TermStaticAttentionFeature(**kwargs))
+            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Static features to term attention')
+        if "Prf" in self.l_qt_att_feature:
+            self.l_qt_att_extractor.append(TermPrfAttentionFeature(**kwargs))
+            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Static features to term attention')
         if "Emb" in self.l_qe_att_feature:
             self.l_qe_att_extractor.append(EntityEmbeddingAttentionFeature(**kwargs))
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
@@ -170,6 +191,14 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add text features to entity attention')
 
+        if "Static" in self.l_qe_att_feature:
+            self.l_qe_att_extractor.append(EntityStaticAttentionFeature(**kwargs))
+            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Static features to entity attention')
+        if "Prf" in self.l_qe_att_feature:
+            self.l_qe_att_extractor.append(EntityPrfAttentionFeature(**kwargs))
+            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Static features to entity attention')
 
     def pipe_extract(self):
         """
@@ -234,6 +263,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         :return: h_feature
         """
         base_score = self._h_q_doc_score[qid][docno]
+        h_q_info['qid'] = qid
 
         l_h_qt_info, l_t = self._split_q_info(h_q_info, target='bow')
         l_h_qe_info, l_e = self._split_q_info(h_q_info, target='boe')

@@ -11,10 +11,14 @@ from scipy import spatial
 from traitlets import (
     Int, Float, List, Unicode
 )
+import sys
 from traitlets.config import Configurable
 from knowledge4ir.utils import load_corpus_stat
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from gensim.models import Word2Vec
+from knowledge4ir.utils import load_trec_ranking_with_info
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 BM25_K1 = 1.2
@@ -408,11 +412,14 @@ class LeToRFeatureExternalInfo(Configurable):
                             ).tag(config=True)
     word2vec_in = Unicode(help='word2vec in').tag(config=True)
     joint_emb_in = Unicode(help="word-entity joint embedding in").tag(config=True)
+    entity_triple_in = Unicode(help="entity triple in").tag(config=True)
+    prf_trec_in = Unicode(help='prf trec in').tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExternalInfo, self).__init__(**kwargs)
         logging.info('start loading external info...')
         self.h_field_h_df = {}
+        self.h_corpus_stat = {}
         if self.corpus_stat_pre:
             l_field_h_df, self.h_corpus_stat = load_corpus_stat(
                 self.corpus_stat_pre, self.l_text_fields)
@@ -433,6 +440,14 @@ class LeToRFeatureExternalInfo(Configurable):
         if self.joint_emb_in:
             logging.info('loading joint embedding [%s]', self.joint_emb_in)
             self.joint_embedding = Word2Vec.load_word2vec_format(self.joint_emb_in)
+        self.h_e_triples = {}
+        if self.entity_triple_in:
+            logging.info('loading entity triples [%s]', self.entity_triple_in)
+            self.h_e_triples = load_packed_triples(self.entity_triple_in)
+        self.ll_q_rank_info = []
+        if self.prf_trec_in:
+            logging.info('loading prf trec with info')
+            self.ll_q_rank_info = load_trec_ranking_with_info(self.prf_trec_in)
 
         logging.info('external info loaded')
 
@@ -452,6 +467,17 @@ class LeToRFeatureExternalInfo(Configurable):
 #
 #     print 'models test:'
 #     _unit_test_models(term_stat)
+
+def load_packed_triples(entity_triple_in):
+    h_e_triples = {}
+    for line in open(entity_triple_in):
+        h = json.loads(line)
+        e = h['id']
+        l_t = h['triples']
+        h_e_triples[e] = l_t
+    logging.info('loaded [%d] entity\' triples', len(h_e_triples))
+    return h_e_triples
+
 
 
 def load_query_info(in_name):
