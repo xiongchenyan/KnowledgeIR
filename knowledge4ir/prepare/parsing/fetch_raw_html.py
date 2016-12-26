@@ -86,7 +86,8 @@ def process_dir(in_dir, target_doc_in, out_name, this_cw_version):
         for fname in file_names:
             in_name = os.path.join(dir_name, fname)
             l_res = get_target_doc_per_file(in_name, s_docno)
-            print >> out, '\n'.join(l_res)
+            if l_res:
+                print >> out, '\n'.join(l_res)
     out.close()
 
 
