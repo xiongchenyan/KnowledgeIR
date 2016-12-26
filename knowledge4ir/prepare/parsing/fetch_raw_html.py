@@ -31,13 +31,13 @@ def get_content(record, cw_v):
     if cw_v == '09':
         res = record.payload
         res = ' '.join(res.split())
-        return res
+        return res.strip()
     if cw_v == '12':
         res = ""
         for line in record.payload:
             res += line.strip() + ' '
         res = ' '.join(res.split())
-        return res
+        return res.strip()
     return ""
 
 
