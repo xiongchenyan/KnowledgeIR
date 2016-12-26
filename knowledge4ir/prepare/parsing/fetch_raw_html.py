@@ -41,6 +41,7 @@ def get_target_doc_per_file(fname, s_docno):
                 continue
             cnt += 1
             docno = record['warc-trec-id']
+            logging.debug('get doc [%s]', docno)
             if docno not in s_docno:
                 continue
             logging.info('get [%s]', docno)
@@ -69,7 +70,7 @@ def process_dir(in_dir, target_doc_in, out_name):
 
 if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
-    set_basic_log()
+    set_basic_log(logging.DEBUG)
 
     if 4 != len(sys.argv):
         print "3 para: in_dir + target docno + output"
