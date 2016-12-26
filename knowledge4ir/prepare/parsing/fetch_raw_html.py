@@ -57,7 +57,8 @@ def get_target_doc_per_file(fname, s_docno):
 
 def process_dir(in_dir, target_doc_in, out_name):
     s_docno = set(open(target_doc_in).read().splitlines())
-    out = open(out_name)
+    logging.info('total [%d] target docno', len(s_docno))
+    out = open(out_name, 'w')
     for dir_name, sub_dirs, file_names in os.walk(in_dir):
         for fname in file_names:
             in_name = os.path.join(dir_name, fname)
