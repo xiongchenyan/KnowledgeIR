@@ -15,7 +15,7 @@ output:
         docnot \t html
 """
 
-import warc
+import warccw09
 import os
 import ntpath
 import logging
@@ -34,12 +34,11 @@ def get_target_doc_per_file(fname, s_docno):
     if (cw09_pre not in s_doc_pre) & (cw12_pre not in s_doc_pre):
         return l_res
 
-    in_file = warc.open(fname)
+    in_file = warccw09.open(fname)
     logging.info('start reading [%s]', fname)
     cnt = 0
     try:
         for record in in_file:
-            print record
             if 'warc-trec-id' not in record:
                 logging.warn('record has no trec id')
                 continue
