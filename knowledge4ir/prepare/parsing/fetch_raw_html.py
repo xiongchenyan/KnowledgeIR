@@ -37,6 +37,7 @@ def get_content(record, cw_v):
         for line in record.payload:
             res += line.strip() + ' '
         res = ' '.join(res.split())
+        res = ' '.join(res.splitlines())
         return res.strip()
     return ""
 
