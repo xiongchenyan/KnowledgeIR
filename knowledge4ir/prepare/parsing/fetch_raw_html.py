@@ -26,6 +26,20 @@ sys.setdefaultencoding('UTF8')
 
 cw_version = '09'
 
+
+def get_content(record, cw_v):
+    if cw_v == '09':
+        res = record.payload
+        res = ' '.join(res.split())
+        return res
+    if cw_v == '12':
+        res = ""
+        for line in record.payload:
+            res += line.strip() + ' '
+        return res
+    return ""
+
+
 def get_target_doc_per_file(fname, s_docno):
     global cw_version
     s_doc_pre = set(['-'.join(docno.split('-')[1:3]) for docno in s_docno])
@@ -52,9 +66,8 @@ def get_target_doc_per_file(fname, s_docno):
             if docno not in s_docno:
                 continue
             logging.info('get [%s]', docno)
-            res = record.payload
-            res = ' '.join(res.split())
-            l_res.append(res)
+            res = get_content(record, cw_version)
+            l_res.append(docno + '\t' + res)
     except AssertionError:
         logging.error('[%s] assertion error', fname)
     logging.info('[%s] get [%d] target docs in [%d] doc', fname, len(l_res), cnt)
