@@ -51,7 +51,7 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
 
     h = dict()
     h[title_field] = title
-    h[body_field] = body_field
+    h[body_field] = body
     h['docno'] = docno
     h['tagme'] = dict()
     h['tagme'][tagged_field] = l_ana
