@@ -25,7 +25,7 @@ sys.setdefaultencoding('UTF8')
 def extract_html(html_text, parser):
     try:
         extractor = Extractor(extractor=parser, html=html_text)
-    except (UnicodeDecodeError, TypeError) as e:
+    except Exception as e:
         return None, None
     title = extractor.source.getTitle()
     body_text = extractor.getText()
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     set_basic_log()
     if 3 > len(sys.argv):
         print "2+ para: html doc in, docno+html one per line + outname + parser "
-        print "(default parse: ArticalExtractor, can be: DefaultExtractor, KeepEverythingExtractor, LargestContentExtractor)"
+        print "(default parse: ArticleExtractor, can be: DefaultExtractor, KeepEverythingExtractor, LargestContentExtractor)"
         sys.exit(-1)
     parser = 'ArticleExtractor'
     if len(sys.argv) > 3:
