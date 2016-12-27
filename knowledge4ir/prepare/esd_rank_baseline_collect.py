@@ -19,7 +19,7 @@ out = open(sys.argv[2], 'w')
 
 for qid in xrange(1, 251):
     l_docno = open(os.path.join(sys.argv[1], '%d_doc_docNo' % qid)).read().splitlines()
-    l_rank = open(os.path.join(sys.argv[1], '%d_prediction').read().splitlines())
+    l_rank = open(os.path.join(sys.argv[1], '%d_prediction')).read().splitlines()
 
     l_doc_rank = zip(l_docno, l_rank)
     l_doc_rank.sort(key=lambda item: item[1])
