@@ -11,7 +11,6 @@ output:
 
 """
 
-import ntpath
 import logging
 import sys
 import json
@@ -49,7 +48,7 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
             continue
         l_ana.append(ana)
         p += 6
-        
+
     h = dict()
     h[title_field] = title
     h[body_field] = body_field
