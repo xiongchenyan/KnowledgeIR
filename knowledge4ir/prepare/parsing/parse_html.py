@@ -36,7 +36,7 @@ def parse_docs(in_name, out_name, parser):
     cnt, err_cnt = 0, 0
     for line in open(in_name):
         docno, html_text = line.strip().split('\t')
-        html_text = html_text[html_text.find('<html'):]
+        html_text = html_text.lower().[html_text.find('<html'):]
         if not html_text:
             continue
         if html_text.strip() == "":
