@@ -16,6 +16,7 @@ import os
 import sys
 import ntpath
 reload(sys)
+import logging
 sys.setdefaultencoding('UTF8')
 
 
@@ -34,6 +35,7 @@ def extract_html(html_text, parser):
 def parse_docs(in_name, out_name, parser):
     out = open(out_name, 'w')
     cnt, err_cnt = 0, 0
+    logging.info('parsing [%s]', in_name)
     for line in open(in_name):
         docno, html_text = line.strip().split('\t')
         html_text = html_text.lower()[html_text.find('<html'):]
@@ -48,14 +50,16 @@ def parse_docs(in_name, out_name, parser):
             err_cnt += 1
             continue
         print >> out, docno + '\t' + ' '.join(title.strip().split()) + '\t' + ' '.join(body_text.strip().split())
-        print '%s parsed' % docno
+        logging.info('%s parsed' % docno)
         cnt += 1
 
     out.close()
-    print "finished %d err, %d correct" % (err_cnt, cnt)
+    logging.info("finished %d err, %d correct" % (err_cnt, cnt))
 
 
 if __name__ == '__main__':
+    from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if 3 > len(sys.argv):
         print "2+ para: html doc in, docno+html one per line + outname + parser "
         print "(default parse: ArticalExtractor, can be: DefaultExtractor, KeepEverythingExtractor, LargestContentExtractor)"
