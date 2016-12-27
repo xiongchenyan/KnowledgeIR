@@ -26,7 +26,7 @@ sys.setdefaultencoding('UTF8')
 def wrap_doc(line, h_wiki_fb, tagged_field):
     cols = line.split('#')
     doc_str = '#'.join(cols[:-1])
-    tagged_str = cols[-1]
+    tagged_str = cols[-1].strip()
 
     docno, title, body = doc_str.split('\t')[:3]
 
