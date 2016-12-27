@@ -57,7 +57,7 @@ class LeToRIRFusionFeatureExtractor(LeToRFeatureExtractor):
             h_doc_df = self.h_field_h_df[field]
             h_doc_tf = {}
             if field in h_doc_info:
-                h_doc_tf = text2lm(h_doc_info[field].lower())
+                h_doc_tf = text2lm(h_doc_info[field].lower(), clean=True)
 
             term_stat = TermStat()
             term_stat.set_from_raw(h_tf, h_doc_tf, h_doc_df, total_df, avg_doc_len)
