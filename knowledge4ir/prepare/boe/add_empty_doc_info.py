@@ -32,9 +32,10 @@ for line in open(sys.argv[1]):
     print >> out, line.strip()
 
 h = dict()
+h['tagme'] = dict()
 for field in TARGET_TEXT_FIELDS:
     h[field] = ""
-    h['tagme'] = dict()
+
     h['tagme'][field] = []
 
 s_h = json.dumps(h)
