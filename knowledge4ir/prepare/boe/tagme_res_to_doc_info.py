@@ -38,14 +38,18 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
         wiki_id, surface, st, ed, score, name = l_tagged[p: p + 6]
         if wiki_id not in h_wiki_fb:
             logging.warn('[%s] not in wiki-> fb dict', wiki_id)
+            p += 6
             continue
         obj_id = h_wiki_fb[wiki_id]
         try:
             ana = [obj_id, int(st), int(ed), {'score': float(score)}, name]
         except ValueError:
             logging.warn('ana %s format error', json.dumps(l_tagged[p: p + 6]))
+            p += 6
             continue
         l_ana.append(ana)
+        p += 6
+        
     h = dict()
     h[title_field] = title
     h[body_field] = body_field
