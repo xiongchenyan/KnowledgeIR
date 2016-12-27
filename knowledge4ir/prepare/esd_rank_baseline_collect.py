@@ -25,6 +25,6 @@ for qid in xrange(1, 251):
     l_doc_rank.sort(key=lambda item: item[1])
     for doc, rank in l_doc_rank:
         print >> out, '%d Q0 %s %d %d EsdRank' % (
-            qid, doc, rank, -rank
+            qid, doc, rank + 1, -rank
         )
 out.close()
