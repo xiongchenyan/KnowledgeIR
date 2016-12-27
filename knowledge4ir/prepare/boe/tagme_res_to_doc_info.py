@@ -56,7 +56,7 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
 
 
 def process(tagme_in, wiki_fb_dict_in, out_name, tagged_field):
-    h_wiki_fb = dict([line.strip().split('\t') for line in open(wiki_fb_dict_in)])
+    h_wiki_fb = dict([line.strip().split('\t')[:2] for line in open(wiki_fb_dict_in)])
     out = open(out_name, 'w')
 
     for cnt, line in enumerate(open(tagme_in)):
