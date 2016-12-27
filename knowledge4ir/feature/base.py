@@ -201,7 +201,7 @@ class TermStat(Configurable):
         if self.doc_len == 0:
             return 0
         v_q = self.v_q_tf / float(np.sum(self.v_q_tf))
-        v_mid = self.v_tf * (bm25_para.k1 + 1) \
+        v_tf_part = self.v_tf * (bm25_para.k1 + 1) \
                 / (self.v_tf + bm25_para.k1 * (1 - bm25_para.b + bm25_para.b * self.doc_len /
                                                self.avg_doc_len))
 
@@ -209,7 +209,8 @@ class TermStat(Configurable):
         v_mid = np.maximum(v_mid, 1.0)
         v_idf_q = np.log(v_mid)
         v_idf_q = np.maximum(v_idf_q, 0)
-        score = v_mid.dot(v_q * v_idf_q)
+        score = v_mid.dot(v_tf_part * v_idf_q)
+
         return score
 
     def cosine(self):
