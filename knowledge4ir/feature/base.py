@@ -210,7 +210,8 @@ class TermStat(Configurable):
         v_idf_q = np.log(v_mid)
         v_idf_q = np.maximum(v_idf_q, 0)
         score = v_mid.dot(v_tf_part * v_idf_q)
-
+        score = max(score, 1.0)
+        score = np.log(score)
         return score
 
     def cosine(self):
