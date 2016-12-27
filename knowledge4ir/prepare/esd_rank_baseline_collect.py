@@ -19,12 +19,14 @@ out = open(sys.argv[2], 'w')
 
 for qid in xrange(1, 251):
     l_docno = open(os.path.join(sys.argv[1], '%d_doc_docNo' % qid)).read().splitlines()
-    l_rank = open(os.path.join(sys.argv[1], '%d_prediction' % qid)).read().splitlines()
-    l_rank = [int(r) for r in l_rank]
-    l_doc_rank = zip(l_docno, l_rank)
-    l_doc_rank.sort(key=lambda item: item[1])
-    for doc, rank in l_doc_rank:
+    l_score = open(os.path.join(sys.argv[1], '%d_prediction' % qid)).read().splitlines()
+    l_score = [int(r) for r in l_score]
+    l_doc_score = zip(l_docno, l_score)
+    l_doc_score.sort(key=lambda item: -item[1])
+    rank = 1
+    for doc, score in l_doc_score:
         print >> out, '%d Q0 %s %d %d EsdRank' % (
-            qid, doc, rank + 1, -rank
+            qid, doc, rank, score
         )
+        rank += 1
 out.close()
