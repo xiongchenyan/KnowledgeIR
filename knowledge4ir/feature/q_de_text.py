@@ -182,7 +182,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
             l_sim_score = term_stat.mul_scores()
             for sim, score in l_sim_score:
                 if sim in self.l_model:
-                    h_feature[self.feature_name + 'Exp' + e_field.title() + sim.title()] = score
+                    h_feature[self.feature_name_pre + 'Exp' + e_field.title() + sim.title()] = score
         return h_feature
 
     def _find_top_k_similar_entities(self, query, h_doc_e_texts):
