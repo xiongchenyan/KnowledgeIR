@@ -23,15 +23,14 @@ from traitlets import (
     Int
 )
 from knowledge4ir.utils import (
-    load_trec_ranking_with_score,
     load_corpus_stat,
     text2lm,
     term2lm,
     body_field,
 )
-from knowledge4ir.utils import TARGET_TEXT_FIELDS
-import logging
-import json
+# from knowledge4ir.utils import TARGET_TEXT_FIELDS
+# import logging
+# import json
 
 
 class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
@@ -86,7 +85,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
         l_h_doc_e_lm = self._form_doc_e_lm(h_doc_info)
         l_e = sum([h.keys() for h in l_h_doc_e_lm], [])
         h_doc_e_texts = self._prepare_doc_e_texts(l_e)
-        h_field_top_k_entities = self._find_top_k_similar_entities(h_doc_e_texts)
+        h_field_top_k_entities = self._find_top_k_similar_entities(query, h_doc_e_texts)
         if 'IndiScores' in self.l_features:
             h_feature.update(
                 self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts)
