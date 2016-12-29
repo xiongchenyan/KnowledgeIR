@@ -53,6 +53,7 @@ class CrossValidator(Configurable):
                     help='to cross validate model: hierarchical, '
                          'qterm_flat, qentity_flat, flat, mask'
                     ).tag(config=True)
+    get_intermediate_res = Bool(False, help="whether predict intermediate results").tag(config=True)
 
     def __init__(self, **kwargs):
         super(CrossValidator, self).__init__(**kwargs)
@@ -108,15 +109,17 @@ class CrossValidator(Configurable):
         l_train_svm = filter_json_lines(self.l_total_data_lines, self.l_train_folds[k])
         l_test_svm = filter_json_lines(self.l_total_data_lines, self.l_test_folds[k])
         self.model.train(l_train_svm)
+
+        self.testing(l_test_svm, out_dir)
         l_q_ranking = self.model.predict(l_test_svm)
-        rank_out_name = out_dir + '/trec'
-        eva_out_name = out_dir + '/eval'
-        dump_trec_ranking_with_score(l_q_ranking, rank_out_name)
-        eva_str = subprocess.check_output(
-            ['perl', GDEVAL_PATH, self.qrel, rank_out_name]).strip()
-        print >> open(eva_out_name, 'w'), eva_str.strip()
-        logging.info("training testing fold %d done with %s",
-                     k, eva_str.splitlines()[-1])
+        # rank_out_name = out_dir + '/trec'
+        # eva_out_name = out_dir + '/eval'
+        # dump_trec_ranking_with_score(l_q_ranking, rank_out_name)
+        # eva_str = subprocess.check_output(
+        #     ['perl', GDEVAL_PATH, self.qrel, rank_out_name]).strip()
+        # print >> open(eva_out_name, 'w'), eva_str.strip()
+        # logging.info("training testing fold %d done with %s",
+        #              k, eva_str.splitlines()[-1])
         return
 
     def train_dev_test_fold(self, k):
@@ -153,6 +156,20 @@ class CrossValidator(Configurable):
         logging.info('start training total')
         self.model.set_para(best_para)
         self.model.train(l_train_lines + l_dev_lines)
+
+        self.testing(l_test_lines, out_dir)
+        # l_q_ranking = self.model.predict(l_test_lines)
+        # rank_out_name = out_dir + '/trec'
+        # eva_out_name = out_dir + '/eval'
+        # dump_trec_ranking_with_score(l_q_ranking, rank_out_name)
+        # eva_str = subprocess.check_output(
+        #     ['perl', GDEVAL_PATH, self.qrel, rank_out_name]).strip()
+        # print >> open(eva_out_name, 'w'), eva_str.strip()
+        # __, ndcg, err = seg_gdeval_out(eva_str)
+        # logging.info('training testing fold %d done with ndcg %f', k, ndcg)
+        return
+
+    def testing(self, l_test_lines, out_dir):
         l_q_ranking = self.model.predict(l_test_lines)
         rank_out_name = out_dir + '/trec'
         eva_out_name = out_dir + '/eval'
@@ -162,6 +179,16 @@ class CrossValidator(Configurable):
         print >> open(eva_out_name, 'w'), eva_str.strip()
         __, ndcg, err = seg_gdeval_out(eva_str)
         logging.info('training testing fold %d done with ndcg %f', k, ndcg)
+
+        if self.get_intermediate_res:
+            ll_intermediate_res = self.model.predict_intermediate(l_test_lines)
+            for name, l_res in ll_intermediate_res:
+                out = open(os.path.join(out_dir, 'intermediate_', name), 'w')
+                for res in l_res:
+                    print >> out, json.dumps(res.tolist())
+                out.close()
+                logging.info('intermediate [%s] scores dumped', name)
+            logging.info('all intermediate results dumped')
         return
 
     def run_one_fold(self, fold_k):

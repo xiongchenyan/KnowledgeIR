@@ -22,6 +22,9 @@ from knowledge4ir.utils import (
     dump_trec_ranking_with_score,
     seg_gdeval_out,
 )
+from keras.models import (
+    Model,
+)
 import subprocess
 from sklearn.preprocessing import normalize
 
@@ -145,6 +148,12 @@ class AttLeToR(Configurable):
                 callbacks=[EarlyStopping(monitor='loss', patience=self.early_stop_patient)]
             )
 
+    def save_models(self, out_pre):
+        self.training_model.save(out_pre + '_train.h5')
+        self.ranking_model.save(out_pre + '_rank.h5')
+        logging.info('training and ranking model saved to [%s_train.h5][%s_rank.h5]',
+                     out_pre, out_pre)
+
     def predict(self, test_lines=None):
         if not test_lines:
             test_lines = open(self.test_in).read().splitlines()
@@ -157,6 +166,26 @@ class AttLeToR(Configurable):
         l_q_ranking = group_scores_to_ranking(l_qid, l_docno, l_score)
         logging.info('predicted')
         return l_q_ranking
+
+    def predict_intermediate(self, test_lines):
+        logging.info('start predicting')
+        h_data, v_label = self.pointwise_construct(test_lines)
+        l_model_name = [name + '_model' for name in self.l_model_names]
+        l_intermediate_model = []
+        ll_intermediate_res = []
+        logging.info('predicting intermediate results from ranking and attention moduels')
+        for name in l_model_name:
+            layer = self.ranking_model.get_layer(name)
+            intermediate_model = Model(input=layer.get_input_at(1),
+                                       output=layer.get_input_at(1)
+                                       )
+            logging.info('intermediate model: [%s]', name)
+            intermediate_model.summary()
+            l_intermediate_model.append(intermediate_model)
+            l_res = intermediate_model.predict(h_data)
+            ll_intermediate_res.append((name, l_res))
+
+        return ll_intermediate_res
 
     def evaluate(self, test_lines, qrel, out_pre=None):
         if not out_pre:
