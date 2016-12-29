@@ -183,7 +183,7 @@ class CrossValidator(Configurable):
         if self.get_intermediate_res:
             ll_intermediate_res = self.model.predict_intermediate(l_test_lines)
             for name, l_res in ll_intermediate_res:
-                out = open(os.path.join(out_dir, 'intermediate_', name), 'w')
+                out = open(os.path.join(out_dir, 'intermediate_' + name), 'w')
                 for res in l_res:
                     print >> out, json.dumps(res.tolist())
                 out.close()
