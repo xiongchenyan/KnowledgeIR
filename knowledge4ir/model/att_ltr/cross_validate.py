@@ -54,7 +54,7 @@ class CrossValidator(Configurable):
                     help='to cross validate model: hierarchical, '
                          'qterm_flat, qentity_flat, flat, mask'
                     ).tag(config=True)
-    get_intermediate_res = Bool(False, help="whether predict intermediate results").tag(config=True)
+    get_intermediate_res = Bool(True, help="whether predict intermediate results").tag(config=True)
 
     def __init__(self, **kwargs):
         super(CrossValidator, self).__init__(**kwargs)
