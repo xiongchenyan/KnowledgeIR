@@ -16,7 +16,10 @@ from traitlets import (
 import json
 import sys
 import logging
-from knowledge4ir.utils import TARGET_TEXT_FIELDS
+from knowledge4ir.utils import (
+    TARGET_TEXT_FIELDS,
+    text2lm
+)
 
 
 class GetVocabulary(Configurable):
@@ -31,7 +34,9 @@ class GetVocabulary(Configurable):
             h = json.loads(line.split('\t')[-1])
             for field in self.l_target_fields:
                 if field in h:
-                    l_w.extend(list(set(h[field].split())))
+                    text = h[field]
+                    lm = text2lm(text, clean=True)
+                    l_w.extend(lm.keys())
         logging.info('[%d] words get from [%s]', len(l_w), fname)
         return l_w
 

@@ -3,6 +3,9 @@ read doc info
 output two lines:
     1: body text
     2: body text with entity replaced by tagme's annotation
+
+On hold...
+    tagme's st and ed is not correct. It discard the punctuations?
 """
 
 from knowledge4ir.utils import body_field
