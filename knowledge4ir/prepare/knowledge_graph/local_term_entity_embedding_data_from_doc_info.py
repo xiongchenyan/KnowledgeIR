@@ -23,8 +23,16 @@ def replace(text, l_ana):
 
 def process_doc(doc_info):
     text = doc_info[body_field]
+    text = clean_text(text)
     l_ana = doc_info['tagme'][body_field]
     return text.lower(), replace(text, l_ana).lower()
+
+
+def clean_text(text):
+    l_t = text.split()
+    s = set(['#'])
+    l_new_t = [t for t in l_t if t not in s]
+    return ' '.join(l_new_t)
 
 
 def make_context_text(doc_info_in, out_name):
