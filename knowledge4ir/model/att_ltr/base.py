@@ -177,7 +177,7 @@ class AttLeToR(Configurable):
         for name in l_model_name:
             layer = self.ranking_model.get_layer(name)
             intermediate_model = Model(input=layer.get_input_at(1),
-                                       output=layer.get_input_at(1)
+                                       output=layer.get_output_at(1)
                                        )
             logging.info('intermediate model: [%s]', name)
             intermediate_model.summary()
