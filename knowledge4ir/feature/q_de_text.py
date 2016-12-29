@@ -23,14 +23,14 @@ from traitlets import (
     Int
 )
 from knowledge4ir.utils import (
-    load_trec_ranking_with_score,
     load_corpus_stat,
     text2lm,
     term2lm,
+    body_field,
 )
-from knowledge4ir.utils import TARGET_TEXT_FIELDS
-import logging
-import json
+# from knowledge4ir.utils import TARGET_TEXT_FIELDS
+# import logging
+# import json
 
 
 class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
@@ -48,6 +48,9 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
     tagger = Unicode('tagme', help='tagger used, as in q info and d info'
                      ).tag(config=True)
     corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
+    l_features = List(Unicode, default_value=['IndiScores'],
+                      help='feature groups: IndiScores, TopExpTextSim, TopTf'
+                      ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRQDocETextFeatureExtractorC, self).__init__(**kwargs)
@@ -82,8 +85,19 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
         l_h_doc_e_lm = self._form_doc_e_lm(h_doc_info)
         l_e = sum([h.keys() for h in l_h_doc_e_lm], [])
         h_doc_e_texts = self._prepare_doc_e_texts(l_e)
-
-        h_feature.update(self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts))
+        h_field_top_k_entities = self._find_top_k_similar_entities(query, h_doc_e_texts)
+        if 'IndiScores' in self.l_features:
+            h_feature.update(
+                self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts)
+            )
+        if 'TopExpTextSim' in self.l_features:
+            h_feature.update(
+                self._extract_q_doc_e_topk_merged_text_sim(query, h_field_top_k_entities, h_doc_e_texts)
+            )
+        if 'TopTf' in self.l_features:
+            h_feature.update(
+                self._extract_q_doc_e_topk_tf(h_doc_info, h_field_top_k_entities)
+            )
         return h_feature
 
     def _form_doc_e_lm(self, h_doc_info):
@@ -105,6 +119,99 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
                     h_fields[key] = ' '.join(h_fields[key])
             h_doc_e_texts[e] = h_fields
         return h_doc_e_texts
+
+    def _extract_q_doc_e_topk_tf(self, h_doc_info, h_field_top_k_entities):
+        """
+        for each e's fields, get top k most similar entities
+        calculate these entities' tf and sum ana scores in doc's body text
+        :param h_doc_info:
+        :param h_field_top_k_entities: top k most similar entities judged by each entities fields
+        :return:
+        """
+        h_feature = {}
+        h_boe_lm = {}
+        h_boe_ana_lm = {}
+
+        for ana in h_doc_info[self.tagger][body_field]:
+            e = ana[0]
+            score = ana[3]['score']
+            if e not in h_boe_lm:
+                h_boe_lm[e] = 1
+                h_boe_ana_lm[e] = score
+            else:
+                h_boe_lm[e] += 1
+                h_boe_ana_lm[e] += score
+
+        for e_field, l_top_e in h_field_top_k_entities.items():
+            for k, e in enumerate(l_top_e):
+                tf = h_boe_lm.get(e, 0)
+                ana_tf = h_boe_ana_lm.get(e, 0)
+                feature_name = self.feature_name_pre + e_field + 'Top%dTf' % (k)
+                h_feature[feature_name] = tf
+                feature_name = self.feature_name_pre + e_field + 'Top%dAnaTf' % (k)
+                h_feature[feature_name] = ana_tf
+
+        return h_feature
+
+    def _extract_q_doc_e_topk_merged_text_sim(self, query, h_field_top_k_entities, h_doc_e_texts):
+        """
+        form an expanded documents with top k entities from each_e_field
+        calc textual similarities between q and the expanded documents
+        :param query:
+        :param h_field_top_k_entities: top k most similar entities in each e fields
+        :param h_doc_e_texts: entities' texts
+        :return:
+        """
+        h_feature = {}
+
+        l_field_expanded_texts = []
+        for e_field, l_topk_e in h_field_top_k_entities.items():
+            text = ""
+            for e in l_topk_e:
+                text += h_doc_e_texts.get(e, {}).get(e_field, "") + ' '
+            l_field_expanded_texts.append((e_field, text))
+
+        q_lm = text2lm(query)
+        total_df = self.h_corpus_stat[body_field]['total_df']
+        avg_doc_len = 100.0
+        h_doc_df = self.h_field_h_df[body_field]
+        for e_field, text in l_field_expanded_texts:
+            exp_lm = text2lm(text, clean=True)
+            term_stat = TermStat()
+            term_stat.set_from_raw(q_lm, exp_lm, h_doc_df, total_df, avg_doc_len)
+            l_sim_score = term_stat.mul_scores()
+            for sim, score in l_sim_score:
+                if sim in self.l_model:
+                    h_feature[self.feature_name_pre + 'Exp' + e_field.title() + sim.title()] = score
+        return h_feature
+
+    def _find_top_k_similar_entities(self, query, h_doc_e_texts):
+        """
+        find top k most similar entities in h_doc_e_texts, judged by each entity fields
+        just use lm score
+        :param query:
+        :param h_doc_e_texts:
+        :return:
+        """
+        q_lm = text2lm(query)
+        h_field_top_k_entities = {}
+
+        for e_field in self.l_entity_fields:
+            l_e_score = []
+            for e, h_field_texts in h_doc_e_texts.items():
+                e_text = h_field_texts.get(e_field, "")
+                if not e_text:
+                    continue
+                h_e_lm = text2lm(e_text.lower())
+                term_stat = TermStat()
+                term_stat.set_from_raw(q_lm, h_e_lm, {})
+                lm_score = term_stat.lm()
+                l_e_score.append((e, lm_score))
+            l_e_score.sort(key=lambda item: -item[1])
+            h_field_top_k_entities[e_field] = [item[0] for item in l_e_score[:self.top_k]]
+        return h_field_top_k_entities
+
+
 
     def _extract_q_doc_e_textual_features(self, query, l_h_doc_e_lm, h_doc_e_texts):
         if not self.h_entity_texts:
