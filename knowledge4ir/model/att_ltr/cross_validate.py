@@ -8,6 +8,7 @@ from knowledge4ir.model.att_ltr.hierarchical import (
     QTermLeToR,
     QEntityLeToR,
     MaskHierarchicalAttLeToR,
+    ProbAttLeToR,
 )
 from knowledge4ir.model.att_ltr import (
     AttLeToR,
@@ -81,6 +82,8 @@ class CrossValidator(Configurable):
     def _init_model(self, **kwargs):
         if self.model_name == 'hierarchical':
             self.model = HierarchicalAttLeToR(**kwargs)
+        if self.model_name == 'prob':
+            self.model = ProbAttLeToR(**kwargs)
         if self.model_name == 'qterm_flat':
             self.model = QTermLeToR(**kwargs)
         if self.model_name == 'qentity_flat':
