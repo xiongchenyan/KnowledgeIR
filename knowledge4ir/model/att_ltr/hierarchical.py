@@ -127,7 +127,7 @@ class ProbAttLeToR(HierarchicalAttLeToR):
         l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
         ranker_model = Merge(mode='concat', name='rank_merge')(l_aligned_models[:2])
         att_model = Merge(mode='concat', name='att_merge')(l_aligned_models[2:])
-        att_model = Activation('softmax')(att_model)
+        att_model = Activation('softmax', name='softmax_attention')(att_model)
         att_ranker = Merge(mode='dot', dot_axes=-1,name='att_rank_dot_merge'
                            )([ranker_model, att_model])
         att_ranker = Model(input=l_inputs, output=att_ranker)
