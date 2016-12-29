@@ -30,7 +30,7 @@ def process_doc(doc_info):
 
 def clean_text(text):
     l_t = text.split()
-    s = set(['#'])
+    s = set(['&'])
     l_new_t = [t for t in l_t if t not in s]
     return ' '.join(l_new_t)
 
