@@ -181,7 +181,11 @@ class CrossValidator(Configurable):
         logging.info('training testing fold %d done with ndcg %f', k, ndcg)
 
         if self.get_intermediate_res:
-            ll_intermediate_res = self.model.predict_intermediate(l_test_lines)
+            ll_intermediate_res, l_q_d = self.model.predict_intermediate(l_test_lines)
+            out = open(os.path.join(out_dir, 'q_docno'), 'w')
+            for q, d in l_q_d:
+                print >> out, '%s\t%s' % (q, d)
+            out.close()
             for name, l_res in ll_intermediate_res:
                 out = open(os.path.join(out_dir, 'intermediate_' + name), 'w')
                 for res in l_res:

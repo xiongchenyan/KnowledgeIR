@@ -171,6 +171,7 @@ class AttLeToR(Configurable):
         logging.info('start predicting')
         h_data, v_label = self.pointwise_construct(test_lines)
         l_model_name = [name + '_model' for name in self.l_model_names]
+        l_qid, l_docno = self.get_qid_docno(test_lines)
         l_intermediate_model = []
         ll_intermediate_res = []
         logging.info('predicting intermediate results from ranking and attention moduels')
@@ -185,7 +186,7 @@ class AttLeToR(Configurable):
             l_res = intermediate_model.predict(h_data)
             ll_intermediate_res.append((name, l_res))
 
-        return ll_intermediate_res
+        return ll_intermediate_res, zip(l_qid, l_docno)
 
     def evaluate(self, test_lines, qrel, out_pre=None):
         if not out_pre:
