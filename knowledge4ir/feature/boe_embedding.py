@@ -60,6 +60,9 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                      help="pooling at query entities 'max', 'mean', 'mean-all', 'topk'"
                      ).tag(config=True)
     bin_range = Float(1.0, help="the bin range to keep in bin").tag(config=True)
+    l_bins = List(Float, default_value=[],
+                  help="bins to use, if given, will directly use this one"
+                  ).tag(config=True)
     log_min = Float(1e-10, help='log of zero bin').tag(config=True)
 
     def __init__(self, **kwargs):
@@ -72,6 +75,9 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             self.l_embedding = [Word2Vec.load_word2vec_format(embedding_in)
                                 for embedding_in in self.l_embedding_in]
             logging.info('[%d] embedding loaded', len(self.l_embedding_in))
+        if not self.l_bins:
+            self._form_bins()
+        logging.info('use bins %s', json.dumps(self.l_bins))
 
     def set_external_info(self, external_info):
         super(LeToRBOEEmbFeatureExtractor, self).set_external_info(external_info)
@@ -283,11 +289,10 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
 
     def _bin_similarity(self, v_sim):
         """
-        log bin
         :param v_sim_mtx:
-        :return:
+        :return: names and bin cnts
         """
-        l_bins = self._form_bins()
+        l_bins = self.l_bins
         l_bin_nb = [0] * len(l_bins)
         for p in xrange(v_sim.shape[0]):
             for bin_p in xrange(len(l_bins)):
@@ -305,6 +310,8 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
         return zip(l_names, l_bin_nb)
 
     def _form_bins(self):
+        if self.l_bins:
+            return
         l_bins = [1]
         if self.nb_bin == 1:
             return l_bins
@@ -315,6 +322,6 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                 bound = 0.00000001
             l_bins.append(bound)
         # logging.info('using bin [%s]', json.dumps(l_bins))
-        return l_bins
+        self.l_bins = l_bins
 
 
