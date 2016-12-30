@@ -29,6 +29,7 @@ import json
 import subprocess
 import logging
 import os
+import shutil
 import ntpath
 
 
@@ -65,10 +66,11 @@ class CondorCvResCollector(Configurable):
         this_out_dir = os.path.join(self.out_dir, method_base)
         if not os.path.exists(this_out_dir):
             os.makedirs(this_out_dir)
-
-        subprocess.check_output(['cp', cv_dir + '/eval', cv_dir + '/trec', this_out_dir])
+        # subprocess.check_output(['cp', cv_dir + '/eval', cv_dir + '/trec', this_out_dir])
+        shutil.copyfile(cv_dir + '/eval', this_out_dir + '/eval')
+        shutil.copyfile(cv_dir + '/trec', this_out_dir + '/trec')
         logging.info('res moved to [%s]', this_out_dir)
-        __, ndcg, err = load_gdeval_res(cv_dir + '/eval.d20')
+        __, ndcg, err = load_gdeval_res(cv_dir + '/eval')
         return method_base, ndcg, err
 
     def collect_cv_res(self, log_dir):
