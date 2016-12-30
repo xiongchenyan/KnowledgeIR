@@ -9,6 +9,7 @@ from knowledge4ir.utils import (
     GDEVAL_PATH,
     QREL_IN,
 )
+import logging
 
 
 def collect_cv_results(cv_dir, qrel_in):
@@ -20,17 +21,17 @@ def collect_cv_results(cv_dir, qrel_in):
                 if 'Fold' in dir_name:
                     cnt += 1
                     l_rank_lines.extend(open(dir_name + '/' + file_name).read().splitlines())
-    rank_out_name = os.path.join(sys.argv[1], 'trec')
+    rank_out_name = os.path.join(cv_dir, 'trec')
     print >> open(rank_out_name, 'w'), '\n'.join(l_rank_lines).strip()
-
     for d in [1, 3, 5, 10, 20]:
         eva_out = subprocess.check_output([
             'perl', GDEVAL_PATH, '-k', '%d' %d, qrel_in, rank_out_name])
-        out = open(os.path.join(sys.argv[1], 'eval.d%02d' % d), 'w')
+        out = open(os.path.join(cv_dir, 'eval.d%02d' % d), 'w')
         print >> out, eva_out.strip()
         out.close()
+        logging.info('')
         if d == 20:
-            out = open(os.path.join(sys.argv[1], 'eval'), 'w')
+            out = open(os.path.join(cv_dir, 'eval'), 'w')
             print >> out, eva_out.strip()
             out.close()
         print "d %d: %s" % (d, ','.join(eva_out.splitlines()[-1].split(',')))
