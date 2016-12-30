@@ -29,7 +29,6 @@ def collect_cv_results(cv_dir, qrel_in):
         out = open(os.path.join(cv_dir, 'eval.d%02d' % d), 'w')
         print >> out, eva_out.strip()
         out.close()
-        logging.info('')
         if d == 20:
             out = open(os.path.join(cv_dir, 'eval'), 'w')
             print >> out, eva_out.strip()
