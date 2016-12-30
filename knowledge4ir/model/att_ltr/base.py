@@ -68,7 +68,7 @@ class AttLeToR(Configurable):
 
     nb_rank_layer = Int(1).tag(config=True)
     nb_att_layer = Int(1).tag(config=True)
-    optimizer=Unicode('rmsprop').tag(config=True)
+    optimizer=Unicode('nadam').tag(config=True)
 
     nb_epoch = Int(100, help='nb of epoch').tag(config=True)
 
