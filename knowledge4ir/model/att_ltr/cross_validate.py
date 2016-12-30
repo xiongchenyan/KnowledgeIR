@@ -181,7 +181,6 @@ class CrossValidator(Configurable):
             ['perl', GDEVAL_PATH, self.qrel, rank_out_name]).strip()
         print >> open(eva_out_name, 'w'), eva_str.strip()
         __, ndcg, err = seg_gdeval_out(eva_str)
-        logging.info('training testing fold %d done with ndcg %f', k, ndcg)
 
         if self.get_intermediate_res:
             ll_intermediate_res, l_q_d = self.model.predict_intermediate(l_test_lines)
@@ -196,6 +195,7 @@ class CrossValidator(Configurable):
                 out.close()
                 logging.info('intermediate [%s] scores dumped', name)
             logging.info('all intermediate results dumped')
+        logging.info('training testing [%s] done with ndcg %f, err %f', out_dir, ndcg, err)
         return
 
     def run_one_fold(self, fold_k):
