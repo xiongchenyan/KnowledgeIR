@@ -50,6 +50,8 @@ class LeToRFeatureExtractCenter(Configurable):
                            ).tag(config=True)
     out_name = Unicode(help='feature out file name').tag(config=True)
     normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
+    include_base_retrieval = Bool(True, help="whether include base retrieval score as feature"
+                                  ).tag(config=True)
 
     _h_qrel = Dict(help='q relevance files to be loaded')
     _h_qid_q_info = Dict(help='qid to query info dict')
@@ -188,7 +190,11 @@ class LeToRFeatureExtractCenter(Configurable):
         h_q_info = self._h_qid_q_info[qid]
 
         base_score = self._h_q_doc_score[qid][docno]
-        h_feature = {'0_basescore': base_score}  # add in the base retrieval model's score as base
+        h_feature = dict()
+        if self.include_base_retrieval:
+            h_feature['0_basescore'] = base_score  # add in the base retrieval model's score as base
+        else:
+            h_feature['0_bias'] = base_score
         # score
         for extractor in self._l_feature_extractor:
             h_this_feature = extractor.extract(qid, docno, h_q_info, h_doc_info)

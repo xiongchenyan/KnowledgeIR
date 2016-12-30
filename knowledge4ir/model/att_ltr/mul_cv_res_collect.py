@@ -79,9 +79,9 @@ class CondorCvResCollector(Configurable):
         l_name_eva = []
         for cv_dir in l_finished_cv_dir:
             l_name_eva.append(self.per_cv_dir_eval(cv_dir))
-
+        print "\n\n"
         for name, ndcg, err in l_name_eva:
-            print "%s,%f,,%f" % (name, ndcg, err)
+            print "%s,%f,,%f" % (' '.join(name.split('_')), ndcg, err)
         return
 
     def _get_all_logs(self, log_dir):
