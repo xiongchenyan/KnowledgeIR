@@ -1,0 +1,12 @@
+c.RunMulKFold.feature_dir='/bos/usr0/cx/tmp/knowledge4ir/feature/'
+c.RunMulKFold.l_feature_names=[
+"cw09_laura_sdm_cmns_BoeEmb",
+"cw09_laura_sdm_tagme_BoeEmb",
+"cw09_lm_cmns_BoeEmb",
+"cw09_lm_tagme_BoeEmb",
+"cw12_lm_cmns_BoeEmb",
+"cw12_lm_tagme_BoeEmb",
+]
+c.RunMulKFold.l_model_configs=['conf_ranksvm']
+c.RunMulKFold.model_dir='.'
+c.RunMulKFold.out_dir="/bos/usr0/cx/tmp/knowledge4ir/cv/mul_out/"

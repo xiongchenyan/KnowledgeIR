@@ -7,6 +7,7 @@ import subprocess
 import os
 from knowledge4ir.utils import (
     GDEVAL_PATH,
+    QREL_IN,
 )
 
 if 2 > len(sys.argv):
@@ -27,7 +28,7 @@ rank_out_name = os.path.join(sys.argv[1], 'trec')
 print >> open(rank_out_name, 'w'), '\n'.join(l_rank_lines).strip()
 
 
-qrel_in = '/bos/usr0/cx/tmp/data/qrel.all'
+qrel_in = QREL_IN
 if len(sys.argv) > 2:
     qrel_in = sys.argv[2]
 for d in [1, 3, 5, 10, 20]:
