@@ -279,7 +279,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
                 #              json.dumps(h_this_feature))
             l_h_qt_feature.append(h_feature)
         for h_qe_info in l_h_qe_info:
-            h_feature = {}
+            h_feature = {'0_basescore': base_score}
             for extractor in self.l_qe_de_extractor + self.l_qe_dw_extractor:
                 h_this_feature = extractor.extract(qid, docno, h_qe_info, h_doc_info)
                 h_feature.update(h_this_feature)
