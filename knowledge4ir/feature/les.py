@@ -25,7 +25,7 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
                    default_value=['lm_dir', 'bm25', 'coordinate', 'tf_idf']
                    ).tag(config=True)
     corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
-    l_entity_fields = List(Unicode, default_value=['name', 'alias', 'desp'])
+    l_entity_fields = List(Unicode, default_value=['name', 'alias', 'desp']).tag(config=True)
     entity_text_in = Unicode(help="entity texts in").tag(config=True)
     tagger = Unicode('tagme', help='tagger used, as in q info and d info'
                      ).tag(config=True)
