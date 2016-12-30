@@ -114,7 +114,7 @@ class CrossValidator(Configurable):
         self.model.train(l_train_svm)
 
         self.testing(l_test_svm, out_dir)
-        l_q_ranking = self.model.predict(l_test_svm)
+        # l_q_ranking = self.model.predict(l_test_svm)
         # rank_out_name = out_dir + '/trec'
         # eva_out_name = out_dir + '/eval'
         # dump_trec_ranking_with_score(l_q_ranking, rank_out_name)
