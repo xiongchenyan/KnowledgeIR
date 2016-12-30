@@ -47,7 +47,7 @@ class AttLeToR(Configurable):
     test_in = Unicode(help="opt: testing input").tag(config=True)
 
     out_dir = Unicode(help='output directory').tag(config=True)
-    l2_w = Float(0, help='l2 regulalizer').tag(config=True)
+    l2_w = Float(0.01, help='l2 regulalizer').tag(config=True)
 
     data_meta_in = Unicode(help='the dimension file from feature extraction').tag(config=True)
     nb_q_t = Int(help='q term len').tag(config=True)
