@@ -102,8 +102,8 @@ class RanklibRunner(Configurable):
             score_out = os.path.join(subdir, self.predict_name)
             log_out = os.path.join(subdir, self.log_name)
             self._train_test(train_in, test_in, score_out, log_out)
-        self._merge_evaluate_trec_rank()
         logging.info('cross validation finished')
+        self._merge_evaluate_trec_rank()
         return
 
     def _cross_validation_with_dev(self):
@@ -114,8 +114,8 @@ class RanklibRunner(Configurable):
             score_out = os.path.join(subdir, self.predict_name)
             log_out = os.path.join(subdir, self.log_name)
             self._train_dev_test(train_in, dev_in, test_in, score_out, log_out)
-        self._merge_evaluate_trec_rank()
         logging.info('cross validation with development finished')
+        self._merge_evaluate_trec_rank()
         return
 
     def total_train_test(self):
