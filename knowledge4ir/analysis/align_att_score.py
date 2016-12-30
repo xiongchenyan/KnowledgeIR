@@ -20,8 +20,8 @@ def load_all_att_vector(cv_dir):
         qe_name = os.path.join(cv_dir, 'Fold%d' % k, "intermediate_qe_att_model")
         qd_name = os.path.join(cv_dir, 'Fold%d' % k, "q_docno")
 
-        l_qt_vec = [json.loads(line) for line in open(qt_name)]
-        l_qe_vec = [json.loads(line) for line in open(qe_name)]
+        l_qt_vec = [[round(r, 4) for r in json.loads(line)] for line in open(qt_name)]
+        l_qe_vec = [[round(r, 4) for r in json.loads(line)] for line in open(qe_name)]
         l_qid = [line.split('\t')[0] for line in open(qd_name)]
 
         h_t = dict(zip(l_qid, l_qt_vec))
