@@ -43,6 +43,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
                      default_value=['topk']).tag(config=True)
     l_top_k = List(Int, default_value=[2, 5], help='top k most similar entities to count in each of doc field'
                   ).tag(config=True)
+    top_k = Int(1).tag(config=True)
 
     l_entity_fields = List(Unicode, default_value=['desp'])
     entity_text_in = Unicode(help="entity texts in").tag(config=True)
@@ -59,7 +60,6 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
         self.h_field_h_df = {}
         self._load_corpus_stat()
         self.h_entity_texts = {}
-        self.top_k = 1
         if self.entity_text_in:
             self.h_entity_texts = load_entity_texts(self.entity_text_in)
         self.s_model = set(self.l_model)
@@ -220,7 +220,8 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
         q_lm = text2lm(query)
         for p in xrange(len(self.l_text_fields)):
             field = self.l_text_fields[p]
-            self.top_k = self.l_top_k[p]
+            if self.l_top_k:
+                self.top_k = self.l_top_k[p]
             h_doc_e_lm = l_h_doc_e_lm[p]
             total_df = self.h_corpus_stat[field]['total_df']
             avg_doc_len = self.h_corpus_stat[field]['average_len']
