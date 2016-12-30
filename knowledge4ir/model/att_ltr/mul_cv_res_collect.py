@@ -52,6 +52,8 @@ class CondorCvResCollector(Configurable):
         h_cv_cnt = {}
         for name in l_out_dir_names:
             cv_dir, fold_d = self._split_dir_fold(name)
+            if not cv_dir.startswith('/bos'):
+                continue
             if cv_dir not in h_cv_cnt:
                 h_cv_cnt[cv_dir] = 1
             else:
@@ -94,7 +96,7 @@ class CondorCvResCollector(Configurable):
         return l_log_names
 
     def _get_out_dir_per_log(self, log_in):
-        line = open(log_in).read().splitlines()[-1]
+        line = [s for s in open(log_in).read().splitlines() if "root - INFO" in s][-1]
         dir_name = line.split('[')[-1].split(']')[0]
         logging.debug('get out dir [%s]', dir_name)
         return dir_name
