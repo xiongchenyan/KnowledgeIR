@@ -27,6 +27,8 @@ def collect_cv_results(cv_dir, qrel_in):
         eva_out = subprocess.check_output([
             'perl', GDEVAL_PATH, '-k', '%d' %d, qrel_in, rank_out_name])
         print >> open(os.path.join(sys.argv[1], 'eval.d%02d' % d), 'w'), eva_out.strip()
+        if d == 20:
+            print >> open(os.path.join(sys.argv[1], 'eval'), 'w'), eva_out.strip()
         print "d %d: %s" % (d, ','.join(eva_out.splitlines()[-1].split(',')))
     print "finished with [%d] fold" % cnt
 

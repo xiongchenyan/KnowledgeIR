@@ -65,7 +65,8 @@ class CondorCvResCollector(Configurable):
         this_out_dir = os.path.join(self.out_dir, method_base)
         if not os.path.exists(this_out_dir):
             os.makedirs(this_out_dir)
-        subprocess.check_output(['cp', cv_dir + '/eval.d*', cv_dir + '/trec', this_out_dir])
+
+        subprocess.check_output(['cp', cv_dir + '/eval', cv_dir + '/trec', this_out_dir])
         logging.info('res moved to [%s]', this_out_dir)
         __, ndcg, err = load_gdeval_res(cv_dir + '/eval.d20')
         return method_base, ndcg, err
