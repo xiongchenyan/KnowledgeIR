@@ -61,6 +61,7 @@ class CondorCvResCollector(Configurable):
         return l_finished_cv_dir
 
     def per_cv_dir_eval(self, cv_dir):
+        logging.info('start [%s]', cv_dir)
         collect_cv_results(cv_dir, self.qrel)
         method_base = ntpath.basename(cv_dir.strip('/'))
         this_out_dir = os.path.join(self.out_dir, method_base)
@@ -95,7 +96,7 @@ class CondorCvResCollector(Configurable):
     def _get_out_dir_per_log(self, log_in):
         line = open(log_in).read().splitlines()[-1]
         dir_name = line.split('[')[-1].split(']')[0]
-        logging.info('get out dir [%s]', dir_name)
+        logging.debug('get out dir [%s]', dir_name)
         return dir_name
 
     def _split_dir_fold(self, dir_name):
