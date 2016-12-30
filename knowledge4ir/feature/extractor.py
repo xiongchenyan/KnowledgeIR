@@ -194,7 +194,7 @@ class LeToRFeatureExtractCenter(Configurable):
         if self.include_base_retrieval:
             h_feature['0_basescore'] = base_score  # add in the base retrieval model's score as base
         else:
-            h_feature['0_bias'] = base_score
+            h_feature['0_bias'] = 1
         # score
         for extractor in self._l_feature_extractor:
             h_this_feature = extractor.extract(qid, docno, h_q_info, h_doc_info)
