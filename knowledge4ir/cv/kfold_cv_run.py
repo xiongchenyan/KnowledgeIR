@@ -290,7 +290,8 @@ class RanklibRunner(Configurable):
         ndcg, err = eva_str.strip().splitlines()[-1].split(',')[-2:]
         ndcg = float(ndcg)
         err = float(err)
-        logging.info('cv evaluation: %s', eva_str.strip().splitlines()[-1])
+        logging.info('[%s] cv evaluation: %s', self.out_dir,
+                     ','.join(eva_str.strip().splitlines()[-1].split(',')[-2:]))
 
         return ndcg
 
