@@ -210,6 +210,9 @@ class FlatLeToR(HierarchicalAttLeToR):
             l_models.append(model)
         return l_models
 
+    def predict_intermediate(self, test_lines):
+        raise NotImplementedError
+
     def _init_one_neural_network(self, in_shape, model_name, nb_layer,):
         model = Sequential(name=model_name)
         # model.add(Masking(input_shape=in_shape, mask_value=0.))

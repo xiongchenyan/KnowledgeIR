@@ -45,7 +45,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
                   ).tag(config=True)
     top_k = Int(1).tag(config=True)
 
-    l_entity_fields = List(Unicode, default_value=['desp'])
+    l_entity_fields = List(Unicode, default_value=['desp']).tag(config=True)
     entity_text_in = Unicode(help="entity texts in").tag(config=True)
     tagger = Unicode('tagme', help='tagger used, as in q info and d info'
                      ).tag(config=True)
