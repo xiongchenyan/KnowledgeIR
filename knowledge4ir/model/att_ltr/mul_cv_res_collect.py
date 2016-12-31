@@ -60,6 +60,7 @@ class CondorCvResCollector(Configurable):
                 h_cv_cnt[cv_dir] += 1
         l_finished_cv_dir = [item[0] for item in h_cv_cnt.items() if item[1] == self.K]
         logging.info('finished cv dirs %s', json.dumps(l_finished_cv_dir))
+        l_finished_cv_dir.sort()
         return l_finished_cv_dir
 
     def per_cv_dir_eval(self, cv_dir):
