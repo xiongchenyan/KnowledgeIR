@@ -52,6 +52,7 @@ class LeToRFeatureExtractCenter(Configurable):
     normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
     include_base_retrieval = Bool(True, help="whether include base retrieval score as feature"
                                   ).tag(config=True)
+    ext_base_rank = Unicode(help="external base rank if needed").tag(config=True)
 
     _h_qrel = Dict(help='q relevance files to be loaded')
     _h_qid_q_info = Dict(help='qid to query info dict')
@@ -60,6 +61,7 @@ class LeToRFeatureExtractCenter(Configurable):
     def __init__(self, **kwargs):
         super(LeToRFeatureExtractCenter, self).__init__(**kwargs)
         self._l_feature_extractor = []
+        self.h_ext_base = {}
         self._load_data()
         self._init_extractors(**kwargs)
 
@@ -97,7 +99,12 @@ class LeToRFeatureExtractCenter(Configurable):
         self._h_qid_q_info = load_query_info(self.q_info_in)
 
         l_q_ranking_score = load_trec_ranking_with_score(self.q_doc_candidate_in)
-
+        if self.ext_base_rank:
+            l_q_ext_base = load_trec_ranking_with_score(self.ext_base_rank)
+            for q, l_rank in l_q_ext_base:
+                for doc, score in l_rank:
+                    self.h_ext_base[q + '\t' + doc] = score
+            logging.info('external base ranking scores loaded [%s]', self.ext_base_rank)
         for qid, ranking_score in l_q_ranking_score:
             self._h_q_doc_score[qid] = dict(ranking_score[:self.rank_top_k])
             logging.debug('q [%s] [%d] candidate docs', qid, len(self._h_q_doc_score[qid]))
@@ -193,6 +200,8 @@ class LeToRFeatureExtractCenter(Configurable):
         h_feature = dict()
         if self.include_base_retrieval:
             h_feature['0_basescore'] = base_score  # add in the base retrieval model's score as base
+        elif self.ext_base_rank:
+            h_feature['0_extbase'] = self.h_ext_base.get(qid + '\t' + docno, -25.0)
         else:
             h_feature['0_bias'] = 1
         # score
