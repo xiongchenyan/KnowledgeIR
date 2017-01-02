@@ -36,7 +36,7 @@ class CVResCollector(Configurable):
         # logging.info('get res line [%s]', res_line)
         cv_dir = res_line.split(']')[0].split('[')[-1]
         base_name = ntpath.basename(ntpath.dirname(cv_dir.strip('/')))
-        base_name.replace('.ranksvm', '')
+        base_name = base_name.replace('.ranksvm', '')
 
         ndcg, err = res_line.split(' ')[-1].split(',')
         ndcg = float(ndcg)
