@@ -35,7 +35,7 @@ class CVResCollector(Configurable):
             return None
         logging.info('get res line [%s]', res_line)
         cv_dir = res_line.split(']')[0].split('[')[-1]
-        base_name = ntpath.dirname(cv_dir.strip('/'))
+        base_name = ntpath.basename(ntpath.dirname(cv_dir.strip('/')))
 
         ndcg, err = res_line.split(' ')[-1].split(',')
         ndcg = float(ndcg)
@@ -58,7 +58,7 @@ class CVResCollector(Configurable):
                 shutil.copytree(cv_dir, os.path.join(self.out_dir, base_name))
         l_res.sort(key = lambda item: item[0])
         for name, ndcg, err in l_res:
-            print ' '.join(name.split()) + ',%f,,%f' % (ndcg, err)
+            print ' '.join(name.split('_')) + ',%f,,%f' % (ndcg, err)
 
         return
 
