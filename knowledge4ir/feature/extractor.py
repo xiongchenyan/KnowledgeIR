@@ -350,13 +350,17 @@ if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
 
     set_basic_log(logging.INFO)
-    if 2 != len(sys.argv):
+    if 2 >= len(sys.argv):
         print 'I extract features for target query doc pairs, with prepared data for q and doc, ' \
               'and qrels to fill in'
+        print "1+ para: conf + doc info in (opt) + out (opt)"
         LeToRFeatureExtractCenter.class_print_help()
         sys.exit()
 
     conf = load_py_config(sys.argv[1])
 
     extract_center = LeToRFeatureExtractCenter(config=conf)
-    extract_center.pipe_extract()
+    if len(sys.argv) > 2:
+        extract_center.pipe_extract(*sys.argv[2:])
+    else:
+        extract_center.pipe_extract()
