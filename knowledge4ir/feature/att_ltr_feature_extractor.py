@@ -200,17 +200,21 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Static features to entity attention')
 
-    def pipe_extract(self):
+    def pipe_extract(self, doc_info_in=None, out_name=None):
         """
         :return:
         """
+        if not doc_info_in:
+            doc_info_in = self.doc_info_in
+        if not out_name:
+            out_name = self.out_name
         h_doc_q_score = self._reverse_q_doc_dict()
 
         l_features = []
         l_qid = []
         l_docno = []
         cnt = 0
-        for line in open(self.doc_info_in):
+        for line in open(doc_info_in):
             cols = line.strip().split('\t')
             docno = cols[0]
             if docno not in h_doc_q_score:
@@ -240,8 +244,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
         #     l_qid, l_docno, l_h_feature = self._normalize(l_qid, l_docno, l_h_feature)
         # dump results
         logging.info('total [%d] pair extracted, dumping...', len(l_features))
-        self._dump_feature(l_qid, l_docno, l_features)
-        logging.info('feature extraction finished, results at [%s]', self.out_name)
+        self._dump_feature(l_qid, l_docno, l_features, out_name)
+        logging.info('feature extraction finished, results at [%s]', out_name)
         return
 
     # def _normalize(self, l_qid, l_docno, l_h_feature):
@@ -332,7 +336,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
             return l_h_qe_info, l_e
         raise NotImplementedError
 
-    def _dump_feature(self, l_qid, l_docno, l_features):
+    def _dump_feature(self, l_qid, l_docno, l_features, out_name=None):
         """
         align features, hash, pad, and dump
         :param l_qid:
@@ -341,15 +345,17 @@ class AttLeToRFeatureExtractCenter(Configurable):
             l_h_qt_feature, l_h_qe_feature, l_h_qt_att, l_h_qe_att,
         :return:
         """
+        if not out_name:
+            out_name = self.out_name
         logging.info('dumping [%d] feature lines', len(l_qid))
-        out = open(self.out_name, 'w')
+        out = open(out_name, 'w')
         # sort data in order
         l_qid, l_docno, l_features = self._reduce_data_to_qid(l_qid, l_docno, l_features)
 
         l_features, h_feature_hash, h_feature_stat = self._pad_att_and_ranking_features(l_features)
 
-        json.dump(h_feature_hash, open(self.out_name + '_feature_name', 'w'))
-        json.dump(h_feature_stat, open(self.out_name + '_feature_stat', 'w'))
+        json.dump(h_feature_hash, open(out_name + '_feature_name', 'w'))
+        json.dump(h_feature_stat, open(out_name + '_feature_stat', 'w'))
         logging.info('ready to dump...')
         for i in xrange(len(l_qid)):
             qid = l_qid[i]

@@ -133,10 +133,14 @@ class LeToRFeatureExtractCenter(Configurable):
         # if 'BoeLes' in self.l_feature_group:
         #     self._l_feature_extractor.append(LeToREIRFeatureExtractor(**kwargs))
 
-    def pipe_extract(self):
+    def pipe_extract(self, doc_info_in=None, out_name=None):
         """
         :return:
         """
+        if not doc_info_in:
+            doc_info_in = self.doc_info_in
+        if not out_name:
+            out_name = self.out_name
         h_doc_q_score = self._reverse_q_doc_dict()
 
         # for each doc_no, h_doc_info in doc data
@@ -147,7 +151,7 @@ class LeToRFeatureExtractCenter(Configurable):
         l_qid = []
         l_docno = []
         cnt = 0
-        for line in open(self.doc_info_in):
+        for line in open(doc_info_in):
             cols = line.strip().split('\t')
             docno = cols[0]
             if docno not in h_doc_q_score:
@@ -173,7 +177,7 @@ class LeToRFeatureExtractCenter(Configurable):
         #     l_qid, l_docno, l_h_feature = self._normalize(l_qid, l_docno, l_h_feature)
         # dump results
         logging.info('total [%d] pair extracted, dumping...', len(l_h_feature))
-        self._dump_svm_res_lines(l_qid, l_docno, l_h_feature)
+        self._dump_svm_res_lines(l_qid, l_docno, l_h_feature, out_name)
         logging.info('feature extraction finished, results at [%s]', self.out_name)
         return
 
@@ -210,7 +214,7 @@ class LeToRFeatureExtractCenter(Configurable):
             h_feature.update(h_this_feature)
         return h_feature
 
-    def _dump_svm_res_lines(self, l_qid, l_docno, l_h_feature):
+    def _dump_svm_res_lines(self, l_qid, l_docno, l_h_feature, out_name=None):
         """
         output svm format results
         :param l_qid:
@@ -219,8 +223,10 @@ class LeToRFeatureExtractCenter(Configurable):
         :param out_name:
         :return: each line is a SVM line
         """
+        if not out_name:
+            out_name = self.out_name
         logging.info('dumping [%d] feature lines', len(l_qid))
-        out = open(self.out_name, 'w')
+        out = open(out_name, 'w')
 
         # sort data in order
         l_qid, l_docno, l_h_feature = self._reduce_data_to_qid(l_qid, l_docno, l_h_feature)
@@ -244,7 +250,7 @@ class LeToRFeatureExtractCenter(Configurable):
             h_hashed_feature, h_feature_name = self._hash_features(h_feature, h_feature_name)
             l_h_hashed_feature.append(h_hashed_feature)
 
-        out = open(self.out_name, 'w')
+        out = open(out_name, 'w')
         for i in xrange(len(l_qid)):
             qid = l_qid[i]
             docno = l_docno[i]
@@ -253,10 +259,10 @@ class LeToRFeatureExtractCenter(Configurable):
             print >> out, self._form_svm_line(qid, docno, rel_score, h_hashed_feature)
 
         out.close()
-        json.dump(h_feature_name, open(self.out_name + '_feature_name', 'w'), indent=2)
+        json.dump(h_feature_name, open(out_name + '_feature_name', 'w'), indent=2)
 
         logging.info('svm type output to [%s], feature name at [%s_feature_name]',
-                     self.out_name, self.out_name)
+                     out_name, out_name)
 
         return
 
