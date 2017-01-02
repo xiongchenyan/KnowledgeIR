@@ -29,6 +29,8 @@ class CVResCollector(Configurable):
         lines = open(log_in).read().splitlines()
         lines = [line for line in lines if 'INFO' in line]
         res_line = lines[-1]
+        if 'cv evaluation' not in res_line:
+            return None
         cv_dir = res_line.split(']')[0].split('[')[-1]
         base_name = ntpath.dirname(cv_dir.strip('/'))
 
@@ -45,12 +47,15 @@ class CVResCollector(Configurable):
             for fname in file_names:
                 if not fname.startswith('condor_out'):
                     continue
-                base_name, cv_dir, ndcg, err = self._seg_results(os.path.join(dir_name, fname))
+                l = self._seg_results(os.path.join(dir_name, fname))
+                if not l:
+                    continue
+                base_name, cv_dir, ndcg, err = l
                 l_res.append([base_name, ndcg, err])
                 shutil.copy(cv_dir, os.path.join(self.out_dir, base_name))
         l_res.sort(key = lambda item: item[0])
         for name, ndcg, err in l_res:
-            print ' '.join(name.split()) + ',%F,,%f' % (name, ndcg, err)
+            print ' '.join(name.split()) + ',%f,,%f' % (ndcg, err)
 
         return
 
