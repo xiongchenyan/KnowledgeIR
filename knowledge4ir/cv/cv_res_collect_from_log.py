@@ -55,7 +55,7 @@ class CVResCollector(Configurable):
                     continue
                 base_name, cv_dir, ndcg, err = l
                 l_res.append([base_name, ndcg, err])
-                shutil.copy(cv_dir, os.path.join(self.out_dir, base_name))
+                shutil.copytree(cv_dir, os.path.join(self.out_dir, base_name))
         l_res.sort(key = lambda item: item[0])
         for name, ndcg, err in l_res:
             print ' '.join(name.split()) + ',%f,,%f' % (ndcg, err)
