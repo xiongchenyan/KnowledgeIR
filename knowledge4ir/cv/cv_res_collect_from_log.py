@@ -31,10 +31,11 @@ class CVResCollector(Configurable):
         res_line = lines[-1]
         if 'cv evaluation' not in res_line:
             return None
+        logging.info('get res line [%s]', res_line)
         cv_dir = res_line.split(']')[0].split('[')[-1]
         base_name = ntpath.dirname(cv_dir.strip('/'))
 
-        ndcg, err = res_line.split()[-1].split(',')
+        ndcg, err = res_line.split(' ')[-1].split(',')
         ndcg = float(ndcg)
         err = float(err)
 
