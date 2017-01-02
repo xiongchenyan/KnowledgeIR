@@ -33,9 +33,10 @@ class CVResCollector(Configurable):
             return None
         if 'bos' not in res_line:
             return None
-        logging.info('get res line [%s]', res_line)
+        # logging.info('get res line [%s]', res_line)
         cv_dir = res_line.split(']')[0].split('[')[-1]
         base_name = ntpath.basename(ntpath.dirname(cv_dir.strip('/')))
+        base_name.replace('.ranksvm', '')
 
         ndcg, err = res_line.split(' ')[-1].split(',')
         ndcg = float(ndcg)
@@ -58,7 +59,7 @@ class CVResCollector(Configurable):
                 shutil.copytree(cv_dir, os.path.join(self.out_dir, base_name))
         l_res.sort(key = lambda item: item[0])
         for name, ndcg, err in l_res:
-            print ' '.join(name.split('_')) + ',%f,,%f' % (ndcg, err)
+            print name + ',%f,,%f' % (ndcg, err)
 
         return
 
