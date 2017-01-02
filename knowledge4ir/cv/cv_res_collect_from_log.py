@@ -56,7 +56,10 @@ class CVResCollector(Configurable):
                     continue
                 base_name, cv_dir, ndcg, err = l
                 l_res.append([base_name, ndcg, err])
-                shutil.copytree(cv_dir, os.path.join(self.out_dir, base_name))
+                to_path = os.path.join(self.out_dir, base_name)
+                if os.path.exists(to_path):
+                    shutil.rmtree(to_path)
+                shutil.copytree(cv_dir, to_path)
         l_res.sort(key = lambda item: item[0])
         for name, ndcg, err in l_res:
             print name + ',%f,,%f' % (ndcg, err)
