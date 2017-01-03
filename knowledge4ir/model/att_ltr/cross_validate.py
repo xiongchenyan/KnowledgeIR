@@ -181,6 +181,8 @@ class CrossValidator(Configurable):
     #     self.model.train(l_train_lines)
 
     def testing(self, l_test_lines, out_dir):
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
         l_q_ranking = self.model.predict(l_test_lines)
         rank_out_name = out_dir + '/trec'
         eva_out_name = out_dir + '/eval'
