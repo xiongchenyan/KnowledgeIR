@@ -51,7 +51,7 @@ class CrossValidator(Configurable):
     q_st = Int(-1).tag(config=True)
     q_ed = Int(-1).tag(config=True)
     model_name = Unicode('hierarchical',
-                    help='to cross validate model: hierarchical, '
+                    help='to cross validate model: hierarchical, prob'
                          'qterm_flat, qentity_flat, flat, mask'
                     ).tag(config=True)
     get_intermediate_res = Bool(True, help="whether predict intermediate results").tag(config=True)
