@@ -172,6 +172,14 @@ class CrossValidator(Configurable):
         # logging.info('training testing fold %d done with ndcg %f', k, ndcg)
         return
 
+    def overfit(self):
+        logging.info('start overfit data')
+        self.model.train(self.l_total_data_lines)
+        self.testing(self.l_total_data_lines, os.path.join(self.out_dir, 'overfit'))
+
+    # def training(self, l_train_lines):
+    #     self.model.train(l_train_lines)
+
     def testing(self, l_test_lines, out_dir):
         l_q_ranking = self.model.predict(l_test_lines)
         rank_out_name = out_dir + '/trec'
@@ -229,7 +237,10 @@ if __name__ == '__main__':
     k = int(sys.argv[2])
     conf = load_py_config(sys.argv[1])
     runner = CrossValidator(config=conf)
-    runner.run_one_fold(k)
+    if k == -2:
+        runner.overfit()
+    else:
+        runner.run_one_fold(k)
 
 
 
