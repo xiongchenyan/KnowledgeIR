@@ -38,6 +38,8 @@ def align(q_info, h_qt_vec, h_qe_vec, out_name):
 
     for line in open(q_info):
         qid, data = line.split('\t')
+        if qid not in h_qt_vec:
+            continue
         h_q = json.loads(data)
         l_qt = h_q['query'].split()
         l_qe_id_name = [(ana[0], ana[-1]) for ana in h_q['tagme']['query']]
