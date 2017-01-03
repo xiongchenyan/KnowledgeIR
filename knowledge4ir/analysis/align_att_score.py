@@ -29,6 +29,7 @@ def load_all_att_vector(cv_dir):
         h_q_qt_vec.update(h_t)
         h_q_qe_vec.update(h_e)
     print "att vector loaded"
+    print " total [%d] [%d] queries" % (len(h_q_qt_vec), len(h_q_qe_vec))
     return h_q_qt_vec, h_q_qe_vec
 
 
