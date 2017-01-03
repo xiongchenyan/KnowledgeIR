@@ -126,7 +126,9 @@ class ProbAttLeToR(HierarchicalAttLeToR):
     def _align_to_rank_model(self, l_inputs, l_models):
         l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
         ranker_model = Merge(mode='concat', name='rank_merge')(l_aligned_models[:2])
+        ranker_model = Masking()(ranker_model)
         att_model = Merge(mode='concat', name='att_merge')(l_aligned_models[2:])
+        att_model = Masking()(att_model)
         att_model = Activation('softmax', name='softmax_attention')(att_model)
         att_ranker = Merge(mode='dot', dot_axes=-1,name='att_rank_dot_merge'
                            )([ranker_model, att_model])
@@ -145,7 +147,7 @@ class MaskHierarchicalAttLeToR(HierarchicalAttLeToR):
         att_ranker = Model(input=l_inputs, output=att_ranker)
         return att_ranker
 
-    def _init_one_neural_network(self, in_shape, model_name, nb_layer,):
+    def _init_one_neural_network(self, in_shape, model_name, nb_layer, activation='linear'):
         model = Sequential(name=model_name)
         this_nb_filter = self.nb_middle_filters
 
