@@ -26,7 +26,7 @@ def get_type_text(rdf_in, out_name):
     t_cnt = 0
     n_cnt = 0
     for cnt, ll_col in enumerate(reader.read(rdf_in)):
-        if not cnt % 0:
+        if not cnt % 1000:
             print "processed [%d] obj, [%d] type text, [%d] notable text" % (cnt, t_cnt, n_cnt)
         oid = parser.get_obj_id(ll_col)
         if not oid:
