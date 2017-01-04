@@ -12,22 +12,47 @@ import json
 import os
 
 
+def load_one_set(qt_name, qe_name, qd_name):
+    l_qt_vec = [[round(r, 4) for r in json.loads(line)] for line in open(qt_name)]
+    l_qe_vec = [[round(r, 4) for r in json.loads(line)] for line in open(qe_name)]
+    l_qid = [line.split('\t')[0] for line in open(qd_name)]
+
+    h_t = dict(zip(l_qid, l_qt_vec))
+    h_e = dict(zip(l_qid, l_qe_vec))
+    return h_t, h_e
+
+
 def load_all_att_vector(cv_dir):
     h_q_qt_vec = {}
     h_q_qe_vec = {}
+    l_qt_name = []
+    l_qe_name = []
+    l_qd_name = []
     for k in xrange(10):
         qt_name = os.path.join(cv_dir, 'Fold%d' % k, "intermediate_qt_att_model")
         qe_name = os.path.join(cv_dir, 'Fold%d' % k, "intermediate_qe_att_model")
         qd_name = os.path.join(cv_dir, 'Fold%d' % k, "q_docno")
+        if not os.path.exists(qt_name):
+            continue
+        l_qt_name.append(qt_name)
+        l_qe_name.append(qe_name)
+        l_qd_name.append(qd_name)
 
-        l_qt_vec = [[round(r, 4) for r in json.loads(line)] for line in open(qt_name)]
-        l_qe_vec = [[round(r, 4) for r in json.loads(line)] for line in open(qe_name)]
-        l_qid = [line.split('\t')[0] for line in open(qd_name)]
-
-        h_t = dict(zip(l_qid, l_qt_vec))
-        h_e = dict(zip(l_qid, l_qe_vec))
+    qt_name = os.path.join(cv_dir, 'overfit', "intermediate_qt_att_model")
+    qe_name = os.path.join(cv_dir, 'overfit', "intermediate_qe_att_model")
+    qd_name = os.path.join(cv_dir, 'overfit', "q_docno")
+    if os.path.exists(qt_name):
+        l_qt_name.append(qt_name)
+        l_qe_name.append(qe_name)
+        l_qd_name.append(qd_name)
+    for p in xrange(len(l_qt_name)):
+        qt_name = l_qt_name[p]
+        qe_name = l_qe_name[p]
+        qd_name = l_qd_name[p]
+        h_t, h_e = load_one_set(qt_name, qe_name, qd_name)
         h_q_qt_vec.update(h_t)
         h_q_qe_vec.update(h_e)
+
     print "att vector loaded"
     print " total [%d] [%d] queries" % (len(h_q_qt_vec), len(h_q_qe_vec))
     return h_q_qt_vec, h_q_qe_vec
