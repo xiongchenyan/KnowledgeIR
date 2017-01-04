@@ -36,6 +36,7 @@ def get_type_text(rdf_in, out_name):
             continue
         l_type = parser.get_type(ll_col)
         notable_type = parser.get_notable(ll_col)
+        desp = desp.replace('\n', ' ')
         desp = ' '.join(desp.split())
         if l_type:
             print >> type_out, json.dumps(l_type) + '\t' + desp
