@@ -25,6 +25,7 @@ from knowledge4ir.result_collect import (
     randomization_test,
     win_tie_loss,
 )
+import logging
 import os
 
 
@@ -34,7 +35,7 @@ class RankingPerformanceCollector(Configurable):
     baseline_name = Unicode(help='base line name').tag(config=True)
     out_dir = Unicode(help='out directory').tag(config=True)
 
-    target_metric = Unicode('ndcg')
+    l_target_metric = List(Unicode, default_value=['ndcg', 'err']).tag(config=True)
     l_target_depth = List(Int, default_value=[1, 5, 10, 20]).tag(config=True)
     eva_prefix = Unicode('eval.d')
     sig_str = Unicode('\dagger')
@@ -64,9 +65,18 @@ class RankingPerformanceCollector(Configurable):
             l_q_eva, ndcg, err = load_gdeval_res(eva_res_name)
             l_q_eva.sort(key=lambda item: int(item[0]))
             l_ndcg = [item[1][0] for item in l_q_eva]
-            metric = self.target_metric + '%02d' % depth
-            h_eval_per_q[metric] = l_ndcg
-            h_eval[metric] = ndcg
+            l_err = [item[1][1] for item in l_q_eva]
+            for metric in self.l_target_metric:
+                name = metric + '%02d' % depth
+                if metric == 'ndcg':
+                    h_eval_per_q[name] = l_ndcg
+                    h_eval[name] = ndcg
+                elif metric == 'err':
+                    h_eval_per_q[name] = l_err
+                    h_eval[name] = err
+                else:
+                    logging.error('[%s] metric not implemented', metric)
+                    raise NotImplementedError
 
         return h_eval_per_q, h_eval
 
@@ -77,8 +87,13 @@ class RankingPerformanceCollector(Configurable):
         out = open(self.out_dir +'/overall.csv', 'w')
 
         header = "\\bf{Method}"
-        for metric in [self.target_metric.upper() + '@%2d' % d for d in self.l_target_depth]:
-            header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
+        for eva_metric in self.l_target_metric:
+            for d in self.l_target_depth:
+                metric = eva_metric.upper() + '@%2d' % d
+                header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
+
+        # for metric in [self.target_metric.upper() + '@%2d' % d for d in self.l_target_depth]:
+        #     header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
         print >> out, header + '\\\\ \\hline'
         print header + '\\\\ \\hline'
         for run_name in [self.baseline_name] + self.l_run_name:
@@ -104,34 +119,35 @@ class RankingPerformanceCollector(Configurable):
             h_eval_per_q = self.h_base_eval_per_q
 
         for d in self.l_target_depth:
-            metric = self.target_metric + '%02d' % d
-            score = h_eval[metric]
-            if run_name == self.baseline_name:
-                res_str += ' & $%.4f$ & -- ' % score
+            for eva_metric in self.l_target_metric:
+                metric = eva_metric + '%02d' % d
+                score = h_eval[metric]
+                if run_name == self.baseline_name:
+                    res_str += ' & $%.4f$ & -- ' % score
+                    if d == 20:
+                        res_str += ' & --/--/--'
+                    continue
+                l_base_q_score = self.h_base_eval_per_q[metric]
+                base_score = self.h_base_eval[metric]
+                l_q_score = h_eval_per_q[metric]
+
+                w, t, l = win_tie_loss(l_q_score, l_base_q_score)
+                rel = float(score) / base_score - 1
+                if rel > 0:
+                    p_value = randomization_test(l_q_score, l_base_q_score)
+                else:
+                    p_value = randomization_test(l_base_q_score, l_q_score)
+
+                if p_value <= 0.05:
+                    score_str = '${%.4f}^%s$' % (score, self.sig_str)
+                else:
+                    score_str = '${%.4f}$' % score
+                res_str += ' & ' + ' & '.join([
+                    score_str,
+                    "$ {0:+.2f}\\%  $ ".format(rel * 100),
+                ]) + '\n\n'
                 if d == 20:
-                    res_str += ' & --/--/--'
-                continue
-            l_base_q_score = self.h_base_eval_per_q[metric]
-            base_score = self.h_base_eval[metric]
-            l_q_score = h_eval_per_q[metric]
-
-            w, t, l = win_tie_loss(l_q_score, l_base_q_score)
-            rel = float(score) / base_score - 1
-            if rel > 0:
-                p_value = randomization_test(l_q_score, l_base_q_score)
-            else:
-                p_value = randomization_test(l_base_q_score, l_q_score)
-
-            if p_value <= 0.05:
-                score_str = '${%.4f}^%s$' % (score, self.sig_str)
-            else:
-                score_str = '${%.4f}$' % score
-            res_str += ' & ' + ' & '.join([
-                score_str,
-                "$ {0:+.2f}\\%  $ ".format(rel * 100),
-            ]) + '\n\n'
-            if d == 20:
-                res_str += '& %02d/%02d/%02d\n\n' % (w, t, l)
+                    res_str += '& %02d/%02d/%02d\n\n' % (w, t, l)
 
         return res_str
 
