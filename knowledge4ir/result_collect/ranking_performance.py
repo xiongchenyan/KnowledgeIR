@@ -96,7 +96,7 @@ class RankingPerformanceCollector(Configurable):
         #     header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
         print >> out, header + '\\\\ \\hline'
         print header + '\\\\ \\hline'
-        for run_name in [self.baseline_name] + self.l_run_name:
+        for run_name in self.l_run_name:
             print >> out, self._overall_performance_per_run(run_name) + '\\\\'
             print self._overall_performance_per_run(run_name) + '\\\\'
         out.close()
