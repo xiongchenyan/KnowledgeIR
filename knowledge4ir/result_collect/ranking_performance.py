@@ -154,7 +154,7 @@ class RankingPerformanceCollector(Configurable):
 
 if __name__ == '__main__':
     import sys
-    from scholarranking.utils import (
+    from knowledge4ir.utils import (
         load_py_config,
         set_basic_log,
     )
