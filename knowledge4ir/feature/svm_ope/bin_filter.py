@@ -48,7 +48,7 @@ def main(svm_in, feature_name_in, out_pre, nb_bin):
     l_svm_data = load_svm_feature(svm_in)
     h_total_feature_id = json.load(open(feature_name_in))
 
-    for max_bin in xrange(nb_bin - 1):
+    for max_bin in xrange(nb_bin):
         make_one_bin(l_svm_data, h_total_feature_id, out_pre + 'First_%02d' % max_bin, max_bin)
         print 'first bin %d done' % max_bin
     print 'done'
