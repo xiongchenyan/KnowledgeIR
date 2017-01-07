@@ -16,16 +16,27 @@ from knowledge4ir.utils import (
     dump_svm_feature,
 )
 
+def get_bin_id(name):
+    bid = None
+    if 'Maxbin' in name:
+        bid = int(name.split('_')[-1])
+        print "%s => %d" % (name, bid)
+    if 'Top' in name:
+        bid = int(name[name.index('Top') + 3:])
+    if bid:
+        print "%s => %d" % (name, bid)
+    return bid
+
 
 def make_one_bin(l_svm_data, h_total_feature_id, out_name, max_bin):
     h_new_feature_id = {}
     for name, fid in h_total_feature_id.items():
-        if 'Maxbin' not in name:
+        bid = get_bin_id(name)
+        if not bid:
             h_new_feature_id[name] = fid
             continue
-
-        bin_n = int(name.split('_')[-1])
-        if bin_n <= max_bin:
+        bid = int(name.split('_')[-1])
+        if bid <= max_bin:
             h_new_feature_id[name] = fid
 
     l_new_svm, h_feature_id = filter_feature(l_svm_data, h_new_feature_id)
@@ -33,7 +44,7 @@ def make_one_bin(l_svm_data, h_total_feature_id, out_name, max_bin):
     json.dump(h_feature_id, open(out_name + '_feature_name', 'w'), indent=1)
 
 
-def main(svm_in, feature_name_in, out_pre, nb_bin=5):
+def main(svm_in, feature_name_in, out_pre, nb_bin):
     l_svm_data = load_svm_feature(svm_in)
     h_total_feature_id = json.load(open(feature_name_in))
 
@@ -45,12 +56,13 @@ def main(svm_in, feature_name_in, out_pre, nb_bin=5):
 
 if __name__ == '__main__':
     import sys
-    if 3 != len(sys.argv):
+    if 4 != len(sys.argv):
         print "bin filter"
-        print "svm in + out"
+        print "svm in + out + nb of bin"
         sys.exit()
     svm_in = sys.argv[1]
     out_pre = sys.argv[2]
+    nb_bin = int(sys.argv[3])
     feature_in = sys.argv[1] + '_feature_name'
-    main(svm_in, feature_in, out_pre)
+    main(svm_in, feature_in, out_pre, nb_bin)
 
