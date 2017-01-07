@@ -35,7 +35,6 @@ def make_one_bin(l_svm_data, h_total_feature_id, out_name, max_bin):
         if not bid:
             h_new_feature_id[name] = fid
             continue
-        bid = int(name.split('_')[-1])
         if bid <= max_bin:
             h_new_feature_id[name] = fid
 
