@@ -106,7 +106,7 @@ class HierarchicalAttLeToR(AttLeToR):
                                            filter_length=1,
                                            input_shape=in_shape,
                                            activation=activation,
-                                           bias=True,
+                                           bias=False,
                                            W_regularizer=l2(self.l2_w)
                                            )
 
@@ -114,7 +114,7 @@ class HierarchicalAttLeToR(AttLeToR):
                 this_layer = Convolution1D(nb_filter=this_nb_filter,
                                            filter_length=1,
                                            activation=activation,
-                                           bias=True,
+                                           bias=False,
                                            W_regularizer=l2(self.l2_w)
                                            )
             model.add(this_layer)
