@@ -10,6 +10,8 @@ output
 import sys
 import json
 import os
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 def load_one_set(qt_name, qe_name, qd_name):
