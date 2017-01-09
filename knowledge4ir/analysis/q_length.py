@@ -112,7 +112,7 @@ if __name__ == '__main__':
         load_py_config,
     )
     set_basic_log()
-    if 3 != len(sys.argv):
+    if 2 != len(sys.argv):
         print "analysis based on query len in bow and boe"
         print "1 para: conf:"
         QLenPerformanceAna.class_print_help()
