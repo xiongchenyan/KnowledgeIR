@@ -40,6 +40,8 @@ from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
 from knowledge4ir.feature.attention.e_prf import EntityPrfAttentionFeature
 from knowledge4ir.feature.attention.e_memory import EntityMemoryAttentionFeature
 from knowledge4ir.feature.attention.t_memory import TermMemoryAttentionFeature
+from knowledge4ir.feature.attention.e_surface import EntitySurfaceFormAttentionFeature
+from knowledge4ir.feature.attention.e_linking import EntityLinkerAttentionFeature
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
@@ -76,7 +78,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
                             help='q term attention features: Emb, Static, Prf, Mem'
                             ).tag(config=True)
     l_qe_att_feature = List(Unicode, default_value=['Emb',],
-                            help='q e attention feature: Emb, Text, Static, Prf, Mem'
+                            help='q e attention feature: Emb, Text, Static, Prf, Mem, Surface, Linker'
                             ).tag(config=True)
 
     out_name = Unicode(help='feature out file name').tag(config=True)
@@ -131,6 +133,10 @@ class AttLeToRFeatureExtractCenter(Configurable):
         EntityPrfAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Mem"
         EntityMemoryAttentionFeature.class_print_help(inst)
+        print "entity attention feature group: Surface"
+        EntitySurfaceFormAttentionFeature.class_print_help(inst)
+        print "entity attention feature group: Linker"
+        EntityLinkerAttentionFeature.class_print_help(inst)
 
     def update_config(self, config):
         super(AttLeToRFeatureExtractCenter, self).update_config(config)
@@ -213,6 +219,14 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qe_att_extractor.append(EntityMemoryAttentionFeature(**kwargs))
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Memory features to entity attention')
+        if "Surface" in self.l_qe_att_feature:
+            self.l_qe_att_extractor.append(EntitySurfaceFormAttentionFeature(**kwargs))
+            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Surface features to entity attention')
+        if "Linker" in self.l_qe_att_feature:
+            self.l_qe_att_extractor.append(EntityLinkerAttentionFeature(**kwargs))
+            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+            logging.info('add Linker features to entity attention')
 
     def pipe_extract(self, doc_info_in=None, out_name=None):
         """
