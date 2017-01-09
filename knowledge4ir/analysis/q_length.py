@@ -97,12 +97,17 @@ class QLenPerformanceAna(Configurable):
         for w_len, cnt in l_w_len:
             base_ndcg = h_w_base_ndcg[w_len]
             ndcg = h_w_ndcg[w_len]
+            rel = 0
+            if base_ndcg:
+                rel = ndcg / base_ndcg - 1
+            else:
+                rel = int(ndcg > 0)
             print >> out, '%d, %d, %.4f, %.4f, %.4f' % (
                 w_len,
                 cnt,
                 base_ndcg,
                 ndcg,
-                ndcg / base_ndcg - 1
+                rel
             )
 
         print >> out, "\n\n"
@@ -113,12 +118,16 @@ class QLenPerformanceAna(Configurable):
         for e_len, cnt in l_e_len:
             base_ndcg = h_e_base_ndcg[e_len]
             ndcg = h_e_ndcg[e_len]
+            if base_ndcg:
+                rel = ndcg / base_ndcg - 1
+            else:
+                rel = int(ndcg > 0)
             print >> out, '%d, %d, %.4f, %.4f, %.4f' % (
                 e_len,
                 cnt,
                 base_ndcg,
                 ndcg,
-                ndcg / base_ndcg - 1
+                rel
             )
 
         out.close()
