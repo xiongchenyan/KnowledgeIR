@@ -11,6 +11,7 @@ output:
 from knowledge4ir.utils import (
     load_query_info,
     get_rel_ndcg,
+    load_gdeval_res,
 )
 import json
 from traitlets.config import Configurable
@@ -47,6 +48,9 @@ class QLenPerformanceAna(Configurable):
         super(QLenPerformanceAna, self).__init__(**kwargs)
         self.h_q_info = load_query_info(self.q_info_in)
         self.h_rel_ndcg = get_rel_ndcg(self.eva_in, self.base_eva_in)
+        self.h_base_eva = load_gdeval_res(self.base_eva_in)
+        self.h_eva = load_gdeval_res(self.eva_in)
+
 
     def avg_len(self):
         l_bow_len = [len(h['query'].split()) for __, h in self.h_q_info.items()]
@@ -59,8 +63,11 @@ class QLenPerformanceAna(Configurable):
         logging.info('avg len get')
 
     def rel_ndcg_at_len(self):
-        h_w_len_rel_ndcg = {}
-        h_e_len_rel_ndcg = {}
+        # h_w_len_rel_ndcg = {}
+        h_w_ndcg = {}
+        h_w_base_ndcg = {}
+        h_e_ndcg = {}
+        h_e_base_ndcg = {}
         h_w_len_cnt = {}
         h_e_len_cnt = {}
         for q, h_info in self.h_q_info.items():
@@ -68,30 +75,51 @@ class QLenPerformanceAna(Configurable):
             boe_len = len(h_info['tagme']['query'])
             if bow_len not in h_w_len_cnt:
                 h_w_len_cnt[bow_len] = 1
-                h_w_len_rel_ndcg[bow_len] = self.h_rel_ndcg.get(q, 0)
+                h_w_ndcg[bow_len] = self.h_eva.get(q, [0, 0])[0]
+                h_w_base_ndcg[bow_len] = self.h_base_eva.get(q, [0,0])[0]
             else:
                 h_w_len_cnt[bow_len] += 1
-                h_w_len_rel_ndcg[bow_len] += self.h_rel_ndcg.get(q, 0)
+                h_w_ndcg[bow_len] += self.h_eva.get(q, [0, 0])[0]
+                h_w_base_ndcg[bow_len] += self.h_base_eva.get(q, [0,0])[0]
             if boe_len not in h_e_len_cnt:
                 h_e_len_cnt[boe_len] = 1
-                h_e_len_rel_ndcg[boe_len] = self.h_rel_ndcg.get(q, 0)
+                h_e_ndcg[boe_len] = self.h_eva.get(q, [0, 0])[0]
+                h_e_base_ndcg[boe_len] = self.h_base_eva.get(q, [0,0])[0]
             else:
                 h_e_len_cnt[boe_len] += 1
-                h_e_len_rel_ndcg[boe_len] += self.h_rel_ndcg.get(q, 0)
+                h_e_ndcg[boe_len] += self.h_eva.get(q, [0, 0])[0]
+                h_e_base_ndcg[boe_len] += self.h_base_eva.get(q, [0,0])[0]
 
         out = open(self.out_pre + '.rel_ndcg_at_len', 'w')
-        print >> out, 'bow:\nlen,cnt,rel_ndcg'
-        l_w_len_rel_ndcg = h_w_len_rel_ndcg.items()
-        l_w_len_rel_ndcg.sort(key=lambda item: item[0])
-        for w_len, sum_ndcg in l_w_len_rel_ndcg:
-            print >> out, '%d,%d,%.4f' % (w_len, h_w_len_cnt[w_len], float(sum_ndcg) / h_w_len_cnt[w_len])
+        print >> out, 'bow:\nlen,cnt,baseline, this_ndcg, rel'
+        l_w_len = h_w_len_cnt.items()
+        l_w_len.sort(key=lambda item: item[0])
+        for w_len, cnt in l_w_len:
+            base_ndcg = h_w_base_ndcg[w_len]
+            ndcg = h_w_ndcg[w_len]
+            print >> out, '%d, %d, %.4f, %.4f, %.4f' % (
+                w_len,
+                cnt,
+                base_ndcg,
+                ndcg,
+                ndcg / base_ndcg - 1
+            )
 
-        l_e_len_rel_ndcg = h_e_len_rel_ndcg.items()
-        l_e_len_rel_ndcg.sort(key=lambda item: item[0])
         print >> out, "\n\n"
-        print >> out, 'boe:\nlen,cnt,rel_ndcg'
-        for e_len, sum_ndcg in l_e_len_rel_ndcg:
-            print >> out, '%d,%d,%.4f' % (e_len, h_e_len_cnt[e_len], float(sum_ndcg) / h_e_len_cnt[e_len])
+        print >> out, 'boe:\nlen,cnt,baseline, this_ndcg, rel'
+
+        l_e_len = h_e_len_cnt.items()
+        l_e_len.sort(key=lambda item: item[0])
+        for e_len, cnt in l_e_len:
+            base_ndcg = h_e_base_ndcg[e_len]
+            ndcg = h_e_ndcg[e_len]
+            print >> out, '%d, %d, %.4f, %.4f, %.4f' % (
+                e_len,
+                cnt,
+                base_ndcg,
+                ndcg,
+                ndcg / base_ndcg - 1
+            )
 
         out.close()
         print "rel ndcg get"
