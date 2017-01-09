@@ -29,7 +29,7 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
                             help="names of corresponding embedding, if more than one"
                             ).tag(config=True)
     tagger = Unicode('tagme', help='tagger').tag(config=True)
-    l_features = List(Unicode, default_value=['cosine', 'joint'],
+    l_features = List(Unicode, default_value=['cosine', 'joint', 'cosine_q'],
                      help='features: cosine, joint, raw_diff'
                      ).tag(config=True)
 
@@ -58,7 +58,10 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
             l_h_feature = mul_update(l_h_feature, l_h_this_feature)
 
         if 'joint' in self.l_features:
-            l_this_h_feature = self._extract_joint( h_q_info, l_e)
+            l_this_h_feature = self._extract_joint(h_q_info, l_e)
+            l_h_feature = mul_update(l_h_feature, l_this_h_feature)
+        if 'cosine_q' in self.l_features:
+            l_this_h_feature = self._extract_cos_to_q(h_q_info, l_e)
             l_h_feature = mul_update(l_h_feature, l_this_h_feature)
         if 'raw_diff' in self.l_features:
             l_this_h_feature = self._extract_raw_diff( h_q_info, l_e)
@@ -94,6 +97,23 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
                               for key, score in h_feature.items()])
             l_h_feature.append(h_feature)
         return l_h_feature
+
+    def _extract_cos_to_q(self, h_q_info, l_e):
+        l_h_feature = []
+        l_t = h_q_info['query'].lower().split()
+        q_t_emb = form_avg_emb(l_t, self.joint_embedding)
+        for e in l_e:
+            h_feature = {}
+            h_joint_feature = self._extract_cosine_per_e(h_q_info, e, q_t_emb, self.joint_embedding)
+            h_feature.update(dict(
+                [(item[0] + 'Joint', item[1]) for item in h_joint_feature.items()]
+            ))
+
+            h_feature = dict([(self.feature_name_pre + key, score)
+                              for key, score in h_feature.items()])
+            l_h_feature.append(h_feature)
+        return l_h_feature
+
 
     def _extract_raw_diff(self, h_q_info, l_e):
         emb = self.l_embedding[0]
