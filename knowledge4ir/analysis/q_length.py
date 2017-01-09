@@ -95,9 +95,8 @@ class QLenPerformanceAna(Configurable):
         l_w_len = h_w_len_cnt.items()
         l_w_len.sort(key=lambda item: item[0])
         for w_len, cnt in l_w_len:
-            base_ndcg = h_w_base_ndcg[w_len]
-            ndcg = h_w_ndcg[w_len]
-            rel = 0
+            base_ndcg = h_w_base_ndcg[w_len] / cnt
+            ndcg = h_w_ndcg[w_len] / cnt
             if base_ndcg:
                 rel = ndcg / base_ndcg - 1
             else:
@@ -116,8 +115,8 @@ class QLenPerformanceAna(Configurable):
         l_e_len = h_e_len_cnt.items()
         l_e_len.sort(key=lambda item: item[0])
         for e_len, cnt in l_e_len:
-            base_ndcg = h_e_base_ndcg[e_len]
-            ndcg = h_e_ndcg[e_len]
+            base_ndcg = h_e_base_ndcg[e_len] / cnt
+            ndcg = h_e_ndcg[e_len] / cnt
             if base_ndcg:
                 rel = ndcg / base_ndcg - 1
             else:
