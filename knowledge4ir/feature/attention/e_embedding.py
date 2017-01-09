@@ -82,12 +82,10 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
 
     def _extract_joint(self, h_q_info, l_e):
         l_h_feature = []
-        # q_te_join_emb = calc_query_entity_total_embedding(h_q_info, self.joint_embedding)
-        l_t = h_q_info['query'].lower().split()
-        q_t_emb = form_avg_emb(l_t, self.joint_embedding)
+        q_te_join_emb = calc_query_entity_total_embedding(h_q_info, self.joint_embedding)
         for e in l_e:
             h_feature = {}
-            h_joint_feature = self._extract_cosine_per_e(h_q_info, e, q_t_emb, self.joint_embedding)
+            h_joint_feature = self._extract_cosine_per_e(h_q_info, e, q_te_join_emb, self.joint_embedding)
             h_feature.update(dict(
                 [(item[0] + 'Joint', item[1]) for item in h_joint_feature.items()]
             ))
