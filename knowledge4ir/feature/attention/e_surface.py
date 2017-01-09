@@ -64,7 +64,6 @@ class EntitySurfaceFormAttentionFeature(EntityAttentionFeature):
             question_e = 1
         h_feature[self.feature_name_pre + 'QuestionE'] = question_e
 
-
         return h_feature
 
 
