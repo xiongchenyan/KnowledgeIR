@@ -340,8 +340,8 @@ def feature_hash(l_h_feature):
     return l_h_hashed_feature, h_name
 
 
-def load_gdeval_res(in_name):
-    return seg_gdeval_out(open(in_name).read())
+def load_gdeval_res(in_name, with_mean=True):
+    return seg_gdeval_out(open(in_name).read(), with_mean)
 
 
 def seg_gdeval_out(eva_str, with_mean=True):
