@@ -13,8 +13,8 @@ import json
 
 
 def avg_len(h_q_info):
-    l_bow_len = [len(h['query'].split()) for h in h_q_info]
-    l_boe_len = [len(h['tagme']['query']) for h in h_q_info]
+    l_bow_len = [len(h['query'].split()) for __, h in h_q_info.items()]
+    l_boe_len = [len(h['tagme']['query']) for __, h in h_q_info.items()]
     return float(sum(l_bow_len)) / len(l_bow_len), float(sum(l_boe_len)) / len(l_boe_len)
 
 
