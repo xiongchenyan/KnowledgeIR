@@ -36,7 +36,7 @@ class EntityAttentionFeature(Configurable):
 
     def _find_entity_p(self, h_q_info, e):
         l_ana = h_q_info['tagme']['query']
-        for p in l_ana:
+        for p in xrange(len(l_ana)):
             if l_ana[p][0] == e:
                 return p
         return -1
