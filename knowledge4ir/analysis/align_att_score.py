@@ -81,9 +81,9 @@ def align(q_info, h_qt_vec, h_qe_vec, out_name):
         res_str = qid + '\t'
         for t, w in zip(l_qt, l_qt_att):
             res_str += '%s,%.04f ' %(t, w)
-        res_str += '\t'
+        res_str += '\t#\t'
         for (eid, name), w in zip(l_qe_id_name, l_qe_att):
-            res_str += '%s,%0.4f' %(name, w)
+            res_str += '%s,%0.4f ' %(name, w)
         print >> out, res_str
 
     out.close()
