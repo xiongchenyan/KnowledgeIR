@@ -75,7 +75,14 @@ def align(q_info, h_qt_vec, h_qe_vec, out_name):
         l_qt_att = h_qt_vec[qid]
         l_qe_att = h_qe_vec[qid]
 
-        print >> out, qid + '\t' + json.dumps(zip(l_qt, l_qt_att)) + '\t' + json.dumps(zip(l_qe_id_name, l_qe_att))
+        # print >> out, qid + '\t' + json.dumps(zip(l_qt, l_qt_att)) + '\t' + json.dumps(zip(l_qe_id_name, l_qe_att))
+        res_str = qid + '\t'
+        for t, w in zip(l_qt, l_qt_att):
+            res_str += '%s,%.04f ' %(t, w)
+        res_str += '\t'
+        for (eid, name), w in zip(l_qe_id_name, l_qe_att):
+            res_str += '%s,%0.4f' %(name, w)
+        print >> out, res_str
 
     out.close()
     print "aligned"
