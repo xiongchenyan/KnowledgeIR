@@ -60,11 +60,14 @@ def load_all_att_vector(cv_dir):
 
 def align(q_info, h_qt_vec, h_qe_vec, out_name):
     out = open(out_name, 'w')
-
+    l_q_data = []
     for line in open(q_info):
         qid, data = line.split('\t')
         if qid not in h_qt_vec:
             continue
+        l_q_data.append([qid, data])
+    l_q_data.sort(key=lambda item: int(item[0]))
+    for qid, data in l_q_data:
         h_q = json.loads(data)
         l_qt = h_q['query'].split()
         l_qe_id_name = [(ana[0], ana[-1]) for ana in h_q['tagme']['query']]
