@@ -57,26 +57,36 @@ class EntityStaticAttentionFeature(EntityAttentionFeature):
 
         l_v_col = self.h_e_triples.get(e, [])
         parser = FbDumpParser()
-
-        l_alias = parser.get_alias(l_v_col)
-        h_feature[self.feature_name_pre + 'NbAlias'] = math.log(max(len(l_alias), 1))
-
         l_types = parser.get_type(l_v_col)
-        h_feature[self.feature_name_pre + 'NbTypes'] = math.log(max(len(l_types), 1))
+        is_person = 0
+        is_location = 0
+        for t in l_types:
+            if 'people' in t:
+                is_person = 1
+            if 'location' in t:
+                is_location = 1
+        h_feature[self.feature_name_pre + 'IsLocation'] = is_location
+        h_feature[self.feature_name_pre + 'isPerson'] = is_person
 
-        desp = parser.get_desp(l_v_col)
-        h_feature[self.feature_name_pre + 'DespLen'] = math.log(max(len(desp.split()), 1))
+        # l_alias = parser.get_alias(l_v_col)
+        # h_feature[self.feature_name_pre + 'NbAlias'] = math.log(max(len(l_alias), 1))
 
-        notable = parser.get_notable(l_v_col)
-        has_notable = 0
-        if notable:
-            has_notable = 1
-        h_feature[self.feature_name_pre + 'HasNotable'] = has_notable
+        # h_feature[self.feature_name_pre + 'NbTypes'] = math.log(max(len(l_types), 1))
 
-        l_neighbors = parser.get_neighbor(l_v_col)
-        h_feature[self.feature_name_pre + 'NbNeighbor'] = math.log(max(len(l_neighbors), 1))
 
-        h_feature[self.feature_name_pre + 'NbTriples'] = math.log(max(len(l_v_col), 1))
+        # desp = parser.get_desp(l_v_col)
+        # h_feature[self.feature_name_pre + 'DespLen'] = math.log(max(len(desp.split()), 1))
+
+        # notable = parser.get_notable(l_v_col)
+        # has_notable = 0
+        # if notable:
+        #     has_notable = 1
+        # h_feature[self.feature_name_pre + 'HasNotable'] = has_notable
+        #
+        # l_neighbors = parser.get_neighbor(l_v_col)
+        # h_feature[self.feature_name_pre + 'NbNeighbor'] = math.log(max(len(l_neighbors), 1))
+        #
+        # h_feature[self.feature_name_pre + 'NbTriples'] = math.log(max(len(l_v_col), 1))
 
         return h_feature
 
