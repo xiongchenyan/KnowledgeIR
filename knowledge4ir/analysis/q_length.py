@@ -48,8 +48,8 @@ class QLenPerformanceAna(Configurable):
         super(QLenPerformanceAna, self).__init__(**kwargs)
         self.h_q_info = load_query_info(self.q_info_in)
         self.h_rel_ndcg = get_rel_ndcg(self.eva_in, self.base_eva_in)
-        self.h_base_eva = load_gdeval_res(self.base_eva_in, False)
-        self.h_eva = load_gdeval_res(self.eva_in, False)
+        self.h_base_eva = dict(load_gdeval_res(self.base_eva_in, False))
+        self.h_eva = dict(load_gdeval_res(self.eva_in, False))
 
 
     def avg_len(self):
