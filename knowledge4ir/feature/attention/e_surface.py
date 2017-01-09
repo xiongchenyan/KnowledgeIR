@@ -1,5 +1,6 @@
 """
-
+surface form features
+based on how the entity's surface form appear in the doc
 """
 
 
@@ -27,12 +28,9 @@ class EntitySurfaceFormAttentionFeature(EntityAttentionFeature):
 
     def _extract_surface_per_e(self, h_q_info, e):
         h_feature = {}
-        ana = []
         l_ana = h_q_info['tagme']['query']
-        for p in l_ana:
-            if l_ana[p][0] == e:
-                ana = l_ana[p][0]
-                break
+        p = self._find_entity_p(h_q_info, e)
+        ana = l_ana[p]
 
         query = h_q_info['query']
 

@@ -34,6 +34,13 @@ class EntityAttentionFeature(Configurable):
     def extract(self, h_q_info, l_e):
         yield NotImplementedError
 
+    def _find_entity_p(self, h_q_info, e):
+        l_ana = h_q_info['tagme']['query']
+        for p in l_ana:
+            if l_ana[p][0] == e:
+                return p
+        return -1
+
 
 def form_avg_emb(l_node, emb):
     l_vector = [emb[node] for node in l_node if node in emb]
