@@ -367,6 +367,19 @@ def seg_gdeval_out(eva_str, with_mean=True):
         return l_qid_eva
 
 
+def get_rel_ndcg(eva_res, base_eva_res):
+    l_q_eva, __, __ = load_gdeval_res(eva_res)
+    l_base_q_eva, __, __ = load_gdeval_res(base_eva_res)
+    h_q_rel_ndcg = dict()
+    h_base_q_eva = dict(l_base_q_eva)
+    for q, (ndcg, __) in l_q_eva:
+        base_ndcg = h_base_q_eva.get(q, [0, 0])[0]
+        rel = ndcg - base_ndcg
+        h_q_rel_ndcg[q] = rel
+
+    return h_q_rel_ndcg
+
+
 def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None):
     """
     rm3 model
