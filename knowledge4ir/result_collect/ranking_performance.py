@@ -127,7 +127,7 @@ class RankingPerformanceCollector(Configurable):
         else:
             h_eval = self.h_base_eval
             h_eval_per_q = self.h_base_eval_per_q
-        wtl_str = ""
+        wtl_str = ' & --/--/--'
         for d in self.l_target_depth:
             for eva_metric in self.l_target_metric:
                 metric = eva_metric + '%02d' % d
