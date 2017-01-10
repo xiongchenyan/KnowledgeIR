@@ -105,7 +105,7 @@ class QLenPerformanceAna(Configurable):
                 h_e_base_err[boe_len] += self.h_base_eva.get(q, [0, 0])[1]
 
         out = open(self.out_pre + '.rel_ndcg_at_len', 'w')
-        print >> out, 'bow:\nlen,cnt,base_ndcg, this_ndcg, rel_err, base_err, this_err, rel_err'
+        print >> out, 'bow:\nlen,cnt,base_ndcg, this_ndcg, rel_ndcg, base_err, this_err, rel_err'
         l_w_len = h_w_len_cnt.items()
         l_w_len.sort(key=lambda item: item[0])
         for w_len, cnt in l_w_len:
@@ -135,7 +135,7 @@ class QLenPerformanceAna(Configurable):
             )
 
         print >> out, "\n\n"
-        print >> out, 'boe:\nlen,cnt,base_ndcg, this_ndcg, rel_err, base_err, this_err, rel_err'
+        print >> out, 'boe:\nlen,cnt,base_ndcg, this_ndcg, rel_ndcg, base_err, this_err, rel_err'
 
         l_e_len = h_e_len_cnt.items()
         l_e_len.sort(key=lambda item: item[0])
