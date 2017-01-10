@@ -14,6 +14,7 @@ from knowledge4ir.utils import (
     load_query_info,
 )
 import json
+import math
 
 
 def get_target_surfaceforms(q_info_in):
@@ -32,7 +33,7 @@ def get_top_k_candidate(surface_form_dict_in, h_surface, k):
     target_cnt = 0
     for p, line in enumerate(open(surface_form_dict_in)):
         sf, eid, cnt = line.strip().split('\t')
-        cnt = int(cnt)
+        cnt = math.floor(float(cnt))
         if sf not in h_surface:
             continue
         target_cnt += 1
