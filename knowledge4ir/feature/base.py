@@ -416,6 +416,7 @@ class LeToRFeatureExternalInfo(Configurable):
     joint_emb_in = Unicode(help="word-entity joint embedding in").tag(config=True)
     entity_triple_in = Unicode(help="entity triple in").tag(config=True)
     prf_trec_in = Unicode(help='prf trec in').tag(config=True)
+    surface_info_in = Unicode(help='surface form info').tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExternalInfo, self).__init__(**kwargs)
@@ -450,7 +451,9 @@ class LeToRFeatureExternalInfo(Configurable):
         if self.prf_trec_in:
             logging.info('loading prf trec with info')
             self.ll_q_rank_info = load_trec_ranking_with_info(self.prf_trec_in)
-
+        if self.surface_info_in:
+            logging.info('loading surface form info')
+            self.h_surface_info = json.load(open(self.surface_info_in))
         logging.info('external info loaded')
 
 
