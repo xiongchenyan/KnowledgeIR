@@ -33,6 +33,15 @@ class RankingPerformanceCollector(Configurable):
     result_dir = Unicode(help='result dir').tag(config=True)
     l_run_name = List(Unicode, help='run names').tag(config=True)
     baseline_name = Unicode(help='base line name').tag(config=True)
+    l_sig_test_name = List(Unicode,
+                           help='list of runs for all others to test statistical significance'
+                           ).tag(config=True)
+    l_sig_symbol = List(Unicode,
+                        default_value=['\\dagger', '\\ddagger',
+                                       '\\mathsection', '\\mathparagraph',
+                                       '*', '**'],
+                        help='symbols to indicate significances'
+                        ).tag(config=True)
     out_dir = Unicode(help='out directory').tag(config=True)
 
     l_target_metric = List(Unicode, default_value=['ndcg', 'err']).tag(config=True)
@@ -46,6 +55,7 @@ class RankingPerformanceCollector(Configurable):
         self.l_run_h_eval = []  # h_eval{'metric': score}
         self.h_base_eval_per_q = []
         self.h_base_eval = []
+        self.l_to_comp_run_p = [self.l_run_name.index(name) for name in self.l_sig_test_name]
 
     def _load_eva_results(self):
         self.h_base_eval_per_q, self.h_base_eval = self._load_per_run_results(self.baseline_name)
@@ -130,16 +140,22 @@ class RankingPerformanceCollector(Configurable):
                 l_base_q_score = self.h_base_eval_per_q[metric]
                 base_score = self.h_base_eval[metric]
                 l_q_score = h_eval_per_q[metric]
+                rel = float(score) / base_score - 1
 
                 w, t, l = win_tie_loss(l_q_score, l_base_q_score)
-                rel = float(score) / base_score - 1
-                if rel > 0:
-                    p_value = randomization_test(l_q_score, l_base_q_score)
-                else:
-                    p_value = randomization_test(l_base_q_score, l_q_score)
 
-                if p_value <= 0.05:
-                    score_str = '${%.4f}^%s$' % (score, self.sig_str)
+                # if rel > 0:
+                #     p_value = randomization_test(l_q_score, l_base_q_score)
+                # else:
+                #     p_value = randomization_test(l_base_q_score, l_q_score)
+
+                # if p_value <= 0.05:
+                #     score_str = '${%.4f}^%s$' % (score, self.sig_str)
+                # else:
+                #     score_str = '${%.4f}$' % score
+                sig_mark = self._calc_sig_mark(l_q_score, metric)
+                if sig_mark:
+                    score_str = '${%.4f}^%s$' % (score, sig_mark)
                 else:
                     score_str = '${%.4f}$' % score
                 res_str += ' & ' + ' & '.join([
@@ -150,6 +166,25 @@ class RankingPerformanceCollector(Configurable):
                     res_str += '& %02d/%02d/%02d\n\n' % (w, t, l)
 
         return res_str
+
+    def _calc_sig_mark(self, l_q_score, metric):
+        sig_mark = ""
+
+        assert len(self.l_to_comp_run_p) <= len(self.l_sig_symbol)
+
+        for i in xrange(len(self.l_to_comp_run_p)):
+            run_p = self.l_to_comp_run_p[i]
+            l_cmp_q_score = self.l_run_h_eval_per_q[run_p][metric]
+            if sum(l_q_score) <= sum(l_cmp_q_score):
+                # only test improvements
+                continue
+            p_value = randomization_test(l_q_score, l_cmp_q_score)
+            if p_value < 0.05:
+                sig_mark += self.l_sig_symbol[i] + ' '
+
+        if sig_mark:
+            sig_mark = '{' + sig_mark + "}"
+        return sig_mark
 
 
 if __name__ == '__main__':
