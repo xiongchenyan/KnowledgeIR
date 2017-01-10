@@ -38,22 +38,29 @@ def get_top_k_candidate(surface_form_dict_in, h_surface, k):
         if sf not in h_surface:
             continue
         target_cnt += 1
-        if len(h_surface[sf]) < k:
-            h_surface[sf].append((eid, cnt))
-            h_surface[sf].sort(key=lambda item: item[1])
-        else:
-            min_id, min_cnt = h_surface[sf][0]
-            if cnt < min_cnt:
-                h_surface[sf][0] = (eid, cnt)
-                h_surface[sf].append((min_id, cnt))
-            else:
-                h_surface[sf].append((eid, cnt))
+        # if len(h_surface[sf]) < k:
+        h_surface[sf].append((eid, cnt))
+            # h_surface[sf].sort(key=lambda item: item[1])
+        # else:
+        #     min_id, min_cnt = h_surface[sf][0]
+        #     if cnt < min_cnt:
+        #         h_surface[sf][0] = (eid, cnt)
+        #         h_surface[sf].append((min_id, cnt))
+        #     else:
+        #         h_surface[sf].append((eid, cnt))
 
         if not p % 1000:
             print "read [%d] sf line get [%d] target" % (p, target_cnt)
 
     h_sf_top_k = {}
     for sf, l in h_surface.items():
+        h = {}
+        for eid, cnt in l:
+            if eid not in h:
+                h[eid] = cnt
+            else:
+                h[eid] += cnt
+        l = h.items()
         l.sort(key=lambda item: -item[1])
         h_sf_top_k[sf] = l[:k]
     return h_sf_top_k
