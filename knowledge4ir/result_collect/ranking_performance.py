@@ -134,8 +134,8 @@ class RankingPerformanceCollector(Configurable):
                 score = h_eval[metric]
                 if run_name == self.baseline_name:
                     res_str += ' & $%.4f$ & -- ' % score
-                    if d == 20:
-                        res_str += ' & --/--/--'
+                    # if d == 20:
+                    #     res_str += ' & --/--/--'
                     continue
                 l_base_q_score = self.h_base_eval_per_q[metric]
                 base_score = self.h_base_eval[metric]
