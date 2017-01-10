@@ -92,8 +92,8 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
             logging.warn('surface [%s] not found in dict', sf)
             return {}
 
-        h_top_k = self.h_surface_info[sf]
-        l_candidate_prob = h_top_k.items()
+        l_top_k = self.h_surface_info[sf]
+        l_candidate_prob = l_top_k
         z = float(sum([item[1] for item in l_candidate_prob]))
         l_candidate_prob = [(item[0], item[1] / z) for item in l_candidate_prob]
         l_candidate_prob.sort(lambda item: -item[1])
@@ -128,8 +128,8 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
             logging.warn('surface [%s] not found in dict', sf)
             return {}
 
-        h_top_k = self.h_surface_info[sf]
-        s_other = set([item for item in h_top_k.keys() if item != e])
+        l_top_k = self.h_surface_info[sf]
+        s_other = set([item for item, __ in l_top_k if item != e])
 
         e_cnt = 0
         other_cnt = 0
