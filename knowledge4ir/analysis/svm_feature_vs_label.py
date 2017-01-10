@@ -18,7 +18,7 @@ def get_feature_avg(svm_in):
     irrel_cnt = 0
 
     for data in l_svm_data:
-        score = data['score']
+        label = data['score']
         h_feature = data['feature']
         for key, score in h_feature.items():
             if score < -20:
@@ -26,7 +26,7 @@ def get_feature_avg(svm_in):
             else:
                 score = math.exp(score)
             h_feature[key] = score
-        if score > 0:
+        if label > 0:
             h_rel_feature = add_svm_feature(h_rel_feature, h_feature)
             rel_cnt += 1
         else:
