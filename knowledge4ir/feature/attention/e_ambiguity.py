@@ -98,8 +98,9 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         l_candidate_prob = [(item[0], item[1] / z) for item in l_candidate_prob]
         l_candidate_prob.sort(key=lambda item: -item[1])
         is_top = 0
-        if l_candidate_prob[0][0] == e:
-            is_top = 1
+        if l_candidate_prob:
+            if l_candidate_prob[0][0] == e:
+                is_top = 1
         h_feature[self.feature_name_pre + 'IsTop'] = is_top
 
         margin = 0
@@ -110,7 +111,9 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
                 margin = l_candidate_prob[0][1] - l_candidate_prob[1][1]
         h_feature[self.feature_name_pre + 'Margin'] = margin
 
-        link_entropy = entropy([item[1] for item in l_candidate_prob])
+        link_entropy = 0
+        if l_candidate_prob:
+            link_entropy = entropy([item[1] for item in l_candidate_prob])
         h_feature[self.feature_name_pre + 'SfEntropy'] = link_entropy
         return h_feature
 
