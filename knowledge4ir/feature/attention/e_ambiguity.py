@@ -96,7 +96,7 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         l_candidate_prob = l_top_k
         z = float(sum([item[1] for item in l_candidate_prob]))
         l_candidate_prob = [(item[0], item[1] / z) for item in l_candidate_prob]
-        l_candidate_prob.sort(lambda item: -item[1])
+        l_candidate_prob.sort(key=lambda item: -item[1])
         is_top = 0
         if l_candidate_prob[0][0] == e:
             is_top = 1
