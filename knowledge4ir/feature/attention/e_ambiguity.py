@@ -104,7 +104,10 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
 
         margin = 0
         if is_top:
-            margin = l_candidate_prob[0][1] - l_candidate_prob[1][1]
+            if len(l_candidate_prob) < 2:
+                margin = 1
+            else:
+                margin = l_candidate_prob[0][1] - l_candidate_prob[1][1]
         h_feature[self.feature_name_pre + 'Margin'] = margin
 
         link_entropy = entropy([item[1] for item in l_candidate_prob])
