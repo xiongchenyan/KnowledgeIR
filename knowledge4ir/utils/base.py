@@ -286,6 +286,13 @@ def load_svm_feature(in_name):
     return l_svm_data
 
 
+def add_svm_feature(h_feature_a, h_feature_b):
+    h_res = dict(h_feature_a)
+    for key, score in h_feature_b.items():
+        h_res[key] = h_res.get(key, 0) + score
+    return h_res
+
+
 def dump_svm_feature(l_svm_data, out_name):
     out = open(out_name, 'w')
     l_svm_data.sort(key=lambda item: int(item['qid'])) # sort

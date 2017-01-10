@@ -5,7 +5,7 @@ input:
     trec rank with doc info
 output:
     for each q-d pair:
-        top k entity search score's entity
+        top k entity search score's entity (Lm dir on description)
         for each query entity, doc's entity in each transE bin
 """
 
@@ -28,4 +28,4 @@ class RankComponentAna(Configurable):
     
     def __init__(self, **kwargs):
         super(RankComponentAna, self).__init__(**kwargs)
-        
+
