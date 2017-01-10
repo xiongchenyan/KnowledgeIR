@@ -142,8 +142,8 @@ class QLenPerformanceAna(Configurable):
         for e_len, cnt in l_e_len:
             base_ndcg = h_e_base_ndcg[e_len] / cnt
             ndcg = h_e_ndcg[e_len] / cnt
-            base_err = h_e_base_err[w_len] / cnt
-            err = h_e_err[w_len] / cnt
+            base_err = h_e_base_err[e_len] / cnt
+            err = h_e_err[e_len] / cnt
             if base_ndcg:
                 rel_ndcg = ndcg / base_ndcg - 1
             else:
