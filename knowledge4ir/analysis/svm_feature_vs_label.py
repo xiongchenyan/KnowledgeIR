@@ -20,6 +20,12 @@ def get_feature_avg(svm_in):
     for data in l_svm_data:
         score = data['score']
         h_feature = data['feature']
+        for key, score in h_feature.items():
+            if score < -20:
+                score = 0
+            else:
+                score = math.exp(score)
+            h_feature[key] = score
         if score > 0:
             h_rel_feature = add_svm_feature(h_rel_feature, h_feature)
             rel_cnt += 1
@@ -63,7 +69,7 @@ if __name__ == '__main__':
     import sys
 
     if 3 != len(sys.argv):
-        print "calc feature average in relevant and other"
+        print "calc feature average in relevant and other, will exp feature score"
         print "2 para: svm in + out"
         sys.exit(-1)
 
