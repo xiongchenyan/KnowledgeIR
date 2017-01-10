@@ -153,7 +153,7 @@ class QLenPerformanceAna(Configurable):
             else:
                 rel_err = int(err > 0)
             print >> out, '%d, %d, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f' % (
-                w_len,
+                e_len,
                 cnt,
                 base_ndcg,
                 ndcg,
