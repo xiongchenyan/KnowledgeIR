@@ -33,6 +33,7 @@ def get_top_k_candidate(surface_form_dict_in, h_surface, k):
     target_cnt = 0
     for p, line in enumerate(open(surface_form_dict_in)):
         sf, eid, cnt = line.strip().split('\t')
+        sf = sf.lower()
         cnt = math.floor(float(cnt))
         if sf not in h_surface:
             continue
