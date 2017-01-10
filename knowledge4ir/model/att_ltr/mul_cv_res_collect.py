@@ -51,6 +51,8 @@ class CondorCvResCollector(Configurable):
 
         h_cv_cnt = {}
         for name in l_out_dir_names:
+            if not 'Fold' in name:
+                continue
             cv_dir, fold_d = self._split_dir_fold(name)
             if not cv_dir.startswith('/bos'):
                 continue

@@ -22,6 +22,10 @@ class OverfitResCollector(Configurable):
             return None
         if 'bos' not in res_line:
             return None
+        if 'overfit' not in res_line:
+            return None
+        if 'Fold' in res_line:
+            return None
         # logging.info('get res line [%s]', res_line)
         cv_dir = res_line.split(']')[0].split('[')[-1]
         base_name = ntpath.basename(ntpath.dirname(cv_dir.strip('/')))
@@ -40,6 +44,7 @@ class OverfitResCollector(Configurable):
             for fname in file_names:
                 if not fname.startswith('condor_out'):
                     continue
+
                 l = self._seg_results(os.path.join(dir_name, fname))
                 if not l:
                     continue
