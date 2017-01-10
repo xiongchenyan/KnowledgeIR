@@ -127,7 +127,7 @@ class RankingPerformanceCollector(Configurable):
         else:
             h_eval = self.h_base_eval
             h_eval_per_q = self.h_base_eval_per_q
-
+        wtl_str = ""
         for d in self.l_target_depth:
             for eva_metric in self.l_target_metric:
                 metric = eva_metric + '%02d' % d
@@ -162,8 +162,10 @@ class RankingPerformanceCollector(Configurable):
                     score_str,
                     "$ {0:+.2f}\\%  $ ".format(rel * 100),
                 ]) + '\n\n'
-                if d == 20:
-                    res_str += '& %02d/%02d/%02d\n\n' % (w, t, l)
+                if (d == 20) & (eva_metric == 'ndcg'):
+                    wtl_str = '& %02d/%02d/%02d\n\n' % (w, t, l)
+
+        res_str += wtl_str
 
         return res_str
 
