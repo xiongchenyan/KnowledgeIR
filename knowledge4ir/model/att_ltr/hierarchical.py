@@ -74,13 +74,16 @@ class HierarchicalAttLeToR(AttLeToR):
         for p in xrange(len(l_in_shape)):
             if p < 2:
                 activation = self.activation
+                l2 = self.l2_w
             else:
                 activation = self.att_activation
+                l2 = self.att_l2_w
             model = self._init_one_neural_network(
                 l_in_shape[p],
                 l_model_name[p],
                 l_nb_layer[p],
-                activation
+                activation,
+                l2
             )
             l_models.append(model)
         return l_models
@@ -94,8 +97,10 @@ class HierarchicalAttLeToR(AttLeToR):
         att_ranker = Model(input=l_inputs, output=att_ranker)
         return att_ranker
 
-    def _init_one_neural_network(self, in_shape, model_name, nb_layer, activation='linear'):
+    def _init_one_neural_network(self, in_shape, model_name, nb_layer, activation='linear', l2_w=None):
         model = Sequential(name=model_name)
+        if not l2_w:
+            l2_w = self.l2_w
         for lvl in xrange(nb_layer):
             if lvl == nb_layer - 1:
                 this_nb_filter = 1
@@ -107,7 +112,7 @@ class HierarchicalAttLeToR(AttLeToR):
                                            input_shape=in_shape,
                                            activation=activation,
                                            bias=False,
-                                           W_regularizer=l2(self.l2_w)
+                                           W_regularizer=l2_w
                                            )
 
             else:
@@ -115,7 +120,7 @@ class HierarchicalAttLeToR(AttLeToR):
                                            filter_length=1,
                                            activation=activation,
                                            bias=False,
-                                           W_regularizer=l2(self.l2_w)
+                                           W_regularizer=l2_w
                                            )
             model.add(this_layer)
         model.add(Flatten())

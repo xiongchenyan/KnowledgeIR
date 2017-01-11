@@ -48,6 +48,7 @@ class AttLeToR(Configurable):
 
     out_dir = Unicode(help='output directory').tag(config=True)
     l2_w = Float(0.01, help='l2 regulalizer').tag(config=True)
+    att_l2_w = Float(0.01, help='att l2 regularlizer').tag(config=True)
 
     data_meta_in = Unicode(help='the dimension file from feature extraction').tag(config=True)
     nb_q_t = Int(help='q term len').tag(config=True)
@@ -104,6 +105,7 @@ class AttLeToR(Configurable):
 
     def set_para(self, h_para):
         self.l2_w = h_para.get('l2_w', self.l2_w)
+        self.att_l2_w = h_para.get('att_l2_w', self.att_l2_w)
         self.nb_att_layer = h_para.get('nb_att_layer', self.nb_att_layer)
         self.nb_rank_layer = h_para.get('nb_rank_layer', self.nb_rank_layer)
         logging.info('set para l2_w=[%f], att layer=[%d], rank layer=[%d]',

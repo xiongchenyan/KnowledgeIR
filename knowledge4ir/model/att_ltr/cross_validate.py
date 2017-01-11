@@ -217,13 +217,14 @@ class CrossValidator(Configurable):
     def _get_dev_para_list(self):
         h_para = {}
         l_l2_w  = self.h_dev_para.get('l2_w', [])
+        l_att_l2_w = self.h_dev_para.get('att_l2_w', [])
         l_att_layer_nb = self.h_dev_para.get('nb_att_layer', [])
         l_rank_layer_nb = self.h_dev_para.get('nb_rank_layer', [])
         # if len(l_l2_w) * len(l_att_layer_nb) * len(l_rank_layer_nb):
         h_mid = {}
         l_res_paras = []
-        dfs_para([l_l2_w, l_att_layer_nb, l_rank_layer_nb],
-                 ['l2_w', 'nb_att_layer', 'nb_rank_layer'], 0, h_mid, l_res_paras)
+        dfs_para([l_l2_w, l_att_l2_w, l_att_layer_nb, l_rank_layer_nb],
+                 ['l2_w', 'att_l2_w', 'nb_att_layer', 'nb_rank_layer'], 0, h_mid, l_res_paras)
         return l_res_paras
 
 
