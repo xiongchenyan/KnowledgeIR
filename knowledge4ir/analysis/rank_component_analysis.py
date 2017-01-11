@@ -66,12 +66,13 @@ class RankComponentAna(Configurable):
         """
         out_name = os.path.join(self.out_dir, 'esr_bin.json')
         out = open(out_name, 'w')
-
+        logging.info('start generating esr bin res')
         for qid, l_rank_doc in self.ll_qid_ranked_doc:
             h_q_info = self.h_q_info.get(qid, {})
             for doc, score, h_info in l_rank_doc:
                 res = self._calc_esr_bin_per_pair(h_q_info, h_info)
                 print >> out, '%s\t%s\t#\t%s' % (qid, doc, json.dumps(res))
+            logging.info('q [%s] done', qid)
         out.close()
         logging.info('esr bin res to [%s]', out_name)
         return
@@ -79,14 +80,14 @@ class RankComponentAna(Configurable):
     def _calc_esr_bin_per_pair(self, h_q_info, h_doc_info):
         # h_res = {}
 
-        l_q_e = [ana[0] for ana in h_q_info['tagme']['query']]
-        l_q_e_emb = [self.embedding.get(e, None) for e in l_q_e]
-        l_d_e = h_doc_info['tagme'][body_field]
+        l_q_e_name = [(ana[0], ana[-1]) for ana in h_q_info['tagme']['query']]
+        l_q_e_emb = [self.embedding.get(e, None) for e, __ in l_q_e_name]
+        l_d_e_name = [(ana[0], ana[1]) for ana in h_doc_info['tagme'][body_field]]
 
         ll_e_sim = []
-        for e in l_q_e:
+        for e in l_q_e_name:
             ll_e_sim.append([])
-        for e in l_d_e:
+        for e, name in l_d_e_name:
             if e not in self.embedding:
                 continue
             d_e_emb = self.embedding[e]
@@ -94,12 +95,11 @@ class RankComponentAna(Configurable):
                 if not q_e_emb:
                     continue
                 l1 = 1.0 - np.mean(np.abs(q_e_emb - d_e_emb))
-                ll_e_sim[p].append((e, l1))
+                ll_e_sim[p].append((e, name, l1))
         for p in xrange(len(ll_e_sim)):
-            ll_e_sim[p].sort(key = lambda item: -item[1])
-            ll_e_sim[p] = [round(w, 2) for w in ll_e_sim[p]]
+            ll_e_sim[p].sort(key = lambda item: -item[-1])
 
-        l_res = zip(l_q_e, ll_e_sim)
+        l_res = zip(l_q_e_name, ll_e_sim)
 
         return l_res
 
@@ -111,32 +111,33 @@ class RankComponentAna(Configurable):
         """
         out_name = os.path.join(self.out_dir, 'esearch.json')
         out = open(out_name, 'w')
-
+        logging.info('start generating esearch res')
         for qid, l_rank_doc in self.ll_qid_ranked_doc:
             h_q_info = self.h_q_info.get(qid, {})
             for doc, score, h_info in l_rank_doc:
                 res = self._calc_esearch_per_pair(h_q_info, h_info)
                 print >> out, '%s\t%s\t#\t%s' % (qid, doc, json.dumps(res))
+            logging.info('q [%s] done', qid)
         out.close()
         logging.info('esearch res to [%s]', out_name)
         return
 
     def _calc_esearch_per_pair(self, h_q_info, h_doc_info):
         # h_res = {}
-        l_e  = [ana[0] for ana in h_doc_info['tagme'][body_field]]
+        l_e_name  = [(ana[0], ana[-1]) for ana in h_doc_info['tagme'][body_field]]
         query = h_q_info['query']
         q_lm = text2lm(query, clean=True)
         total_df, avg_len = self.h_corpus_stat['total_df'], 100.0
         l_e_score = []
-        for e in l_e:
+        for e, name in l_e_name:
             desp = self.h_entity_texts[e]['desp']
             e_lm = text2lm(desp, clean=True)
             term_stat = TermStat()
             term_stat.set_from_raw(q_lm, e_lm, self.h_field_h_df[body_field], total_df, avg_len)
             lm_dir = term_stat.lm_dir()
-            l_e_score.append((e, lm_dir))
+            l_e_score.append((e, name, lm_dir))
 
-        l_e_score.sort(key=lambda item: -item[1])
+        l_e_score.sort(key=lambda item: -item[-1])
         # h_res['e_lm_dir'] = l_e_score[:10]
 
         return l_e_score[:10]
