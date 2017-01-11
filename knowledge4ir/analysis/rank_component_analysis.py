@@ -83,23 +83,25 @@ class RankComponentAna(Configurable):
             return []
         l_q_e_name = [(ana[0], ana[-1]) for ana in h_q_info['tagme']['query']]
         l_q_e_emb = []
-        for e, __ in l_q_e_emb:
+        for e, name in l_q_e_emb:
             if e not in self.embedding:
                 l_q_e_emb.append(None)
+                logging.warn('q entity [%s][%s] not in embedding', e, name)
             else:
                 l_q_e_emb.append(self.embedding[e])
 
-        l_d_e_name = [(ana[0], ana[1]) for ana in h_doc_info['tagme'][body_field]]
+        l_d_e_name = [(ana[0], ana[-1]) for ana in h_doc_info['tagme'][body_field]]
 
         ll_e_sim = []
         for e in l_q_e_name:
             ll_e_sim.append([])
         for e, name in l_d_e_name:
             if e not in self.embedding:
+                logging.warn('d e [%s][%s] not in embedding', e, name)
                 continue
             d_e_emb = self.embedding[e]
             for p, q_e_emb in enumerate(l_q_e_emb):
-                if not q_e_emb:
+                if q_e_emb is None:
                     continue
                 l1 = 1.0 - np.mean(np.abs(q_e_emb - d_e_emb))
                 ll_e_sim[p].append((e, name, l1))
