@@ -10,6 +10,7 @@ from knowledge4ir.feature.attention import (
 import json
 import logging
 import math
+from knowledge4ir.utils import body_field
 from traitlets import (
     List,
     Unicode,
@@ -40,6 +41,8 @@ class TermStaticAttentionFeature(TermAttentionFeature):
         for t in l_t:
             h_feature = {}
             for field, h_df in self.h_field_h_df.items():
+                if field != body_field:
+                    continue
                 df = h_df.get(t, 1)
                 total_df = self.h_corpus_stat[field]['total_df']
                 idf = math.log(float(total_df) / float(df))
