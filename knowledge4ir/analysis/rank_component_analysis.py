@@ -27,6 +27,7 @@ from knowledge4ir.utils import (
     set_basic_log,
     text2lm,
     term2lm,
+    load_trec_labels_dict,
 )
 import numpy as np
 import json
@@ -38,6 +39,7 @@ class RankComponentAna(Configurable):
     q_info_in = Unicode(help='q info in').tag(config=True)
     trec_with_info_in = Unicode(help='trec with info in').tag(config=True)
     out_dir = Unicode(help='out directory').tag(config=True)
+    qrel_in = Unicode(help='qrel').tag(config=True)
 
     def __init__(self, **kwargs):
         super(RankComponentAna, self).__init__(**kwargs)
@@ -49,7 +51,7 @@ class RankComponentAna(Configurable):
 
         self.h_q_info = load_query_info(self.q_info_in)
         self.ll_qid_ranked_doc = load_trec_ranking_with_info(self.trec_with_info_in)
-
+        self.h_qrel = load_trec_labels_dict(self.qrel_in)
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
 
@@ -71,7 +73,8 @@ class RankComponentAna(Configurable):
             h_q_info = self.h_q_info.get(qid, {})
             for doc, score, h_info in l_rank_doc:
                 res = self._calc_esr_bin_per_pair(h_q_info, h_info)
-                print >> out, '%s\t%s\t#\t%s' % (qid, doc, json.dumps(res))
+                label = self.h_qrel.get(qid, {}).get(doc, 0)
+                print >> out, '%s\t%s\t%d\t#\t%s' % (qid, doc, label, json.dumps(res))
             logging.info('q [%s] done', qid)
         out.close()
         logging.info('esr bin res to [%s]', out_name)
@@ -126,7 +129,8 @@ class RankComponentAna(Configurable):
             h_q_info = self.h_q_info.get(qid, {})
             for doc, score, h_info in l_rank_doc:
                 res = self._calc_esearch_per_pair(h_q_info, h_info)
-                print >> out, '%s\t%s\t#\t%s' % (qid, doc, json.dumps(res))
+                label = self.h_qrel.get(qid, {}).get(doc, 0)
+                print >> out, '%s\t%s\t%d\t#\t%s' % (qid, doc, label, json.dumps(res))
             logging.info('q [%s] done', qid)
         out.close()
         logging.info('esearch res to [%s]', out_name)
