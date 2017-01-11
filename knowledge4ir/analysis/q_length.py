@@ -66,54 +66,72 @@ class QLenPerformanceAna(Configurable):
         # h_w_len_rel_ndcg = {}
         h_w_ndcg = {}
         h_w_base_ndcg = {}
+        h_w_ndcg_wtl = {}
         h_e_ndcg = {}
         h_e_base_ndcg = {}
+        h_e_ndcg_wtl = {}
 
         h_w_err = {}
         h_w_base_err = {}
+        h_w_err_wtl = {}
         h_e_err = {}
         h_e_base_err = {}
+        h_e_err_wtl = {}
 
         h_w_len_cnt = {}
         h_e_len_cnt = {}
         for q, h_info in self.h_q_info.items():
             bow_len = len(h_info['query'].split())
             boe_len = len(h_info['tagme']['query'])
+            ndcg, err = self.h_eva.get(q, [0, 0])
+            base_ndcg, base_err = self.h_base_eva.get(q, [0, 0])
+            ndcg_wtl = (int(ndcg > base_ndcg), int(ndcg == base_ndcg), int(ndcg < base_ndcg))
+            err_wtl = (int(err > base_err), int(err == base_err), int(err < base_err))
             if bow_len not in h_w_len_cnt:
                 h_w_len_cnt[bow_len] = 1
-                h_w_ndcg[bow_len] = self.h_eva.get(q, [0, 0])[0]
-                h_w_base_ndcg[bow_len] = self.h_base_eva.get(q, [0, 0])[0]
-                h_w_err[bow_len] = self.h_eva.get(q, [0, 0])[1]
-                h_w_base_err[bow_len] = self.h_base_eva.get(q, [0, 0])[1]
+                h_w_ndcg[bow_len] = ndcg
+                h_w_base_ndcg[bow_len] = base_ndcg
+                h_w_err[bow_len] = err
+                h_w_base_err[bow_len] = base_err
+                h_w_ndcg_wtl[bow_len] = ndcg_wtl
+                h_w_err_wtl[bow_len] = err_wtl
             else:
                 h_w_len_cnt[bow_len] += 1
-                h_w_ndcg[bow_len] += self.h_eva.get(q, [0, 0])[0]
-                h_w_base_ndcg[bow_len] += self.h_base_eva.get(q, [0, 0])[0]
-                h_w_err[bow_len] += self.h_eva.get(q, [0, 0])[1]
-                h_w_base_err[bow_len] += self.h_base_eva.get(q, [0, 0])[1]
+                h_w_ndcg[bow_len] += ndcg
+                h_w_base_ndcg[bow_len] += base_ndcg
+                h_w_err[bow_len] += err
+                h_w_base_err[bow_len] += base_err
+                h_w_ndcg_wtl[bow_len] = map(sum, zip(*[h_w_ndcg_wtl[bow_len], ndcg_wtl]))
+                h_w_err_wtl[bow_len] = map(sum, zip(*[h_w_err_wtl[bow_len], err_wtl]))
             if boe_len not in h_e_len_cnt:
                 h_e_len_cnt[boe_len] = 1
-                h_e_ndcg[boe_len] = self.h_eva.get(q, [0, 0])[0]
-                h_e_base_ndcg[boe_len] = self.h_base_eva.get(q, [0, 0])[0]
-                h_e_err[boe_len] = self.h_eva.get(q, [0, 0])[1]
-                h_e_base_err[boe_len] = self.h_base_eva.get(q, [0, 0])[1]
+                h_e_ndcg[boe_len] = ndcg
+                h_e_base_ndcg[boe_len] = base_ndcg
+                h_e_err[boe_len] = err
+                h_e_base_err[boe_len] = base_err
+                h_e_ndcg_wtl[boe_len] = ndcg_wtl
+                h_e_err_wtl[boe_len] = err_wtl
             else:
                 h_e_len_cnt[boe_len] += 1
-                h_e_ndcg[boe_len] += self.h_eva.get(q, [0, 0])[0]
-                h_e_base_ndcg[boe_len] += self.h_base_eva.get(q, [0, 0])[0]
-                h_e_err[boe_len] += self.h_eva.get(q, [0, 0])[1]
-                h_e_base_err[boe_len] += self.h_base_eva.get(q, [0, 0])[1]
+                h_e_ndcg[boe_len] += ndcg
+                h_e_base_ndcg[boe_len] += base_ndcg
+                h_e_err[boe_len] += err
+                h_e_base_err[boe_len] += base_err
+                h_e_ndcg_wtl[boe_len] = map(sum, zip(*[h_e_ndcg_wtl[boe_len], ndcg_wtl]))
+                h_e_err_wtl[boe_len] = map(sum, zip(*[h_e_err_wtl[boe_len], err_wtl]))
 
         out = open(self.out_pre + '.rel_ndcg_at_len', 'w')
-        print >> out, 'bow:\nlen,cnt,base_ndcg, this_ndcg, rel_ndcg, base_err, this_err, rel_err'
+        print >> out, 'bow_len,cnt,base_ndcg, this_ndcg, rel_ndcg, ndcg_w, ndcg_t, ndcg_l, ' \
+                      'base_err, this_err, rel_err, err_w, err_t, err_l'
         l_w_len = h_w_len_cnt.items()
         l_w_len.sort(key=lambda item: item[0])
         for w_len, cnt in l_w_len:
             base_ndcg = h_w_base_ndcg[w_len] / cnt
             ndcg = h_w_ndcg[w_len] / cnt
-
+            ndcg_wtl = h_w_ndcg_wtl[w_len]
             base_err = h_w_base_err[w_len] / cnt
             err = h_w_err[w_len] / cnt
+            err_wtl = h_w_err_wtl[w_len]
             if base_ndcg:
                 rel_ndcg = ndcg / base_ndcg - 1
             else:
@@ -123,20 +141,26 @@ class QLenPerformanceAna(Configurable):
                 rel_err = err / base_err - 1
             else:
                 rel_err = int(err > 0)
-            print >> out, '%d, %d, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f' % (
+            print >> out, '%d, %d, %.4f, %.4f, %.4f, %d, %d, %d, %.4f, %.4f, %.4f, %d, %d, %d,' % (
                 w_len,
                 cnt,
                 base_ndcg,
                 ndcg,
                 rel_ndcg,
+                ndcg_wtl[0],
+                ndcg_wtl[1],
+                ndcg_wtl[2],
                 base_err,
                 err,
                 rel_err,
+                err_wtl[0],
+                err_wtl[1],
+                err_wtl[2]
             )
 
         print >> out, "\n\n"
-        print >> out, 'boe:\nlen,cnt,base_ndcg, this_ndcg, rel_ndcg, base_err, this_err, rel_err'
-
+        print >> out, 'boe_len,cnt,base_ndcg, this_ndcg, rel_ndcg, ndcg_w, ndcg_t, ndcg_l, ' \
+                      'base_err, this_err, rel_err, err_w, err_t, err_l'
         l_e_len = h_e_len_cnt.items()
         l_e_len.sort(key=lambda item: item[0])
         for e_len, cnt in l_e_len:
@@ -144,6 +168,8 @@ class QLenPerformanceAna(Configurable):
             ndcg = h_e_ndcg[e_len] / cnt
             base_err = h_e_base_err[e_len] / cnt
             err = h_e_err[e_len] / cnt
+            ndcg_wtl = h_e_ndcg_wtl[w_len]
+            err_wtl = h_e_err_wtl[w_len]
             if base_ndcg:
                 rel_ndcg = ndcg / base_ndcg - 1
             else:
@@ -152,15 +178,21 @@ class QLenPerformanceAna(Configurable):
                 rel_err = err / base_err - 1
             else:
                 rel_err = int(err > 0)
-            print >> out, '%d, %d, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f' % (
-                e_len,
+            print >> out, '%d, %d, %.4f, %.4f, %.4f, %d, %d, %d, %.4f, %.4f, %.4f, %d, %d, %d,' % (
+                w_len,
                 cnt,
                 base_ndcg,
                 ndcg,
                 rel_ndcg,
+                ndcg_wtl[0],
+                ndcg_wtl[1],
+                ndcg_wtl[2],
                 base_err,
                 err,
                 rel_err,
+                err_wtl[0],
+                err_wtl[1],
+                err_wtl[2]
             )
 
         out.close()
