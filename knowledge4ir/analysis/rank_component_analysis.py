@@ -53,6 +53,7 @@ class RankComponentAna(Configurable):
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
 
+    @classmethod
     def class_print_help(cls, inst=None):
         super(RankComponentAna, cls).class_print_help(inst)
         LeToRFeatureExternalInfo.class_print_help(inst)
