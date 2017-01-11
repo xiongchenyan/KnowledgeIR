@@ -168,8 +168,8 @@ class QLenPerformanceAna(Configurable):
             ndcg = h_e_ndcg[e_len] / cnt
             base_err = h_e_base_err[e_len] / cnt
             err = h_e_err[e_len] / cnt
-            ndcg_wtl = h_e_ndcg_wtl[w_len]
-            err_wtl = h_e_err_wtl[w_len]
+            ndcg_wtl = h_e_ndcg_wtl[e_len]
+            err_wtl = h_e_err_wtl[e_len]
             if base_ndcg:
                 rel_ndcg = ndcg / base_ndcg - 1
             else:
@@ -179,7 +179,7 @@ class QLenPerformanceAna(Configurable):
             else:
                 rel_err = int(err > 0)
             print >> out, '%d, %d, %.4f, %.4f, %.4f, %d, %d, %d, %.4f, %.4f, %.4f, %d, %d, %d,' % (
-                w_len,
+                e_len,
                 cnt,
                 base_ndcg,
                 ndcg,
