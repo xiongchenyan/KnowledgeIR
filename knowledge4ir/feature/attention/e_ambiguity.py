@@ -42,6 +42,7 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
     prf_d = Int(20).tag(config=True)
     tagger = Unicode('tagme', help="tagger").tag(config=True)
     l_feature = List(Unicode, default_value=['surface', 'prf']).tag(config=True)
+    mode = Unicode('full', help='full|lean').tag(config=True)
 
     def __init__(self, **kwargs):
         super(EntityAmbiguityAttentionFeature, self).__init__(**kwargs)
@@ -97,19 +98,20 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         z = float(sum([item[1] for item in l_candidate_prob]))
         l_candidate_prob = [(item[0], item[1] / z) for item in l_candidate_prob]
         l_candidate_prob.sort(key=lambda item: -item[1])
-        is_top = 0
-        if l_candidate_prob:
-            if l_candidate_prob[0][0] == e:
-                is_top = 1
-        h_feature[self.feature_name_pre + 'IsTop'] = is_top
+        if self.mode == 'full':
+            is_top = 0
+            if l_candidate_prob:
+                if l_candidate_prob[0][0] == e:
+                    is_top = 1
+            h_feature[self.feature_name_pre + 'IsTop'] = is_top
 
-        margin = 0
-        if is_top:
-            if len(l_candidate_prob) < 2:
-                margin = 1
-            else:
-                margin = l_candidate_prob[0][1] - l_candidate_prob[1][1]
-        h_feature[self.feature_name_pre + 'Margin'] = margin
+            margin = 0
+            if is_top:
+                if len(l_candidate_prob) < 2:
+                    margin = 1
+                else:
+                    margin = l_candidate_prob[0][1] - l_candidate_prob[1][1]
+            h_feature[self.feature_name_pre + 'Margin'] = margin
 
         link_entropy = 0
         if l_candidate_prob:
