@@ -25,7 +25,9 @@ def get_top_k(in_name, out_name):
             add_top_k(h_q_top_irrel[q], l_top_k)
 
     out = open(out_name, 'w')
-    for q in h_q_top_rel.keys():
+    l_q = h_q_top_rel.keys()
+    l_q.sort(key=lambda item: int(item))
+    for q in l_q:
         l_rel = h_q_top_rel[q].items()
         l_irrel = h_q_top_irrel.get(q, {}).items()
         l_rel.sort(key=lambda item: -item[1])
