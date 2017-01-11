@@ -52,7 +52,7 @@ def add_top_k(h, l_top_k):
 
 if __name__ == '__main__':
     if 4 != len(sys.argv):
-        print "2 para: esearch.json + out + k"
+        print "3 para: esearch.json + out + k"
         sys.exit()
 
     get_top_k(*sys.argv[1:])
