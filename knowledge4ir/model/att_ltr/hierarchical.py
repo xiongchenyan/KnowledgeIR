@@ -112,7 +112,7 @@ class HierarchicalAttLeToR(AttLeToR):
                                            input_shape=in_shape,
                                            activation=activation,
                                            bias=False,
-                                           W_regularizer=l2_w
+                                           W_regularizer=l2(l2_w)
                                            )
 
             else:
@@ -120,7 +120,7 @@ class HierarchicalAttLeToR(AttLeToR):
                                            filter_length=1,
                                            activation=activation,
                                            bias=False,
-                                           W_regularizer=l2_w
+                                           W_regularizer=l2(l2_w)
                                            )
             model.add(this_layer)
         model.add(Flatten())
