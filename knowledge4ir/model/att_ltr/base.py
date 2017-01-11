@@ -108,8 +108,8 @@ class AttLeToR(Configurable):
         self.att_l2_w = h_para.get('att_l2_w', self.att_l2_w)
         self.nb_att_layer = h_para.get('nb_att_layer', self.nb_att_layer)
         self.nb_rank_layer = h_para.get('nb_rank_layer', self.nb_rank_layer)
-        logging.info('set para l2_w=[%f], att layer=[%d], rank layer=[%d]',
-                     self.l2_w, self.nb_att_layer, self.nb_rank_layer)
+        logging.info('set para l2_w=[%f], att_l2_w=[%f], att layer=[%d], rank layer=[%d]',
+                     self.l2_w, self.att_l2_w, self.nb_att_layer, self.nb_rank_layer)
         return
 
     def _load_meta_data(self):
