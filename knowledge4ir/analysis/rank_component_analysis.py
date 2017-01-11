@@ -136,7 +136,7 @@ class RankComponentAna(Configurable):
         l_e_name  = [(ana[0], ana[-1]) for ana in h_doc_info['tagme'][body_field]]
         query = h_q_info['query']
         q_lm = text2lm(query, clean=True)
-        total_df, avg_len = self.h_corpus_stat['total_df'], 100.0
+        total_df, avg_len = self.h_corpus_stat[body_field]['total_df'], 100.0
         l_e_score = []
         for e, name in l_e_name:
             desp = self.h_entity_texts[e]['desp']
