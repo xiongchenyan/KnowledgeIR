@@ -94,7 +94,7 @@ class RankComponentAna(Configurable):
                 l_q_e_emb.append(self.embedding[e])
 
         l_d_e_name = [(ana[0], ana[-1]) for ana in h_doc_info['tagme'][body_field]]
-
+        l_d_e_name = list(set(l_d_e_name))
         ll_e_sim = []
         for e in l_q_e_name:
             ll_e_sim.append([])
@@ -103,12 +103,12 @@ class RankComponentAna(Configurable):
                 logging.warn('d e [%s][%s] not in embedding', e, name)
                 continue
             d_e_emb = self.embedding[e]
-            logging.info('get doc e [%s][%s]', e, name)
+            # logging.info('get doc e [%s][%s]', e, name)
             for p, q_e_emb in enumerate(l_q_e_emb):
                 if q_e_emb is None:
                     continue
                 l1 = 1.0 - np.mean(np.abs(q_e_emb - d_e_emb))
-                logging.info('[%s][%s] l1 distance: %f', l_q_e_name[p][1], name, l1)
+                # logging.info('[%s][%s] l1 distance: %f', l_q_e_name[p][1], name, l1)
                 ll_e_sim[p].append((e, name, l1))
         for p in xrange(len(ll_e_sim)):
             ll_e_sim[p].sort(key = lambda item: -item[-1])
@@ -171,6 +171,6 @@ if __name__ == '__main__':
     conf = load_py_config(sys.argv[1])
     analyzer = RankComponentAna(config=conf)
     analyzer.generate_esr_bin_res()
-    # analyzer.generate_esearch_res()
+    analyzer.generate_esearch_res()
 
 
