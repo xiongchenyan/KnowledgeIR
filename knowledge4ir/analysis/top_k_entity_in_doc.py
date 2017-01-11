@@ -6,9 +6,10 @@ import sys
 import json
 
 
-def get_top_k(in_name, out_name):
+def get_top_k(in_name, out_name, k):
     h_q_top_rel = {}
     h_q_top_irrel = {}
+    k = int(k)
 
     for line in open(in_name):
         cols = line.strip().split('\t')
@@ -17,7 +18,7 @@ def get_top_k(in_name, out_name):
             h_q_top_rel[q] = {}
             h_q_top_irrel[q] = {}
         l_top_k = json.loads(cols[-1])
-        l_top_k = l_top_k[:3]
+        l_top_k = l_top_k[:k]
         label = int(label)
         if label > 0:
             add_top_k(h_q_top_rel[q], l_top_k)
@@ -50,8 +51,8 @@ def add_top_k(h, l_top_k):
 
 
 if __name__ == '__main__':
-    if 3 != len(sys.argv):
-        print "2 para: esearch.json + out"
+    if 4 != len(sys.argv):
+        print "2 para: esearch.json + out + k"
         sys.exit()
 
     get_top_k(*sys.argv[1:])
