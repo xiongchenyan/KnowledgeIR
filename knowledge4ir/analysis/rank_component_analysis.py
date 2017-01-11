@@ -83,7 +83,7 @@ class RankComponentAna(Configurable):
             return []
         l_q_e_name = [(ana[0], ana[-1]) for ana in h_q_info['tagme']['query']]
         l_q_e_emb = []
-        for e, name in l_q_e_emb:
+        for e, name in l_q_e_name:
             if e not in self.embedding:
                 l_q_e_emb.append(None)
                 logging.warn('q entity [%s][%s] not in embedding', e, name)
