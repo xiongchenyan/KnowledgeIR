@@ -100,10 +100,12 @@ class RankComponentAna(Configurable):
                 logging.warn('d e [%s][%s] not in embedding', e, name)
                 continue
             d_e_emb = self.embedding[e]
+            logging.info('get doc e [%s][%s]', e, name)
             for p, q_e_emb in enumerate(l_q_e_emb):
                 if q_e_emb is None:
                     continue
                 l1 = 1.0 - np.mean(np.abs(q_e_emb - d_e_emb))
+                logging.info('[%s][%s] l1 distance: %f', l_q_e_name[p][1], name, l1)
                 ll_e_sim[p].append((e, name, l1))
         for p in xrange(len(ll_e_sim)):
             ll_e_sim[p].sort(key = lambda item: -item[-1])
@@ -111,7 +113,6 @@ class RankComponentAna(Configurable):
         l_res = zip(l_q_e_name, ll_e_sim)
 
         return l_res
-
 
     def generate_esearch_res(self):
         """
@@ -166,6 +167,6 @@ if __name__ == '__main__':
     conf = load_py_config(sys.argv[1])
     analyzer = RankComponentAna(config=conf)
     analyzer.generate_esr_bin_res()
-    analyzer.generate_esearch_res()
+    # analyzer.generate_esearch_res()
 
 
