@@ -81,7 +81,12 @@ class RankComponentAna(Configurable):
         # h_res = {}
 
         l_q_e_name = [(ana[0], ana[-1]) for ana in h_q_info['tagme']['query']]
-        l_q_e_emb = [self.embedding.get(e, None) for e, __ in l_q_e_name]
+        l_q_e_emb = []
+        for e, __ in l_q_e_emb:
+            if e not in self.embedding:
+                l_q_e_emb.append(None)
+            else:
+                l_q_e_emb.append(self.embedding[e])
         l_d_e_name = [(ana[0], ana[1]) for ana in h_doc_info['tagme'][body_field]]
 
         ll_e_sim = []
