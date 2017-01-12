@@ -98,25 +98,27 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         z = float(sum([item[1] for item in l_candidate_prob]))
         l_candidate_prob = [(item[0], item[1] / z) for item in l_candidate_prob]
         l_candidate_prob.sort(key=lambda item: -item[1])
-        if self.mode == 'full':
-            is_top = 0
-            if l_candidate_prob:
-                if l_candidate_prob[0][0] == e:
-                    is_top = 1
-            h_feature[self.feature_name_pre + 'IsTop'] = is_top
+        is_top = 0
+        if l_candidate_prob:
+            if l_candidate_prob[0][0] == e:
+                is_top = 1
 
-            margin = 0
-            if is_top:
-                if len(l_candidate_prob) < 2:
-                    margin = 1
-                else:
-                    margin = l_candidate_prob[0][1] - l_candidate_prob[1][1]
-            h_feature[self.feature_name_pre + 'Margin'] = margin
+        margin = 0
+        if is_top:
+            if len(l_candidate_prob) < 2:
+                margin = 1
+            else:
+                margin = l_candidate_prob[0][1] - l_candidate_prob[1][1]
 
         link_entropy = 0
         if l_candidate_prob:
             link_entropy = entropy([item[1] for item in l_candidate_prob])
+
+        h_feature[self.feature_name_pre + 'IsTop'] = is_top
         h_feature[self.feature_name_pre + 'SfEntropy'] = link_entropy
+        if self.mode == 'full':
+            h_feature[self.feature_name_pre + 'Margin'] = margin
+
         return h_feature
 
     def _extract_per_e_prf(self, h_q_info, e):

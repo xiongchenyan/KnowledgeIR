@@ -19,7 +19,7 @@ from traitlets import (
 
 class EntitySurfaceFormAttentionFeature(EntityAttentionFeature):
     feature_name_pre = Unicode("EntitySurface")
-    mode = Unicode('full', help='full|lean').tag(config=True)
+    mode = Unicode('lean', help='full|lean').tag(config=True)
 
     def extract(self, h_q_info, l_e):
         l_h_feature = []
@@ -49,19 +49,20 @@ class EntitySurfaceFormAttentionFeature(EntityAttentionFeature):
                 overlapped = 1
             if (ana[1] <= st) & (ana[2] > st):
                 overlapped = 1
+        be_covered = 0
+        for ana in l_ana:
+            if (ana[1] <= st) & (ana[2] >= ed):
+                be_covered = 1
+        question_e = 0
+        if query.split()[0].lower() in {'what', 'why', 'when', 'how'}:
+            question_e = 1
 
-        h_feature[self.feature_name_pre + 'Overlapped'] = overlapped
+        h_feature[self.feature_name_pre + 'BeCovered'] = be_covered
+        h_feature[self.feature_name_pre + 'SoleE'] = min(1, len(l_ana))
         if self.mode == 'full':
-            be_covered = 0
-            for ana in l_ana:
-                if (ana[1] <= st) & (ana[2] >= ed):
-                    be_covered = 1
-            h_feature[self.feature_name_pre + 'BeCovered'] = be_covered
-            h_feature[self.feature_name_pre + 'SoleE'] = min(1, len(l_ana))
-            question_e = 0
-            if query.split()[0].lower() in {'what', 'why', 'when', 'how'}:
-                question_e = 1
             h_feature[self.feature_name_pre + 'QuestionE'] = question_e
+            h_feature[self.feature_name_pre + 'Overlapped'] = overlapped
+
 
         return h_feature
 
