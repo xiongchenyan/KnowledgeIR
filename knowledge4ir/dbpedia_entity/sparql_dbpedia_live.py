@@ -36,7 +36,10 @@ def fetch_res(sparql_str):
     sparql = SPARQLWrapper("http://dbpedia.org/sparql")
     sparql.setQuery(sparql_str)
     sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
+    try:
+        results = sparql.query().convert()
+    except SPARQLWrapper.SPARQLExceptions.EndPointInternalError:
+        return {}
     return results
 
 
