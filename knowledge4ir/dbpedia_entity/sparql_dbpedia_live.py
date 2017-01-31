@@ -5,6 +5,8 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
 import logging
 import xml.etree.ElementTree as ET
+import json
+
 
 def query_generator(xml_q_in):
     """
@@ -44,7 +46,7 @@ def run_given_sparql(xml_q_in_name, out_name):
     for qid, query in query_generator(xml_q_in_name):
         logging.info('running [%s]', qid)
         results = fetch_res(query)
-        print >> out, '%s\t%s' % (qid, results.replace('\n', ' '))
+        print >> out, '%s\t%s' % (qid, json.dumps(results))
 
     out.close()
 
@@ -58,4 +60,3 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     run_given_sparql(*sys.argv[1:])
-    
