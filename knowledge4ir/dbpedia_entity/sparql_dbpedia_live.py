@@ -6,7 +6,7 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 import logging
 import xml.etree.ElementTree as ET
 import json
-from SPARQLExceptions import EndPointInternalError
+from SPARQLWrapper.SPARQLExceptions import EndPointInternalError
 
 
 def query_generator(xml_q_in):
