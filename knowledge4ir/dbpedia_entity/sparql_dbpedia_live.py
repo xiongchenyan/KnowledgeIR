@@ -6,6 +6,7 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 import logging
 import xml.etree.ElementTree as ET
 import json
+from SPARQLExceptions import EndPointInternalError
 
 
 def query_generator(xml_q_in):
@@ -38,7 +39,7 @@ def fetch_res(sparql_str):
     sparql.setReturnFormat(JSON)
     try:
         results = sparql.query().convert()
-    except SPARQLWrapper.SPARQLExceptions.EndPointInternalError:
+    except EndPointInternalError:
         return {}
     return results
 
