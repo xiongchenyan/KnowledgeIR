@@ -4,7 +4,7 @@
 
 from SPARQLWrapper import SPARQLWrapper, JSON
 import logging
-
+import xml.etree.ElementTree as ET
 
 def query_generator(xml_q_in):
     """
@@ -13,6 +13,20 @@ def query_generator(xml_q_in):
     :return: yield a query id and a query SPARQL string each time
     """
 
+    tree = ET.parse(xml_q_in)
+
+    for child in tree.getroot():
+        qid = child.attrib['id']
+        query = ""
+
+        for son in child:
+            if son.tag == 'query':
+                query = son.text
+        if not query:
+            continue
+        if 'OUT OF SCOPE' in query:
+            continue
+        yield qid, query
     return
 
 
@@ -27,7 +41,7 @@ def fetch_res(sparql_str):
 def run_given_sparql(xml_q_in_name, out_name):
     out = open(out_name, 'w')
 
-    for qid, query in query_generator(open(xml_q_in_name)):
+    for qid, query in query_generator(xml_q_in_name):
         logging.info('running [%s]', qid)
         results = fetch_res(query)
         print >> out, '%s\t%s' % (qid, results.replace('\n', ' '))
@@ -44,3 +58,4 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     run_given_sparql(*sys.argv[1:])
+    
