@@ -27,8 +27,9 @@ def convert_per_line(line, pre):
     l_uri = []
     for binding in l_bindings:
         uri = binding.get('uri', {}).get('value', "")
-        uri = url_transfer(uri)
-        l_uri.append(uri)
+        if uri.startswith('http://dbpedia.org'):
+            uri = url_transfer(uri)
+            l_uri.append(uri)
 
     l_res = [qid + ' Q0 ' + uri + ' 1' for uri in l_uri]
     return l_res
