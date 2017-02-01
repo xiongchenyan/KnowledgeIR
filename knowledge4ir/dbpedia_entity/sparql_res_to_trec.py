@@ -3,6 +3,9 @@ json sparql result to trec rank
 """
 
 import json
+import sys
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 def url_transfer(uri):
@@ -45,7 +48,6 @@ def process(in_name, out_name):
     print "done"
 
 if __name__ == '__main__':
-    import sys
 
     if 3 != len(sys.argv):
         print "2 para: sparql res + out"
