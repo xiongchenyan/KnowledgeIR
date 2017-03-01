@@ -19,7 +19,7 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.duet_feature.depreciated.matching.q_de_ref_rank import LeToRQDocERefRankFeatureExtractorC
+from knowledge4ir.depreciated.duet_feature.matching import LeToRQDocERefRankFeatureExtractorC
 from knowledge4ir.duet_feature.matching.boe_embedding import LeToRBOEEmbFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
