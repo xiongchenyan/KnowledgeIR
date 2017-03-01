@@ -12,8 +12,10 @@ import json
 
 
 class JointSemanticResource(Configurable):
-    surface_form_path = Unicode(help="the location of surface form dict, in Json format").tag(config=True)
-    embedding_path = Unicode(help="embedding numpy matrix location").tag(config=True)
+    surface_form_path = Unicode(help="the location of surface form dict, in Json format"
+                                ).tag(config=True)
+    embedding_path = Unicode(help="embedding numpy matrix location"
+                             ).tag(config=True)
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
