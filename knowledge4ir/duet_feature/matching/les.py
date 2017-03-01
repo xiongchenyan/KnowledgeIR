@@ -5,7 +5,7 @@ basically the textual fields of query entity to t
 
 from traitlets import List, Unicode
 
-from knowledge4ir.feature import (
+from knowledge4ir.duet_feature import (
     LeToRFeatureExtractor,
     TermStat,
     load_entity_texts,

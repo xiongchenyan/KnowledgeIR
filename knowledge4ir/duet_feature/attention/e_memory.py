@@ -3,7 +3,7 @@ e id feature
 overfit to get ground truth term weights
 """
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     EntityAttentionFeature,
 )
 from traitlets import (

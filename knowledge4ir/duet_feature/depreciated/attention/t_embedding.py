@@ -2,7 +2,7 @@
     embedding cosine with query mean
 """
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     TermAttentionFeature,
     calc_query_entity_total_embedding,
     form_avg_emb,

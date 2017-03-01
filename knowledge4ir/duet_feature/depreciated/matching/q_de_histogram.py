@@ -12,7 +12,7 @@ from gensim.models import Word2Vec
 import numpy as np
 import json
 import logging
-from knowledge4ir.feature import LeToRFeatureExtractor
+from knowledge4ir.duet_feature import LeToRFeatureExtractor
 from traitlets import (
     Unicode,
     Int,

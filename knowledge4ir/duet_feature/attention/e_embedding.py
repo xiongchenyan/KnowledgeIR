@@ -3,7 +3,7 @@
 """
 
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     EntityAttentionFeature,
     form_avg_emb,
     calc_query_entity_total_embedding,

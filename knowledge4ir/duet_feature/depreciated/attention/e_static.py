@@ -13,7 +13,7 @@ will need:
 
 """
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     EntityAttentionFeature,
     mul_update,
 )

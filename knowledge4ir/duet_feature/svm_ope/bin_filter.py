@@ -9,7 +9,7 @@ output:
 
 """
 
-from knowledge4ir.feature.svm_ope.filter_feature import filter_feature
+from knowledge4ir.duet_feature.svm_ope.filter_feature import filter_feature
 import json
 from knowledge4ir.utils import (
     load_svm_feature,

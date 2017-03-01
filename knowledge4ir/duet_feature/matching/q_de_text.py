@@ -12,7 +12,7 @@ features:
 """
 
 
-from knowledge4ir.feature import (
+from knowledge4ir.duet_feature import (
     LeToRFeatureExtractor,
     TermStat,
     load_entity_texts,

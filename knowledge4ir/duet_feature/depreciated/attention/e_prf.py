@@ -8,11 +8,11 @@ from traitlets import (
     Int
 )
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     EntityAttentionFeature,
     mul_update,
 )
-from knowledge4ir.feature.depreciated.attention.t_prf import TermPrfAttentionFeature
+from knowledge4ir.duet_feature.depreciated.attention.t_prf import TermPrfAttentionFeature
 from knowledge4ir.utils import (
     body_field,
     TARGET_TEXT_FIELDS,

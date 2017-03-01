@@ -4,12 +4,12 @@ textual similarity attention features of entity to the query
 
 """
 
-from knowledge4ir.feature.attention import EntityAttentionFeature
+from knowledge4ir.duet_feature.attention import EntityAttentionFeature
 from traitlets import (
     Unicode,
     List
 )
-from knowledge4ir.feature import (
+from knowledge4ir.duet_feature import (
     TermStat,
 )
 from knowledge4ir.utils import (

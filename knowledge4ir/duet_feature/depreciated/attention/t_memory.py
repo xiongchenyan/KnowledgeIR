@@ -3,7 +3,7 @@ memory based features
     word name
 """
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     TermAttentionFeature,
 )
 from traitlets import (

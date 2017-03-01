@@ -13,20 +13,20 @@ import json
 import logging
 import random
 
+from knowledge4ir.duet_feature.depreciated.q_de_histogram import LeToRQDocEHistFeatureExtractor
 from traitlets import (
     Int, List, Dict, Unicode, Bool
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.feature.depreciated.q_de_histogram import LeToRQDocEHistFeatureExtractor
-from knowledge4ir.feature.depreciated.q_de_ref_rank import LeToRQDocERefRankFeatureExtractorC
-from knowledge4ir.feature.matching.boe_embedding import LeToRBOEEmbFeatureExtractor
-from knowledge4ir.feature.matching.ir_fusion import (
+from knowledge4ir.duet_feature.depreciated.matching.q_de_ref_rank import LeToRQDocERefRankFeatureExtractorC
+from knowledge4ir.duet_feature.matching.boe_embedding import LeToRBOEEmbFeatureExtractor
+from knowledge4ir.duet_feature.matching.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
 )
-from knowledge4ir.feature.matching.les import LeToRLesFeatureExtractor
-from knowledge4ir.feature.matching.q_de_text import LeToRQDocETextFeatureExtractorC
-from knowledge4ir.feature.matching.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
+from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
+from knowledge4ir.duet_feature.matching.q_de_text import LeToRQDocETextFeatureExtractorC
+from knowledge4ir.duet_feature.matching.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,

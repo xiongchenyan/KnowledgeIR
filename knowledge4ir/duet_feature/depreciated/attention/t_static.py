@@ -3,7 +3,7 @@ static features
 I think it is only idf now
 """
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     TermAttentionFeature,
     mul_update,
 )

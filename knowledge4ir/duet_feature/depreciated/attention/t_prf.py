@@ -10,7 +10,7 @@ prf docs:
 """
 
 
-from knowledge4ir.feature.attention import (
+from knowledge4ir.duet_feature.attention import (
     TermAttentionFeature,
     mul_update,
 )
