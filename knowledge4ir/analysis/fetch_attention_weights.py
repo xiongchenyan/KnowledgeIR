@@ -1,5 +1,5 @@
 """
-align attention scores
+get attention scores on terms and entities
 input:
     the attention letor result directory with intermediate results
     q info
@@ -98,7 +98,7 @@ def align_att_scores(q_info, cv_dir, out_name):
 
 if __name__ == '__main__':
     if 4 != len(sys.argv):
-        print "3 para: q info in + cv dir with results + out name"
+        print "3 para: q info in + att cv dir with results + out name"
         print "I fetch attention scores on q terms and q entities"
         sys.exit(-1)
 
