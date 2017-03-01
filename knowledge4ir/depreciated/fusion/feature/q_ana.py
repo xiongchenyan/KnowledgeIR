@@ -2,13 +2,12 @@
 extract query ana features
 """
 
-from knowledge4ir.fusion.feature import QAttFeatureExtractor
-import logging
-import json
 from traitlets import (
     Unicode,
     List,
 )
+
+from knowledge4ir.depreciated.fusion import QAttFeatureExtractor
 from knowledge4ir.utils import (
     load_query_info,
 )

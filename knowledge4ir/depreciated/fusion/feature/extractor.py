@@ -8,20 +8,20 @@ output:
     svm?
 """
 
+import json
+import logging
+
+from traitlets import (
+    Unicode,
+    List,
+)
+from traitlets.config import Configurable
+
+from knowledge4ir.depreciated.fusion.feature.q_ana import QAttAnaFeatureExtractor
 from knowledge4ir.utils import (
     load_query_info,
     feature_hash,
 )
-from traitlets.config import Configurable
-from traitlets import (
-    Unicode,
-    Int,
-    List,
-)
-import numpy as np
-import json
-import logging
-from knowledge4ir.fusion.feature.q_ana import QAttAnaFeatureExtractor
 
 
 class QAttentionFeatureExtractCenter(Configurable):

@@ -18,15 +18,15 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.feature.boe_embedding import LeToRBOEEmbFeatureExtractor
-from knowledge4ir.feature.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
-from knowledge4ir.feature.q_de_ref_rank import LeToRQDocERefRankFeatureExtractorC
-from knowledge4ir.feature.les import LeToRLesFeatureExtractor
-from knowledge4ir.feature.q_de_histogram import LeToRQDocEHistFeatureExtractor
-from knowledge4ir.feature.q_de_text import LeToRQDocETextFeatureExtractorC
-from knowledge4ir.feature.ir_fusion import (
+from knowledge4ir.feature.depreciated.q_de_histogram import LeToRQDocEHistFeatureExtractor
+from knowledge4ir.feature.depreciated.q_de_ref_rank import LeToRQDocERefRankFeatureExtractorC
+from knowledge4ir.feature.matching.boe_embedding import LeToRBOEEmbFeatureExtractor
+from knowledge4ir.feature.matching.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
 )
+from knowledge4ir.feature.matching.les import LeToRLesFeatureExtractor
+from knowledge4ir.feature.matching.q_de_text import LeToRQDocETextFeatureExtractorC
+from knowledge4ir.feature.matching.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,

@@ -1,7 +1,5 @@
 """
 I am the basic functions used for LeToR feature extraction
-6/14/2016 unit tested
-    the minimum func of lm not yet. but will be ok
 """
 import json
 import logging

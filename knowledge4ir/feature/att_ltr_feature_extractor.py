@@ -22,35 +22,35 @@ import json
 import logging
 import random
 
+import numpy as np
 from traitlets import (
-    Int, List, Dict, Unicode, Bool
+    Int, List, Unicode
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.feature.boe_embedding import LeToRBOEEmbFeatureExtractor
-from knowledge4ir.feature.les import LeToRLesFeatureExtractor
-from knowledge4ir.feature.q_de_text import LeToRQDocETextFeatureExtractorC
-from knowledge4ir.feature.ir_fusion import LeToRIRFusionFeatureExtractor
-from knowledge4ir.feature.attention.t_embedding import TermEmbeddingAttentionFeature
-from knowledge4ir.feature.attention.e_embedding import EntityEmbeddingAttentionFeature
-from knowledge4ir.feature.attention.e_text import EntityTextAttentionFeature
-from knowledge4ir.feature.attention.e_static import EntityStaticAttentionFeature
-from knowledge4ir.feature.attention.t_static import TermStaticAttentionFeature
-from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
-from knowledge4ir.feature.attention.e_prf import EntityPrfAttentionFeature
-from knowledge4ir.feature.attention.e_memory import EntityMemoryAttentionFeature
-from knowledge4ir.feature.attention.t_memory import TermMemoryAttentionFeature
-from knowledge4ir.feature.attention.e_surface import EntitySurfaceFormAttentionFeature
-from knowledge4ir.feature.attention.e_linking import EntityLinkerAttentionFeature
+from knowledge4ir.feature import LeToRFeatureExternalInfo
 from knowledge4ir.feature.attention.e_ambiguity import EntityAmbiguityAttentionFeature
+from knowledge4ir.feature.attention.e_embedding import EntityEmbeddingAttentionFeature
+from knowledge4ir.feature.attention.e_linking import EntityLinkerAttentionFeature
+from knowledge4ir.feature.attention.e_memory import EntityMemoryAttentionFeature
+from knowledge4ir.feature.attention.e_prf import EntityPrfAttentionFeature
+from knowledge4ir.feature.attention.e_static import EntityStaticAttentionFeature
+from knowledge4ir.feature.attention.e_surface import EntitySurfaceFormAttentionFeature
+from knowledge4ir.feature.attention.e_text import EntityTextAttentionFeature
+from knowledge4ir.feature.attention.t_embedding import TermEmbeddingAttentionFeature
+from knowledge4ir.feature.attention.t_memory import TermMemoryAttentionFeature
+from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
+from knowledge4ir.feature.attention.t_static import TermStaticAttentionFeature
+from knowledge4ir.feature.matching.boe_embedding import LeToRBOEEmbFeatureExtractor
+from knowledge4ir.feature.matching.ir_fusion import LeToRIRFusionFeatureExtractor
+from knowledge4ir.feature.matching.les import LeToRLesFeatureExtractor
+from knowledge4ir.feature.matching.q_de_text import LeToRQDocETextFeatureExtractorC
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
     load_trec_labels_dict,
     load_py_config,
 )
-from knowledge4ir.feature import LeToRFeatureExternalInfo
-import numpy as np
 
 
 class AttLeToRFeatureExtractCenter(Configurable):
