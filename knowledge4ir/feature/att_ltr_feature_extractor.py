@@ -23,6 +23,9 @@ import logging
 import random
 
 import numpy as np
+from knowledge4ir.feature.attention.t_embedding import TermEmbeddingAttentionFeature
+from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
+from knowledge4ir.feature.attention.t_static import TermStaticAttentionFeature
 from traitlets import (
     Int, List, Unicode
 )
@@ -31,16 +34,13 @@ from traitlets.config import Configurable
 from knowledge4ir.feature import LeToRFeatureExternalInfo
 from knowledge4ir.feature.attention.e_ambiguity import EntityAmbiguityAttentionFeature
 from knowledge4ir.feature.attention.e_embedding import EntityEmbeddingAttentionFeature
-from knowledge4ir.feature.attention.e_linking import EntityLinkerAttentionFeature
 from knowledge4ir.feature.attention.e_memory import EntityMemoryAttentionFeature
-from knowledge4ir.feature.attention.e_prf import EntityPrfAttentionFeature
-from knowledge4ir.feature.attention.e_static import EntityStaticAttentionFeature
-from knowledge4ir.feature.attention.e_surface import EntitySurfaceFormAttentionFeature
-from knowledge4ir.feature.attention.e_text import EntityTextAttentionFeature
-from knowledge4ir.feature.attention.t_embedding import TermEmbeddingAttentionFeature
-from knowledge4ir.feature.attention.t_memory import TermMemoryAttentionFeature
-from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
-from knowledge4ir.feature.attention.t_static import TermStaticAttentionFeature
+from knowledge4ir.feature.depreciated.attention.e_linking import EntityLinkerAttentionFeature
+from knowledge4ir.feature.depreciated.attention.e_prf import EntityPrfAttentionFeature
+from knowledge4ir.feature.depreciated.attention.e_static import EntityStaticAttentionFeature
+from knowledge4ir.feature.depreciated.attention.e_surface import EntitySurfaceFormAttentionFeature
+from knowledge4ir.feature.depreciated.attention.e_text import EntityTextAttentionFeature
+from knowledge4ir.feature.depreciated.attention.t_memory import TermMemoryAttentionFeature
 from knowledge4ir.feature.matching.boe_embedding import LeToRBOEEmbFeatureExtractor
 from knowledge4ir.feature.matching.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.feature.matching.les import LeToRLesFeatureExtractor

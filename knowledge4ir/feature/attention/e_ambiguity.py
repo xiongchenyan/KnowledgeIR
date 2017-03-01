@@ -14,25 +14,21 @@ output:
 
 """
 
-
-from knowledge4ir.feature.attention import (
-    EntityAttentionFeature,
-    mul_update,
-)
-from scipy.stats import entropy
-from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
-import json
 import logging
-import math
+
+from scipy.stats import entropy
 from traitlets import (
     List,
     Unicode,
     Int
 )
+
+from knowledge4ir.feature.attention import (
+    EntityAttentionFeature,
+    mul_update,
+)
 from knowledge4ir.utils import (
     body_field,
-    TARGET_TEXT_FIELDS,
-    term2lm,
     # rm3,
 )
 

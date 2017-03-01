@@ -3,20 +3,16 @@ entity prf
 the same as t_prf
 """
 
+from traitlets import (
+    Unicode,
+    Int
+)
 
 from knowledge4ir.feature.attention import (
     EntityAttentionFeature,
     mul_update,
 )
-from knowledge4ir.feature.attention.t_prf import TermPrfAttentionFeature
-import json
-import logging
-import math
-from traitlets import (
-    List,
-    Unicode,
-    Int
-)
+from knowledge4ir.feature.depreciated.attention.t_prf import TermPrfAttentionFeature
 from knowledge4ir.utils import (
     body_field,
     TARGET_TEXT_FIELDS,
