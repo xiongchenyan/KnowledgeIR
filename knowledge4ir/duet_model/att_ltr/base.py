@@ -14,7 +14,7 @@ from traitlets import (
 import json
 import logging
 import numpy as np
-from knowledge4ir.model.base import pair_docno
+from knowledge4ir.duet_model.base import pair_docno
 from keras.callbacks import EarlyStopping
 from knowledge4ir.utils import (
     group_scores_to_ranking,

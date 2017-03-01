@@ -2,7 +2,7 @@
 cross validate hybrid model
 """
 
-from knowledge4ir.model.att_ltr.hierarchical import (
+from knowledge4ir.duet_model.att_ltr.hierarchical import (
     HierarchicalAttLeToR,
     FlatLeToR,
     QTermLeToR,
@@ -10,11 +10,11 @@ from knowledge4ir.model.att_ltr.hierarchical import (
     MaskHierarchicalAttLeToR,
     ProbAttLeToR,
 )
-from knowledge4ir.model.att_ltr import (
+from knowledge4ir.duet_model.att_ltr import (
     AttLeToR,
     dfs_para,
 )
-from knowledge4ir.model import (
+from knowledge4ir.duet_model import (
     fix_kfold_partition,
     filter_json_lines,
 )

@@ -24,7 +24,7 @@ from knowledge4ir.utils import (
     load_py_config,
     set_basic_log
 )
-from knowledge4ir.model.att_ltr.cv_result_collect import collect_cv_results
+from knowledge4ir.duet_model.att_ltr.cv_result_collect import collect_cv_results
 import json
 import subprocess
 import logging

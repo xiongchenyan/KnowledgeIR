@@ -21,7 +21,7 @@ from keras.models import (
     Sequential,
 )
 # from keras.callbacks import EarlyStopping
-from knowledge4ir.model.att_ltr import AttLeToR
+from knowledge4ir.duet_model.att_ltr import AttLeToR
 from traitlets import (
     Int,
     Unicode,
