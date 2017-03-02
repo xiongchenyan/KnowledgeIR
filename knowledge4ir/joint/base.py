@@ -27,9 +27,11 @@ class HyperParameter(Configurable):
     body_shape = Tuple(Int, default_value=(300, 1)).tag(config=True)
     embedding_dim = Int(300).tag(config=True)
     l_kernel_pool_mean =List(Float, default_value=[],
-                             help='will always add the exact kernel'
+                             help='kernal pooling means'
                              ).tag(config=True)
-    kernel_pool_lambda = Float(0.1).tag(config=True)
+    l_kernel_pool_sigma = List(Float, default_value=[],
+                               help='kernal pooling sigmas'
+                               ).tag(config=True)
 
     # training parameters
     loss = Unicode('hinge').tag(config=True)
