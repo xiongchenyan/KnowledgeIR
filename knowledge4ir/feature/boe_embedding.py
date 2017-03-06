@@ -33,7 +33,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                            default_value=[TARGET_TEXT_FIELDS],
                            help='doc fields to use'
                            ).tag(config=True)
-    embedding_in = Unicode(help='embedding data input (word2vec format) if only one',
+    embedding_in = Unicode(help='embedding data spot (word2vec format) if only one',
                            ).tag(config=True)
     l_embedding_in = List(Unicode, default_value=[],
                           help="embedding data inputs, if more than one"

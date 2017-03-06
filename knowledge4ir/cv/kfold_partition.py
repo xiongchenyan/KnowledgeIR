@@ -93,7 +93,7 @@ if __name__ == '__main__':
     import sys
     if 5 > len(sys.argv):
         print 'I partition svm data in to k folds, sequentially'
-        print '4+ para: input svm data + output dir + q st + q ed (include) + k (default 5) + with_dev (default 0)'
+        print '4+ para: spot svm data + output dir + q st + q ed (include) + k (default 5) + with_dev (default 0)'
         sys.exit()
     q_st = int(sys.argv[3])
     q_ed = int(sys.argv[4])

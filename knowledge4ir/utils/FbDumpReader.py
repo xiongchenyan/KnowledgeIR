@@ -25,7 +25,7 @@ sys.setdefaultencoding('UTF8')
 
 
 class KeyFileReader(Configurable):
-    is_gzip = Bool(False, help='input is gzip or not').tag(config=True)
+    is_gzip = Bool(False, help='spot is gzip or not').tag(config=True)
     l_key_inx = List(Int, default_value=[0], help='key columns p').tag(config=True)
     splitter = Unicode('\t', help="spliter").tag(config=True)
     max_line_per_key = Int(100000, help='max line per key').tag(config=True)

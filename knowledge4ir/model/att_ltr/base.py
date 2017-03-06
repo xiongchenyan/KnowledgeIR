@@ -42,9 +42,9 @@ def dfs_para(ll_paras, l_name, current_p, current_para, l_res):
 
 
 class AttLeToR(Configurable):
-    train_in = Unicode(help="opt: trainning input").tag(config=True)
-    dev_in = Unicode(help="opt: dev input").tag(config=True)
-    test_in = Unicode(help="opt: testing input").tag(config=True)
+    train_in = Unicode(help="opt: trainning spot").tag(config=True)
+    dev_in = Unicode(help="opt: dev spot").tag(config=True)
+    test_in = Unicode(help="opt: testing spot").tag(config=True)
 
     out_dir = Unicode(help='output directory').tag(config=True)
     l2_w = Float(0.01, help='l2 regulalizer').tag(config=True)

@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     if 2 > len(sys.argv):
         print 'I do simple annotation for given text file'
-        print '1+ para. conf + input (if is doc ana)'
+        print '1+ para. conf + spot (if is doc ana)'
         _show_conf()
         sys.exit()
     conf = load_py_config(sys.argv[1])

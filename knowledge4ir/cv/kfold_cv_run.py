@@ -45,7 +45,7 @@ class RanklibRunner(Configurable):
                       help='the location of ranklib jar'
                       ).tag(config=True)
     nb_fold = Int(5, help='fold number k').tag(config=True)
-    fold_dir = Unicode(help='input fold dir').tag(config=True)
+    fold_dir = Unicode(help='spot fold dir').tag(config=True)
     out_dir = Unicode(help='output dir').tag(config=True)
     model_id = Unicode('4', help='model id as defined in ranklib, -1==ranksvm, -2==hybrid').tag(config=True)
     qrel = Unicode(help='qrel path').tag(config=True)

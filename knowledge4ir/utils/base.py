@@ -151,7 +151,7 @@ def group_scores_to_ranking(l_qid, l_docno, l_score):
 
 def load_trec_labels_dict(in_name):
     """
-    input: trec format qrel
+    spot: trec format qrel
     :param in_name:  qrel
     :return: h_qrel = {qid:{doc:score} }
     """

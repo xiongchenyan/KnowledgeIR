@@ -58,6 +58,6 @@ if __name__ == '__main__':
     import sys
     if 3 != len(sys.argv):
         print "I collect corpus stat"
-        print "2 para: input doc dir + output pre"
+        print "2 para: spot doc dir + output pre"
         sys.exit()
     collect_corpus_stat(*sys.argv[1:])

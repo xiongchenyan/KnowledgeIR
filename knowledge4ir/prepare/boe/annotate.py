@@ -32,7 +32,7 @@ sys.setdefaultencoding('UTF8')
 class Annotator(Configurable):
     linker_type = Unicode('cmns', help='type of linker:cmns|tagme').tag(config=True)
     target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
-    in_name = Unicode(help='input').tag(config=True)
+    in_name = Unicode(help='spot').tag(config=True)
     out_name = Unicode(help='output').tag(config=True)
     
     def __init__(self, **kwargs):

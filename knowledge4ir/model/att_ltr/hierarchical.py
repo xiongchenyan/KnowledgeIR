@@ -291,13 +291,13 @@ class QTermLeToR(HierarchicalAttLeToR):
     # def _align_to_rank_model(self, l_inputs, l_models):
     #     l_aligned_models = [Lambda(lambda x: K.mean(x, axis=None),
     #                                output_shape=(1,)
-    #                                )(model(input)) for model, input in zip(l_models, l_inputs)]
+    #                                )(model(spot)) for model, spot in zip(l_models, l_inputs)]
     #     ranker_model = l_aligned_models[0]
     #     # ranker_model = Lambda(lambda x: K.mean(x, axis=None),
     #     #                       output_shape=(1,)
     #     #                       )(ranker_model)
     #     # ranker_model = Dense(output_dim=1)(ranker_model)
-    #     att_ranker = Model(input=l_inputs, output=ranker_model)
+    #     att_ranker = Model(spot=l_inputs, output=ranker_model)
     #     return att_ranker
 
 
@@ -306,9 +306,9 @@ class QEntityLeToR(QTermLeToR):
     model_ed = Int(2)
 
     # def _align_to_rank_model(self, l_inputs, l_models):
-    #     l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
+    #     l_aligned_models = [model(spot) for model, spot in zip(l_models, l_inputs)]
     #     ranker_model = Lambda(lambda x: K.mean(x),
     #                           output_shape=(1,)
     #                           )(l_aligned_models[1])
-    #     att_ranker = Model(input=l_inputs, output=ranker_model)
+    #     att_ranker = Model(spot=l_inputs, output=ranker_model)
     #     return att_ranker
