@@ -74,4 +74,4 @@ if __name__ == '__main__':
     middle_output_path = sys.argv[2]
 
     spotter = SurfaceFormSpotter(surface_form=surface_path, middle_data=middle_output_path)
-    print spotter.spot("Yahoo located at US.")
+    print (spotter.spot("Yahoo located at US."))

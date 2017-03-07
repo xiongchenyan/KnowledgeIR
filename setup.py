@@ -8,7 +8,7 @@ setup(name='knowledge4ir',
       author='Chenyan Xiong',
       install_requires=['scikit-learn', 'sklearn', 'numpy', 'scipy', 'traitlets', 'six',
                         'google-api-python-client', 'elasticsearch', 'nltk', 'keras',
-                        'gensim', 'rdflib'
+                        'gensim', 'rdflib', 'pyahocorasick'
                         ],
       packages=find_packages()
       )
