@@ -38,7 +38,7 @@ from knowledge4ir.joint.kernel_pooling import kernel_pooling
 
 # TODO: wrong!
 # TODO: The attention should be applied on the k-p's score, but not on the embedding nor the translation score
-
+# TODO: On hold 03/08/2017
 class SoftESR(JointSemanticModel):
 
     def _build_para_layers(self):

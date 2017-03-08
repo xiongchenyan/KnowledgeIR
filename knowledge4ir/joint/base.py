@@ -48,7 +48,8 @@ class HyperParameter(Configurable):
 
 class JointSemanticModel(Configurable):
     """
-    the base class for all models
+    the base class for all models,
+    defines API
     """
     aux_pre = Unicode('aux_')
     q_name = Unicode('q')
