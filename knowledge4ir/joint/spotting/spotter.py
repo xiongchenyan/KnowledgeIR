@@ -96,10 +96,10 @@ class Spotter(Configurable):
         out = open(spot_out_name, 'w')
         for line in open(q_info_in):
             h_q = json.loads(line)
-            h = self.spot_query_json(h_q)
+            h_spot = self.spot_query_json(h_q)
             q_cnt += 1
-            spot_cnt += len(h_q['spot'])
-            print >> out, json.dumps(h)
+            spot_cnt += len(h_spot['spot'])
+            print >> out, json.dumps(h_spot)
         out.close()
         logging.info('spotted, average [%d] sf per q', float(spot_cnt) / float(q_cnt))
         return
@@ -126,9 +126,9 @@ class Spotter(Configurable):
         out = open(spot_out_name, 'w')
         for line in open(d_info_in):
             h_d = json.loads(line)
-            h = self.spot_doc_json(h_d)
+            h_spot = self.spot_doc_json(h_d)
             d_cnt += 1
-            print >> out, json.dumps(h)
+            print >> out, json.dumps(h_spot)
         out.close()
         logging.info('spotted [%d] documents', d_cnt)
         return
