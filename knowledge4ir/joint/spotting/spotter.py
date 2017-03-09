@@ -53,6 +53,8 @@ class Spotter(Configurable):
         for st in xrange(len(l_terms)):
             for reverse_len in xrange(self.max_surface_len - 1):
                 ed = st + self.max_surface_len - reverse_len
+                if ed > len(l_terms):
+                    continue
                 sub_str = ' '.join(l_terms[st: ed])
 
                 if len(sub_str) > 3:
@@ -109,7 +111,7 @@ class Spotter(Configurable):
         q = h_q['query']
         l_qt = q.lower().split()
         l_ana = self.spot_text(l_qt)
-        h['query'] = ' '.join(q)
+        h['query'] = ' '.join(l_qt)
         h['spot'] = l_ana
         return h
 
