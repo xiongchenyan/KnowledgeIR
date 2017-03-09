@@ -157,7 +157,7 @@ class MainConf(Configurable):
 
 
 if __name__ == '__main__':
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
     if 2 != len(sys.argv):
         print "I spot q or doc"
         print "conf:"
