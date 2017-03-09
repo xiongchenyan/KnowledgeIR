@@ -33,8 +33,8 @@ class JointSemanticResource(Configurable):
         if not self.surface_form_path:
             return
         logging.info('loading sf dict from [%s]', self.surface_form_path)
-        self.h_surface_form = json.load(self.surface_form_path)
-        logging.info('sf dict loaded')
+        self.h_surface_form = json.load(open(self.surface_form_path))
+        logging.info('sf dict of [%d] size loaded', len(self.h_surface_form))
 
     def _load_emb(self):
         if not self.embedding_path:
