@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     conf = load_py_config(sys.argv[1])
     in_name = conf.in_name
-    out_name = conf.out_name
+    out_name = conf.out
     in_type = conf.main.type
 
     spotter = Spotter(config=conf)
