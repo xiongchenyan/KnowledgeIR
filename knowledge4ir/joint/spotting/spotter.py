@@ -69,7 +69,12 @@ class Spotter(Configurable):
                     l_ana = self._get_candidate(ngram)
                     if l_ana:
                         spotted = True
-                        res = [ngram, st, ed, l_ana]
+                        # res = [ngram, st, ed, l_ana]
+                        res = dict()
+                        res['surface'] = ngram
+                        res['loc'] = (st, ed)
+                        l_entities = [{"id": ana[0], 'cmns': ana[1]} for ana in l_ana]
+                        res['entities'] = l_entities
                         l_spot.append(res)
                         logging.debug('get spot [%s] in [%d-%d)', ngram, st, ed)
                         break
@@ -122,7 +127,7 @@ class Spotter(Configurable):
         l_qt = q.lower().split()
         l_ana = self.spot_text(l_qt)
         h['query'] = ' '.join(l_qt)
-        h['spot'] = l_ana
+        h['spot'] = {'query': l_ana}
         return h
 
     def pipe_spot_doc_json(self, d_info_in, spot_out_name):
