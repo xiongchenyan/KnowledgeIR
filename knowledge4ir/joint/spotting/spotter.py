@@ -13,7 +13,8 @@ from traitlets.config import Configurable
 from traitlets import (
     Int,
     Unicode,
-    List
+    List,
+    Bool
 )
 from knowledge4ir.utils import (
     set_basic_log,
@@ -27,6 +28,7 @@ from knowledge4ir.utils import TARGET_TEXT_FIELDS
 class Spotter(Configurable):
     max_surface_len = Int(5, help='max surface form length').tag(config=True)
     max_candidate_per_surface = Int(5, help='max candidate per surface').tag(config=True)
+    only_longest = Bool(True, help='whether only keep longest').tag(config=True)
 
     def __init__(self, **kwargs):
         super(Spotter, self).__init__(**kwargs)
@@ -49,8 +51,8 @@ class Spotter(Configurable):
         """
         logging.info('start spotting text of [%d] terms', len(l_terms))
         l_spot = []
-
-        for st in xrange(len(l_terms)):
+        st = 0
+        while st < len(l_terms):
             for reverse_len in xrange(self.max_surface_len):
                 ed = st + self.max_surface_len - reverse_len
                 if ed > len(l_terms):
@@ -62,14 +64,21 @@ class Spotter(Configurable):
                     l_variation_ngram = [sub_str.upper(), sub_str.title(), sub_str]
                 else:
                     l_variation_ngram = [sub_str]
-
+                spotted = False
                 for ngram in l_variation_ngram:
                     l_ana = self._get_candidate(ngram)
                     if l_ana:
+                        spotted = True
                         res = [ngram, st, ed, l_ana]
                         l_spot.append(res)
                         logging.debug('get spot [%s] in [%d-%d)', ngram, st, ed)
                         break
+                if self.only_longest:
+                    if spotted:
+                        st = ed - 1
+                        break
+            st += 1
+
         logging.info('[%d] terms resulted in [%d] surfaces', len(l_terms), len(l_spot))
         return l_spot
 
