@@ -19,7 +19,7 @@ def get_per_ana_entities(line):
         for field in TARGET_TEXT_FIELDS:
             l_ana.extend(spot_data[field])
     else:
-        l_ana = spot_data['spot']
+        l_ana = spot_data
 
     l_e = [item[0] for item in l_ana]
 

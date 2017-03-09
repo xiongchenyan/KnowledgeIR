@@ -147,6 +147,7 @@ class Spotter(Configurable):
 
     def spot_doc_json(self, h_d):
         h = dict()
+        h['spot'] = dict()
         for field in TARGET_TEXT_FIELDS:
             if field not in h_d:
                 continue
@@ -154,7 +155,8 @@ class Spotter(Configurable):
             l_term = text.lower().split()
             l_ana = self.spot_text(l_term)
             h[field] = ' '.join(l_term)
-            h['spot'] = {field: l_ana}
+            h['spot'][field] = l_ana
+            h['docno'] = h_d['docno']
 
         return h
 
