@@ -51,7 +51,7 @@ class Spotter(Configurable):
         l_spot = []
 
         for st in xrange(len(l_terms)):
-            for reverse_len in xrange(self.max_surface_len - 1):
+            for reverse_len in xrange(self.max_surface_len):
                 ed = st + self.max_surface_len - reverse_len
                 if ed > len(l_terms):
                     continue
