@@ -9,12 +9,13 @@ from traitlets import (
 )
 import logging
 import json
+from gensim.models import Word2Vec
 
 
 class JointSemanticResource(Configurable):
     surface_form_path = Unicode(help="the location of surface form dict, in Json format"
                                 ).tag(config=True)
-    embedding_path = Unicode(help="embedding numpy matrix location"
+    embedding_path = Unicode(help="embedding location (word2vec format)"
                              ).tag(config=True)
     
     def __init__(self, **kwargs):
@@ -39,8 +40,9 @@ class JointSemanticResource(Configurable):
     def _load_emb(self):
         if not self.embedding_path:
             return
-        logging.info('loading embedding np mtx [%s]', self.embedding_path)
-        self.embedding = np.load(self.embedding_path)
-        logging.info('embedding array loaded')
+        logging.info('loading embedding [%s]', self.embedding_path)
+        self.embedding = Word2Vec()
+        self.embedding.load_word2vec_format(self.embedding_path)
+        logging.info('embedding loaded')
 
 
