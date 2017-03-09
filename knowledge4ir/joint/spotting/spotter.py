@@ -147,27 +147,29 @@ class Spotter(Configurable):
         return h
 
 
+class MainConf(Configurable):
+    in_name = Unicode(help='input').tag(config=True)
+    out_name = Unicode(help='output').tag(config=True)
+    in_type = Unicode('q', help='q|doc').tag(config=True)
+
+
 if __name__ == '__main__':
     set_basic_log(logging.INFO)
     if 2 != len(sys.argv):
         print "I spot q or doc"
         print "conf:"
         Spotter.class_print_help()
-        print "c.main.in_name="
-        print "c.main.out="
-        print "c.main.type=q|doc"
+        MainConf.class_print_help()
         sys.exit()
 
     conf = load_py_config(sys.argv[1])
-    in_name = conf.in_name
-    out_name = conf.out
-    in_type = conf.main.type
+    arg = MainConf(config=conf)
 
     spotter = Spotter(config=conf)
-    if in_type == 'q':
-        spotter.pipe_spot_query_json(in_name, out_name)
+    if arg.in_type == 'q':
+        spotter.pipe_spot_query_json(arg.in_name, arg.out_name)
     else:
-        spotter.pipe_spot_doc_json(in_name, out_name)
+        spotter.pipe_spot_doc_json(arg.in_name, arg.out_name)
 
 
 
