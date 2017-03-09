@@ -14,14 +14,11 @@ def get_per_ana_entities(line):
 
     spot_data = h.get('spot', [])
 
-    if type(spot_data) == dict:
-        l_ana = []
-        for field in TARGET_TEXT_FIELDS:
-            l_ana.extend(spot_data[field])
-    else:
-        l_ana = spot_data
+    l_ana = []
+    for field in ['query'] + TARGET_TEXT_FIELDS:
+        l_ana.extend(spot_data[field])
 
-    l_e = sum([[ana[0] for ana in item[-1]] for item in l_ana], [])
+    l_e = sum([[ana['id'] for ana in item['entities']] for item in l_ana], [])
 
     return l_e
 
