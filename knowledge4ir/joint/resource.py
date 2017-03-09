@@ -19,7 +19,7 @@ class JointSemanticResource(Configurable):
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
-        self.embedding = np.array()
+        self.embedding = np.array(None)
         self.h_surface_form = dict()
         self._load()
 
