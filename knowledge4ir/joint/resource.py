@@ -20,7 +20,7 @@ class JointSemanticResource(Configurable):
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
-        self.embedding = np.array(None)
+        self.embedding = Word2Vec()
         self.h_surface_form = dict()
         self._load()
 
@@ -41,8 +41,7 @@ class JointSemanticResource(Configurable):
         if not self.embedding_path:
             return
         logging.info('loading embedding [%s]', self.embedding_path)
-        self.embedding = Word2Vec()
-        self.embedding.load_word2vec_format(self.embedding_path)
+        self.embedding = Word2Vec.load_word2vec_format(self.embedding_path)
         logging.info('embedding loaded')
 
 
