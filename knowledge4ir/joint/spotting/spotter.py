@@ -28,7 +28,7 @@ from knowledge4ir.utils import TARGET_TEXT_FIELDS
 class Spotter(Configurable):
     max_surface_len = Int(5, help='max surface form length').tag(config=True)
     max_candidate_per_surface = Int(5, help='max candidate per surface').tag(config=True)
-    only_longest = Bool(True, help='whether only keep longest').tag(config=True)
+    only_longest = Bool(False, help='whether only keep longest').tag(config=True)
 
     def __init__(self, **kwargs):
         super(Spotter, self).__init__(**kwargs)
