@@ -37,7 +37,7 @@ class Grounder(Configurable):
 
     def __init__(self, **kwargs):
         super(Grounder, self).__init__(**kwargs)
-        self.resource = JointSemanticResource(**kwargs)
+        self.resource = None # must be set
 
     def set_resource(self, external_resource):
         self.resource = external_resource
@@ -48,6 +48,8 @@ class Grounder(Configurable):
         :param h_info: spot->field->[h_sf_info] h_sf_info['entities'] = [h_e_info]
         :return: packed into h_info
         """
+        assert self.resource is not None
+
         if 'spot' not in h_info:
             logging.WARN('spot field not found in h_info')
             return h_info
