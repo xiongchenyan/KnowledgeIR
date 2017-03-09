@@ -154,7 +154,7 @@ class Spotter(Configurable):
             l_term = text.lower().split()
             l_ana = self.spot_text(l_term)
             h[field] = ' '.join(l_term)
-            h['spot'] = l_ana
+            h['spot'] = {field: l_ana}
 
         return h
 
