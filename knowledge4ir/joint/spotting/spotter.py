@@ -59,7 +59,7 @@ class Spotter(Configurable):
 
                 if len(sub_str) > 3:
                     # manual set capitalization priority
-                    l_variation_ngram = [sub_str.capitalize(), sub_str.title(), sub_str]
+                    l_variation_ngram = [sub_str.upper(), sub_str.title(), sub_str]
                 else:
                     l_variation_ngram = [sub_str]
 
@@ -82,6 +82,7 @@ class Spotter(Configurable):
         h_sf = self.resource.h_surface_form
 
         l_mid_ana = h_sf.get(ngram, [])
+        logging.debug('[%s] [%d] candidate', ngram, len(l_mid_ana))
         l_ana = deepcopy(l_mid_ana[:self.max_candidate_per_surface])
         return l_ana
 
@@ -156,7 +157,7 @@ class MainConf(Configurable):
 
 
 if __name__ == '__main__':
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
     if 2 != len(sys.argv):
         print "I spot q or doc"
         print "conf:"
