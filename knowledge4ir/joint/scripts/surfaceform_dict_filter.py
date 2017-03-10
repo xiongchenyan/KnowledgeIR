@@ -10,7 +10,7 @@ output:
 import json
 import sys
 
-if 4 >= len(sys.argv):
+if 4 > len(sys.argv):
     print "3+ para: sf dict + out name + all spotted files"
     sys.exit(-1)
 
