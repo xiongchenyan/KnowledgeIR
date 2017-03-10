@@ -62,7 +62,7 @@ if __name__ == '__main__':
     )
     import sys
 
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
     if 2 != len(sys.argv):
         print "I ground spotted entities"
         print "1 para: config"

@@ -95,6 +95,7 @@ class Grounder(Configurable):
         h_feature.update(self._surface_coverage_features(h_sf_info, h_info))
         h_feature.update(self._surface_lp(h_sf_info))
 
+        logging.debug('sf [%s] feature %s', h_sf_info['surface'], json.dumps(h_feature))
         return h_feature
 
     def extract_for_entity(self, h_e_info, h_sf_info, h_info):
@@ -117,7 +118,8 @@ class Grounder(Configurable):
         h_feature['e_cmns'] = h_e_info['cmns']
 
         h_feature.update(self._entity_embedding_vote(e_id, h_info))
-        raise h_feature
+        logging.debug('e [%s] feature %s', e_id, json.dumps(h_feature))
+        return h_feature
 
     def _surface_cmns_features(self, h_sf_info):
         h_feature = {}
