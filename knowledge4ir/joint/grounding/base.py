@@ -155,7 +155,7 @@ class Grounder(Configurable):
 
             for field, l_sf in h_info['spot'].items():
                 for sf in l_sf:
-                    top_e_id = sf.get('entities', [{}]).get('id', '')
+                    top_e_id = sf.get('entities', [{}])[0].get('id', '')
                     if top_e_id == e_id:
                         # no self vote
                         continue
