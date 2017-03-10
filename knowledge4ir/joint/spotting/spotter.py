@@ -61,7 +61,7 @@ class Spotter(Configurable):
 
                 if len(sub_str) > 3:
                     # manual set capitalization priority
-                    l_variation_ngram = [sub_str.upper(), sub_str.title(), sub_str]
+                    l_variation_ngram = [sub_str.title(), sub_str]
                 else:
                     l_variation_ngram = [sub_str]
                 spotted = False
