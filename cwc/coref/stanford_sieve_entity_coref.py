@@ -1,4 +1,4 @@
-from cwc.coref.CorefEngineRunner import CorefEngineRunner
+from cwc.coref.coref_engine_runner import CorefEngineRunner
 
 
 class StanfordSievEntityCoref(CorefEngineRunner):
