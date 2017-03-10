@@ -41,10 +41,10 @@ class JointSemanticResource(Configurable):
         logging.info('sf dict of [%d] size loaded', len(self.h_surface_form))
 
     def _load_sf_stat(self):
-        if not self.surface_form_path:
+        if not self.surface_stat_path:
             return
-        logging.info('loading sf stat from [%s]', self.surface_form_path)
-        self.h_surface_stat = json.load(open(self.surface_form_path))
+        logging.info('loading sf stat from [%s]', self.surface_stat_path)
+        self.h_surface_stat = json.load(open(self.surface_stat_path))
         logging.info('sf stat of [%d] size loaded', len(self.h_surface_stat))
 
     def _load_emb(self):
