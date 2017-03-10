@@ -26,9 +26,11 @@ def convert_per_record(line):
 
 def wiki_sf_stat_prepare(in_name, out_name):
     h_res = {}
-    for line in open(in_name):
+    for p, line in enumerate(open(in_name)):
         sf, h_stat = convert_per_record(line)
         h_res[sf] = h_stat
+        if not p % 1000:
+            print "converted [%d] lines" % p
     json.dump(h_res, open(out_name, 'w'), indent=1)
     return
 
