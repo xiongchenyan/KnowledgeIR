@@ -73,7 +73,7 @@ class Grounder(Configurable):
                 h_sf_info['entities'] = l_h_e_info_with_feature
                 l_h_sf_info_with_feature.append(h_sf_info)
             h_grounded_field[field] = l_h_sf_info_with_feature
-
+        del h_new_info['spot']
         h_new_info['ground'] = h_spotted_field
         return h_new_info
 
