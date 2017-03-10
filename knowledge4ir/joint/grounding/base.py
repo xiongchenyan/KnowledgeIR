@@ -146,9 +146,17 @@ class Grounder(Configurable):
         h_feature['sf_len'] = len(h_sf_info.get('surface', ''))
         return h_feature
 
-    # TODO
     def _surface_lp(self, h_sf_info):
         h_feature = {}
+        sf = h_sf_info['surface']
+
+        h_stat = self.resource.h_surface_stat.get(sf, {})
+        wiki_tf = h_stat.get('tf', 0)
+        lp = 0
+        if wiki_tf >= 10:
+            lp = h_stat.get('lp', 0)
+        h_feature['sf_wiki_tf'] = wiki_tf
+        h_feature['sf_lp'] = lp
         return h_feature
 
     def _entity_embedding_vote(self, e_id, h_info):
