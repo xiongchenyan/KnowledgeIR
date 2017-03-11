@@ -14,7 +14,12 @@ import logging
 from knowledge4ir.utils import (
     FbDumpParser,
     FbDumpReader,
+    e_desp_field,
+    e_name_field,
+    e_alias_field,
+    raw_clean
 )
+
 
 
 def prepare_textual_fields(dump_in, target_in, out_name):
@@ -42,14 +47,17 @@ def prepare_textual_fields(dump_in, target_in, out_name):
         desp = parser.get_desp(l_v_col)
         name = parser.get_name(l_v_col)
         alias = parser.get_alias(l_v_col)
-        l_type = parser.get_type(l_v_col)
-        type_str = ' '.join([t.split('/')[-1] for t in l_type])
+        # l_type = parser.get_type(l_v_col)
+        # type_str = ' '.join([t.split('/')[-1] for t in l_type])
+
+        if type(alias) == list:
+            alias = ' '.join(alias)
 
         h = dict()
         h['id'] = mid
-        h['desp'] = desp
-        h['name'] = name
-        h['alias'] = alias
+        h[e_desp_field] = raw_clean(desp)
+        h[e_name_field] = raw_clean(name)
+        h[e_alias_field] = raw_clean(alias)
         # h['type_str'] = type_str
 
         print >> out, json.dumps(h)
