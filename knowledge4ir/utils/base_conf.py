@@ -20,4 +20,4 @@ QREL_IN = "/bos/usr0/cx/tmp/knowledge4ir/data/qrel.all"
 e_desp_field = 'desp'
 e_name_field = 'name'
 e_alias_field = 'alias'
-E_TEXT_FIELDS = [e_name_field, e_alias_field, e_desp_field]
+ENTITY_TEXT_FIELDS = [e_name_field, e_alias_field, e_desp_field]

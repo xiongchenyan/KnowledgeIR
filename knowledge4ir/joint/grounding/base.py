@@ -28,6 +28,10 @@ from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from copy import deepcopy
 from scipy import stats
+from knowledge4ir.joint import (
+    GROUND_FIELD,
+    SPOT_FIELD,
+)
 
 
 class Grounder(Configurable):
@@ -50,11 +54,11 @@ class Grounder(Configurable):
         """
         assert self.resource is not None
 
-        if 'spot' not in h_info:
+        if SPOT_FIELD not in h_info:
             logging.WARN('spot field not found in h_info')
             return h_info
         h_new_info = deepcopy(h_info)
-        h_spotted_field = h_info['spot']
+        h_spotted_field = h_info[SPOT_FIELD]
         h_grounded_field = {}
         for field in self.l_target_fields:
             l_h_sf_info = h_spotted_field.get(field, [])
@@ -73,8 +77,8 @@ class Grounder(Configurable):
                 h_sf_info['entities'] = l_h_e_info_with_feature
                 l_h_sf_info_with_feature.append(h_sf_info)
             h_grounded_field[field] = l_h_sf_info_with_feature
-        del h_new_info['spot']
-        h_new_info['ground'] = h_spotted_field
+        del h_new_info[SPOT_FIELD]
+        h_new_info[GROUND_FIELD] = h_spotted_field
         return h_new_info
 
     def extract_for_surface(self, h_sf_info, h_info):

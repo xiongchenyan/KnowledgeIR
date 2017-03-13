@@ -25,10 +25,10 @@ class JointSemanticResource(Configurable):
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
-        self.embedding = Word2Vec()
-        self.h_surface_form = dict()
-        self.h_surface_stat = dict()
-        self.h_entity_fields = dict()
+        self.embedding = None
+        self.h_surface_form = None
+        self.h_surface_stat = None
+        self.h_entity_fields = None
         self.corpus_stat = CorpusStat(**kwargs)
         self._load()
 

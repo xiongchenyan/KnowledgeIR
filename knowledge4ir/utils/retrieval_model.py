@@ -147,7 +147,7 @@ class RetrievalModel(Configurable):
         resp += 'avg_doc_len: %.2f' % self.avg_doc_len
         return resp
 
-    def default_model_scores(self):
+    def scores(self):
         l_name_score = self.all_scores()
         l_score = [(name, score) for name, score in l_name_score if name in self.default_model_group]
         return l_score

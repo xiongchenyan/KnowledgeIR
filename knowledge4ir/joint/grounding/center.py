@@ -18,20 +18,20 @@ from knowledge4ir.joint.grounding import Grounder
 from knowledge4ir.joint.resource import JointSemanticResource
 
 
-class GroundFeatureCenter(Configurable):
+class GroundCenter(Configurable):
     in_name = Unicode(help='q info or doc info spotted json file to ground'
                       ).tag(config=True)
     out_name = Unicode(help='output file name').tag(config=True)
 
     def __init__(self, **kwargs):
-        super(GroundFeatureCenter, self).__init__(**kwargs)
+        super(GroundCenter, self).__init__(**kwargs)
         self.grounder = Grounder(**kwargs)
         self.resource = JointSemanticResource(**kwargs)
         self.grounder.set_resource(self.resource)
 
     @classmethod
     def class_print_help(cls, inst=None):
-        super(GroundFeatureCenter, cls).class_print_help(inst)
+        super(GroundCenter, cls).class_print_help(inst)
         JointSemanticResource.class_print_help(inst)
         Grounder.class_print_help(inst)
 
@@ -66,10 +66,10 @@ if __name__ == '__main__':
     if 2 != len(sys.argv):
         print "I ground spotted entities"
         print "1 para: config"
-        GroundFeatureCenter.class_print_help()
+        GroundCenter.class_print_help()
         sys.exit(-1)
 
     conf = load_py_config(sys.argv[1])
-    center = GroundFeatureCenter(config=conf)
+    center = GroundCenter(config=conf)
     center.ground()
 
