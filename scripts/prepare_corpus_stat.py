@@ -22,10 +22,14 @@ if 3 != len(sys.argv):
     print "2 paras: input pre + out"
     sys.exit(-1)
 
-
+print "start loading pickle dicts..."
 h_title_df = pickle.load(open(sys.argv[1] + '.title'))
+print "[%d] title term" % len(h_title_df)
 h_body_df = pickle.load(open(sys.argv[1] + '.bodyText'))
+print '[%d] body term' % len(h_body_df)
 h_stat = pickle.load(open(sys.argv[1] + '.stat'))
+
+print 'dicts loaded'
 
 h_field_df = dict()
 h_field_df[title_field] = h_title_df
@@ -40,5 +44,7 @@ h_field_avg_len[title_field] = h_stat[title_field]['average_len']
 h_field_avg_len[body_field] = h_stat[body_field]['average_len']
 
 l_data = [h_field_df, h_field_total_df, h_field_avg_len]
+print "start dumping new format..."
 pickle.dump(l_data, open(sys.argv[2], 'wb'))
+print "finished"
 
