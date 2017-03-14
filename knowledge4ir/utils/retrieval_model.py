@@ -209,7 +209,7 @@ class RetrievalModel(Configurable):
                                                                                 lm_para.dir_mu)
         v_mid = np.maximum(v_mid, MIN_LM_SCORE)
         score = np.log(v_mid).dot(v_q)
-        return score
+        return score + 20
 
     def lm_jm(self, lm_para=LmPara()):
         if self.doc_len == 0:
@@ -219,7 +219,7 @@ class RetrievalModel(Configurable):
                 + lm_para.jm_lambda * self.v_q_df / self.total_df
         v_mid = np.maximum(v_mid, MIN_LM_SCORE)
         score = np.log(v_mid).dot(self.v_q_tf)
-        return score
+        return score + 20
 
     def lm_twoway(self, lm_para=LmPara()):
         if self.doc_len == 0:
@@ -231,7 +231,7 @@ class RetrievalModel(Configurable):
                 + lm_para.jm_lambda * self.v_q_df / self.total_df
         v_mid = np.maximum(v_mid, MIN_LM_SCORE)
         score = np.log(v_mid).dot(self.v_q_tf)
-        return score
+        return score + 20
 
     def bm25(self, bm25_para=BM25Para()):
         if self.doc_len == 0:
