@@ -29,8 +29,8 @@ class JointSemanticResource(Configurable):
         self.h_surface_form = None
         self.h_surface_stat = None
         self.h_entity_fields = None
-        self.corpus_stat = CorpusStat(**kwargs)
         self._load()
+        self.corpus_stat = CorpusStat(**kwargs)
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -38,10 +38,10 @@ class JointSemanticResource(Configurable):
         CorpusStat.class_print_help(inst)
 
     def _load(self):
+        self._load_entity_fields()
         self._load_sf()
         self._load_emb()
         self._load_sf_stat()
-        self._load_entity_fields()
         return
 
     def _load_sf(self):
