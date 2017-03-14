@@ -82,7 +82,7 @@ class QeDTextMatchFeatureExtractor(MatchFeatureExtractor):
 
     def _extract_per_entity(self, e_id, d_info, external_resource):
         h_feature = dict()
-        h_e_fields = self.h_entity_field.get(e_id, {})
+        h_e_fields = external_resource.h_entity_field.get(e_id, {})
         l_e_text_fields = [(field, h_e_fields.get(field, ""))
                            for field in self.l_entity_fields]
         corpus_stat = external_resource.corpus_stat
