@@ -34,6 +34,8 @@ from knowledge4ir.utils import (
 from knowledge4ir.joint import (
     MATCH_FIELD
 )
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 class MatchCenter(Configurable):
@@ -91,7 +93,7 @@ class MatchCenter(Configurable):
 
         for feature_group in self.s_feature_group:
             assert feature_group in self.h_group_mapping
-
+        logging.info('target feature groups %s', json.dumps(self.s_feature_group))
         for feature_group in self.s_feature_group:
             self.l_feature_extractor.append(self.h_group_mapping[feature_group](**kwargs))
             logging.info('feature group [%s] added', feature_group)

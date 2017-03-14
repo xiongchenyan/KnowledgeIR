@@ -37,7 +37,10 @@ class QeDTextMatchFeatureExtractor(MatchFeatureExtractor):
 
     def __init__(self, **kwargs):
         super(QeDTextMatchFeatureExtractor, self).__init__(**kwargs)
+        logging.info('initializing QeDTextMatchFeatureExtractor')
         self.retrieval_model = RetrievalModel(**kwargs)
+        logging.info('QeDTextMatchFeatureExtractor init with target entity fields: %s',
+                     json.dumps(self.l_entity_fields))
 
     @classmethod
     def class_print_help(cls, inst=None):
