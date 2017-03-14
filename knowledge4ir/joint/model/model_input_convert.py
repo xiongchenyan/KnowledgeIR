@@ -18,11 +18,32 @@ output:
         sf_entity qe_d: |spot||candidate entity||f dim|
         all the three's corresponding dimension are aligned
         meta:
-            sf: list of sf for sf matrix first dim
+            sf: list of loc for sf matrix first dim
             sf-entity matrix: list of sf for sf_entity
             qid
             docno
 """
+
+
+import json
+import sys
+from knowledge4ir.utils import (
+    load_trec_labels_dict
+)
+from traitlets.config import Configurable
+from traitlets import (
+    Unicode,
+    Int
+)
+
+
+class ModelInputConvert(Configurable):
+    
+    
+    def __init__(self, **kwargs):
+        super(ModelInputConvert, self).__init__(**kwargs)
+
+
 
 
 
