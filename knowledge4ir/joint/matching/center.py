@@ -114,12 +114,13 @@ class MatchCenter(Configurable):
             logging.info('start extracting for [%s]', q)
             q_info = self.h_q_info[q]
             for docno, score in ranking:
+                logging.info('with doc [%s-%s]', q, docno)
                 d_info = self.h_d_info.get(docno, {})
                 h_matched_feature = dict()
                 for extractor in self.l_feature_extractor:
                     h_this_matched_feature = extractor.extract(
                         q_info, d_info, self.resource)
-                    self._mul_update(h_matched_feature, h_this_matched_feature)
+                    h_matched_feature = self._mul_update(h_matched_feature, h_this_matched_feature)
                 print >> out, json.dumps(h_matched_feature)
                 logging.info('[%s-%s] match feature extracted', q, docno)
             logging.info('q [%s] match features extracted', q)
@@ -134,7 +135,9 @@ class MatchCenter(Configurable):
         :param h_this_one:
         :return:
         """
-
+        if not h_total:
+            h_total = h_this_one
+            return h_total
         l_total_matched = h_total[MATCH_FIELD]
         l_this_matched = h_this_one[MATCH_FIELD]
         h_this_sf_matched = dict([(h_sf['loc'], h_sf) for h_sf in l_this_matched])
@@ -143,7 +146,7 @@ class MatchCenter(Configurable):
             l_total_matched[i] = self._update_per_sf(
                 l_total_matched[i], h_this_sf_matched.get(l_total_matched[i]['loc']))
         h_total[MATCH_FIELD] = l_total_matched
-        return
+        return h_total
 
     def _update_per_sf(self, h_sf_matched, h_to_add_sf):
         assert h_sf_matched['loc'] == h_to_add_sf['loc']
