@@ -69,7 +69,11 @@ class JointSemanticResource(Configurable):
         if not self.entity_field_path:
             return
         logging.info('loading entity fields from [%s]', self.entity_field_path)
-        self.h_entity_fields = json.load(open(self.entity_field_path))
+        self.h_entity_fields = dict()
+        for line in open(self.entity_field_path):
+            h_field = json.loads(line)
+            self.h_entity_fields[h_field['id']] = h_field
+
         logging.info('total [%d] entity fields loaded', len(self.h_entity_fields))
 
 
