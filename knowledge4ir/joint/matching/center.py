@@ -171,6 +171,7 @@ if __name__ == '__main__':
         print "I extract matching features"
         print "1 para: config"
         MatchCenter.class_print_help()
+        MatchMain.class_print_help()
         sys.exit(-1)
     conf = load_py_config(sys.argv[1])
 
