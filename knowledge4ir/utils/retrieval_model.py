@@ -54,9 +54,10 @@ class CorpusStat(Configurable):
 
     def __init__(self, **kwargs):
         super(CorpusStat, self).__init__(**kwargs)
-        l_data = pickle.load(open(self.corpus_stat_in, 'rb'))
-        self.h_field_df, self.h_field_total_df, self.h_field_avg_len = l_data
-        logging.info('corpus stat in [%s] loaded', self.corpus_stat_in)
+        if self.corpus_stat_in:
+            l_data = pickle.load(open(self.corpus_stat_in, 'rb'))
+            self.h_field_df, self.h_field_total_df, self.h_field_avg_len = l_data
+            logging.info('corpus stat in [%s] loaded', self.corpus_stat_in)
 
 
 class RetrievalModel(Configurable):
