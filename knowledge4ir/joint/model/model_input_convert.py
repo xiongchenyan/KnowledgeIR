@@ -193,6 +193,7 @@ class ModelInputConvert(Configurable):
             loc = tuple(sf_info['loc'])
             if loc not in h_spot_loc_p:
                 logging.debug('%s not in spot list, perhaps filtered', json.dumps(loc))
+                continue
             i = h_spot_loc_p[loc]
             logging.debug('%s i=%d', json.dumps(loc), i)
             for e_id, e_info in sf_info['entities']:
