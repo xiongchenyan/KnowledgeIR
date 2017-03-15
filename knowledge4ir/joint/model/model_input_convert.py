@@ -259,7 +259,7 @@ class ModelInputConvert(Configurable):
         if not h_feature_name:
             l_name = h_feature.keys()
             l_name.sort()
-            h_feature_name.update(dict(zip([l_name, range(len(l_name))])))
+            h_feature_name.update(dict(zip(l_name, range(len(l_name)))))
 
         l_f_scores = [0 for p in len(h_feature)]
         for name, value in h_feature.items():
