@@ -156,8 +156,8 @@ class ModelInputConvert(Configurable):
         essemble one pair, update feature id's if new
         features in to first level lists
         meta data to "meta":
-        :param pair_info:
-        :param q_grounding_info:
+        :param pair_info: the match info for this q-d pair
+        :param q_grounding_info: the converted grounded query infor for this query
         :return:
         """
         converted_mtx_info = dict()
@@ -171,15 +171,14 @@ class ModelInputConvert(Configurable):
         converted_mtx_info['letor_f'] = [pair_info['base_score']]  # 1 dim ltr feature for now
 
         # get q's grounding part
-        q_mtx_info = q_grounding_info[qid]
-        l_spot_loc = q_mtx_info[self.sf_ground_ref]
-        ll_sf_e_id = q_mtx_info[self.e_ground_ref]
+        l_spot_loc = q_grounding_info[self.sf_ground_ref]
+        ll_sf_e_id = q_grounding_info[self.e_ground_ref]
 
         h_spot_loc_p = dict(zip(l_spot_loc, range(len(l_spot_loc))))
         l_h_sf_e_p = [dict(zip(l_sf_e_id, range(len(l_sf_e_id))))
                       for l_sf_e_id in ll_sf_e_id]
 
-        logging.info('corresponding q groudning info fetched')
+        logging.info('corresponding q grouding info fetched')
 
         # form sf-e-feature tensor
         lll_sf_e_match = [[[] for __ in xrange(self.max_e_per_spot)]
@@ -206,8 +205,8 @@ class ModelInputConvert(Configurable):
         # put various data into designated locations
         converted_mtx_info['meta'][self.sf_ground_ref] = l_spot_loc
         converted_mtx_info['meta'][self.e_ground_ref] = ll_sf_e_id
-        converted_mtx_info[self.sf_ground_name] = q_mtx_info[self.sf_ground_name]
-        converted_mtx_info[self.e_ground_name] = q_mtx_info[self.e_ground_name]
+        converted_mtx_info[self.sf_ground_name] = q_grounding_info[self.sf_ground_name]
+        converted_mtx_info[self.e_ground_name] = q_grounding_info[self.e_ground_name]
         converted_mtx_info[self.e_match_name] = lll_sf_e_match
 
         logging.info('pair [%s-%s] assembled, matching shape=%s',
