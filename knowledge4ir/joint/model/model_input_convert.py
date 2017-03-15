@@ -261,7 +261,7 @@ class ModelInputConvert(Configurable):
             l_name.sort()
             h_feature_name.update(dict(zip(l_name, range(len(l_name)))))
 
-        l_f_scores = [0 for p in len(h_feature)]
+        l_f_scores = [0 for _ in xrange(len(h_feature))]
         for name, value in h_feature.items():
             assert name in h_feature_name  # assume all feature dicts are extracted fully
             p = h_feature_name[name]
