@@ -94,10 +94,10 @@ class ModelInputConvert(Configurable):
         :param q_info:
         :return: q_mtx_info
         """
-        ll_sf_feature = [[] for p in xrange(self.max_spot_per_q)]
+        ll_sf_feature = [[] for _ in xrange(self.max_spot_per_q)]
         l_spot_loc = []
-        lll_sf_e_feature = [[[] for i in xrange(self.max_e_per_spot)]
-                            for p in xrange(self.max_spot_per_q)]
+        lll_sf_e_feature = [[[] for __ in xrange(self.max_e_per_spot)]
+                            for _ in xrange(self.max_spot_per_q)]
         ll_sf_e_id = []
 
         l_sf_info = q_info[GROUND_FIELD]['query']
@@ -182,9 +182,8 @@ class ModelInputConvert(Configurable):
         logging.info('corresponding q groudning info fetched')
 
         # form sf-e-feature tensor
-        lll_sf_e_match = [[[] for i in xrange(self.max_e_per_spot)]
-                          for p in xrange(self.max_spot_per_q)]
-
+        lll_sf_e_match = [[[] for __ in xrange(self.max_e_per_spot)]
+                          for _ in xrange(self.max_spot_per_q)]
 
         f_dim = 0
         for sf_info in converted_mtx_info[MATCH_FIELD]:
@@ -301,4 +300,3 @@ if __name__ == '__main__':
     converter = ModelInputConvert(config=conf)
 
     converter.convert()
-
