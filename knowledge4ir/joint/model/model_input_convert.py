@@ -111,7 +111,7 @@ class ModelInputConvert(Configurable):
 
             ll_sf_feature[i] = l_f_score
             sf_f_dim = len(l_f_score)
-            loc = sf_info['loc']
+            loc = tuple(sf_info['loc'])
             l_spot_loc.append(loc)
 
         # padding
