@@ -188,8 +188,7 @@ class ModelInputConvert(Configurable):
         for sf_info in pair_info[MATCH_FIELD]:
             loc = tuple(sf_info['loc'])
             i = h_spot_loc_p[loc]
-            for e_info in sf_info['entities']:
-                e_id = e_info['id']
+            for e_id, e_info in sf_info['entities']:
                 h_feature = e_info['f']
                 j = l_h_sf_e_p[i][e_id]
                 l_f_score, self.h_e_matching_feature_id = self._form_feature_vector(
