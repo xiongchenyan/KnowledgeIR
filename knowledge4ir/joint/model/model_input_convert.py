@@ -48,7 +48,7 @@ from knowledge4ir.joint import (
 
 class ModelInputConvert(Configurable):
     max_spot_per_q = Int(3, help='max spot allowed per q').tag(config=True)
-    max_e_per_spot = Int(3, help='top e allowed per q').tag(config=True)
+    max_e_per_spot = Int(5, help='top e allowed per q').tag(config=True)
     qrel_in = Unicode(help='qrel in').tag(config=True)
     q_info_in = Unicode(help='q info in, with grounded features').tag(config=True)
     q_d_match_info_in = Unicode(help='matched pairs info in, with matching features'
@@ -191,10 +191,15 @@ class ModelInputConvert(Configurable):
 
         for sf_info in pair_info[MATCH_FIELD]:
             loc = tuple(sf_info['loc'])
+            if loc not in h_spot_loc_p:
+                logging.debug('%s not in spot list, perhaps filtered', json.dumps(loc))
             i = h_spot_loc_p[loc]
             logging.debug('%s i=%d', json.dumps(loc), i)
             for e_id, e_info in sf_info['entities']:
                 h_feature = e_info['f']
+                if e_id not in l_h_sf_e_p[i]:
+                    logging.debug('[%s] not in ground (filtered)', e_id)
+                    continue
                 j = l_h_sf_e_p[i][e_id]
                 logging.debug('[%s] j=%d', e_id, j)
                 l_f_score, self.h_e_matching_feature_id = self._form_feature_vector(
