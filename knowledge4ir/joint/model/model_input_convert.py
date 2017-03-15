@@ -163,7 +163,7 @@ class ModelInputConvert(Configurable):
         converted_mtx_info = dict()
         qid = pair_info['qid']
         docno = pair_info['docno']
-        label = self.h_qrel[qid].get(docno, 0)
+        label = self.h_qrel.get(qid, {}).get(docno, 0)
         logging.info('start assemble par [%s-%s]', qid, docno)
 
         converted_mtx_info['meta'] = {'qid': qid, 'docno': docno}
