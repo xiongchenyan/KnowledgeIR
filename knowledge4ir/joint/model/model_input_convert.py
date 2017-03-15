@@ -63,7 +63,7 @@ class ModelInputConvert(Configurable):
 
     def __init__(self, **kwargs):
         super(ModelInputConvert, self).__init__(**kwargs)
-        self.h_qrel = load_trec_labels_dict(self.q_info_in)
+        self.h_qrel = load_trec_labels_dict(self.qrel_in)
 
         self.h_q_grounding_info_mtx = dict()  # qid -> grounding info mtx
         self.h_sf_grounding_feature_id = dict()
@@ -301,4 +301,4 @@ if __name__ == '__main__':
     converter = ModelInputConvert(config=conf)
 
     converter.convert()
-    
+
