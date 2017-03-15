@@ -186,7 +186,8 @@ class ModelInputConvert(Configurable):
 
         f_dim = 0
         for sf_info in pair_info[MATCH_FIELD]:
-            i = h_spot_loc_p[sf_info['loc']]
+            loc = tuple(sf_info['loc'])
+            i = h_spot_loc_p[loc]
             for e_info in sf_info['entities']:
                 e_id = e_info['id']
                 h_feature = e_info['f']
