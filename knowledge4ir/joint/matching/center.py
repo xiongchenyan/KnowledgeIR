@@ -160,7 +160,7 @@ class MatchCenter(Configurable):
 
         for p in xrange(len(l_entities_matched)):
             to_add = h_to_add_entities[l_to_add_entities['id']]
-            l_entities_matched['f'].update(to_add['f'])
+            l_entities_matched[p]['f'].update(to_add['f'])
         h_sf_matched['entities'] = l_entities_matched
         return h_sf_matched
 

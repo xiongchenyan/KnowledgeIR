@@ -76,7 +76,7 @@ class QeDTextMatchFeatureExtractor(MatchFeatureExtractor):
                 e_id = grounded_e['id']
                 e_name = external_resource.h_entity_fields.get(e_id, {}).get(e_name_field, "")
                 h_feature = self._extract_per_entity(e_id, d_info, external_resource)
-                l_matched_entities.append((e_id, {'f': h_feature, e_name_field: e_name}))
+                l_matched_entities.append(({'id': e_id, 'f': h_feature, e_name_field: e_name}))
             matched_sf['entities'] = l_matched_entities
             l_q_matched_feature.append(matched_sf)
         h_match_info[MATCH_FIELD] = l_q_matched_feature
