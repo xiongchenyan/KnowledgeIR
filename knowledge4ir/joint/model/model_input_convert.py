@@ -185,12 +185,18 @@ class ModelInputConvert(Configurable):
                           for _ in xrange(self.max_spot_per_q)]
 
         f_dim = 0
+
+        logging.debug('spot loc: %s', json.dumps(l_spot_loc))
+        logging.debug('s-e id: %s', json.dumps(ll_sf_e_id, indent=1))
+
         for sf_info in pair_info[MATCH_FIELD]:
             loc = tuple(sf_info['loc'])
             i = h_spot_loc_p[loc]
+            logging.debug('%s i=%d', json.dumps(loc), i)
             for e_id, e_info in sf_info['entities']:
                 h_feature = e_info['f']
                 j = l_h_sf_e_p[i][e_id]
+                logging.debug('[%s] j=%d', e_id, j)
                 l_f_score, self.h_e_matching_feature_id = self._form_feature_vector(
                     h_feature, self.h_e_matching_feature_id
                 )
