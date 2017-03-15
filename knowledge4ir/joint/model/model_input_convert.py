@@ -103,33 +103,52 @@ class ModelInputConvert(Configurable):
         l_sf_info = q_info[GROUND_FIELD]['query']
 
         # sf grounding feature
+        sf_f_dim = 0
         for i, sf_info in enumerate(l_sf_info[:self.max_spot_per_q]):
             h_f = sf_info['f']
             l_f_score, self.h_sf_grounding_feature_id = self._form_feature_vector(
                 h_f, self.h_sf_grounding_feature_id)
 
             ll_sf_feature[i] = l_f_score
+            sf_f_dim = len(l_f_score)
             loc = sf_info['loc']
             l_spot_loc.append(loc)
 
+        # padding
+        sf_mtx_shape = [self.max_spot_per_q, sf_f_dim]
+        ll_sf_feature = self._padding_mtx(ll_sf_feature,
+                                          sf_mtx_shape)
+
         # e grounding feature tensor
+        e_f_dim = 0
         for i, sf_info in enumerate(l_sf_info[:self.max_spot_per_q]):
             l_e_id = []
             for j, e_info in enumerate(sf_info['entities'][:self.max_e_per_spot]):
                 h_f = e_info['f']
                 l_f_score, self.h_e_grounding_feature_id = self._form_feature_vector(
                     h_f, self.h_e_grounding_feature_id)
-
+                e_f_dim = len(l_f_score)
                 e_id = e_info['id']
                 lll_sf_e_feature[i][j] = l_f_score
                 l_e_id.append(e_id)
             ll_sf_e_id.append(l_e_id)
+            for p in xrange(len(sf_info['entities']), self.max_e_per_spot):
+                lll_sf_e_feature[i][p] = [0] * e_f_dim
+
+        # padding
+        sf_e_tensor_shape = [self.max_spot_per_q, self.max_e_per_spot, e_f_dim]
+        lll_sf_e_feature = self._padding_tensor(
+            lll_sf_e_feature, sf_e_tensor_shape)
 
         q_mtx_info = dict()
         q_mtx_info[self.sf_ground_name] = ll_sf_feature
         q_mtx_info[self.sf_ground_ref] = l_spot_loc
         q_mtx_info[self.e_ground_name] = lll_sf_e_feature
         q_mtx_info[self.e_ground_ref] = ll_sf_e_id
+
+        logging.info('q grounding features assembled, sf mtx shape: %s, sf-e tensor shape: %s',
+                     json.dumps(sf_mtx_shape), json.dumps(sf_e_tensor_shape))
+
         return q_mtx_info
 
     def _assemble_one_pair(self, pair_info, q_grounding_info):
@@ -145,17 +164,55 @@ class ModelInputConvert(Configurable):
         qid = pair_info['qid']
         docno = pair_info['docno']
         label = self.h_qrel[qid].get(docno, 0)
+        logging.info('start assemble par [%s-%s]', qid, docno)
 
         converted_mtx_info['meta'] = {'qid': qid, 'docno': docno}
         converted_mtx_info['label'] = label
+        converted_mtx_info['letor_f'] = [pair_info['base_score']]  # 1 dim ltr feature for now
 
-        # TODO
         # get q's grounding part
+        q_mtx_info = q_grounding_info[qid]
+        l_spot_loc = q_mtx_info[self.sf_ground_ref]
+        ll_sf_e_id = q_mtx_info[self.e_ground_ref]
 
-        # for sf-e-feature tensor
+        h_spot_loc_p = dict(zip(l_spot_loc, range(len(l_spot_loc))))
+        l_h_sf_e_p = [dict(zip(l_sf_e_id, range(len(l_sf_e_id))))
+                      for l_sf_e_id in ll_sf_e_id]
+
+        logging.info('corresponding q groudning info fetched')
+
+        # form sf-e-feature tensor
+        lll_sf_e_match = [[[] for i in xrange(self.max_e_per_spot)]
+                          for p in xrange(self.max_spot_per_q)]
+
+
+        f_dim = 0
+        for sf_info in converted_mtx_info[MATCH_FIELD]:
+            i = h_spot_loc_p[sf_info['loc']]
+            for e_info in sf_info['entities']:
+                e_id = e_info['id']
+                h_feature = e_info['f']
+                j = l_h_sf_e_p[i][e_id]
+                l_f_score, self.h_e_matching_feature_id = self._form_feature_vector(
+                    h_feature, self.h_e_matching_feature_id
+                )
+                lll_sf_e_match[i][j] = l_f_score
+                f_dim = len(l_f_score)
+
+        # padding
+        sf_e_tensor_shape = [self.max_spot_per_q, self.max_e_per_spot, f_dim]
+        lll_sf_e_match = self._padding_tensor(
+            lll_sf_e_match, sf_e_tensor_shape)
 
         # put various data into designated locations
+        converted_mtx_info['meta'][self.sf_ground_ref] = l_spot_loc
+        converted_mtx_info['meta'][self.e_ground_ref] = ll_sf_e_id
+        converted_mtx_info[self.sf_ground_name] = q_mtx_info[self.sf_ground_name]
+        converted_mtx_info[self.e_ground_name] = q_mtx_info[self.e_ground_name]
+        converted_mtx_info[self.e_match_name] = lll_sf_e_match
 
+        logging.info('pair [%s-%s] assembled, matching shape=%s',
+                     qid, docno, json.dumps(sf_e_tensor_shape))
         return converted_mtx_info
 
     def convert(self):
@@ -182,7 +239,7 @@ class ModelInputConvert(Configurable):
         logging.info('matching pairs converted')
 
         self._dump_meta()
-
+        logging.info('full grounding and matching data converted')
         return
 
     def _dump_meta(self):
@@ -197,7 +254,8 @@ class ModelInputConvert(Configurable):
         logging.info('meta data (feature name:dim) dumped')
         return
 
-    def _form_feature_vector(self, h_feature, h_feature_name):
+    @classmethod
+    def _form_feature_vector(cls, h_feature, h_feature_name):
         if not h_feature_name:
             l_name = h_feature.keys()
             l_name.sort()
@@ -210,5 +268,37 @@ class ModelInputConvert(Configurable):
             l_f_scores[p] = value
         return l_f_scores, h_feature_name
 
+    @classmethod
+    def _padding_mtx(cls, ll, shape):
+        for i in xrange(shape[0]):
+            if not ll[i]:
+                ll[i] = [0] * shape[-1]
+
+        return ll
+
+    @classmethod
+    def _padding_tensor(cls, lll, shape):
+        for i in xrange(shape[0]):
+            for j in xrange(shape[1]):
+                lll[i][j] = [0] * shape[-1]
+        return lll
 
 
+if __name__ == '__main__':
+    from knowledge4ir.utils import (
+        load_py_config,
+        set_basic_log,
+    )
+    set_basic_log(logging.INFO)
+
+    if 2 != len(sys.argv):
+        print "convert readable features into lists"
+        print "1 para: config"
+        ModelInputConvert.class_print_help()
+        sys.exit(-1)
+
+    conf = load_py_config(sys.argv[1])
+    converter = ModelInputConvert(config=conf)
+
+    converter.convert()
+    
