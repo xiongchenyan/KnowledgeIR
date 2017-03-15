@@ -96,7 +96,8 @@ class QeDTextMatchFeatureExtractor(MatchFeatureExtractor):
                 self.retrieval_model.set(h_q_lm, h_d_lm, doc_field, corpus_stat)
                 l_sim_scores = self.retrieval_model.scores()
 
-                l_feature = [(self.feature_name_pre + field.title() + doc_field.title() + name, score)
+                l_feature = [(self.feature_name_pre + field.title()
+                              + doc_field.title() + name, score)
                              for name, score in l_sim_scores]
                 h_feature.update(dict(l_feature))
 

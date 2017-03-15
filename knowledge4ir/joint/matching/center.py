@@ -115,14 +115,18 @@ class MatchCenter(Configurable):
             q_info = self.h_q_info[q]
             for docno, score in ranking:
                 logging.info('with doc [%s-%s]', q, docno)
-                d_info = self.h_d_info.get(docno, {})
+                d_info = self.h_d_info.get(docno, {'docno': docno})
                 h_matched_feature = dict()
-                for extractor in self.l_feature_extractor:
-                    h_this_matched_feature = extractor.extract(
+                for this_extractor in self.l_feature_extractor:
+                    h_this_matched_feature = this_extractor.extract(
                         q_info, d_info, self.resource)
-                    h_matched_feature = self._mul_update(h_matched_feature, h_this_matched_feature)
+                    h_matched_feature = self._mul_update(
+                        h_matched_feature, h_this_matched_feature)
+
+                h_matched_feature['base_score'] = score
                 print >> out, json.dumps(h_matched_feature)
                 logging.info('[%s-%s] match feature extracted', q, docno)
+
             logging.info('q [%s] match features extracted', q)
         logging.info('ranking pairs [%s] matching features extracted to [%s]',
                      trec_rank_in, out_name)
