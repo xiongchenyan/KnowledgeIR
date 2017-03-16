@@ -290,7 +290,8 @@ class ModelInputConvert(Configurable):
     def _padding_tensor(cls, lll, shape):
         for i in xrange(shape[0]):
             for j in xrange(shape[1]):
-                lll[i][j] = [0] * shape[-1]
+                if not lll[i][j]:
+                    lll[i][j] = [0] * shape[-1]
         return lll
 
 
