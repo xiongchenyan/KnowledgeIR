@@ -2,20 +2,19 @@
 base functions for ranking model
 lambda layers for Kernel-pooling
 """
-from traitlets.config import Configurable
+import json
+import logging
+
+import numpy as np
+from keras.callbacks import EarlyStopping
 from traitlets import (
-    Float,
-    Int,
-    Tuple,
     Unicode,
     List,
 )
+from traitlets.config import Configurable
 
 from knowledge4ir.joint.resource import JointSemanticResource
-import logging
-import json
-from keras.callbacks import EarlyStopping
-import numpy as np
+from knowledge4ir.model.hyper_para import HyperParameter
 from knowledge4ir.utils import (
     dump_trec_out_from_ranking_score,
 )
@@ -29,41 +28,6 @@ ltr_feature_name = 'ltr_f'
 l_input_name = [sf_ground_name, e_ground_name, e_match_name]
 
 y_name = 'label'
-
-
-class HyperParameter(Configurable):
-    # model parameters
-    l2_w = Float(0.01).tag(config=True)
-    dropout_rate = Float(0).tag(config=True)
-    q_shape = Tuple(Int, default_value=(5, 1)).tag(config=True)
-    title_shape = Tuple(Int, default_value=(10, 1)).tag(config=True)
-    body_shape = Tuple(Int, default_value=(300, 1)).tag(config=True)
-    embedding_dim = Int(300).tag(config=True)
-    l_kernel_pool_mean =List(Float, default_value=[],
-                             help='kernal pooling means'
-                             ).tag(config=True)
-    l_kernel_pool_sigma = List(Float, default_value=[],
-                               help='kernal pooling sigmas'
-                               ).tag(config=True)
-
-    # training parameters
-    loss = Unicode('hinge').tag(config=True)
-    opt = Unicode('nadam').tag(config=True)
-    batch_size = Int(-1).tag(config=True)
-    nb_epoch = Int(10).tag(config=True)
-    early_stopping_patient = Int(10).tag(config=True)
-
-    def pretty_print(self):
-        """
-        only print those to be explored
-        :return:
-        """
-        h_target = {}
-        l_target = ['l2_w', 'dropout_rate']
-        for target in l_target:
-            value = getattr(self, target)
-            h_target[target] = value
-        return json.dumps(h_target)
 
 
 class JointSemanticModel(Configurable):
@@ -193,14 +157,20 @@ class JointSemanticModel(Configurable):
                                         l_hyper_para)
         logging.info('best para in dev: %s', best_para.pretty_print())
 
-        paired_X = dict()
+        paired_x = dict()
         Y = np.concatenate(train_y, dev_y)
         for key, tensor in paired_train_x:
-            paired_X[key] = np.concatenate(paired_train_x, paired_dev_x)
+            paired_x[key] = np.concatenate(paired_train_x, paired_dev_x)
 
-        self.pairwise_train(paired_X, Y, best_para)
+        self.pairwise_train(paired_x, Y, best_para)
         logging.info('train with best dev para done')
         return
+
+    def train_data_reader(self, in_name, s_target_qid=None):
+        return self.pairwise_data_reader(in_name, s_target_qid)
+
+    def test_data_reader(self, in_name, s_target_qid=None):
+        return self.pointwise_data_reader(in_name, s_target_qid)
 
     def pointwise_data_reader(self, in_name, s_target_qid=None):
         """
