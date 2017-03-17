@@ -11,7 +11,6 @@ from traitlets import (
     List,
 )
 
-from knowledge4ir.joint import JointSemanticResource
 from knowledge4ir.joint.resource import JointSemanticResource
 import logging
 import json
@@ -96,6 +95,12 @@ class JointSemanticModel(Configurable):
 
     def _form_model_from_layers(self, h_para_layers):
         raise NotImplementedError
+
+    def train(self, x, y, hyper_para=None):
+        return self.pairwise_train(x, y, hyper_para)
+
+    def train_with_dev(self, x, y, dev_x, dev_y, l_hyper_para):
+        self.pairwise_train_with_dev(x, y, dev_x, dev_y, l_hyper_para)
 
     def pairwise_train(self, paired_x, y, hyper_para=None):
         """
@@ -242,7 +247,7 @@ class JointSemanticModel(Configurable):
             meta.qid is qid
             meta.docno is docno
         :param s_target_qid: the target qid to keep, if none then keep all
-        :return: paired_X
+        :return: paired_x
         """
         l_data = self._simple_reader(in_name, s_target_qid)
 

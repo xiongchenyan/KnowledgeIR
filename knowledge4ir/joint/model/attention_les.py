@@ -21,15 +21,9 @@ from keras.layers import (
     Dense,
     Conv1D,
     Conv2D,
-    Lambda,
-    Reshape,
     Input,
     RepeatVector,
     Lambda,
-)
-from keras.activations import (
-    softmax,
-    relu,
 )
 from keras.regularizers import (
     l2
@@ -44,8 +38,6 @@ from knowledge4ir.joint.model import (
     e_match_name,
     e_ground_name,
     ltr_feature_name,
-    JointSemanticModel)
-from knowledge4ir.joint import (
     JointSemanticModel
 )
 from traitlets import (
