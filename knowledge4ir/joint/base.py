@@ -87,11 +87,11 @@ class JointSemanticModel(Configurable):
     def _form_model_from_layers(self, h_para_layers):
         raise NotImplementedError
 
-    def pairwise_train(self, paired_X, Y, hyper_para=None):
+    def pairwise_train(self, paired_x, y, hyper_para=None):
         """
         pairwise training
-        :param paired_X: the prepared paired input X, should be aligned with _build_model
-        :param Y: label
+        :param paired_x: the prepared paired input X, should be aligned with _build_model
+        :param y: label
         :param hyper_para: if set, then use this one
         :return: trained model
         """
@@ -100,18 +100,18 @@ class JointSemanticModel(Configurable):
         logging.info('training with para: %s', hyper_para.pretty_print())
         batch_size = hyper_para.batch_size
         if -1 == batch_size:
-            batch_size = len(paired_X)
+            batch_size = len(paired_x)
         self._build_model()
         self.training_model.compile(
             hyper_para.opt,
             hyper_para.loss,
         )
 
-        logging.info('start training with [%d] data with full batch', len(paired_X))
+        logging.info('start training with [%d] data with full batch', len(paired_x))
 
         self.training_model.fit(
-            paired_X,
-            Y,
+            paired_x,
+            y,
             batch_size=batch_size,
             nb_epoch=hyper_para.nb_epoch,
             callbacks=EarlyStopping(monitor='loss',
@@ -121,46 +121,46 @@ class JointSemanticModel(Configurable):
         logging.info('model training finished')
         return
 
-    def predict(self, X):
+    def predict(self, x):
         """
         assume the model is trained
-        :param X:
+        :param x:
         :return:
         """
-        Y = self.ranking_model.predict(X, batch_size=len(X))
+        Y = self.ranking_model.predict(x, batch_size=len(x))
         return Y
 
-    def generate_ranking(self, X, out_name):
+    def generate_ranking(self, x, out_name):
         """
         the model must be trained
-        :param X:
+        :param x:
         :param out_name: the place to put the ranking score
         :return:
         """
-        Y = self.predict(X)
+        Y = self.predict(x)
         l_score = Y.tolist()
-        l_qid = [h['qid'] for h in X['meta']]
-        l_docno = [h['docno'] for h in X['meta']]
+        l_qid = [h['qid'] for h in x['meta']]
+        l_docno = [h['docno'] for h in x['meta']]
 
         dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, self.model_name)
         logging.info('ranking results dumped to [%s]', out_name)
         return
 
-    def hyper_para_dev(self, paired_train_X, train_Y, paired_dev_X, dev_Y, l_hyper_para):
+    def hyper_para_dev(self, paired_train_x, train_y, paired_dev_x, dev_y, l_hyper_para):
         """
         return the best hyper_pra in l_hyper_para, based on performance in dev data
-        :param paired_train_X:
-        :param train_Y:
-        :param paired_dev_X:
-        :param dev_Y:
+        :param paired_train_x:
+        :param train_y:
+        :param paired_dev_x:
+        :param dev_y:
         :param l_hyper_para:
         :return:
         """
         best_loss = None
         best_para = None
         for hyper_para in l_hyper_para:
-            self.pairwise_train(paired_train_X, train_Y, hyper_para)
-            this_loss = self.ranking_model.evaluate(paired_dev_X, dev_Y)
+            self.pairwise_train(paired_train_x, train_y, hyper_para)
+            this_loss = self.ranking_model.evaluate(paired_dev_x, dev_y)
             if not best_loss:
                 best_para = hyper_para
                 best_loss = this_loss
@@ -171,17 +171,17 @@ class JointSemanticModel(Configurable):
 
         return best_para
 
-    def pairwise_train_with_dev(self, paired_train_X, train_Y, paired_dev_X, dev_Y, l_hyper_para):
+    def pairwise_train_with_dev(self, paired_train_x, train_y, paired_dev_x, dev_y, l_hyper_para):
         logging.info('start pairwise train with development for best para')
-        best_para = self.hyper_para_dev(paired_train_X, train_Y,
-                                        paired_dev_X, dev_Y,
+        best_para = self.hyper_para_dev(paired_train_x, train_y,
+                                        paired_dev_x, dev_y,
                                         l_hyper_para)
         logging.info('best para in dev: %s', best_para.pretty_print())
 
         paired_X = dict()
-        Y = np.concatenate(train_Y, dev_Y)
-        for key, tensor in paired_train_X:
-            paired_X[key] = np.concatenate(paired_train_X, paired_dev_X)
+        Y = np.concatenate(train_y, dev_y)
+        for key, tensor in paired_train_x:
+            paired_X[key] = np.concatenate(paired_train_x, paired_dev_x)
 
         self.pairwise_train(paired_X, Y, best_para)
         logging.info('train with best dev para done')
