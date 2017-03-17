@@ -19,6 +19,7 @@ import numpy as np
 from knowledge4ir.utils import (
     dump_trec_out_from_ranking_score,
 )
+y_name = 'label'
 
 
 class HyperParameter(Configurable):
@@ -64,7 +65,7 @@ class JointSemanticModel(Configurable):
     model_name = Unicode('joint_semantics')
     aux_pre = Unicode('aux_')
     l_x_name = List(Unicode, default_value=[]).tag(config=True)
-    y_name = Unicode('label').tag(config=True)
+    y_name = Unicode(y_name)
 
     def __init__(self, **kwargs):
         super(JointSemanticModel, self).__init__(**kwargs)
@@ -78,9 +79,7 @@ class JointSemanticModel(Configurable):
         self.external_resource = resource
 
     def _build_model(self):
-        h_para_layers = self._build_para_layers()
-        self.ranking_model, self.training_model = self._form_model_from_layers(h_para_layers)
-        return
+        raise NotImplementedError
 
     def _build_para_layers(self):
         raise NotImplementedError

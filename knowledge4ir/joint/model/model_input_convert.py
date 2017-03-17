@@ -44,6 +44,14 @@ from knowledge4ir.joint import (
     MATCH_FIELD,
     GROUND_FIELD
 )
+from knowledge4ir.joint.model import (
+    sf_ground_name,
+    sf_ground_ref,
+    e_ground_name,
+    e_ground_ref,
+    e_match_name,
+    ltr_feature_name
+)
 
 
 class ModelInputConvert(Configurable):
@@ -54,12 +62,6 @@ class ModelInputConvert(Configurable):
     q_d_match_info_in = Unicode(help='matched pairs info in, with matching features'
                                 ).tag(config=True)
     out_name = Unicode(help='output prefix').tag(config=True)
-
-    sf_ground_name = Unicode('sf_ground')
-    sf_ground_ref = Unicode('sf_ref')
-    e_ground_name = Unicode('e_ground')
-    e_ground_ref = Unicode('e_ref')
-    e_match_name = Unicode('e_match')
 
     def __init__(self, **kwargs):
         super(ModelInputConvert, self).__init__(**kwargs)
@@ -141,10 +143,10 @@ class ModelInputConvert(Configurable):
             lll_sf_e_feature, sf_e_tensor_shape)
 
         q_mtx_info = dict()
-        q_mtx_info[self.sf_ground_name] = ll_sf_feature
-        q_mtx_info[self.sf_ground_ref] = l_spot_loc
-        q_mtx_info[self.e_ground_name] = lll_sf_e_feature
-        q_mtx_info[self.e_ground_ref] = ll_sf_e_id
+        q_mtx_info[sf_ground_name] = ll_sf_feature
+        q_mtx_info[sf_ground_ref] = l_spot_loc
+        q_mtx_info[e_ground_name] = lll_sf_e_feature
+        q_mtx_info[e_ground_ref] = ll_sf_e_id
 
         logging.info('q grounding features assembled, sf mtx shape: %s, sf-e tensor shape: %s',
                      json.dumps(sf_mtx_shape), json.dumps(sf_e_tensor_shape))
@@ -168,11 +170,11 @@ class ModelInputConvert(Configurable):
 
         converted_mtx_info['meta'] = {'qid': qid, 'docno': docno}
         converted_mtx_info['label'] = label
-        converted_mtx_info['letor_f'] = [pair_info['base_score']]  # 1 dim ltr feature for now
+        converted_mtx_info[ltr_feature_name] = [pair_info['base_score']]  # 1 dim ltr feature for now
 
         # get q's grounding part
-        l_spot_loc = q_grounding_info[self.sf_ground_ref]
-        ll_sf_e_id = q_grounding_info[self.e_ground_ref]
+        l_spot_loc = q_grounding_info[sf_ground_ref]
+        ll_sf_e_id = q_grounding_info[e_ground_ref]
 
         h_spot_loc_p = dict(zip(l_spot_loc, range(len(l_spot_loc))))
         l_h_sf_e_p = [dict(zip(l_sf_e_id, range(len(l_sf_e_id))))
@@ -215,11 +217,11 @@ class ModelInputConvert(Configurable):
             lll_sf_e_match, sf_e_tensor_shape)
 
         # put various data into designated locations
-        converted_mtx_info['meta'][self.sf_ground_ref] = l_spot_loc
-        converted_mtx_info['meta'][self.e_ground_ref] = ll_sf_e_id
-        converted_mtx_info[self.sf_ground_name] = q_grounding_info[self.sf_ground_name]
-        converted_mtx_info[self.e_ground_name] = q_grounding_info[self.e_ground_name]
-        converted_mtx_info[self.e_match_name] = lll_sf_e_match
+        converted_mtx_info['meta'][sf_ground_ref] = l_spot_loc
+        converted_mtx_info['meta'][e_ground_ref] = ll_sf_e_id
+        converted_mtx_info[sf_ground_name] = q_grounding_info[sf_ground_name]
+        converted_mtx_info[e_ground_name] = q_grounding_info[e_ground_name]
+        converted_mtx_info[e_match_name] = lll_sf_e_match
 
         logging.info('pair [%s-%s] assembled, matching shape=%s',
                      qid, docno, json.dumps(sf_e_tensor_shape))
