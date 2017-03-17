@@ -43,8 +43,8 @@ from knowledge4ir.joint.model import (
     sf_ground_name,
     e_match_name,
     e_ground_name,
-    ltr_feature_name
-)
+    ltr_feature_name,
+    JointSemanticModel)
 from knowledge4ir.joint import (
     JointSemanticModel
 )
