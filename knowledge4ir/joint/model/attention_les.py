@@ -184,7 +184,7 @@ class AttentionLes(JointSemanticModel):
 
         # broad cast the sf's score to sf-e mtx
         sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
-        # sf_att = Lambda(lambda x: K.transpose(x))(sf_att)
+        sf_att = Lambda(lambda x: x.T)(sf_att)
 
         e_combined_att = merge([sf_att, e_ground_cnn],
                                mode='mul')
