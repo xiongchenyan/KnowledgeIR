@@ -26,6 +26,7 @@ from keras.layers import (
     Lambda,
     Reshape,
     Activation,
+    Permute,
 )
 from keras.regularizers import (
     l2
@@ -184,7 +185,7 @@ class AttentionLes(JointSemanticModel):
 
         # broad cast the sf's score to sf-e mtx
         sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
-        sf_att = Lambda(lambda x: x.transpose())(sf_att)
+        sf_att = Permute((2, 1))(sf_att)
 
         e_combined_att = merge([sf_att, e_ground_cnn],
                                mode='mul')
