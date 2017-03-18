@@ -85,7 +85,6 @@ class AttentionLes(JointSemanticModel):
             input_shape=self.sf_ground_shape,
             name=sf_ground_name + '_CNN',
         )
-        sf_ground_cnn = Flatten()(sf_ground_cnn)
 
         # a typical ltr linear model
         ltr_dense = Dense(
@@ -173,6 +172,7 @@ class AttentionLes(JointSemanticModel):
         sf_ground_input = Input(shape=self.sf_ground_shape,
                                 name=pre + sf_ground_name)
         sf_ground_cnn = sf_ground_cnn(sf_ground_input)
+        sf_ground_cnn = Flatten()(sf_ground_cnn)
 
         e_ground_input = Input(shape=self.e_ground_shape,
                                name=pre + e_ground_name)
