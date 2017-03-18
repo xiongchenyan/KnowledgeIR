@@ -24,6 +24,8 @@ from keras.layers import (
     Input,
     RepeatVector,
     Lambda,
+    Reshape,
+    Activation,
 )
 from keras.regularizers import (
     l2
@@ -83,6 +85,7 @@ class AttentionLes(JointSemanticModel):
             input_shape=self.sf_ground_shape,
             name=sf_ground_name + '_CNN',
         )
+        sf_ground_cnn = Flatten()(sf_ground_cnn)
 
         # a typical ltr linear model
         ltr_dense = Dense(
@@ -101,11 +104,13 @@ class AttentionLes(JointSemanticModel):
             nb_col=1,
             W_regularizer=l2(self.hyper_para.l2_w),
             bias=False,
-            activation='softmax',
+            activation='linear',
             dim_ordering='tf',
             input_shape=self.e_ground_shape,
             name=e_ground_name + '_CNN'
         )
+        e_ground_cnn = Reshape(self.e_match_shape[:-2])(e_ground_cnn)  # drop last dimension
+        e_ground_cnn = Activation('softmax')(e_ground_cnn)
 
         # 2 d cnn to get matching scores for entities
         e_match_cnn = Conv2D(
@@ -118,6 +123,8 @@ class AttentionLes(JointSemanticModel):
             input_shape=self.e_match_shape,
             name=e_match_name + '_CNN'
         )
+        e_match_cnn = Reshape(self.e_match_shape[:-2])(e_match_cnn)
+
         h_para_layers = {
             sf_ground_name + '_CNN': sf_ground_cnn,
             e_ground_name + '_CNN': e_ground_cnn,
