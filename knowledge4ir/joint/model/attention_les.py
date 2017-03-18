@@ -188,13 +188,14 @@ class AttentionLes(JointSemanticModel):
         sf_att = Permute((2, 1))(sf_att)
 
         e_combined_att = merge([sf_att, e_ground_cnn],
-                               mode='mul')
+                               mode='mul', name=pre+ 'full_att_mtx'
+                               )
 
         e_ranking_score = merge([Flatten()(e_combined_att), e_match_cnn],
-                                mode='dot',)
+                                mode='dot', name=pre + 'att_e_ranking_score')
 
         ranking_score = merge([e_ranking_score, ltr_dense],
-                              mode='sum', output_shape=(1,))
+                              mode='sum', output_shape=(1,), name=pre+'ew_combine')
         ranking_model = Model(input=[sf_ground_input, e_ground_input, e_match_input, ltr_input],
                               output=ranking_score)
 
