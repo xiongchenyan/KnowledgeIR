@@ -2,7 +2,7 @@
 overfit a data
 """
 
-from knowledge4ir.model import CrossValidator
+from knowledge4ir.model.cross_validator import CrossValidator
 import sys
 from knowledge4ir.utils import (
     load_py_config,

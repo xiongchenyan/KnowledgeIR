@@ -8,7 +8,7 @@ in para:
     with dev (0|1)
 """
 
-from knowledge4ir.model import CrossValidator
+from knowledge4ir.model.cross_validator import CrossValidator
 import json
 import sys
 from knowledge4ir.utils import (
