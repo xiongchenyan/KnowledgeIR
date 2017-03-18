@@ -172,7 +172,7 @@ class AttentionLes(JointSemanticModel):
 
         e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
-        e_ground_cnn = Reshape(self.e_match_shape[:-2])(e_ground_cnn)  # drop last dimension
+        e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
         e_ground_cnn = Activation('softmax')(e_ground_cnn)
 
         ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
@@ -180,7 +180,7 @@ class AttentionLes(JointSemanticModel):
 
         e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
         e_match_cnn = e_match_cnn(e_match_input)
-        e_match_cnn = Flatten()(e_match_cnn)  # drop last dimension
+        e_match_cnn = Flatten()(e_match_cnn)
 
         # broad cast the sf's score to sf-e mtx
         sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
