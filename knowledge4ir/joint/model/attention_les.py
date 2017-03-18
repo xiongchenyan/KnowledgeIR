@@ -108,8 +108,6 @@ class AttentionLes(JointSemanticModel):
             input_shape=self.e_ground_shape,
             name=e_ground_name + '_CNN'
         )
-        e_ground_cnn = Reshape(self.e_match_shape[:-2])(e_ground_cnn)  # drop last dimension
-        e_ground_cnn = Activation('softmax')(e_ground_cnn)
 
         # 2 d cnn to get matching scores for entities
         e_match_cnn = Conv2D(
@@ -122,7 +120,6 @@ class AttentionLes(JointSemanticModel):
             input_shape=self.e_match_shape,
             name=e_match_name + '_CNN'
         )
-        e_match_cnn = Reshape(self.e_match_shape[:-2])(e_match_cnn)
 
         h_para_layers = {
             sf_ground_name + '_CNN': sf_ground_cnn,
@@ -169,22 +166,21 @@ class AttentionLes(JointSemanticModel):
             pre = self.aux_pre
 
         # align inputs
-        sf_ground_input = Input(shape=self.sf_ground_shape,
-                                name=pre + sf_ground_name)
+        sf_ground_input = Input(shape=self.sf_ground_shape, name=pre + sf_ground_name)
         sf_ground_cnn = sf_ground_cnn(sf_ground_input)
         sf_ground_cnn = Flatten()(sf_ground_cnn)
 
-        e_ground_input = Input(shape=self.e_ground_shape,
-                               name=pre + e_ground_name)
+        e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
+        e_ground_cnn = Reshape(self.e_match_shape[:-2])(e_ground_cnn)  # drop last dimension
+        e_ground_cnn = Activation('softmax')(e_ground_cnn)
 
-        ltr_input = Input(shape=self.ltr_shape,
-                          name=pre + ltr_feature_name)
+        ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
         ltr_dense = ltr_dense(ltr_input)
 
-        e_match_input = Input(shape=self.e_match_shape,
-                              name=pre + e_match_name)
+        e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
         e_match_cnn = e_match_cnn(e_match_input)
+        e_match_cnn = Flatten()(e_match_cnn)  # drop last dimension
 
         # broad cast the sf's score to sf-e mtx
         sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
@@ -193,9 +189,8 @@ class AttentionLes(JointSemanticModel):
         e_combined_att = merge([sf_att, e_ground_cnn],
                                mode='mul')
 
-        e_ranking_score = merge([Flatten()(e_combined_att), Flatten()(e_match_cnn)],
-                                mode='dot',
-                                )
+        e_ranking_score = merge([Flatten()(e_combined_att), e_match_cnn],
+                                mode='dot',)
 
         ranking_score = merge([e_ranking_score, ltr_dense],
                               mode='sum')
