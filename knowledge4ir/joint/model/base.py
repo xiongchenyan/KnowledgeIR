@@ -25,7 +25,7 @@ e_ground_name = 'e_ground'
 e_ground_ref = 'e_ref'
 e_match_name = 'e_match'
 ltr_feature_name = 'ltr_f'
-l_input_name = [sf_ground_name, e_ground_name, e_match_name]
+l_input_name = [sf_ground_name, e_ground_name, e_match_name, ltr_feature_name]
 y_name = 'label'
 
 
@@ -188,19 +188,18 @@ class JointSemanticModel(Configurable):
         h_key_lists = dict()
         for x_name in self.l_x_name:
             h_key_lists[x_name] = []
-        h_key_lists[self.y_name] = []
         l_meta = []
         for data in l_data:
             h_this_x, score = self._pack_one_data(data)
             for key, value in h_this_x.items():
                 h_key_lists[key].append(value)
             point_y.append(score)
-            l_meta = data['meta']
+            l_meta.append(data['meta'])
 
         logging.info('start converting loaded lists to arrays')
         point_data = self._packed_list_to_array(h_key_lists)
         point_data['meta'] = l_meta
-        point_y  = np.array(point_y)
+        point_y = np.array(point_y)
         logging.info('pointwise data read')
         return point_data, point_y
 
@@ -224,7 +223,6 @@ class JointSemanticModel(Configurable):
         for x_name in self.l_x_name:
             h_key_lists[x_name] = []
             h_key_lists[self.aux_pre + x_name] = []
-        h_key_lists[self.y_name] = []
         l_meta = []
         h_qid_instance_cnt = dict()
         paired_y = []
