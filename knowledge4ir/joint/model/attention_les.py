@@ -154,8 +154,8 @@ class AttentionLes(JointSemanticModel):
         """
 
         sf_ground_cnn = h_para_layers[sf_ground_name + '_CNN']
-        e_ground_cnn = h_para_layers[e_ground_name + 'CNN']
-        ltr_dense = h_para_layers[ltr_feature_name + 'Dense']
+        e_ground_cnn = h_para_layers[e_ground_name + '_CNN']
+        ltr_dense = h_para_layers[ltr_feature_name + '_Dense']
         e_match_cnn = h_para_layers[e_match_name + '_CNN']
 
         pre = ""
