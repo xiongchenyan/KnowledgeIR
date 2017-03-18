@@ -194,7 +194,7 @@ class AttentionLes(JointSemanticModel):
                                 mode='dot',)
 
         ranking_score = merge([e_ranking_score, ltr_dense],
-                              mode='sum')
+                              mode='sum', output_shape=(1,))
         ranking_model = Model(input=[sf_ground_input, e_ground_input, e_match_input, ltr_input],
                               output=ranking_score)
 
