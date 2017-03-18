@@ -138,7 +138,8 @@ class AttentionLes(JointSemanticModel):
         training_model = Sequential()
         training_model.add(Merge([ranker, aux_ranker],
                                  mode=lambda x: x[0] - x[1],
-                                 output_shape=(1,)
+                                 output_shape=(1,),
+                                 name='training_pairwise'
                                  )
                            )
         logging.info('ranker summary: %s', ranker.to_json(indent=1))
