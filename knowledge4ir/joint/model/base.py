@@ -24,7 +24,7 @@ sf_ground_ref = 'sf_ref'
 e_ground_name = 'e_ground'
 e_ground_ref = 'e_ref'
 e_match_name = 'e_match'
-ltr_feature_name = 'ltr_f'
+ltr_feature_name = 'letor_f'
 l_input_name = [sf_ground_name, e_ground_name, e_match_name, ltr_feature_name]
 y_name = 'label'
 
@@ -243,9 +243,9 @@ class JointSemanticModel(Configurable):
                 if y_anchor < y_aux:
                     y = -1
                 paired_y.append(y)
-                for key, value in x_anchor:
+                for key, value in x_anchor.items():
                     h_key_lists[key].append(value)
-                for key, value in x_aux:
+                for key, value in x_aux.items():
                     h_key_lists[self.aux_pre + key].append(value)
 
                 this_meta = dict(meta_anchor)
@@ -273,7 +273,8 @@ class JointSemanticModel(Configurable):
         score = data[self.y_name]
         return h_res, score
 
-    def _packed_list_to_array(self, h_key_lists):
+    @classmethod
+    def _packed_list_to_array(cls, h_key_lists):
         """
         convert the packed lists to np array
         :param h_key_lists:
@@ -285,7 +286,8 @@ class JointSemanticModel(Configurable):
             logging.info('[%s] shape %s', key, json.dumps(X[key].shape))
         return X
 
-    def _simple_reader(self, in_name, s_target_qid=None):
+    @classmethod
+    def _simple_reader(cls, in_name, s_target_qid=None):
         """
         simply read all data and parse them into given format
         :param in_name:
