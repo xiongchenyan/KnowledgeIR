@@ -146,6 +146,8 @@ class AttentionLes(JointSemanticModel):
         ranker.summary()
         logging.info('trainer summary: %s', training_model.to_json(indent=1))
         training_model.summary()
+        self.ranking_model = ranker
+        self.training_model = training_model
         return ranker, training_model
 
     def _form_model_from_layers(self, h_para_layers, is_aux=False):

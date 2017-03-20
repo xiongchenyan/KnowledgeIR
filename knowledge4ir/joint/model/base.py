@@ -183,6 +183,7 @@ class JointSemanticModel(Configurable):
         :param s_target_qid: the target qid, if None then keep all
         :return: point_X
         """
+        logging.info('start generate point wise data from [%s]', in_name)
         l_data = self._simple_reader(in_name, s_target_qid)
         point_y = []
         h_key_lists = dict()
@@ -217,6 +218,7 @@ class JointSemanticModel(Configurable):
         :param s_target_qid: the target qid to keep, if none then keep all
         :return: paired_x
         """
+        logging.info('start generating pairwise data from [%s]', in_name)
         l_data = self._simple_reader(in_name, s_target_qid)
 
         h_key_lists = dict()
@@ -230,7 +232,7 @@ class JointSemanticModel(Configurable):
             x_anchor, y_anchor = self._pack_one_data(l_data[i])
             meta_anchor = l_data[i]['meta']
             q_anchor = meta_anchor['qid']
-            logging.info('start packing pairs start with %s', json.dumps(meta_anchor))
+            logging.debug('start packing pairs start with %s', json.dumps(meta_anchor))
             for j in xrange(i + 1, len(l_data)):
                 meta_aux = l_data[j]['meta']
                 q_aux = meta_aux['qid']
@@ -294,7 +296,7 @@ class JointSemanticModel(Configurable):
         :param s_target_qid:
         :return:
         """
-
+        logging.info('reading from [%s]', in_name)
         l_data = []
         cnt = 0
         for line in open(in_name):
