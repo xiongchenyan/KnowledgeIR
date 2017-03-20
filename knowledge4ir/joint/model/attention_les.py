@@ -256,7 +256,7 @@ class AttentionLes(JointSemanticModel):
                                mode='mul', name=pre + 'full_att_mtx'
                                )
 
-        e_ranking_score = merge([Flatten()(e_combined_att), e_match_cnn],
+        e_ranking_score = merge([Flatten()(sf_att), e_match_cnn],
                                 mode='dot', name=pre + 'att_e_ranking_score')
 
         ranking_score = merge([e_ranking_score, ltr_dense],
