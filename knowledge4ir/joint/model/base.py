@@ -78,14 +78,14 @@ class JointSemanticModel(Configurable):
         logging.info('training with para: %s', hyper_para.pretty_print())
         batch_size = hyper_para.batch_size
         if -1 == batch_size:
-            batch_size = len(paired_x)
+            batch_size = len(y.shape[0])
         self._build_model()
         self.training_model.compile(
             hyper_para.opt,
             hyper_para.loss,
         )
 
-        logging.info('start training with [%d] data with full batch', len(paired_x))
+        logging.info('start training with [%d] data with full batch', batch_size)
 
         self.training_model.fit(
             paired_x,
@@ -93,7 +93,7 @@ class JointSemanticModel(Configurable):
             batch_size=batch_size,
             nb_epoch=hyper_para.nb_epoch,
             callbacks=[EarlyStopping(monitor='loss',
-                                     patience=self.hyper_para.early_stopping_patient
+                                     patience=hyper_para.early_stopping_patient
                                      )],
         )
         logging.info('model training finished')
@@ -105,7 +105,7 @@ class JointSemanticModel(Configurable):
         :param x:
         :return:
         """
-        y = self.ranking_model.predict(x, batch_size=len(x))
+        y = self.ranking_model.predict(x)
         return y.reshape(-1)
 
     def generate_ranking(self, x, out_name):

@@ -63,7 +63,7 @@ class CrossValidator(Configurable):
         s_train_qid = set(l_train[fold_k])
         s_test_qid = set(l_test[fold_k])
         train_x, train_y = self.model.train_data_reader(in_name, s_train_qid)
-        test_x = self.model.test_data_reader(in_name, s_test_qid)
+        test_x, _ = self.model.test_data_reader(in_name, s_test_qid)
 
         self.model.train(train_x, train_y, self.l_hyper_para[0])
         logging.info('trained')
@@ -109,7 +109,7 @@ class CrossValidator(Configurable):
         """
         s_qid = ["%d" % i for i in range(self.q_range[0], self.q_range[1] + 1)]
         train_x, train_y = self.model.train_data_reader(train_in, s_qid)
-        test_x, test_y = self.model.test_data_reader(test_in, s_qid)
+        test_x, _ = self.model.test_data_reader(test_in, s_qid)
         self.model.train(train_x, train_y, self.l_hyper_para[0])
         logging.info('trained')
         self._dump_and_evaluate(test_x, out_dir)
@@ -126,7 +126,7 @@ class CrossValidator(Configurable):
         rank_out = self._form_rank_out_name(out_dir, fold_k)
         self.model.generate_ranking(test_x, rank_out)
         logging.info('ranking results to [%s]', rank_out)
-        eva_res = subprocess.check_output([GDEVAL_PATH, self.qrel_in, rank_out])
+        eva_res = subprocess.check_output(['perl', GDEVAL_PATH, self.qrel_in, rank_out])
         eva_out = self._form_eval_out_name(out_dir, fold_k)
         print >> open(eva_out, 'w'), eva_res.strip()
         logging.info('fold [%d] finished to [%s], result [%s]',
