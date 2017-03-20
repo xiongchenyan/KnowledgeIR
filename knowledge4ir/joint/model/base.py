@@ -105,8 +105,8 @@ class JointSemanticModel(Configurable):
         :param x:
         :return:
         """
-        Y = self.ranking_model.predict(x, batch_size=len(x))
-        return Y
+        y = self.ranking_model.predict(x, batch_size=len(x))
+        return y.reshape(-1)
 
     def generate_ranking(self, x, out_name):
         """
@@ -115,8 +115,9 @@ class JointSemanticModel(Configurable):
         :param out_name: the place to put the ranking score
         :return:
         """
-        Y = self.predict(x)
-        l_score = Y.tolist()
+        y = self.predict(x)
+        l_score = y.tolist()
+
         l_qid = [h['qid'] for h in x['meta']]
         l_docno = [h['docno'] for h in x['meta']]
 
