@@ -128,9 +128,6 @@ class AttentionLes(JointSemanticModel):
 
         return new_ts
 
-
-
-
     def _build_para_layers(self):
         """
         an sf grounding layer
@@ -206,9 +203,9 @@ class AttentionLes(JointSemanticModel):
                                  name='training_pairwise'
                                  )
                            )
-        logging.info('ranker summary: %s', ranker.to_json(indent=1))
+        logging.info('ranker summary')
         ranker.summary()
-        logging.info('trainer summary: %s', training_model.to_json(indent=1))
+        logging.info('trainer summary')
         training_model.summary()
         self.ranking_model = ranker
         self.training_model = training_model
