@@ -27,6 +27,7 @@ from keras.layers import (
     Reshape,
     Activation,
     Permute,
+    AveragePooling1D,
 )
 from keras.regularizers import (
     l2
@@ -259,10 +260,6 @@ class AttentionLes(JointSemanticModel):
         e_ranking_score = merge([Flatten()(e_combined_att), e_match_cnn],
                                 mode='dot', name=pre + 'att_e_ranking_score')
 
-
-        #  use average pooling
-
-
         ranking_score = merge([e_ranking_score, ltr_dense],
                               mode='sum', output_shape=(1,), name=pre+'ew_combine')
         ranking_model = Model(input=[sf_ground_input, e_ground_input, e_match_input, ltr_input],
@@ -302,7 +299,10 @@ class Les(AttentionLes):
         e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
         e_match_cnn = e_match_cnn(e_match_input)
         e_match_cnn = Flatten()(e_match_cnn)
-        e_match_cnn = Lambda(lambda x: K.mean(x, axis=1), output_shape=(1, ))(e_match_cnn)
+        # e_match_cnn = Lambda(lambda x: K.mean(x, axis=1), output_shape=(1, ))(e_match_cnn)
+        e_match_cnn = Flatten()(
+            AveragePooling1D(pool_length=self.e_match_shape[0] * self.e_match_shape[1])(e_match_cnn)
+        )
         # broad cast the sf's score to sf-e mtx
 
         #  use average pooling
