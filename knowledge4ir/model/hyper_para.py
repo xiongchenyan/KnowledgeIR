@@ -11,9 +11,9 @@ class HyperParameter(Configurable):
     # model parameters
     l2_w = Float(0.01).tag(config=True)
     dropout_rate = Float(0).tag(config=True)
-    q_shape = Tuple(Int, default_value=(5, 1)).tag(config=True)
-    title_shape = Tuple(Int, default_value=(10, 1)).tag(config=True)
-    body_shape = Tuple(Int, default_value=(300, 1)).tag(config=True)
+    # q_shape = Tuple(Int, default_value=(5, 1)).tag(config=True)
+    # title_shape = Tuple(Int, default_value=(10, 1)).tag(config=True)
+    # body_shape = Tuple(Int, default_value=(300, 1)).tag(config=True)
     embedding_dim = Int(300).tag(config=True)
     l_kernel_pool_mean =List(Float, default_value=[],
                              help='kernal pooling means'
@@ -26,7 +26,7 @@ class HyperParameter(Configurable):
     loss = Unicode('hinge').tag(config=True)
     opt = Unicode('nadam').tag(config=True)
     batch_size = Int(-1).tag(config=True)
-    nb_epoch = Int(10).tag(config=True)
+    nb_epoch = Int(100).tag(config=True)
     early_stopping_patient = Int(10).tag(config=True)
 
     def pretty_print(self):

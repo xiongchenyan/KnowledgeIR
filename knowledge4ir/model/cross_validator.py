@@ -17,8 +17,8 @@ h_model_name = {
 
 
 class CrossValidator(Configurable):
-    nb_folds = Unicode(10).tag(config=True)
-    model_name = Unicode(help="the model name").tag(config=True)
+    nb_folds = Int(10).tag(config=True)
+    model_name = Unicode('att_les', help="the model name").tag(config=True)
     model_conf = Unicode(help='the model config file').tag(config=True)
     q_range = Tuple(Int, default_value=(1, 200)).tag(config=True)
     l_hyper_para_in = List(Unicode, help="the file names of hyper paras, if dev, then explore the list,"
