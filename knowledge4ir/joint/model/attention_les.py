@@ -282,8 +282,6 @@ class Les(AttentionLes):
         :return:
         """
 
-        sf_ground_cnn = h_para_layers[sf_ground_name + '_CNN']
-        e_ground_cnn = h_para_layers[e_ground_name + '_CNN']
         ltr_dense = h_para_layers[ltr_feature_name + '_Dense']
         e_match_cnn = h_para_layers[e_match_name + '_CNN']
 
@@ -298,11 +296,11 @@ class Les(AttentionLes):
 
         e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
         e_match_cnn = e_match_cnn(e_match_input)
-        e_match_cnn = Flatten()(e_match_cnn)
         # e_match_cnn = Lambda(lambda x: K.mean(x, axis=1), output_shape=(1, ))(e_match_cnn)
-        e_match_cnn = Flatten()(
-            AveragePooling1D(pool_length=self.e_match_shape[0] * self.e_match_shape[1])(e_match_cnn)
-        )
+        e_match_cnn = AveragePooling1D(pool_length=self.e_match_shape[0])(e_match_cnn)
+        e_match_cnn = Permute((2, 1))(e_match_cnn)
+        e_match_cnn = AveragePooling1D(pool_length=self.e_match_shape[1])(e_match_cnn)
+        e_match_cnn = Flatten()(e_match_cnn)
         # broad cast the sf's score to sf-e mtx
 
         #  use average pooling
