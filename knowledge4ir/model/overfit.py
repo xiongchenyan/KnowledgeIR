@@ -11,6 +11,8 @@ from knowledge4ir.utils import (
 if len(sys.argv) < 4:
     print "overfit data"
     print "3 para: config in + data in + out dir"
+    print "config:"
+    CrossValidator.class_print_help()
     sys.exit(-1)
 
 conf = load_py_config(sys.argv[1])

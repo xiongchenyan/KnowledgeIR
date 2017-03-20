@@ -18,6 +18,8 @@ from knowledge4ir.utils import (
 if len(sys.argv) < 5:
     print "run one fold of cv"
     print "4+ para: config in + data in + out dir + fold k + with dev (optional, default 0, 0|1)"
+    print "config:"
+    CrossValidator.class_print_help()
     sys.exit(-1)
 
 with_dev = 0
