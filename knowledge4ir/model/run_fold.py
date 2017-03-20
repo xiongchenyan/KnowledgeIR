@@ -10,11 +10,15 @@ in para:
 
 from knowledge4ir.model.cross_validator import CrossValidator
 import json
+import logging
 import sys
 from knowledge4ir.utils import (
     load_py_config,
+    set_basic_log,
 )
 
+
+set_basic_log(logging.INFO)
 if len(sys.argv) < 5:
     print "run one fold of cv"
     print "4+ para: config in + data in + out dir + fold k + with dev (optional, default 0, 0|1)"
