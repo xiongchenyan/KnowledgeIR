@@ -64,7 +64,7 @@ class AttentionLes(JointSemanticModel):
         super(AttentionLes, self).__init__(**kwargs)
         self.sf_ground_shape = (self.max_spot_per_q, self.sf_ground_f_dim)
         self.e_ground_shape = (self.max_spot_per_q, self.max_e_per_spot, self.e_ground_f_dim)
-        self.e_match_shape = (self.max_spot_per_q, self.max_e_per_spot, self.e_ground_f_dim)
+        self.e_match_shape = (self.max_spot_per_q, self.max_e_per_spot, self.e_match_f_dim)
         self.ltr_shape = (self.ltr_f_dim,)
 
     def _build_para_layers(self):
