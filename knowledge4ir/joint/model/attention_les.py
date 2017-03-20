@@ -302,7 +302,7 @@ class Les(AttentionLes):
         e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
         e_match_cnn = e_match_cnn(e_match_input)
         e_match_cnn = Flatten()(e_match_cnn)
-        e_match_cnn = Lambda(lambda x: K.mean(x, axis=1))(e_match_cnn)
+        e_match_cnn = Lambda(lambda x: K.mean(x, axis=1), output_shape=(1, ))(e_match_cnn)
         # broad cast the sf's score to sf-e mtx
 
         #  use average pooling
