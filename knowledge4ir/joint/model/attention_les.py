@@ -296,6 +296,7 @@ class Les(AttentionLes):
 
         e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
         e_match_cnn = e_match_cnn(e_match_input)
+        e_match_cnn = Reshape(self.e_match_shape[:-1])(e_match_cnn)  # drop last dimension
         # e_match_cnn = Lambda(lambda x: K.mean(x, axis=1), output_shape=(1, ))(e_match_cnn)
         e_match_cnn = AveragePooling1D(pool_length=self.e_match_shape[0])(e_match_cnn)
         e_match_cnn = Permute((2, 1))(e_match_cnn)
