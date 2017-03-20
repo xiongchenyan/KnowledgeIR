@@ -57,6 +57,10 @@ from knowledge4ir.joint.model import (
 class ModelInputConvert(Configurable):
     max_spot_per_q = Int(3, help='max spot allowed per q').tag(config=True)
     max_e_per_spot = Int(5, help='top e allowed per q').tag(config=True)
+    sf_ground_f_dim = Int(6, help='sf ground feature dimension').tag(config=True)
+    e_ground_f_dim = Int(5, help='e ground feature dimension').tag(config=True)
+    e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
+    ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     qrel_in = Unicode(help='qrel in').tag(config=True)
     q_info_in = Unicode(help='q info in, with grounded features').tag(config=True)
     q_d_match_info_in = Unicode(help='matched pairs info in, with matching features'
@@ -105,40 +109,36 @@ class ModelInputConvert(Configurable):
         l_sf_info = q_info[GROUND_FIELD]['query']
 
         # sf grounding feature
-        sf_f_dim = 0
         for i, sf_info in enumerate(l_sf_info[:self.max_spot_per_q]):
             h_f = sf_info['f']
             l_f_score, self.h_sf_grounding_feature_id = self._form_feature_vector(
                 h_f, self.h_sf_grounding_feature_id)
 
             ll_sf_feature[i] = l_f_score
-            sf_f_dim = len(l_f_score)
             loc = tuple(sf_info['loc'])
             l_spot_loc.append(loc)
 
         # padding
-        sf_mtx_shape = [self.max_spot_per_q, sf_f_dim]
+        sf_mtx_shape = [self.max_spot_per_q, self.sf_ground_f_dim]
         ll_sf_feature = self._padding_mtx(ll_sf_feature,
                                           sf_mtx_shape)
 
         # e grounding feature tensor
-        e_f_dim = 0
         for i, sf_info in enumerate(l_sf_info[:self.max_spot_per_q]):
             l_e_id = []
             for j, e_info in enumerate(sf_info['entities'][:self.max_e_per_spot]):
                 h_f = e_info['f']
                 l_f_score, self.h_e_grounding_feature_id = self._form_feature_vector(
                     h_f, self.h_e_grounding_feature_id)
-                e_f_dim = len(l_f_score)
                 e_id = e_info['id']
                 lll_sf_e_feature[i][j] = l_f_score
                 l_e_id.append(e_id)
             ll_sf_e_id.append(l_e_id)
             for p in xrange(len(sf_info['entities']), self.max_e_per_spot):
-                lll_sf_e_feature[i][p] = [0] * e_f_dim
+                lll_sf_e_feature[i][p] = [0] * self.e_ground_f_dim
 
         # padding
-        sf_e_tensor_shape = [self.max_spot_per_q, self.max_e_per_spot, e_f_dim]
+        sf_e_tensor_shape = [self.max_spot_per_q, self.max_e_per_spot, self.e_ground_f_dim]
         lll_sf_e_feature = self._padding_tensor(
             lll_sf_e_feature, sf_e_tensor_shape)
 
@@ -186,7 +186,6 @@ class ModelInputConvert(Configurable):
         lll_sf_e_match = [[[] for __ in xrange(self.max_e_per_spot)]
                           for _ in xrange(self.max_spot_per_q)]
 
-        f_dim = 0
 
         logging.debug('spot loc: %s', json.dumps(l_spot_loc))
         logging.debug('s-e id: %s', json.dumps(ll_sf_e_id, indent=1))
@@ -209,10 +208,9 @@ class ModelInputConvert(Configurable):
                     h_feature, self.h_e_matching_feature_id
                 )
                 lll_sf_e_match[i][j] = l_f_score
-                f_dim = len(l_f_score)
 
         # padding
-        sf_e_tensor_shape = [self.max_spot_per_q, self.max_e_per_spot, f_dim]
+        sf_e_tensor_shape = [self.max_spot_per_q, self.max_e_per_spot, self.e_match_f_dim]
         lll_sf_e_match = self._padding_tensor(
             lll_sf_e_match, sf_e_tensor_shape)
 

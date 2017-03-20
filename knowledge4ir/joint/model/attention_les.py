@@ -56,7 +56,7 @@ class AttentionLes(JointSemanticModel):
     max_e_per_spot = Int(5, help='top e allowed per q').tag(config=True)
     sf_ground_f_dim = Int(6, help='sf ground feature dimension').tag(config=True)
     e_ground_f_dim = Int(5, help='e ground feature dimension').tag(config=True)
-    e_match_f_dim = Int(15, help='e match feature dimension').tag(config=True)
+    e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     l_x_name = List(Unicode, default_value=l_input_name).tag(config=True)
 

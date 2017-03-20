@@ -107,8 +107,9 @@ class CrossValidator(Configurable):
         :param out_dir: out directory
         :return:
         """
-        train_x, train_y = self.model.train_data_reader(train_in)
-        test_x, test_y = self.model.test_data_reader(test_in)
+        s_qid = ["%d" % i for i in range(self.q_range[0], self.q_range[1] + 1)]
+        train_x, train_y = self.model.train_data_reader(train_in, s_qid)
+        test_x, test_y = self.model.test_data_reader(test_in, s_qid)
         self.model.train(train_x, train_y, self.l_hyper_para[0])
         logging.info('trained')
         self._dump_and_evaluate(test_x, out_dir)
