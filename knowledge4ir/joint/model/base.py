@@ -242,9 +242,9 @@ class JointSemanticModel(Configurable):
                 x_aux, y_aux = self._pack_one_data(l_data[j])
                 if y_aux == y_anchor:
                     continue  # only preference pairs
-                y = 1
+                y = 1.0
                 if y_anchor < y_aux:
-                    y = -1
+                    y = -1.0
                 paired_y.append(y)
                 for key, value in x_anchor.items():
                     h_key_lists[key].append(value)

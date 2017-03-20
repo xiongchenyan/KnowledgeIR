@@ -133,7 +133,7 @@ class CrossValidator(Configurable):
         eva_res = subprocess.check_output(['perl', GDEVAL_PATH, self.qrel_in, rank_out])
         eva_out = self._form_eval_out_name(out_dir, fold_k)
         print >> open(eva_out, 'w'), eva_res.strip()
-        if fold_k:
+        if fold_k is not None:
             logging.info('fold [%d] finished to [%s], result [%s]',
                          fold_k, eva_out, eva_res.splitlines()[-1]
                          )
@@ -145,7 +145,7 @@ class CrossValidator(Configurable):
 
     @classmethod
     def _form_fold_dir(cls, out_dir, fold_k=None):
-        if fold_k:
+        if fold_k is not None:
             fold_dir = path.join(out_dir, 'Fold%d' % fold_k)
         else:
             fold_dir = path.join(out_dir, 'uni')
