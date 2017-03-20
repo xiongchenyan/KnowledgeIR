@@ -48,6 +48,7 @@ from traitlets import (
     Int,
     List,
 )
+import numpy as np
 
 
 class AttentionLes(JointSemanticModel):
@@ -66,6 +67,57 @@ class AttentionLes(JointSemanticModel):
         self.e_ground_shape = (self.max_spot_per_q, self.max_e_per_spot, self.e_ground_f_dim)
         self.e_match_shape = (self.max_spot_per_q, self.max_e_per_spot, self.e_match_f_dim)
         self.ltr_shape = (self.ltr_f_dim,)
+
+    def pairwise_data_reader(self, in_name, s_target_qid=None):
+        x, y = super(AttentionLes, self).pairwise_data_reader(in_name, s_target_qid)
+        x = self._reshape_input(x)
+        return x, y
+    
+    def pointwise_data_reader(self, in_name, s_target_qid=None):
+        x, y = super(AttentionLes, self).pointwise_data_reader(in_name, s_target_qid)
+        x = self._reshape_input(x)
+        return x, y
+
+    def _reshape_input(self, x):
+        """
+        reshape the input to meet sf_ground_shape, e_ground_shape, e_match_shape, ltr_shape
+        the first dim of each array is the batch, will not be affected
+        :param x:
+        :return:
+        """
+        l_name_shape = zip([sf_ground_name, e_ground_name,
+                            e_match_name, ltr_feature_name],
+                           [self.sf_ground_shape, self.e_ground_shape,
+                            self.e_match_shape, self.ltr_shape])
+        for x_name, x_shape in l_name_shape:
+            if x[x_name].shape[1:] != x_shape:
+                x[x_name] = self._padding(x[x_name], x_shape)
+        return x
+
+    def _padding(self, ts, ts_shape):
+        """
+        reshape the 1: dim of ts
+        only support 1-4 dim
+        :param ts:
+        :param ts_shape:
+        :return:
+        """
+        nb_x = ts.shape[0]
+        new_ts = np.zeros([nb_x] + list(ts_shape))
+
+        if len(ts_shape) == 1:
+            new_ts[:, :ts_shape[0]] = ts[:, :ts_shape[0]]
+        if len(ts_shape) == 2:
+            new_ts[:, :ts_shape[0], :ts_shape[1]] = ts[:, :ts_shape[0], :ts_shape[1]]
+        if len(ts_shape) == 3:
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]] = ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]]
+        if len(ts_shape) == 4:
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]] = ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]]
+
+        return new_ts
+
+
+
 
     def _build_para_layers(self):
         """
