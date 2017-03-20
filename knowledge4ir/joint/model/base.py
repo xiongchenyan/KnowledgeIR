@@ -78,7 +78,7 @@ class JointSemanticModel(Configurable):
         logging.info('training with para: %s', hyper_para.pretty_print())
         batch_size = hyper_para.batch_size
         if -1 == batch_size:
-            batch_size = len(y.shape[0])
+            batch_size = y.shape[0]
         self._build_model()
         self.training_model.compile(
             hyper_para.opt,
