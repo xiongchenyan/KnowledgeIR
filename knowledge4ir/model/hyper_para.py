@@ -40,3 +40,7 @@ class HyperParameter(Configurable):
             value = getattr(self, target)
             h_target[target] = value
         return json.dumps(h_target)
+
+
+if __name__ == '__main__':
+    HyperParameter.class_print_help()
