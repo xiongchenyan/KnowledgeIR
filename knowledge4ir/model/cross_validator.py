@@ -55,6 +55,7 @@ class CrossValidator(Configurable):
         :param fold_k:
         :return:
         """
+        logging.info('training and testing one fold for [%s][%d]', in_name, fold_k)
         l_train, l_test, __ = fix_kfold_partition(False, k=10,
                                                   st=self.q_range[0],
                                                   ed=self.q_range[1]
@@ -82,6 +83,7 @@ class CrossValidator(Configurable):
         :param l_para:
         :return:
         """
+        logging.info('training, dev, and testing one fold for [%s][%d]', in_name, fold_k)
         l_train, l_test, l_dev = fix_kfold_partition(False, k=10,
                                                      st=self.q_range[0],
                                                      ed=self.q_range[1]
@@ -107,6 +109,8 @@ class CrossValidator(Configurable):
         :param out_dir: out directory
         :return:
         """
+        logging.info('train and test with [%s] -> [%s]',
+                     train_in, test_in)
         s_qid = ["%d" % i for i in range(self.q_range[0], self.q_range[1] + 1)]
         train_x, train_y = self.model.train_data_reader(train_in, s_qid)
         test_x, _ = self.model.test_data_reader(test_in, s_qid)
