@@ -90,11 +90,21 @@ class AttentionLes(JointSemanticModel):
                            [self.sf_ground_shape, self.e_ground_shape,
                             self.e_match_shape, self.ltr_shape])
         for x_name, x_shape in l_name_shape:
+            if x_name not in x:
+                continue
+            if x[x_name].shape[1:] != x_shape:
+                x[x_name] = self._padding(x[x_name], x_shape)
+
+        l_aux_name_shape = [(self.aux_pre + name, shape) for name, shape in l_name_shape]
+        for x_name, x_shape in l_aux_name_shape:
+            if x_name not in x:
+                continue
             if x[x_name].shape[1:] != x_shape:
                 x[x_name] = self._padding(x[x_name], x_shape)
         return x
 
-    def _padding(self, ts, ts_shape):
+    @classmethod
+    def _padding(cls, ts, ts_shape):
         """
         reshape the 1: dim of ts
         only support 1-4 dim
