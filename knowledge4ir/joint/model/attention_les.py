@@ -270,9 +270,6 @@ class AttentionLes(JointSemanticModel):
         return ranking_model
 
 
-
-
-
 class Les(AttentionLes):
     model_name = Unicode('les')
 
@@ -401,7 +398,8 @@ class DisAmbiAttLes(AttentionLes):
         e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
         e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
-        # e_ground_cnn = Activation('softmax')(e_ground_cnn)
+        if self.e_att_activation == 'softmax':
+            e_ground_cnn = Activation('softmax')(e_ground_cnn)
 
         ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
         ltr_dense = ltr_dense(ltr_input)
