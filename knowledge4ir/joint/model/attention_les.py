@@ -379,8 +379,8 @@ class SfAttLes(AttentionLes):
         logging.info('fetching intermediate results')
         name = 'sf_att'
         layer = self.ranking_model.get_layer(name)
-        intermediate_model = Model(input=layer.get_input_at(1),
-                                   output=layer.get_output_at(1)
+        intermediate_model = Model(input=layer.get_input_at(0),
+                                   output=layer.get_output_at(0)
                                    )
         intermediate_model.summary()
         mid_res = intermediate_model.predict(x)
