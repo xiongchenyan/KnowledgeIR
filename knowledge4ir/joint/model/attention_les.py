@@ -312,3 +312,106 @@ class Les(AttentionLes):
 
         return ranking_model
 
+
+class SfAttLes(AttentionLes):
+    """
+    only apply attention on surface forms
+    """
+    model_name = Unicode('sf_les')
+
+    def _form_model_from_layers(self, h_para_layers, is_aux=False):
+        """
+        merge sf_ground_cnn's 1d results with e_ground_cnn's
+            sf_ground_cnn |sf| * 1, e_ground_cnn |sf||e|, multiply the vector along the cols
+            to get a |sf||e| attention matrix
+        then merge with e_match_cnn's results, a full dot to a single score
+        then add with ltr's results to get the final ranking score
+        :param h_para_layers: the returned results of _build_para_layers
+        :return:
+        """
+
+        sf_ground_cnn = h_para_layers[sf_ground_name + '_CNN']
+        ltr_dense = h_para_layers[ltr_feature_name + '_Dense']
+        e_match_cnn = h_para_layers[e_match_name + '_CNN']
+
+        pre = ""
+        if is_aux:
+            pre = self.aux_pre
+
+        # align inputs
+        sf_ground_input = Input(shape=self.sf_ground_shape, name=pre + sf_ground_name)
+        sf_ground_cnn = sf_ground_cnn(sf_ground_input)
+        sf_ground_cnn = Flatten()(sf_ground_cnn)
+
+        ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
+        ltr_dense = ltr_dense(ltr_input)
+
+        e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
+        e_match_cnn = e_match_cnn(e_match_input)
+        e_match_cnn = Flatten()(e_match_cnn)
+
+        # broad cast the sf's score to sf-e mtx
+        sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
+        sf_att = Permute((2, 1))(sf_att)
+
+        e_ranking_score = merge([Flatten()(sf_att), e_match_cnn],
+                                mode='dot', name=pre + 'att_e_ranking_score')
+
+        ranking_score = merge([e_ranking_score, ltr_dense],
+                              mode='sum', output_shape=(1,), name=pre+'ew_combine')
+        ranking_model = Model(input=[sf_ground_input, e_match_input, ltr_input],
+                              output=ranking_score)
+
+        return ranking_model
+
+
+class DisAmbiAttLes(AttentionLes):
+    """
+    only apply attention on entity disambiguation
+    """
+    model_name = Unicode('dis_ambi_les')
+
+    def _form_model_from_layers(self, h_para_layers, is_aux=False):
+        """
+        merge sf_ground_cnn's 1d results with e_ground_cnn's
+            sf_ground_cnn |sf| * 1, e_ground_cnn |sf||e|, multiply the vector along the cols
+            to get a |sf||e| attention matrix
+        then merge with e_match_cnn's results, a full dot to a single score
+        then add with ltr's results to get the final ranking score
+        :param h_para_layers: the returned results of _build_para_layers
+        :return:
+        """
+
+        e_ground_cnn = h_para_layers[e_ground_name + '_CNN']
+        ltr_dense = h_para_layers[ltr_feature_name + '_Dense']
+        e_match_cnn = h_para_layers[e_match_name + '_CNN']
+
+        pre = ""
+        if is_aux:
+            pre = self.aux_pre
+
+        # align inputs
+
+        e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
+        e_ground_cnn = e_ground_cnn(e_ground_input)
+        e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
+        # e_ground_cnn = Activation('softmax')(e_ground_cnn)
+
+        ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
+        ltr_dense = ltr_dense(ltr_input)
+
+        e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
+        e_match_cnn = e_match_cnn(e_match_input)
+        e_match_cnn = Flatten()(e_match_cnn)
+
+        # broad cast the sf's score to sf-e mtx
+
+        e_ranking_score = merge([Flatten()(e_ground_cnn), e_match_cnn],
+                                mode='dot', name=pre + 'att_e_ranking_score')
+
+        ranking_score = merge([e_ranking_score, ltr_dense],
+                              mode='sum', output_shape=(1,), name=pre+'ew_combine')
+        ranking_model = Model(input=[e_ground_input, e_match_input, ltr_input],
+                              output=ranking_score)
+
+        return ranking_model

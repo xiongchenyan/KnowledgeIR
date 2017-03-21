@@ -12,11 +12,15 @@ from knowledge4ir.utils.model import fix_kfold_partition
 from knowledge4ir.joint.model.attention_les import (
     AttentionLes,
     Les,
+    DisAmbiAttLes,
+    SfAttLes,
 )
 
 h_model_name = {
     "att_les": AttentionLes,
     "les": Les,
+    "att_e_les": DisAmbiAttLes,
+    "att_sf_les": SfAttLes,
 }
 
 
