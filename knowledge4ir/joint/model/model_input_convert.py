@@ -233,7 +233,7 @@ class ModelInputConvert(Configurable):
         logging.info('start converting input')
         self._form_q_grounding_info_mtx()
 
-        out = open(self.out_name + '.json', 'w')
+        out = open(self.out_name, 'w')
 
         for p, line in enumerate(open(self.q_d_match_info_in)):
             if not p % 100:

@@ -386,13 +386,14 @@ class SfAttLes(AttentionLes):
         mid_res = intermediate_model.predict(x)
         l_meta = x['meta']
         s_qid = {}
-        for p in xrange(mid_res.shaope[0]):
+        for p in xrange(mid_res.shape[0]):
             qid = l_meta[p]['qid']
             if qid not in s_qid:
                 s_qid[qid] = True
-                logging.info('sf_att [%s]: %s', qid, np.array2string(mid_res[p]))
+                logging.info('sf_att of q [%s]: %s', qid, np.array2string(mid_res[p]))
         y = super(SfAttLes, self).predict(x)
         return y
+    
 
 class DisAmbiAttLes(AttentionLes):
     """
