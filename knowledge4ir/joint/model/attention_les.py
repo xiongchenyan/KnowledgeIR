@@ -320,6 +320,7 @@ class SfAttLes(AttentionLes):
     only apply attention on surface forms
     """
     model_name = Unicode('sf_les')
+    max_e_per_spot = Int(1, help='top e allowed per q').tag(config=True)
 
     def _form_model_from_layers(self, h_para_layers, is_aux=False):
         """

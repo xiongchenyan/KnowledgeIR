@@ -297,7 +297,10 @@ class JointSemanticModel(Configurable):
         :param s_target_qid:
         :return:
         """
-        logging.info('reading from [%s]', in_name)
+        nb_target = -1
+        if s_target_qid:
+            nb_target = len(s_target_qid)
+        logging.info('reading from [%s] with [%d] target qid', in_name, nb_target)
         l_data = []
         cnt = 0
         for line in open(in_name):
