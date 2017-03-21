@@ -351,6 +351,7 @@ class SfAttLes(AttentionLes):
         e_match_cnn = Flatten()(e_match_cnn)
 
         # broad cast the sf's score to sf-e mtx
+        # TODO this must be the problem. Check WHY
         sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
         sf_att = Permute((2, 1))(sf_att)
 
