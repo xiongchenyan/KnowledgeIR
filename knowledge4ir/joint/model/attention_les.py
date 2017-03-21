@@ -62,6 +62,7 @@ class AttentionLes(JointSemanticModel):
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     l_x_name = List(Unicode, default_value=l_input_name).tag(config=True)
     e_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
+    sf_att_activation = Unicode('relu', help='the activation on e grounding').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttentionLes, self).__init__(**kwargs)
@@ -143,7 +144,7 @@ class AttentionLes(JointSemanticModel):
         sf_ground_cnn = Conv1D(
             nb_filter=1,
             filter_length=1,
-            activation='relu',
+            activation=self.sf_att_activation,
             W_regularizer=l2(self.hyper_para.l2_w),
             bias=False,
             input_shape=self.sf_ground_shape,
@@ -167,7 +168,6 @@ class AttentionLes(JointSemanticModel):
             nb_col=1,
             W_regularizer=l2(self.hyper_para.l2_w),
             bias=False,
-            activation='linear',
             dim_ordering='tf',
             input_shape=self.e_ground_shape,
             name=e_ground_name + '_CNN'
@@ -241,8 +241,8 @@ class AttentionLes(JointSemanticModel):
         e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
         e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
-        if self.e_att_activation == 'softmax':
-            e_ground_cnn = Activation('softmax')(e_ground_cnn)
+        if self.e_att_activation != 'linear':
+            e_ground_cnn = Activation(self.e_att_activation)(e_ground_cnn)
 
         ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
         ltr_dense = ltr_dense(ltr_input)
@@ -425,8 +425,8 @@ class DisAmbiAttLes(AttentionLes):
         e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
         e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
-        if self.e_att_activation == 'softmax':
-            e_ground_cnn = Activation('softmax')(e_ground_cnn)
+        if self.e_att_activation != 'linear':
+            e_ground_cnn = Activation(self.e_att_activation)(e_ground_cnn)
 
         ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
         ltr_dense = ltr_dense(ltr_input)
