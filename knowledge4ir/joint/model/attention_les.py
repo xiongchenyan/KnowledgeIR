@@ -368,6 +368,33 @@ class SfAttLes(AttentionLes):
 
         return ranking_model
 
+    def predict(self, x):
+        """
+        add a log about the intermediate results of sf_att
+        :param x:
+        :return:
+        """
+
+        # get sf att intermediate results, and put to log (per qid's sf att mtx)
+        logging.info('fetching intermediate results')
+        name = 'sf_att'
+        layer = self.ranking_model.get_layer(name)
+        intermediate_model = Model(input=layer.get_input_at(1),
+                                   output=layer.get_output_at(1)
+                                   )
+        intermediate_model.summary()
+        mid_res = intermediate_model.predict(x)
+        l_meta = x['meta']
+        s_qid = {}
+        for p in xrange(mid_res.shaope[0]):
+            qid = l_meta[p]['qid']
+            if qid not in s_qid:
+                s_qid[qid] = True
+                logging.info('sf_att [%s]: %s', qid, np.array2string(mid_res[p]))
+        y = super(SfAttLes, self).predict(x)
+        return y
+
+
 
 class DisAmbiAttLes(AttentionLes):
     """
