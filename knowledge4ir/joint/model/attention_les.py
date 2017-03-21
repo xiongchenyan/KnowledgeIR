@@ -377,7 +377,7 @@ class SfAttLes(AttentionLes):
 
         # get sf att intermediate results, and put to log (per qid's sf att mtx)
         logging.info('fetching intermediate results')
-        name = 'sf_att'
+        name = sf_ground_name + '_CNN'
         layer = self.ranking_model.get_layer(name)
         intermediate_model = Model(input=layer.get_input_at(0),
                                    output=layer.get_output_at(0)
@@ -393,8 +393,6 @@ class SfAttLes(AttentionLes):
                 logging.info('sf_att [%s]: %s', qid, np.array2string(mid_res[p]))
         y = super(SfAttLes, self).predict(x)
         return y
-
-
 
 class DisAmbiAttLes(AttentionLes):
     """
