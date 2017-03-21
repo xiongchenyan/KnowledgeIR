@@ -56,13 +56,13 @@ class AttentionLes(JointSemanticModel):
     model_name = Unicode('att_les')
     max_spot_per_q = Int(3, help='max spot allowed per q').tag(config=True)
     max_e_per_spot = Int(3, help='top e allowed per q').tag(config=True)
-    sf_ground_f_dim = Int(6, help='sf ground feature dimension').tag(config=True)
+    sf_ground_f_dim = Int(5, help='sf ground feature dimension').tag(config=True)
     e_ground_f_dim = Int(5, help='e ground feature dimension').tag(config=True)
     e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     l_x_name = List(Unicode, default_value=l_input_name).tag(config=True)
     e_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
-    sf_att_activation = Unicode('relu', help='the activation on e grounding').tag(config=True)
+    sf_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttentionLes, self).__init__(**kwargs)
@@ -354,7 +354,6 @@ class SfAttLes(AttentionLes):
         e_match_cnn = Flatten()(e_match_cnn)
 
         # broad cast the sf's score to sf-e mtx
-        # TODO this must be the problem. Check WHY
         sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
         sf_att = Permute((2, 1), name='sf_att')(sf_att)
 
