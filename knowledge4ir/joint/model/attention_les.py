@@ -61,6 +61,7 @@ class AttentionLes(JointSemanticModel):
     e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     l_x_name = List(Unicode, default_value=l_input_name).tag(config=True)
+    e_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttentionLes, self).__init__(**kwargs)
@@ -240,7 +241,8 @@ class AttentionLes(JointSemanticModel):
         e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
         e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
-        # e_ground_cnn = Activation('softmax')(e_ground_cnn)
+        if self.e_att_activation == 'softmax':
+            e_ground_cnn = Activation('softmax')(e_ground_cnn)
 
         ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
         ltr_dense = ltr_dense(ltr_input)
@@ -266,6 +268,9 @@ class AttentionLes(JointSemanticModel):
                               output=ranking_score)
 
         return ranking_model
+
+
+
 
 
 class Les(AttentionLes):
