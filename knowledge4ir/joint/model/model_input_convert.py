@@ -197,7 +197,8 @@ class ModelInputConvert(Configurable):
                 continue
             i = h_spot_loc_p[loc]
             logging.debug('%s i=%d', json.dumps(loc), i)
-            for e_id, e_info in sf_info['entities']:
+            for e_info in sf_info['entities']:
+                e_id = e_info['id']
                 h_feature = e_info['f']
                 if e_id not in l_h_sf_e_p[i]:
                     logging.debug('[%s] not in ground (filtered)', e_id)

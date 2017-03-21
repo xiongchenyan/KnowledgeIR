@@ -393,7 +393,7 @@ class SfAttLes(AttentionLes):
                 logging.info('sf_att of q [%s]: %s', qid, np.array2string(mid_res[p]))
         y = super(SfAttLes, self).predict(x)
         return y
-    
+
 
 class DisAmbiAttLes(AttentionLes):
     """
