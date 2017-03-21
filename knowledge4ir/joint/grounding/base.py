@@ -159,7 +159,7 @@ class Grounder(Configurable):
         lp = 0
         if wiki_tf >= 10:
             lp = h_stat.get('lp', 0)
-        h_feature['sf_wiki_tf'] = wiki_tf
+        # h_feature['sf_wiki_tf'] = wiki_tf
         h_feature['sf_lp'] = lp
         return h_feature
 
