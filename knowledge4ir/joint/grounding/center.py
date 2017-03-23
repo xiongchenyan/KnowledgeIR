@@ -14,6 +14,7 @@ from traitlets import (
     Unicode,
     Int
 )
+from knowledge4ir.joint.grounding.mem_e import EMemGrounder
 from knowledge4ir.joint.grounding import Grounder
 from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
@@ -24,10 +25,16 @@ class GroundCenter(Configurable):
     in_name = Unicode(help='q info or doc info spotted json file to ground'
                       ).tag(config=True)
     out_name = Unicode(help='output file name').tag(config=True)
+    grounder_name = Unicode('base',
+                            help='the grounder to use, default base, choice: base|e_mem'
+                            ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(GroundCenter, self).__init__(**kwargs)
-        self.grounder = Grounder(**kwargs)
+        if self.grounder_name == 'base':
+            self.grounder = EMemGrounder(**kwargs)
+        else:
+            self.grounder = Grounder(**kwargs)
         self.resource = JointSemanticResource(**kwargs)
         self.grounder.set_resource(self.resource)
 
