@@ -80,6 +80,8 @@ class GroundCenter(Configurable):
 
         for h_info in l_h_info:
             for field in TARGET_TEXT_FIELDS + ['query']:
+                if field not in h_info['ground']:
+                    continue
                 l_sf_ground = h_info['ground'][field]
                 for h_sf in l_sf_ground:
                     this_sf_f = h_sf['f']
@@ -97,6 +99,8 @@ class GroundCenter(Configurable):
         l_res = []
         for h_info in l_h_info:
             for field in TARGET_TEXT_FIELDS + ['query']:
+                if field not in h_info['ground']:
+                    continue
                 l_sf_ground = h_info['ground'][field]
                 for h_sf in l_sf_ground:
                     new_f = deepcopy(h_sf_f)
