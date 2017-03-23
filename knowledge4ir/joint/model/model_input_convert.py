@@ -180,12 +180,11 @@ class ModelInputConvert(Configurable):
         l_h_sf_e_p = [dict(zip(l_sf_e_id, range(len(l_sf_e_id))))
                       for l_sf_e_id in ll_sf_e_id]
 
-        logging.info('corresponding q grouding info fetched')
+        logging.info('corresponding q grounding info fetched')
 
         # form sf-e-feature tensor
         lll_sf_e_match = [[[] for __ in xrange(self.max_e_per_spot)]
                           for _ in xrange(self.max_spot_per_q)]
-
 
         logging.debug('spot loc: %s', json.dumps(l_spot_loc))
         logging.debug('s-e id: %s', json.dumps(ll_sf_e_id, indent=1))
