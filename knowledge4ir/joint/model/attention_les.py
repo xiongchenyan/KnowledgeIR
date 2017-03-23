@@ -49,6 +49,7 @@ from traitlets import (
     Int,
     List,
 )
+from copy import deepcopy
 import numpy as np
 
 
@@ -80,6 +81,46 @@ class AttentionLes(JointSemanticModel):
         x, y = super(AttentionLes, self).pointwise_data_reader(in_name, s_target_qid)
         x = self._reshape_input(x)
         return x, y
+
+    def formulate_intermediate_res(self, x, out_name):
+        """
+        formulate and dump intermediate results
+            here:
+                predict the entity scores matrix
+                pair with x's meta field, and dump to out_name
+        :param x: the data, with the meta fields
+        :param out_name: the place to put the data
+        :return:
+        """
+        logging.info('formulating e attention weights')
+        l_meta = deepcopy(x['meta'])
+
+        name = e_ground_name + '_CNN'
+        layer = self.ranking_model.get_layer(name)
+        intermediate_model = Model(input=layer.get_input_at(0),
+                                   output=layer.get_output_at(0)
+                                   )
+        intermediate_model.summary()
+        mid_res = intermediate_model.predict(x)
+        for p in xrange(len(l_meta)):
+            e_att_mtx = mid_res[p]
+            e_att = []
+            ll_e_ref = l_meta[p]['e_ref']
+            ll_e_att_score = []
+            for i in xrange(ll_e_ref):
+                l_e_score = []
+                for j in xrange(len(ll_e_ref[i])):
+                    e_id = ll_e_ref[i][j]
+                    score = e_att_mtx[i][j]
+                    l_e_score.append((e_id, score))
+                ll_e_att_score.append(l_e_score)
+            l_meta['e_att_score'] = ll_e_att_score
+        out = open(out_name, 'w')
+        for meta in l_meta:
+            print >> out, json.dumps(meta)
+        out.close()
+        logging.info('e att dumped to [%s]', out_name)
+        return
 
     def _reshape_input(self, x):
         """
