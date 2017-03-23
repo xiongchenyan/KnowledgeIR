@@ -31,9 +31,11 @@ class GroundCenter(Configurable):
 
     def __init__(self, **kwargs):
         super(GroundCenter, self).__init__(**kwargs)
-        if self.grounder_name == 'base':
+        if self.grounder_name == 'e_mem':
+            logging.info('use grounder [%s]', self.grounder_name)
             self.grounder = EMemGrounder(**kwargs)
         else:
+            logging.info('use basic grounder')
             self.grounder = Grounder(**kwargs)
         self.resource = JointSemanticResource(**kwargs)
         self.grounder.set_resource(self.resource)
