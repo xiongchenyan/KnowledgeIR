@@ -13,9 +13,12 @@ only need to replace the extract_for_surface and extract_for_entity
 
 from knowledge4ir.joint.grounding import Grounder
 import json
+from traitlets import (
+    Unicode,
+)
 
-
-class OverfitGrounder()
+class EMemGrounder(Grounder):
+    feature_pre = Unicode
 
 
 
