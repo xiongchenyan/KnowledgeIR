@@ -123,7 +123,11 @@ class JointSemanticModel(Configurable):
 
         dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, self.model_name)
         logging.info('ranking results dumped to [%s]', out_name)
+        self.formulate_intermediate_res(x, out_name + 'intermediate_res')
         return
+
+    def formulate_intermediate_res(self, x, out_name):
+        raise NotImplementedError
 
     def hyper_para_dev(self, paired_train_x, train_y, paired_dev_x, dev_y, l_hyper_para):
         """
