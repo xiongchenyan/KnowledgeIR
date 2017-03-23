@@ -17,3 +17,7 @@ title_field = 'title'
 TARGET_TEXT_FIELDS = [title_field, body_field, ]
 MS_ENTITY_KEY = '3c552f84af52430482da7285e4da8ad9'
 QREL_IN = "/bos/usr0/cx/tmp/knowledge4ir/data/qrel.all"
+e_desp_field = 'desp'
+e_name_field = 'name'
+e_alias_field = 'alias'
+ENTITY_TEXT_FIELDS = [e_name_field, e_alias_field, e_desp_field]

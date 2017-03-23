@@ -23,6 +23,9 @@ from knowledge4ir.utils import (
 import logging
 from copy import deepcopy
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
+from knowledge4ir.joint import (
+    SPOT_FIELD
+)
 
 
 class Spotter(Configurable):
@@ -127,7 +130,8 @@ class Spotter(Configurable):
         l_qt = q.lower().split()
         l_ana = self.spot_text(l_qt)
         h['query'] = ' '.join(l_qt)
-        h['spot'] = {'query': l_ana}
+        h['qid'] = h_q['qid']
+        h[SPOT_FIELD] = {'query': l_ana}
         return h
 
     def pipe_spot_doc_json(self, d_info_in, spot_out_name):
@@ -160,7 +164,7 @@ class Spotter(Configurable):
             l_term = text.lower().split()
             l_ana = self.spot_text(l_term)
             h[field] = ' '.join(l_term)
-            h['spot'][field] = l_ana
+            h[SPOT_FIELD][field] = l_ana
             h['docno'] = h_d['docno']
 
         return h

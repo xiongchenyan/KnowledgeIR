@@ -18,3 +18,7 @@ overall architecture:
 """
 
 from .base import *
+GROUND_FIELD = 'ground'
+SPOT_FIELD = 'spot'
+MATCH_FIELD = 'match'
+

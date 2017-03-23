@@ -4,29 +4,30 @@ attention learning to rank model
 The base class with input generators, and virtual methods
 """
 
-from traitlets.config import Configurable
+import json
+import logging
+import subprocess
+
+import numpy as np
+from keras.callbacks import EarlyStopping
+from keras.models import (
+    Model,
+)
+from sklearn.preprocessing import normalize
 from traitlets import (
     Unicode,
     Int,
     Float,
     Bool,
 )
-import json
-import logging
-import numpy as np
-from knowledge4ir.duet_model.base import pair_docno
-from keras.callbacks import EarlyStopping
+from traitlets.config import Configurable
+
 from knowledge4ir.utils import (
     group_scores_to_ranking,
     GDEVAL_PATH,
     dump_trec_ranking_with_score,
     seg_gdeval_out,
 )
-from keras.models import (
-    Model,
-)
-import subprocess
-from sklearn.preprocessing import normalize
 
 
 def pair_docno(v_label, l_qid, l_docno):
@@ -59,29 +60,6 @@ def pair_docno(v_label, l_qid, l_docno):
     v_paired_label = np.array(v_paired_label)
     logging.info('total formed %d doc pairs', len(l_pos_pair))
     return v_paired_label, l_paired_qid, l_docno_pair, l_pos_pair
-
-
-def fix_kfold_partition(with_dev=False, k=10, st=1, ed=200):
-    l_train_folds = []
-    l_dev_folds = []
-    l_test_folds = []
-    for fold in xrange(k):
-        test = []
-        train = []
-        dev = []
-        for qid in xrange(st, ed + 1):
-            if (qid % k) == fold:
-                test.append("%d" % qid)
-                continue
-            if with_dev:
-                if ((qid + 1) % k) == fold:
-                    dev.append("%d" % qid)
-                    continue
-            train.append("%d" % qid)
-        l_train_folds.append(train)
-        l_test_folds.append(test)
-        l_dev_folds.append(dev)
-    return l_train_folds, l_test_folds, l_dev_folds
 
 
 def filter_svm_data(l_svm_data, l_qid):

@@ -10,6 +10,7 @@ from traitlets import (
 import logging
 import json
 from gensim.models import Word2Vec
+from knowledge4ir.utils.retrieval_model import CorpusStat
 
 
 class JointSemanticResource(Configurable):
@@ -19,15 +20,25 @@ class JointSemanticResource(Configurable):
                              ).tag(config=True)
     surface_stat_path = Unicode(help="the location of surface form stat dict in json"
                                 ).tag(config=True)
+    entity_field_path = Unicode(help="entity field path"
+                                ).tag(config=True)
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
-        self.embedding = Word2Vec()
-        self.h_surface_form = dict()
-        self.h_surface_stat = dict()
+        self.embedding = None
+        self.h_surface_form = None
+        self.h_surface_stat = None
+        self.h_entity_fields = None
         self._load()
+        self.corpus_stat = CorpusStat(**kwargs)
+
+    @classmethod
+    def class_print_help(cls, inst=None):
+        super(JointSemanticResource, cls).class_print_help(inst)
+        CorpusStat.class_print_help(inst)
 
     def _load(self):
+        self._load_entity_fields()
         self._load_sf()
         self._load_emb()
         self._load_sf_stat()
@@ -53,5 +64,16 @@ class JointSemanticResource(Configurable):
         logging.info('loading embedding [%s]', self.embedding_path)
         self.embedding = Word2Vec.load_word2vec_format(self.embedding_path)
         logging.info('embedding loaded')
+
+    def _load_entity_fields(self):
+        if not self.entity_field_path:
+            return
+        logging.info('loading entity fields from [%s]', self.entity_field_path)
+        self.h_entity_fields = dict()
+        for line in open(self.entity_field_path):
+            h_field = json.loads(line)
+            self.h_entity_fields[h_field['id']] = h_field
+
+        logging.info('total [%d] entity fields loaded', len(self.h_entity_fields))
 
 

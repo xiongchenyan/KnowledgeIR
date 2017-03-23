@@ -7,7 +7,9 @@ import json
 
 from knowledge4ir.utils import term2lm
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
-
+from knowledge4ir.joint import (
+    SPOT_FIELD
+)
 
 def get_per_ana_entities(line):
     h = json.loads(line)
@@ -16,7 +18,7 @@ def get_per_ana_entities(line):
 
     l_ana = []
     for field in ['query'] + TARGET_TEXT_FIELDS:
-        l_ana.extend(spot_data[field])
+        l_ana.extend(spot_data.get(field, []))
 
     l_e = sum([[ana['id'] for ana in item['entities']] for item in l_ana], [])
 

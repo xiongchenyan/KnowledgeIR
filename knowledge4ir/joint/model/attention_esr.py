@@ -22,9 +22,9 @@ from keras.models import (
     Sequential,
 )
 from knowledge4ir.joint import (
-    JointSemanticModel,
     JointSemanticResource,
 )
+from knowledge4ir.joint.model import JointSemanticModel
 
 from traitlets.config import Configurable
 from traitlets import (
