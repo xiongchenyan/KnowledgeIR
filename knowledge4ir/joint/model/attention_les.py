@@ -137,8 +137,8 @@ class AttentionLes(JointSemanticModel):
             if x_name not in x:
                 continue
             if x[x_name].shape[1:] != x_shape:
+                logging.info('reshaping [%s] to shape %s', x_name, json.dumps(x_shape))
                 x[x_name] = self._padding(x[x_name], x_shape)
-                logging.info('reshape [%s] to shape %s', x_name, json.dumps(x_shape))
 
         l_aux_name_shape = [(self.aux_pre + name, shape) for name, shape in l_name_shape]
         for x_name, x_shape in l_aux_name_shape:
