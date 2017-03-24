@@ -107,7 +107,7 @@ class AttentionLes(JointSemanticModel):
             e_att = []
             ll_e_ref = l_meta[p]['e_ref']
             ll_e_att_score = []
-            for i in xrange(ll_e_ref):
+            for i in xrange(len(ll_e_ref)):
                 l_e_score = []
                 for j in xrange(len(ll_e_ref[i])):
                     e_id = ll_e_ref[i][j]
