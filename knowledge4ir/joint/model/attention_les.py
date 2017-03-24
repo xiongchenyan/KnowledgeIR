@@ -23,7 +23,6 @@ from keras.layers import (
     Conv2D,
     Input,
     RepeatVector,
-    Lambda,
     Reshape,
     Activation,
     Permute,
@@ -33,7 +32,6 @@ from keras.regularizers import (
     l2
 )
 
-import keras.backend as K
 import logging
 import json
 from knowledge4ir.joint.model import (
@@ -104,7 +102,6 @@ class AttentionLes(JointSemanticModel):
         mid_res = intermediate_model.predict(x)
         for p in xrange(len(l_meta)):
             e_att_mtx = mid_res[p]
-            e_att = []
             ll_e_ref = l_meta[p]['e_ref']
             ll_e_att_score = []
             for i in xrange(len(ll_e_ref)):
@@ -117,6 +114,47 @@ class AttentionLes(JointSemanticModel):
             l_meta['e_att_score'] = ll_e_att_score
         out = open(out_name, 'w')
         for meta in l_meta:
+            print >> out, json.dumps(meta)
+        out.close()
+        logging.info('e att dumped to [%s]', out_name)
+        return
+
+    def formulate_intermediate_res_generator(self, in_name, out_name, s_target_qid):
+        """
+        formulate and dump intermediate results
+            here:
+                predict the entity scores matrix
+                pair with x's meta field, and dump to out_name
+        :return:
+        """
+        logging.info('formulating e attention weights')
+
+        name = e_ground_name + '_CNN'
+        layer = self.ranking_model.get_layer(name)
+        intermediate_model = Model(input=layer.get_input_at(0),
+                                   output=layer.get_output_at(0)
+                                   )
+        intermediate_model.summary()
+        mid_res = intermediate_model.predict_generator(
+            self.pointwise_data_generator(in_name, s_target_qid),
+            val_samples=len(s_target_qid)
+        )
+
+        out = open(out_name, 'w')
+        for p, line in enumerate(open(in_name)):
+            h = json.loads(line)
+            meta = h['meta']
+            e_att_mtx = mid_res[p]
+            ll_e_ref = meta['e_ref']
+            ll_e_att_score = []
+            for i in xrange(len(ll_e_ref)):
+                l_e_score = []
+                for j in xrange(len(ll_e_ref[i])):
+                    e_id = ll_e_ref[i][j]
+                    score = e_att_mtx[i][j]
+                    l_e_score.append((e_id, score))
+                ll_e_att_score.append(l_e_score)
+            meta['e_att_score'] = ll_e_att_score
             print >> out, json.dumps(meta)
         out.close()
         logging.info('e att dumped to [%s]', out_name)
@@ -166,9 +204,11 @@ class AttentionLes(JointSemanticModel):
         if len(ts_shape) == 2:
             new_ts[:, :ts_shape[0], :ts_shape[1]] = ts[:, :ts_shape[0], :ts_shape[1]]
         if len(ts_shape) == 3:
-            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]] = ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]]
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]] = \
+                ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]]
         if len(ts_shape) == 4:
-            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]] = ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]]
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]] = \
+                    ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]]
 
         return new_ts
 
