@@ -149,7 +149,7 @@ class JointSemanticModel(ModelBase):
         steps = len(s_target_qid)
         self.training_model.fit_generator(
             self.pairwise_data_generator(in_name, s_target_qid),
-            samples_per_epoch=steps,
+            samples_per_epoch=10000,
             nb_epoch=hyper_para.nb_epoch,
             callbacks=[EarlyStopping(monitor='loss',
                                      patience=hyper_para.early_stopping_patient
@@ -163,7 +163,7 @@ class JointSemanticModel(ModelBase):
             self.pointwise_data_generator(in_name, s_target_qid),
             val_samples=len(s_target_qid)
         )
-        return y
+        return y.reshape(-1)
 
     def generate_ranking_generator(self, in_name, out_name, s_target_qid):
         y = self.predict_generator(in_name, s_target_qid)
