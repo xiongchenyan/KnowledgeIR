@@ -434,9 +434,10 @@ class JointSemanticModel(ModelBase):
             with open(in_name) as f:
                 l_data = []
                 current_qid = None
-                for line in f:
+                for p, line in enumerate(f):
                     h = json.loads(line)
                     qid = h['meta']['qid']
+                    logging.info('line [%d] qid [%s]', p, qid)
                     if s_target_qid is not None:
                         if qid not in s_target_qid:
                             continue
