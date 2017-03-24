@@ -127,6 +127,17 @@ class CrossValidator(Configurable):
         self._dump_and_evaluate(test_x, out_dir)
         return
 
+    def train_test_generator(self, train_in, test_in, out_dir, s_train_qid, s_test_qid):
+        """
+        train and test with generator
+        """
+        logging.info('train and test with [%s] -> [%s]',
+                     train_in, test_in)
+        self.model.train_generator(train_in, self.l_hyper_para[0], s_train_qid)
+        logging.info('trained')
+        self._dump_and_evaluate_generator(test_in, out_dir, s_test_qid)
+        return
+
     def _dump_and_evaluate(self, test_x, out_dir, fold_k=None):
         """
         self.model is trained
@@ -149,6 +160,23 @@ class CrossValidator(Configurable):
             logging.info('finished to [%s], result [%s]',
                          eva_out, eva_res.splitlines()[-1]
                          )
+        return
+
+    def _dump_and_evaluate_generator(self, test_in, out_dir, s_test_qid):
+        """
+        self.model is trained
+        :param test_in: test input
+        :param out_dir: cv out dir
+        :param s_test_qid: the test qid set
+        :return:
+        """
+        rank_out = self._form_rank_out_name(out_dir, None)
+        self.model.generate_ranking_generator(test_in, rank_out, s_test_qid)
+        logging.info('ranking results to [%s]', rank_out)
+        eva_res = subprocess.check_output(['perl', GDEVAL_PATH, self.qrel_in, rank_out])
+        eva_out = self._form_eval_out_name(out_dir, None)
+        print >> open(eva_out, 'w'), eva_res.strip()
+        logging.info('evaluation result dumped to [%s], result [%s]', eva_out, eva_res.splitlines()[-1])
         return
 
     @classmethod
