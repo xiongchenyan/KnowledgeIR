@@ -417,17 +417,14 @@ class JointSemanticModel(ModelBase):
         return l_data
 
     @classmethod
-    def _simple_generator(cls, in_name, s_target_qid=None):
+    def _simple_generator(cls, in_name, s_target_qid):
         """
         infinite loop over in_name's lines
         :param in_name: input file
         :param s_target_qid: qid to take
         :return:
         """
-        nb_target = -1
-        if s_target_qid:
-            nb_target = len(s_target_qid)
-        logging.info('generating from [%s] with [%d] target qid', in_name, nb_target)
+        logging.info('generating from [%s] with [%d] target qid', in_name, len(s_target_qid))
 
         while True:
             logging.info('(re)starting from begining of file')
@@ -438,9 +435,9 @@ class JointSemanticModel(ModelBase):
                     h = json.loads(line)
                     qid = h['meta']['qid']
                     logging.info('line [%d] qid [%s]', p, qid)
-                    if s_target_qid is not None:
-                        if qid not in s_target_qid:
-                            continue
+                    if qid not in s_target_qid:
+                        logging.info('qid [%s] skipped', qid)
+                        continue
                     if current_qid is None:
                         current_qid = qid
                     if qid != current_qid:
