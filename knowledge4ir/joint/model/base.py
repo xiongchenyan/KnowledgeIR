@@ -301,9 +301,9 @@ class JointSemanticModel(ModelBase):
         logging.info('start pairwise generating from [%s]', in_name)
         for l_data in self._simple_generator(in_name, s_target_qid):
             pair_x, pair_y = self._pack_pairwise(l_data)
-            logging.info('packed into [%d] pairs', pair_y.shape[0])
+            logging.debug('packed into [%d] pairs', pair_y.shape[0])
             if not pair_y.shape[0]:
-                logging.info('skip as no pairwise preference for this q')
+                logging.debug('skip as no pairwise preference for this q')
                 continue
             yield pair_x, pair_y
 
@@ -392,7 +392,7 @@ class JointSemanticModel(ModelBase):
         X = dict()
         for key, l_data in h_key_lists.items():
             X[key] = np.array(l_data)
-            logging.info('[%s] shape %s', key, json.dumps(X[key].shape))
+            logging.debug('[%s] shape %s', key, json.dumps(X[key].shape))
         return X
 
     @classmethod
