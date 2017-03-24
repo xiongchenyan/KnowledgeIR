@@ -149,7 +149,7 @@ class JointSemanticModel(ModelBase):
         steps = len(s_target_qid)
         self.training_model.fit_generator(
             self.pairwise_data_generator(in_name, s_target_qid),
-            samples_per_epoch=10000,
+            samples_per_epoch=steps * 500,
             nb_epoch=hyper_para.nb_epoch,
             callbacks=[EarlyStopping(monitor='loss',
                                      patience=hyper_para.early_stopping_patient
