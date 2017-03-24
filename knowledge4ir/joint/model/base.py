@@ -427,21 +427,20 @@ class JointSemanticModel(ModelBase):
         logging.info('generating from [%s] with [%d] target qid', in_name, len(s_target_qid))
 
         while True:
-            logging.info('(re)starting from begining of file')
+            logging.debug('(re)starting from beginning of file')
             with open(in_name) as f:
                 l_data = []
                 current_qid = None
                 for p, line in enumerate(f):
                     h = json.loads(line)
                     qid = h['meta']['qid']
-                    logging.info('line [%d] qid [%s]', p, qid)
                     if qid not in s_target_qid:
-                        logging.info('qid [%s] skipped', qid)
+                        logging.debug('qid [%s] skipped', qid)
                         continue
                     if current_qid is None:
                         current_qid = qid
                     if qid != current_qid:
-                        logging.info('generated qid [%s]', qid)
+                        logging.debug('generated qid [%s]', qid)
                         yield l_data
                         l_data = []
                         current_qid = qid

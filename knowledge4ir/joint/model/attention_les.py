@@ -80,6 +80,16 @@ class AttentionLes(JointSemanticModel):
         x = self._reshape_input(x)
         return x, y
 
+    def pairwise_data_generator(self, in_name, s_target_qid):
+        for x, y in super(AttentionLes, self).pairwise_data_generator(in_name, s_target_qid):
+            x = self._reshape_input(x)
+            yield x, y
+
+    def pointwise_data_generator(self, in_name, s_target_qid):
+        for x, y in super(AttentionLes, self).pointwise_data_generator(in_name, s_target_qid):
+            x = self._reshape_input(x)
+            yield x, y
+
     def formulate_intermediate_res(self, x, out_name):
         """
         formulate and dump intermediate results
