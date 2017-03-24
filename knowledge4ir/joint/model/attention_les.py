@@ -102,7 +102,12 @@ class AttentionLes(JointSemanticModel):
         mid_res = intermediate_model.predict(x)
 
         out = open(out_name, 'w')
+        last_qid = None
         for p in xrange(len(l_meta)):
+            qid = l_meta[p]['meta']['qid']
+            if qid == last_qid:
+                continue
+            last_qid = qid
             e_att_mtx = mid_res[p]
             ll_e_ref = l_meta[p]['e_ref']
             ll_e_att_score = []
@@ -141,9 +146,13 @@ class AttentionLes(JointSemanticModel):
         )
 
         out = open(out_name, 'w')
+        last_qid = None
         for p, line in enumerate(open(in_name)):
             h = json.loads(line)
             meta = h['meta']
+            qid = meta['qid']
+            if qid == last_qid:
+                continue
             e_att_mtx = mid_res[p]
             ll_e_ref = meta['e_ref']
             ll_e_att_score = []
@@ -156,6 +165,7 @@ class AttentionLes(JointSemanticModel):
                 ll_e_att_score.append(l_e_score)
             meta['e_att_score'] = ll_e_att_score
             print >> out, json.dumps(meta)
+            last_qid = qid
         out.close()
         logging.info('e att dumped to [%s]', out_name)
         return
