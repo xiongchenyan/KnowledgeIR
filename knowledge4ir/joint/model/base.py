@@ -280,7 +280,7 @@ class JointSemanticModel(ModelBase):
         logging.info('paired [%d] pointwise data to [%d] pairs', len(l_data), paired_y.shape[0])
         return paired_data, paired_y
 
-    def pointwise_data_generator(self, in_name, s_target_qid=None):
+    def pointwise_data_generator(self, in_name, s_target_qid):
         """
         yield point wise data of one query each time
         :param in_name: input data
@@ -291,7 +291,7 @@ class JointSemanticModel(ModelBase):
             point_x, point_y = self._pack_pointwise(l_data)
             yield point_x, point_y
 
-    def pairwise_data_generator(self, in_name, s_target_qid=None):
+    def pairwise_data_generator(self, in_name, s_target_qid):
         """
         yield pairwise data of one query each time
         :param in_name: training/testing data
@@ -302,6 +302,9 @@ class JointSemanticModel(ModelBase):
         for l_data in self._simple_generator(in_name, s_target_qid):
             pair_x, pair_y = self._pack_pairwise(l_data)
             logging.info('packed into [%d] pairs', pair_y.shape[0])
+            if not pair_y.shape[0]:
+                logging.info('skip as no pairwise preference for this q')
+                continue
             yield pair_x, pair_y
 
     def _pack_pointwise(self, l_data):
