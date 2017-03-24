@@ -298,6 +298,7 @@ class JointSemanticModel(ModelBase):
         :param s_target_qid: target qid to keep
         :return:
         """
+        logging.info('start pairwise generating from [%s]', in_name)
         for l_data in self._simple_generator(in_name, s_target_qid):
             pair_x, pair_y = self._pack_pairwise(l_data)
             logging.info('packed into [%d] pairs', pair_y.shape[0])
@@ -429,6 +430,7 @@ class JointSemanticModel(ModelBase):
         logging.info('generating from [%s] with [%d] target qid', in_name, nb_target)
 
         while True:
+            logging.info('(re)starting from begining of file')
             with open(in_name) as f:
                 l_data = []
                 current_qid = None
