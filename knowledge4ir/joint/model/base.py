@@ -145,7 +145,7 @@ class JointSemanticModel(ModelBase):
             hyper_para.loss,
         )
 
-        logging.info('start training')
+        logging.info('start training with [%d] target qid', len(s_target_qid))
         steps = len(s_target_qid)
         self.training_model.fit_generator(
             self.pairwise_data_generator(in_name, s_target_qid),
@@ -300,6 +300,7 @@ class JointSemanticModel(ModelBase):
         """
         for l_data in self._simple_generator(in_name, s_target_qid):
             pair_x, pair_y = self._pack_pairwise(l_data)
+            logging.info('packed into [%d] pairs', pair_y.shape[0])
             yield pair_x, pair_y
 
     def _pack_pointwise(self, l_data):
@@ -440,6 +441,7 @@ class JointSemanticModel(ModelBase):
                     if current_qid is None:
                         current_qid = qid
                     if qid != current_qid:
+                        logging.info('generated qid [%s]', qid)
                         yield l_data
                         l_data = []
                         current_qid = qid
