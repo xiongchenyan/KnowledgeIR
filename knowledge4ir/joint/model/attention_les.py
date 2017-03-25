@@ -489,7 +489,7 @@ class SfAttLes(AttentionLes):
             if qid not in s_qid:
                 s_qid[qid] = True
                 logging.info('sf_att of q [%s]: %s', qid, np.array2string(mid_res[p]))
-                print >> out, json.dumps({'qid': qid, 'sf_att': mid_res[p].to_list()})
+                print >> out, json.dumps({'qid': qid, 'sf_att': mid_res[p].tolist()})
         out.close()
         return
 
