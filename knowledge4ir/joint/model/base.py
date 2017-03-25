@@ -161,7 +161,7 @@ class JointSemanticModel(ModelBase):
     def predict_generator(self, in_name, s_target_qid):
         y = self.ranking_model.predict_generator(
             self.pointwise_data_generator(in_name, s_target_qid),
-            val_samples=len(s_target_qid)
+            val_samples=len(s_target_qid) * 100
         )
         return y.reshape(-1)
 
