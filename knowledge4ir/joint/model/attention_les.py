@@ -150,9 +150,12 @@ class AttentionLes(JointSemanticModel):
                                    output=layer.get_output_at(0)
                                    )
         intermediate_model.summary()
+
+        steps = self._check_target_lines(in_name, s_target_qid)
+        logging.info('formulating for [%d] target pairs', steps)
         mid_res = intermediate_model.predict_generator(
             self.pointwise_data_generator(in_name, s_target_qid),
-            val_samples=len(s_target_qid) * 100
+            val_samples=steps
         )
 
         out = open(out_name, 'w')

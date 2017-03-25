@@ -159,9 +159,11 @@ class JointSemanticModel(ModelBase):
         return
 
     def predict_generator(self, in_name, s_target_qid):
+        steps = self._check_target_lines(in_name, s_target_qid)
+        logging.info('predicting with generator for [%d] lines')
         y = self.ranking_model.predict_generator(
             self.pointwise_data_generator(in_name, s_target_qid),
-            val_samples=len(s_target_qid) * 100
+            val_samples=steps
         )
         return y.reshape(-1)
 
@@ -418,6 +420,28 @@ class JointSemanticModel(ModelBase):
             l_data.append(h)
         logging.info('total [%d] lines [%d] kept', cnt, len(l_data))
         return l_data
+
+    @classmethod
+    def _check_target_lines(cls, in_name, s_target_qid):
+        """
+        simply read all data and parse them into given format
+        :param in_name:
+        :param s_target_qid:
+        :return:
+        """
+        cnt = 0
+        nb_target = len(s_target_qid)
+        logging.info('reading from [%s] with [%d] target qid', in_name, nb_target)
+        l_data = []
+        cnt = 0
+        for line in open(in_name):
+            cnt += 1
+            h = json.loads(line)
+            if s_target_qid is not None:
+                if h['meta']['qid'] not in s_target_qid:
+                    continue
+                cnt += 1
+        return cnt
 
     @classmethod
     def _simple_generator(cls, in_name, s_target_qid):
