@@ -114,7 +114,7 @@ class AttentionLes(JointSemanticModel):
         out = open(out_name, 'w')
         last_qid = None
         for p in xrange(len(l_meta)):
-            qid = l_meta[p]['meta']['qid']
+            qid = l_meta[p]['qid']
             if qid == last_qid:
                 continue
             last_qid = qid
@@ -471,13 +471,7 @@ class SfAttLes(AttentionLes):
 
         return ranking_model
 
-    def predict(self, x):
-        """
-        add a log about the intermediate results of sf_att
-        :param x:
-        :return:
-        """
-
+    def formulate_intermediate_res(self, x, out_name):
         # get sf att intermediate results, and put to log (per qid's sf att mtx)
         logging.info('fetching intermediate results')
         name = sf_ground_name + '_CNN'
@@ -489,13 +483,15 @@ class SfAttLes(AttentionLes):
         mid_res = intermediate_model.predict(x)
         l_meta = x['meta']
         s_qid = {}
+        out = open(out_name, 'w')
         for p in xrange(mid_res.shape[0]):
             qid = l_meta[p]['qid']
             if qid not in s_qid:
                 s_qid[qid] = True
                 logging.info('sf_att of q [%s]: %s', qid, np.array2string(mid_res[p]))
-        y = super(SfAttLes, self).predict(x)
-        return y
+                print >> out, json.dumps({'qid': qid, 'sf_att': mid_res[p].to_list()})
+        out.close()
+        return
 
 
 class DisAmbiAttLes(AttentionLes):

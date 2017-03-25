@@ -73,10 +73,6 @@ class EAttAna(Configurable):
         out.close()
         logging.info('analysis finished')
 
-
-
-
-
     def top_e_rank_dist(self):
         """
         the count of top e's rank in each sf's first several e's
