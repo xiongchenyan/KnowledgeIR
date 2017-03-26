@@ -472,7 +472,30 @@ class JointSemanticModel(ModelBase):
                 if l_data:
                     yield l_data
 
+    @classmethod
+    def _padding(cls, ts, ts_shape):
+        """
+        reshape the 1: dim of ts
+        only support 1-4 dim
+        :param ts:
+        :param ts_shape:
+        :return:
+        """
+        nb_x = ts.shape[0]
+        new_ts = np.zeros([nb_x] + list(ts_shape))
 
+        if len(ts_shape) == 1:
+            new_ts[:, :ts_shape[0]] = ts[:, :ts_shape[0]]
+        if len(ts_shape) == 2:
+            new_ts[:, :ts_shape[0], :ts_shape[1]] = ts[:, :ts_shape[0], :ts_shape[1]]
+        if len(ts_shape) == 3:
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]] = \
+                ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]]
+        if len(ts_shape) == 4:
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]] = \
+                ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]]
+
+        return new_ts
 
 
 

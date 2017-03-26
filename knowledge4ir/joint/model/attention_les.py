@@ -60,8 +60,8 @@ class AttentionLes(JointSemanticModel):
     e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     l_x_name = List(Unicode, default_value=l_input_name).tag(config=True)
-    e_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
-    sf_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
+    e_att_activation = Unicode('relu', help='the activation on e grounding').tag(config=True)
+    sf_att_activation = Unicode('relu', help='the activation on e grounding').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttentionLes, self).__init__(**kwargs)
@@ -210,31 +210,6 @@ class AttentionLes(JointSemanticModel):
                 # logging.info('reshape [%s] to shape %s', x_name, json.dumps(x_shape))
         return x
 
-    @classmethod
-    def _padding(cls, ts, ts_shape):
-        """
-        reshape the 1: dim of ts
-        only support 1-4 dim
-        :param ts:
-        :param ts_shape:
-        :return:
-        """
-        nb_x = ts.shape[0]
-        new_ts = np.zeros([nb_x] + list(ts_shape))
-
-        if len(ts_shape) == 1:
-            new_ts[:, :ts_shape[0]] = ts[:, :ts_shape[0]]
-        if len(ts_shape) == 2:
-            new_ts[:, :ts_shape[0], :ts_shape[1]] = ts[:, :ts_shape[0], :ts_shape[1]]
-        if len(ts_shape) == 3:
-            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]] = \
-                ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]]
-        if len(ts_shape) == 4:
-            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]] = \
-                    ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]]
-
-        return new_ts
-
     def _build_para_layers(self):
         """
         an sf grounding layer
@@ -272,6 +247,7 @@ class AttentionLes(JointSemanticModel):
             nb_col=1,
             W_regularizer=l2(self.hyper_para.l2_w),
             bias=False,
+            activation=self.e_att_activation,
             dim_ordering='tf',
             input_shape=self.e_ground_shape,
             name=e_ground_name + '_CNN'
@@ -345,8 +321,6 @@ class AttentionLes(JointSemanticModel):
         e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
         e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
-        if self.e_att_activation != 'linear':
-            e_ground_cnn = Activation(self.e_att_activation)(e_ground_cnn)
 
         ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
         ltr_dense = ltr_dense(ltr_input)
