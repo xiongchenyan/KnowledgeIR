@@ -121,9 +121,9 @@ class AttentionLes(JointSemanticModel):
             e_att_mtx = mid_res[p]
             ll_e_ref = l_meta[p]['e_ref']
             ll_e_att_score = []
-            for i in xrange(len(ll_e_ref)):
+            for i in xrange(min(len(ll_e_ref), e_att_mtx.shape[0])):
                 l_e_score = []
-                for j in xrange(len(ll_e_ref[i])):
+                for j in xrange(min(len(ll_e_ref[i]), e_att_mtx.shape[1])):
                     e_id = ll_e_ref[i][j]
                     score = e_att_mtx[i][j].tolist()
                     l_e_score.append((e_id, score))
@@ -169,9 +169,9 @@ class AttentionLes(JointSemanticModel):
             e_att_mtx = mid_res[p]
             ll_e_ref = meta['e_ref']
             ll_e_att_score = []
-            for i in xrange(len(ll_e_ref)):
+            for i in xrange(min(len(ll_e_ref), e_att_mtx.shape[0])):
                 l_e_score = []
-                for j in xrange(len(ll_e_ref[i])):
+                for j in xrange(min(len(ll_e_ref[i]), e_att_mtx.shape[1])):
                     e_id = ll_e_ref[i][j]
                     score = e_att_mtx[i][j].tolist()
                     l_e_score.append((e_id, score))
