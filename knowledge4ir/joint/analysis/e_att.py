@@ -90,7 +90,7 @@ class EAttAna(Configurable):
 
                 l_sorted = sorted(l_e_score, key=lambda item: -item[1])
                 p = [item[0] for item in l_sorted].index(e_id)
-                l_top_e_rank.append(p + 1)
+                l_top_e_rank.append(p)
         bins = np.bincount(l_top_e_rank)
         return bins.tolist()
 
