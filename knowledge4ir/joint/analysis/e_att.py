@@ -42,6 +42,7 @@ class EAttAna(Configurable):
                 for j in xrange(len(e_att[i])):
                     if type(e_att[i][j][1]) == list:
                         e_att[i][j][1] = e_att[i][j][1][0]  # in case it is old res
+                        e_att[i][j][1] = max(e_att[i][j][1], 0)
             l_e_att_mtx.append(e_att)
         logging.info('att mtx of [%d] q loaded', len(l_e_att_mtx))
         return l_e_att_mtx
