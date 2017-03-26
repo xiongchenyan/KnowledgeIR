@@ -247,7 +247,6 @@ class AttentionLes(JointSemanticModel):
             nb_col=1,
             W_regularizer=l2(self.hyper_para.l2_w),
             bias=False,
-            activation=self.e_att_activation,
             dim_ordering='tf',
             input_shape=self.e_ground_shape,
             name=e_ground_name + '_CNN'
@@ -321,6 +320,8 @@ class AttentionLes(JointSemanticModel):
         e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
         e_ground_cnn = e_ground_cnn(e_ground_input)
         e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
+        if self.e_att_activation != 'linear':
+            e_ground_cnn = Activation(self.e_att_activation)(e_ground_cnn)
 
         ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
         ltr_dense = ltr_dense(ltr_input)
