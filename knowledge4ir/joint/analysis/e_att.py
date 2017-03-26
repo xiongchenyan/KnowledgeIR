@@ -69,12 +69,12 @@ class EAttAna(Configurable):
         logging.info('start ana e attention scores')
         out = open(self.out_name, 'w')
         print >> out, 'cmns e rank distribution:'
-        print >> out, json.dumps(self.top_e_rank_dist())
+        print >> out, json.dumps(self.top_e_rank_dist()).strip('[]')
         print >> out, 'cmns e weight frac:'
         print >> out, '%f' % self.top_e_weight_frac()
         print >> out, 'e attention score normalized bins 11 bins in 0-1'
         l_bins = self.att_dist()
-        print >> out, json.dumps(zip(range(len(l_bins)), l_bins))
+        print >> out, json.dumps(l_bins).strip('[]')
         out.close()
         logging.info('analysis finished')
 
