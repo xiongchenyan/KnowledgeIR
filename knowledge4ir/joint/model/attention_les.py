@@ -125,7 +125,7 @@ class AttentionLes(JointSemanticModel):
                 l_e_score = []
                 for j in xrange(min(len(ll_e_ref[i]), e_att_mtx.shape[1])):
                     e_id = ll_e_ref[i][j]
-                    score = e_att_mtx[i][j].tolist()
+                    score = e_att_mtx[i][j][0]
                     l_e_score.append((e_id, score))
                 ll_e_att_score.append(l_e_score)
             l_meta[p]['e_att_score'] = ll_e_att_score
