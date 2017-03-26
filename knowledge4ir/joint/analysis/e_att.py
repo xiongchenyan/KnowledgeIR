@@ -3,7 +3,7 @@ analysis e attention weights
 
 input:
     intermediate results of model's output
-        each line's ['meta']['e_att_score'] ->
+        each line's ['e_att_score'] ->
             [a sf form's[(e, att score),()],
 output:
     stats of attention weights (normalized to sum to 1)
@@ -37,7 +37,7 @@ class EAttAna(Configurable):
         logging.info('loading e att res from [%s]', self.in_name)
         for line in open(self.in_name):
             h = json.loads(line)
-            e_att = h['meta']['e_att_score']
+            e_att = h['e_att_score']
             l_e_att_mtx.append(e_att)
         logging.info('att mtx of [%d] q loaded', len(l_e_att_mtx))
         return l_e_att_mtx
