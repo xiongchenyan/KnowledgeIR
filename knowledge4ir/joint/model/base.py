@@ -160,7 +160,7 @@ class JointSemanticModel(ModelBase):
 
     def predict_generator(self, in_name, s_target_qid):
         steps = self._check_target_lines(in_name, s_target_qid)
-        logging.info('predicting with generator for [%d] lines')
+        logging.info('predicting with generator for [%d] lines', steps)
         y = self.ranking_model.predict_generator(
             self.pointwise_data_generator(in_name, s_target_qid),
             val_samples=steps
@@ -432,15 +432,12 @@ class JointSemanticModel(ModelBase):
         cnt = 0
         nb_target = len(s_target_qid)
         logging.info('reading from [%s] with [%d] target qid', in_name, nb_target)
-        l_data = []
-        cnt = 0
         for line in open(in_name):
-            cnt += 1
             h = json.loads(line)
             if s_target_qid is not None:
                 if h['meta']['qid'] not in s_target_qid:
                     continue
-                cnt += 1
+            cnt += 1
         return cnt
 
     @classmethod
