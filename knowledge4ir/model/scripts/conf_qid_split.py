@@ -38,7 +38,8 @@ while ed <= q_ed:
                 print >> out, "c..CrossValidator.q_range=[%d, %d]" % (st, ed)
             else:
                 print >> out, line.strip()
-    st = ed
+    st = ed + 1
     ed = st + nb_q - 1
+    cnt += 1
 
 print "done"
