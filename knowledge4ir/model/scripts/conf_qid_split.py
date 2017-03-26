@@ -35,7 +35,7 @@ while ed <= q_ed:
     with open(sys.argv[1] + "_%d" % cnt, 'w') as out:
         for line in l_conf:
             if line.startswith("c.CrossValidator.q_range="):
-                print >> out, "c..CrossValidator.q_range=[%d, %d]" % (st, ed)
+                print >> out, "c.CrossValidator.q_range=[%d, %d]" % (st, ed)
             else:
                 print >> out, line.strip()
     st = ed + 1
