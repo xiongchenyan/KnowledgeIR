@@ -15,6 +15,7 @@ from knowledge4ir.joint.model.attention_les import (
     DisAmbiAttLes,
     SfAttLes,
 )
+import json
 
 h_model_name = {
     "att_les": AttentionLes,
@@ -33,6 +34,10 @@ class CrossValidator(Configurable):
                                          "if no dev, then the first one is the default "
                            ).tag(config=True)
     qrel_in = Unicode(help='qrel in').tag(config=True)
+    nb_repeat = Int(
+        1,
+        help='number of repeat training time, will pick the one with best training loss to apply'
+    ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(CrossValidator, self).__init__(**kwargs)
@@ -74,9 +79,25 @@ class CrossValidator(Configurable):
         train_x, train_y = self.model.train_data_reader(in_name, s_train_qid)
         test_x, _ = self.model.test_data_reader(in_name, s_test_qid)
 
-        self.model.train(train_x, train_y, self.l_hyper_para[0])
-        logging.info('trained')
-        self._dump_and_evaluate(test_x, out_dir, fold_k)
+        best_train_loss = None
+        best_ndcg = None
+        for p in xrange(self.nb_repeat):
+            logging.info('repeating training [%d]', p)
+            loss = self.model.train(train_x, train_y, self.l_hyper_para[0])
+            logging.info('trained p with loss [%f]', loss)
+            if best_train_loss is not None:
+                if best_train_loss < loss:
+                    logging.info('no improvement in training loss [%f]>[%f],skip this training',
+                                 loss, best_train_loss)
+                    continue
+            logging.info('get new best training loss %f vs %s, use it on testing data',
+                         loss, json.dumps(best_train_loss))
+            ndcg = self._dump_and_evaluate(test_x, out_dir, fold_k)
+            logging.info('[%d] try, loss %s -> %f, test ndcg %s -> %f',
+                         p, json.dumps(best_train_loss), loss,
+                         json.dumps(best_ndcg), ndcg)
+            best_train_loss, best_ndcg = loss, ndcg
+
         return
 
     def train_dev_test_one_fold(self, in_name, out_dir, fold_k):
@@ -104,9 +125,25 @@ class CrossValidator(Configurable):
         dev_x, dev_y = self.model.train_data_reader(in_name, s_dev_qid)
         test_x = self.model.test_data_reader(in_name, s_test_qid)
 
-        self.model.train_with_dev(train_x, train_y, dev_x, dev_y, self.l_hyper_para)
-        logging.info('trained')
-        self._dump_and_evaluate(test_x, out_dir, fold_k)
+        best_train_loss = None
+        best_ndcg = None
+        for p in xrange(self.nb_repeat):
+            logging.info('repeating training [%d]', p)
+            loss = self.model.train_with_dev(train_x, train_y, dev_x, dev_y, self.l_hyper_para)
+            logging.info('trained p with loss [%f]', loss)
+            if best_train_loss is not None:
+                if best_train_loss < loss:
+                    logging.info('no improvement in training loss [%f]>[%f],skip this training',
+                                 loss, best_train_loss)
+                    continue
+            logging.info('get new best training loss %f vs %s, use it on testing data',
+                         loss, json.dumps(best_train_loss))
+            ndcg = self._dump_and_evaluate(test_x, out_dir, fold_k)
+            logging.info('[%d] try, loss %s -> %f, test ndcg %s -> %f',
+                         p, json.dumps(best_train_loss), loss,
+                         json.dumps(best_ndcg), ndcg)
+            best_train_loss, best_ndcg = loss, ndcg
+
         return
 
     def train_test_files(self, train_in, test_in, out_dir):
@@ -122,9 +159,25 @@ class CrossValidator(Configurable):
         s_qid = ["%d" % i for i in range(self.q_range[0], self.q_range[1] + 1)]
         train_x, train_y = self.model.train_data_reader(train_in, s_qid)
         test_x, _ = self.model.test_data_reader(test_in, s_qid)
-        self.model.train(train_x, train_y, self.l_hyper_para[0])
-        logging.info('trained')
-        self._dump_and_evaluate(test_x, out_dir)
+
+        best_train_loss = None
+        best_ndcg = None
+        for p in xrange(self.nb_repeat):
+            logging.info('repeating training [%d]', p)
+            loss = self.model.train(train_x, train_y, self.l_hyper_para[0])
+            logging.info('trained p with loss [%f]', loss)
+            if best_train_loss is not None:
+                if best_train_loss < loss:
+                    logging.info('no improvement in training loss [%f]>[%f],skip this training',
+                                 loss, best_train_loss)
+                    continue
+            logging.info('get new best training loss %f vs %s, use it on testing data',
+                         loss, json.dumps(best_train_loss))
+            ndcg = self._dump_and_evaluate(test_x, out_dir)
+            logging.info('[%d] try, loss %s -> %f, test ndcg %s -> %f',
+                         p, json.dumps(best_train_loss), loss,
+                         json.dumps(best_ndcg), ndcg)
+            best_train_loss, best_ndcg = loss, ndcg
         return
 
     def train_test_generator(self, train_in, test_in, out_dir, s_train_qid, s_test_qid):
@@ -160,7 +213,9 @@ class CrossValidator(Configurable):
             logging.info('finished to [%s], result [%s]',
                          eva_out, eva_res.splitlines()[-1]
                          )
-        return
+        ndcg, err = eva_res.splitlines()[-1].split(',')[-2:]
+        ndcg = float(ndcg)
+        return ndcg
 
     def _dump_and_evaluate_generator(self, test_in, out_dir, s_test_qid):
         """

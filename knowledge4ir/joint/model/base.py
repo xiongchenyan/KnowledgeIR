@@ -89,7 +89,7 @@ class JointSemanticModel(ModelBase):
 
         logging.info('start training with [%d] data with full batch', batch_size)
 
-        self.training_model.fit(
+        res = self.training_model.fit(
             paired_x,
             y,
             batch_size=batch_size,
@@ -99,7 +99,7 @@ class JointSemanticModel(ModelBase):
                                      )],
         )
         logging.info('model training finished')
-        return
+        return res.history['loss'][-1]
 
     def predict(self, x):
         """
@@ -147,7 +147,7 @@ class JointSemanticModel(ModelBase):
 
         logging.info('start training with [%d] target qid', len(s_target_qid))
         steps = len(s_target_qid)
-        self.training_model.fit_generator(
+        res = self.training_model.fit_generator(
             self.pairwise_data_generator(in_name, s_target_qid),
             samples_per_epoch=steps * 500,
             nb_epoch=hyper_para.nb_epoch,
@@ -156,7 +156,7 @@ class JointSemanticModel(ModelBase):
                                      )],
         )
         logging.info('generator model training finished')
-        return
+        return res.history['loss']
 
     def predict_generator(self, in_name, s_target_qid):
         steps = self._check_target_lines(in_name, s_target_qid)
@@ -227,9 +227,9 @@ class JointSemanticModel(ModelBase):
         for key, tensor in paired_train_x:
             paired_x[key] = np.concatenate(paired_train_x, paired_dev_x)
 
-        self.pairwise_train(paired_x, Y, best_para)
+        res = self.pairwise_train(paired_x, Y, best_para)
         logging.info('train with best dev para done')
-        return
+        return res
 
     def train_data_reader(self, in_name, s_target_qid=None):
         return self.pairwise_data_reader(in_name, s_target_qid)
