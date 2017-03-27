@@ -54,7 +54,7 @@ class PrettyCompEAtt(Configurable):
         l_res_line = []
         for i, loc in enumerate(l_info[0]['sf_ref']):
             sf = ' '.join(l_qt[loc[0]: loc[1]])
-            for j in l_info[0]['e_ref']:
+            for j in xrange(len(l_info[0]['e_ref'])):
                 e_id, root_score, name = l_info[0]['e_att_score'][i][j]
                 this_line = q_pre + '\t' + '\t'.join(sf, e_id, name) + '\t%f' % root_score
                 for info in l_info[1:]:
