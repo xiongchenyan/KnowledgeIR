@@ -128,6 +128,7 @@ class CrossValidator(Configurable):
 
         best_train_loss = None
         best_ndcg = None
+        l_loss_ndcg = []
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train_with_dev(train_x, train_y, dev_x, dev_y, self.l_hyper_para)
@@ -136,6 +137,7 @@ class CrossValidator(Configurable):
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
                                  loss, best_train_loss)
+                    l_loss_ndcg.append((loss, 'na'))
                     continue
             logging.info('get new best training loss %f vs %s, use it on testing data',
                          loss, json.dumps(best_train_loss))
@@ -144,6 +146,8 @@ class CrossValidator(Configurable):
                          p, json.dumps(best_train_loss), loss,
                          json.dumps(best_ndcg), ndcg)
             best_train_loss, best_ndcg = loss, ndcg
+            l_loss_ndcg.append((loss, ndcg))
+        logging.info('loss vs ndcg: %s', json.dumps(l_loss_ndcg))
         logging.info('[%s][%d] finished, loss [%f], ndcg [%f]', out_dir, fold_k,
                      best_train_loss, best_ndcg)
         return
