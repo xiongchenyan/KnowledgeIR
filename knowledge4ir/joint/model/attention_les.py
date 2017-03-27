@@ -54,7 +54,7 @@ import numpy as np
 class AttentionLes(JointSemanticModel):
     model_name = Unicode('att_les')
     max_spot_per_q = Int(3, help='max spot allowed per q').tag(config=True)
-    max_e_per_spot = Int(3, help='top e allowed per q').tag(config=True)
+    max_e_per_spot = Int(5, help='top e allowed per q').tag(config=True)
     sf_ground_f_dim = Int(5, help='sf ground feature dimension').tag(config=True)
     e_ground_f_dim = Int(5, help='e ground feature dimension').tag(config=True)
     e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
