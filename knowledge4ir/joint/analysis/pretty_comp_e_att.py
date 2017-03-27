@@ -56,6 +56,8 @@ class PrettyCompEAtt(Configurable):
             sf = ' '.join(l_qt[loc[0]: loc[1]])
             for j in xrange(len(l_info[0]['e_ref'])):
                 e_id, root_score, name = l_info[0]['e_att_score'][i][j]
+                if type(root_score) == list:
+                    root_score = root_score[0]
                 this_line = q_pre + '\t' + '\t'.join([sf, e_id, name]) + '\t%f' % root_score
                 for info in l_info[1:]:
                     e_score = info['e_att_score'][i][j][1]
