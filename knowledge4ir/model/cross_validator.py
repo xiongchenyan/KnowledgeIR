@@ -84,7 +84,7 @@ class CrossValidator(Configurable):
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train(train_x, train_y, self.l_hyper_para[0])
-            logging.info('trained p with loss [%f]', loss)
+            logging.info('trained [%d] with loss [%f]', p, loss)
             if best_train_loss is not None:
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
@@ -97,7 +97,8 @@ class CrossValidator(Configurable):
                          p, json.dumps(best_train_loss), loss,
                          json.dumps(best_ndcg), ndcg)
             best_train_loss, best_ndcg = loss, ndcg
-
+        logging.info('[%s][%d] finished, loss [%f], ndcg [%f]', out_dir, fold_k,
+                     best_train_loss, best_ndcg)
         return
 
     def train_dev_test_one_fold(self, in_name, out_dir, fold_k):
@@ -143,7 +144,8 @@ class CrossValidator(Configurable):
                          p, json.dumps(best_train_loss), loss,
                          json.dumps(best_ndcg), ndcg)
             best_train_loss, best_ndcg = loss, ndcg
-
+        logging.info('[%s][%d] finished, loss [%f], ndcg [%f]', out_dir, fold_k,
+                     best_train_loss, best_ndcg)
         return
 
     def train_test_files(self, train_in, test_in, out_dir):
@@ -178,6 +180,8 @@ class CrossValidator(Configurable):
                          p, json.dumps(best_train_loss), loss,
                          json.dumps(best_ndcg), ndcg)
             best_train_loss, best_ndcg = loss, ndcg
+        logging.info('[%s] finished, loss [%f], ndcg [%f]', test_in,
+                     best_train_loss, best_ndcg)
         return
 
     def train_test_generator(self, train_in, test_in, out_dir, s_train_qid, s_test_qid):
