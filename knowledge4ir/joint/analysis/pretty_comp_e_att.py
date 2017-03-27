@@ -48,7 +48,7 @@ class PrettyCompEAtt(Configurable):
     def _form_one_q(self, qid):
         l_info = [h[qid] for h in self.l_h_qid_e_att]
         query = l_info[0]['query']
-        q_pre = qid + '\t' + query + '\t' + "\t".join(['%.4f' % h_q_eva['qid'][0] for h_q_eva in self.l_h_q_eva])
+        q_pre = qid + '\t' + query + '\t' + "\t".join(['%.4f' % h_q_eva[qid][0] for h_q_eva in self.l_h_q_eva])
         l_qt = query.split()
 
         l_res_line = []
