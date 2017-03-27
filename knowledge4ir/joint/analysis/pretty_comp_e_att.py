@@ -1,0 +1,100 @@
+"""
+pretty comparison of e attentions from two methods
+
+
+input:
+    eval of a
+    eval of b
+    e att of a and b (the output of append_tesxt_to_e_att's results)
+
+output:
+    qid \t query \t ndcg a \t ndcg b sf \t e_1 \t name \t score from a \t score from b
+    \t \t \t \t \t other entity
+    \t\t\t other spots
+"""
+
+from knowledge4ir.utils import load_gdeval_res
+import json
+import logging
+from traitlets.config import Configurable
+from traitlets import (
+    Unicode,
+    Int,
+    List,
+)
+import sys
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
+
+
+class PrettyCompEAtt(Configurable):
+    l_eval_in = List(Unicode, help='2 evaluation res').tag(config=True)
+    l_e_att_in = List(Unicode, help='2 att res').tag(config=True)
+    out_name = Unicode(help='out name').tag(config=True)
+
+    def __init__(self, **kwargs):
+        super(PrettyCompEAtt, self).__init__(**kwargs)
+        self.l_h_q_eva = [dict(load_gdeval_res(eval_in, False)) for eval_in in self.l_eval_in]
+        self.l_h_qid_e_att = [self._load_e_att(att_in) for att_in in self.l_e_att_in]
+        logging.info('eval res and e att res loaded')
+
+    def _load_e_att(self, att_in):
+        h_qid_e_att = dict()
+        for line in open(att_in):
+            h = json.loads(line)
+            h_qid_e_att[h['qid']] = h
+        return h_qid_e_att
+
+    def _form_one_q(self, qid):
+        l_info = [h[qid] for h in self.l_h_qid_e_att]
+        query = l_info[0]['query']
+        q_pre = qid + '\t' + query + '\t' + "\t".join(['%.4f' % h_q_eva['qid'][0] for h_q_eva in self.l_h_q_eva])
+        l_qt = query.split()
+
+        l_res_line = []
+        for i, loc in enumerate(l_info[0]['sf_ref']):
+            sf = ' '.join(l_qt[loc[0]: loc[1]])
+            for j in l_info[0]['e_ref']:
+                e_id, __, name = l_info[0]['e_att_score'][i][j]
+                this_line = q_pre + '\t' + '\t'.join(sf, e_id, name)
+                for info in l_info:
+                    e_score = info['e_att_score'][i][j][1]
+                    if type(e_score) == list:
+                        e_score = e_score[0]
+                    this_line += '\t%.4f' % e_score
+                l_res_line.append(this_line)
+            l_res_line.append('\n')
+        l_res_line.append('\n\n')
+        return l_res_line
+
+    def process(self):
+        logging.info('start aligning eval and e att results')
+        out = open(self.out_name, 'w')
+        for qid in self.l_h_qid_e_att[0].keys():
+            l_lines = self._form_one_q(qid)
+            print >> out, '\n'.join(l_lines)
+            logging.info('q [%s] finished', qid)
+        out.close()
+        logging.info('finished')
+
+
+if __name__ == '__main__':
+    from knowledge4ir.utils import (
+        load_py_config,
+        set_basic_log
+    )
+    set_basic_log(logging.INFO)
+
+    if 2 != len(sys.argv):
+        print "get e att aligned results for manual analysis"
+        PrettyCompEAtt.class_print_help()
+        sys.exit(-1)
+
+    ana = PrettyCompEAtt(config=load_py_config(sys.argv[1]))
+    ana.process()
+
+
+
+
+
+
