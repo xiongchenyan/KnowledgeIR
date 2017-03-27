@@ -46,7 +46,13 @@ class PrettyCompEAtt(Configurable):
         return h_qid_e_att
 
     def _form_one_q(self, qid):
+        if qid not in self.l_h_q_eva[0]:
+            return ""
+        if qid not in self.l_h_qid_e_att[0]:
+            return ""
         l_info = [h[qid] for h in self.l_h_qid_e_att]
+
+
         query = l_info[0]['query']
         q_pre = qid + '\t' + query + '\t' + "\t".join(['%.4f' % h_q_eva[qid][0] for h_q_eva in self.l_h_q_eva])
         l_qt = query.split()
