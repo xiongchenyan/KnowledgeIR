@@ -55,13 +55,13 @@ class PrettyCompEAtt(Configurable):
         for i, loc in enumerate(l_info[0]['sf_ref']):
             sf = ' '.join(l_qt[loc[0]: loc[1]])
             for j in l_info[0]['e_ref']:
-                e_id, __, name = l_info[0]['e_att_score'][i][j]
-                this_line = q_pre + '\t' + '\t'.join(sf, e_id, name)
-                for info in l_info:
+                e_id, root_score, name = l_info[0]['e_att_score'][i][j]
+                this_line = q_pre + '\t' + '\t'.join(sf, e_id, name) + '\t%f' % root_score
+                for info in l_info[1:]:
                     e_score = info['e_att_score'][i][j][1]
                     if type(e_score) == list:
                         e_score = e_score[0]
-                    this_line += '\t%.4f' % e_score
+                    this_line += '\t%.4f' % e_score - root_score
                 l_res_line.append(this_line)
             l_res_line.append('\n')
         l_res_line.append('\n\n')
