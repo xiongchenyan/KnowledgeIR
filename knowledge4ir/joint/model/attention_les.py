@@ -105,6 +105,9 @@ class AttentionLes(JointSemanticModel):
 
         name = e_ground_name + '_CNN'
         layer = self.ranking_model.get_layer(name)
+        if layer is None:
+            logging.info('current model has no e attention layer')
+            return
         intermediate_model = Model(input=layer.get_input_at(0),
                                    output=layer.get_output_at(0)
                                    )
