@@ -71,7 +71,7 @@ class PrettyCompEAtt(Configurable):
                     e_score = info['e_att_score'][i][j][1]
                     if type(e_score) == list:
                         e_score = e_score[0]
-                    this_line += '\t%.4f' % e_score - root_score
+                    this_line += '\t%.4f' % (e_score - root_score)
                 l_res_line.append(this_line)
             l_res_line.append('\n')
         l_res_line.append('\n\n')
