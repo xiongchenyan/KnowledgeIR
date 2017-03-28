@@ -54,7 +54,12 @@ class PrettyCompEAtt(Configurable):
 
 
         query = l_info[0]['query']
-        q_pre = qid + '\t' + query + '\t' + "\t".join(['%.4f' % h_q_eva[qid][0] for h_q_eva in self.l_h_q_eva])
+        q_pre = qid + '\t' + query
+        root_ndcg = self.l_h_q_eva[0][qid][0]
+        q_pre += '\t%.4f' % root_ndcg
+        if len(self.l_h_q_eva) > 1:
+            q_pre += "\t".join(['%.4f' % h_q_eva[qid][0] - root_ndcg
+                                for h_q_eva in self.l_h_q_eva[1:]])
         l_qt = query.split()
 
         l_res_line = []
@@ -71,7 +76,7 @@ class PrettyCompEAtt(Configurable):
                     e_score = info['e_att_score'][i][j][1]
                     if type(e_score) == list:
                         e_score = e_score[0]
-                    this_line += '\t%.4f' % (e_score - root_score)
+                    this_line += '\t%.4f' % (e_score)
                 l_res_line.append(this_line)
             l_res_line.append('\n')
         l_res_line.append('\n\n')
