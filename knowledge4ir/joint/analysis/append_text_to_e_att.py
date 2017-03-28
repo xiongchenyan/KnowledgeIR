@@ -49,7 +49,9 @@ class AppendText(Configurable):
             for j in xrange(len(l_att_score[i])):
                 e_id = l_att_score[i][j][0]
                 name = self.h_e_text.get(e_id, {}).get('name')
-                l_att_score[i][j].append(name)
+                desp = self.h_e_text.get(e_id, {}).get('desp')
+                desp = ' '.join(desp.split())
+                l_att_score[i][j].extend([name, desp])
         h['e_att_score'] = l_att_score
         return h
 
