@@ -58,8 +58,8 @@ class PrettyCompEAtt(Configurable):
         root_ndcg = self.l_h_q_eva[0][qid][0]
         q_pre += '\t%.4f' % root_ndcg
         if len(self.l_h_q_eva) > 1:
-            q_pre += "\t".join(['%.4f' % (h_q_eva[qid][0] - root_ndcg)
-                                for h_q_eva in self.l_h_q_eva[1:]])
+            q_pre += "\t" + "\t".join(['%.4f' % (h_q_eva[qid][0] - root_ndcg)
+                                       for h_q_eva in self.l_h_q_eva[1:]])
         l_qt = query.split()
 
         l_res_line = []
