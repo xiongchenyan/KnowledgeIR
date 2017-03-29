@@ -47,12 +47,10 @@ class PrettyCompEAtt(Configurable):
 
     def _form_one_q(self, qid):
         if qid not in self.l_h_q_eva[0]:
-            return ""
+            return None, None
         if qid not in self.l_h_qid_e_att[0]:
-            return ""
+            return None, None
         l_info = [h[qid] for h in self.l_h_qid_e_att]
-
-
         query = l_info[0]['query']
         q_pre = qid + '\t' + query
         root_ndcg = self.l_h_q_eva[0][qid][0]
@@ -92,6 +90,8 @@ class PrettyCompEAtt(Configurable):
         l_key_l_res = []
         for qid in self.l_h_qid_e_att[0].keys():
             key_ndcg, l_lines = self._form_one_q(qid)
+            if key_ndcg is None:
+                continue
             l_key_l_res.append((key_ndcg, l_lines))
             logging.info('q [%s] results get', qid)
         logging.info('sort...')
