@@ -57,9 +57,11 @@ class PrettyCompEAtt(Configurable):
         q_pre = qid + '\t' + query
         root_ndcg = self.l_h_q_eva[0][qid][0]
         q_pre += '\t%.4f' % root_ndcg
+        key_ndcg = root_ndcg
         if len(self.l_h_q_eva) > 1:
             q_pre += "\t" + "\t".join(['%.4f' % (h_q_eva[qid][0] - root_ndcg)
                                        for h_q_eva in self.l_h_q_eva[1:]])
+            key_ndcg = self.l_h_q_eva[1][qid][0] - root_ndcg
         l_qt = query.split()
 
         l_res_line = []
@@ -82,15 +84,20 @@ class PrettyCompEAtt(Configurable):
                 l_res_line.append(this_line)
             l_res_line.append('\n')
         l_res_line.append('\n\n')
-        return l_res_line
+        return key_ndcg, l_res_line
 
     def process(self):
         logging.info('start aligning eval and e att results')
         out = open(self.out_name, 'w')
+        l_key_l_res = []
         for qid in self.l_h_qid_e_att[0].keys():
-            l_lines = self._form_one_q(qid)
+            key_ndcg, l_lines = self._form_one_q(qid)
+            l_key_l_res.append((key_ndcg, l_lines))
+            logging.info('q [%s] results get', qid)
+        logging.info('sort...')
+        l_key_l_res.sort(key=lambda item: item[0])
+        for key, l_lines in l_key_l_res:
             print >> out, '\n'.join(l_lines)
-            logging.info('q [%s] finished', qid)
         out.close()
         logging.info('finished')
 
