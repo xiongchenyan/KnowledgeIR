@@ -23,7 +23,6 @@ from keras.layers import (
     Conv2D,
     Input,
     RepeatVector,
-    Lambda,
     Reshape,
     Activation,
     Permute,
@@ -33,7 +32,6 @@ from keras.regularizers import (
     l2
 )
 
-import keras.backend as K
 import logging
 import json
 from knowledge4ir.joint.model import (
@@ -49,20 +47,21 @@ from traitlets import (
     Int,
     List,
 )
+from copy import deepcopy
 import numpy as np
 
 
 class AttentionLes(JointSemanticModel):
     model_name = Unicode('att_les')
     max_spot_per_q = Int(3, help='max spot allowed per q').tag(config=True)
-    max_e_per_spot = Int(3, help='top e allowed per q').tag(config=True)
+    max_e_per_spot = Int(5, help='top e allowed per q').tag(config=True)
     sf_ground_f_dim = Int(5, help='sf ground feature dimension').tag(config=True)
     e_ground_f_dim = Int(5, help='e ground feature dimension').tag(config=True)
     e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     l_x_name = List(Unicode, default_value=l_input_name).tag(config=True)
-    e_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
-    sf_att_activation = Unicode('linear', help='the activation on e grounding').tag(config=True)
+    e_att_activation = Unicode('relu', help='the activation on e grounding').tag(config=True)
+    sf_att_activation = Unicode('relu', help='the activation on e grounding').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttentionLes, self).__init__(**kwargs)
@@ -81,6 +80,112 @@ class AttentionLes(JointSemanticModel):
         x = self._reshape_input(x)
         return x, y
 
+    def pairwise_data_generator(self, in_name, s_target_qid):
+        for x, y in super(AttentionLes, self).pairwise_data_generator(in_name, s_target_qid):
+            x = self._reshape_input(x)
+            yield x, y
+
+    def pointwise_data_generator(self, in_name, s_target_qid):
+        for x, y in super(AttentionLes, self).pointwise_data_generator(in_name, s_target_qid):
+            x = self._reshape_input(x)
+            yield x, y
+
+    def formulate_intermediate_res(self, x, out_name):
+        """
+        formulate and dump intermediate results
+            here:
+                predict the entity scores matrix
+                pair with x's meta field, and dump to out_name
+        :param x: the data, with the meta fields
+        :param out_name: the place to put the data
+        :return:
+        """
+        logging.info('formulating e attention weights')
+        l_meta = deepcopy(x['meta'])
+
+        name = e_ground_name + '_CNN'
+        layer = self.ranking_model.get_layer(name)
+        if layer is None:
+            logging.info('current model has no e attention layer')
+            return
+        intermediate_model = Model(input=layer.get_input_at(0),
+                                   output=layer.get_output_at(0)
+                                   )
+        intermediate_model.summary()
+        mid_res = intermediate_model.predict(x)
+
+        out = open(out_name, 'w')
+        last_qid = None
+        for p in xrange(len(l_meta)):
+            qid = l_meta[p]['qid']
+            if qid == last_qid:
+                continue
+            last_qid = qid
+            e_att_mtx = mid_res[p]
+            ll_e_ref = l_meta[p]['e_ref']
+            ll_e_att_score = []
+            for i in xrange(min(len(ll_e_ref), e_att_mtx.shape[0])):
+                l_e_score = []
+                for j in xrange(min(len(ll_e_ref[i]), e_att_mtx.shape[1])):
+                    e_id = ll_e_ref[i][j]
+                    score = e_att_mtx[i][j].tolist()[0]
+                    l_e_score.append((e_id, score))
+                ll_e_att_score.append(l_e_score)
+            l_meta[p]['e_att_score'] = ll_e_att_score
+            print >> out, json.dumps(l_meta[p])
+        out.close()
+        logging.info('e att dumped to [%s]', out_name)
+        return
+
+    def formulate_intermediate_res_generator(self, in_name, out_name, s_target_qid):
+        """
+        formulate and dump intermediate results
+            here:
+                predict the entity scores matrix
+                pair with x's meta field, and dump to out_name
+        :return:
+        """
+        logging.info('formulating e attention weights')
+
+        name = e_ground_name + '_CNN'
+        layer = self.ranking_model.get_layer(name)
+        intermediate_model = Model(input=layer.get_input_at(0),
+                                   output=layer.get_output_at(0)
+                                   )
+        intermediate_model.summary()
+
+        steps = self._check_target_lines(in_name, s_target_qid)
+        logging.info('formulating for [%d] target pairs', steps)
+        mid_res = intermediate_model.predict_generator(
+            self.pointwise_data_generator(in_name, s_target_qid),
+            val_samples=steps
+        )
+
+        out = open(out_name, 'w')
+        last_qid = None
+        for p, line in enumerate(open(in_name)):
+            h = json.loads(line)
+            meta = h['meta']
+            qid = meta['qid']
+            if qid == last_qid:
+                continue
+            e_att_mtx = mid_res[p]
+            ll_e_ref = meta['e_ref']
+            ll_e_att_score = []
+            for i in xrange(min(len(ll_e_ref), e_att_mtx.shape[0])):
+                l_e_score = []
+                for j in xrange(min(len(ll_e_ref[i]), e_att_mtx.shape[1])):
+                    e_id = ll_e_ref[i][j]
+                    score = e_att_mtx[i][j].tolist()[0]
+                    l_e_score.append((e_id, score))
+                ll_e_att_score.append(l_e_score)
+            meta['e_att_score'] = ll_e_att_score
+            print >> out, json.dumps(meta)
+            last_qid = qid
+        out.close()
+        logging.info('e att dumped to [%s]', out_name)
+        return
+
     def _reshape_input(self, x):
         """
         reshape the input to meet sf_ground_shape, e_ground_shape, e_match_shape, ltr_shape
@@ -96,8 +201,8 @@ class AttentionLes(JointSemanticModel):
             if x_name not in x:
                 continue
             if x[x_name].shape[1:] != x_shape:
+                # logging.info('reshaping [%s] to shape %s', x_name, json.dumps(x_shape))
                 x[x_name] = self._padding(x[x_name], x_shape)
-                logging.info('reshape [%s] to shape %s', x_name, json.dumps(x_shape))
 
         l_aux_name_shape = [(self.aux_pre + name, shape) for name, shape in l_name_shape]
         for x_name, x_shape in l_aux_name_shape:
@@ -105,31 +210,8 @@ class AttentionLes(JointSemanticModel):
                 continue
             if x[x_name].shape[1:] != x_shape:
                 x[x_name] = self._padding(x[x_name], x_shape)
-                logging.info('reshape [%s] to shape %s', x_name, json.dumps(x_shape))
+                # logging.info('reshape [%s] to shape %s', x_name, json.dumps(x_shape))
         return x
-
-    @classmethod
-    def _padding(cls, ts, ts_shape):
-        """
-        reshape the 1: dim of ts
-        only support 1-4 dim
-        :param ts:
-        :param ts_shape:
-        :return:
-        """
-        nb_x = ts.shape[0]
-        new_ts = np.zeros([nb_x] + list(ts_shape))
-
-        if len(ts_shape) == 1:
-            new_ts[:, :ts_shape[0]] = ts[:, :ts_shape[0]]
-        if len(ts_shape) == 2:
-            new_ts[:, :ts_shape[0], :ts_shape[1]] = ts[:, :ts_shape[0], :ts_shape[1]]
-        if len(ts_shape) == 3:
-            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]] = ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]]
-        if len(ts_shape) == 4:
-            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]] = ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]]
-
-        return new_ts
 
     def _build_para_layers(self):
         """
@@ -367,13 +449,7 @@ class SfAttLes(AttentionLes):
 
         return ranking_model
 
-    def predict(self, x):
-        """
-        add a log about the intermediate results of sf_att
-        :param x:
-        :return:
-        """
-
+    def formulate_intermediate_res(self, x, out_name):
         # get sf att intermediate results, and put to log (per qid's sf att mtx)
         logging.info('fetching intermediate results')
         name = sf_ground_name + '_CNN'
@@ -385,13 +461,15 @@ class SfAttLes(AttentionLes):
         mid_res = intermediate_model.predict(x)
         l_meta = x['meta']
         s_qid = {}
+        out = open(out_name, 'w')
         for p in xrange(mid_res.shape[0]):
             qid = l_meta[p]['qid']
             if qid not in s_qid:
                 s_qid[qid] = True
                 logging.info('sf_att of q [%s]: %s', qid, np.array2string(mid_res[p]))
-        y = super(SfAttLes, self).predict(x)
-        return y
+                print >> out, json.dumps({'qid': qid, 'sf_att': mid_res[p].tolist()})
+        out.close()
+        return
 
 
 class DisAmbiAttLes(AttentionLes):

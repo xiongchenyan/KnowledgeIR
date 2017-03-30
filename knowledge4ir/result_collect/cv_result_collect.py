@@ -33,7 +33,7 @@ def collect_cv_results(cv_dir, qrel_in):
             out = open(os.path.join(cv_dir, 'eval'), 'w')
             print >> out, eva_out.strip()
             out.close()
-        print "d %d: %s" % (d, ','.join(eva_out.splitlines()[-1].split(',')))
+            print "d %d: %s" % (d, ','.join(eva_out.splitlines()[-1].split(',')))
     print "finished with [%d] fold" % cnt
 
 

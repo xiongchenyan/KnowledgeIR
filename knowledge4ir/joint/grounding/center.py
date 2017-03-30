@@ -14,6 +14,7 @@ from traitlets import (
     Unicode,
     Int
 )
+from knowledge4ir.joint.grounding.mem_e import EMemGrounder
 from knowledge4ir.joint.grounding import Grounder
 from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
@@ -24,10 +25,18 @@ class GroundCenter(Configurable):
     in_name = Unicode(help='q info or doc info spotted json file to ground'
                       ).tag(config=True)
     out_name = Unicode(help='output file name').tag(config=True)
+    grounder_name = Unicode('base',
+                            help='the grounder to use, default base, choice: base|e_mem'
+                            ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(GroundCenter, self).__init__(**kwargs)
-        self.grounder = Grounder(**kwargs)
+        if self.grounder_name == 'e_mem':
+            logging.info('use grounder [%s]', self.grounder_name)
+            self.grounder = EMemGrounder(**kwargs)
+        else:
+            logging.info('use basic grounder')
+            self.grounder = Grounder(**kwargs)
         self.resource = JointSemanticResource(**kwargs)
         self.grounder.set_resource(self.resource)
 
@@ -73,6 +82,8 @@ class GroundCenter(Configurable):
 
         for h_info in l_h_info:
             for field in TARGET_TEXT_FIELDS + ['query']:
+                if field not in h_info['ground']:
+                    continue
                 l_sf_ground = h_info['ground'][field]
                 for h_sf in l_sf_ground:
                     this_sf_f = h_sf['f']
@@ -90,6 +101,8 @@ class GroundCenter(Configurable):
         l_res = []
         for h_info in l_h_info:
             for field in TARGET_TEXT_FIELDS + ['query']:
+                if field not in h_info['ground']:
+                    continue
                 l_sf_ground = h_info['ground'][field]
                 for h_sf in l_sf_ground:
                     new_f = deepcopy(h_sf_f)

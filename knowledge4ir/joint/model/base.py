@@ -11,13 +11,12 @@ from traitlets import (
     Unicode,
     List,
 )
-from traitlets.config import Configurable
-
 from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.model.hyper_para import HyperParameter
 from knowledge4ir.utils import (
     dump_trec_out_from_ranking_score,
 )
+from knowledge4ir.model import ModelBase
 
 sf_ground_name = 'sf_ground'
 sf_ground_ref = 'sf_ref'
@@ -29,7 +28,7 @@ l_input_name = [sf_ground_name, e_ground_name, e_match_name, ltr_feature_name]
 y_name = 'label'
 
 
-class JointSemanticModel(Configurable):
+class JointSemanticModel(ModelBase):
     """
     the base class for all models,
     defines API
@@ -65,6 +64,9 @@ class JointSemanticModel(Configurable):
     def train_with_dev(self, x, y, dev_x, dev_y, l_hyper_para):
         self.pairwise_train_with_dev(x, y, dev_x, dev_y, l_hyper_para)
 
+    def train_generator(self, in_name, hyper_para, s_target_qid):
+        return self.pairwise_train_generator(in_name, hyper_para, s_target_qid)
+
     def pairwise_train(self, paired_x, y, hyper_para=None):
         """
         pairwise training
@@ -87,7 +89,7 @@ class JointSemanticModel(Configurable):
 
         logging.info('start training with [%d] data with full batch', batch_size)
 
-        self.training_model.fit(
+        res = self.training_model.fit(
             paired_x,
             y,
             batch_size=batch_size,
@@ -97,7 +99,7 @@ class JointSemanticModel(Configurable):
                                      )],
         )
         logging.info('model training finished')
-        return
+        return res.history['loss'][-1]
 
     def predict(self, x):
         """
@@ -123,7 +125,70 @@ class JointSemanticModel(Configurable):
 
         dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, self.model_name)
         logging.info('ranking results dumped to [%s]', out_name)
+        self.formulate_intermediate_res(x, out_name + 'intermediate_res')
         return
+
+    def pairwise_train_generator(self, in_name, hyper_para, s_target_qid):
+        """
+        pairwise training with generator
+        :param in_name: the prepared paired input
+        :param hyper_para: if set, then use this one
+        :param s_target_qid: target qid to use
+        :return: trained model
+        """
+        if not hyper_para:
+            hyper_para = self.hyper_para
+        logging.info('training with para: %s', hyper_para.pretty_print())
+        self._build_model()
+        self.training_model.compile(
+            hyper_para.opt,
+            hyper_para.loss,
+        )
+
+        logging.info('start training with [%d] target qid', len(s_target_qid))
+        steps = len(s_target_qid)
+        res = self.training_model.fit_generator(
+            self.pairwise_data_generator(in_name, s_target_qid),
+            samples_per_epoch=steps * 500,
+            nb_epoch=hyper_para.nb_epoch,
+            callbacks=[EarlyStopping(monitor='loss',
+                                     patience=hyper_para.early_stopping_patient
+                                     )],
+        )
+        logging.info('generator model training finished')
+        return res.history['loss']
+
+    def predict_generator(self, in_name, s_target_qid):
+        steps = self._check_target_lines(in_name, s_target_qid)
+        logging.info('predicting with generator for [%d] lines', steps)
+        y = self.ranking_model.predict_generator(
+            self.pointwise_data_generator(in_name, s_target_qid),
+            val_samples=steps
+        )
+        return y.reshape(-1)
+
+    def generate_ranking_generator(self, in_name, out_name, s_target_qid):
+        y = self.predict_generator(in_name, s_target_qid)
+        l_score = y.tolist()
+        l_qid = []
+        l_docno = []
+        for line in open(in_name):
+            h = json.loads(line)
+            qid, docno = h['meta']['qid'], h['meta']['docno']
+            if qid not in s_target_qid:
+                continue
+            l_qid.append(qid)
+            l_docno.append(docno)
+        dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, self.model_name)
+        logging.info('ranking results dumped to [%s]', out_name)
+        self.formulate_intermediate_res_generator(in_name, out_name + 'intermediate_res', s_target_qid)
+        return
+
+    def formulate_intermediate_res_generator(self, in_name, out_name, s_target_qid):
+        raise NotImplementedError
+
+    def formulate_intermediate_res(self, x, out_name):
+        raise NotImplementedError
 
     def hyper_para_dev(self, paired_train_x, train_y, paired_dev_x, dev_y, l_hyper_para):
         """
@@ -162,15 +227,21 @@ class JointSemanticModel(Configurable):
         for key, tensor in paired_train_x:
             paired_x[key] = np.concatenate(paired_train_x, paired_dev_x)
 
-        self.pairwise_train(paired_x, Y, best_para)
+        res = self.pairwise_train(paired_x, Y, best_para)
         logging.info('train with best dev para done')
-        return
+        return res
 
     def train_data_reader(self, in_name, s_target_qid=None):
         return self.pairwise_data_reader(in_name, s_target_qid)
 
     def test_data_reader(self, in_name, s_target_qid=None):
         return self.pointwise_data_reader(in_name, s_target_qid)
+
+    def train_data_generator(self, in_name, s_target_qid=None):
+        return self.pairwise_data_generator(in_name, s_target_qid)
+
+    def test_data_generator(self, in_name, s_target_qid=None):
+        return self.pointwise_data_generator(in_name, s_target_qid)
 
     def pointwise_data_reader(self, in_name, s_target_qid=None):
         """
@@ -186,22 +257,7 @@ class JointSemanticModel(Configurable):
         """
         logging.info('start generate point wise data from [%s]', in_name)
         l_data = self._simple_reader(in_name, s_target_qid)
-        point_y = []
-        h_key_lists = dict()
-        for x_name in self.l_x_name:
-            h_key_lists[x_name] = []
-        l_meta = []
-        for data in l_data:
-            h_this_x, score = self._pack_one_data(data)
-            for key, value in h_this_x.items():
-                h_key_lists[key].append(value)
-            point_y.append(score)
-            l_meta.append(data['meta'])
-
-        logging.info('start converting loaded lists to arrays')
-        point_data = self._packed_list_to_array(h_key_lists)
-        point_data['meta'] = l_meta
-        point_y = np.array(point_y)
+        point_data, point_y = self._pack_pointwise(l_data)
         logging.info('pointwise data read')
         return point_data, point_y
 
@@ -222,6 +278,58 @@ class JointSemanticModel(Configurable):
         logging.info('start generating pairwise data from [%s]', in_name)
         l_data = self._simple_reader(in_name, s_target_qid)
 
+        paired_data, paired_y = self._pack_pairwise(l_data)
+        logging.info('paired [%d] pointwise data to [%d] pairs', len(l_data), paired_y.shape[0])
+        return paired_data, paired_y
+
+    def pointwise_data_generator(self, in_name, s_target_qid):
+        """
+        yield point wise data of one query each time
+        :param in_name: input data
+        :param s_target_qid: target qid to keep
+        :return:
+        """
+        for l_data in self._simple_generator(in_name, s_target_qid):
+            point_x, point_y = self._pack_pointwise(l_data)
+            yield point_x, point_y
+
+    def pairwise_data_generator(self, in_name, s_target_qid):
+        """
+        yield pairwise data of one query each time
+        :param in_name: training/testing data
+        :param s_target_qid: target qid to keep
+        :return:
+        """
+        logging.info('start pairwise generating from [%s]', in_name)
+        for l_data in self._simple_generator(in_name, s_target_qid):
+            pair_x, pair_y = self._pack_pairwise(l_data)
+            logging.debug('packed into [%d] pairs', pair_y.shape[0])
+            if not pair_y.shape[0]:
+                logging.debug('skip as no pairwise preference for this q')
+                continue
+            yield pair_x, pair_y
+
+    def _pack_pointwise(self, l_data):
+        point_y = []
+        h_key_lists = dict()
+        for x_name in self.l_x_name:
+            h_key_lists[x_name] = []
+        l_meta = []
+        for data in l_data:
+            h_this_x, score = self._pack_one_data(data)
+            for key, value in h_this_x.items():
+                h_key_lists[key].append(value)
+            point_y.append(score)
+            l_meta.append(data['meta'])
+
+        logging.debug('converting lists to arrays')
+        point_data = self._packed_list_to_array(h_key_lists)
+        point_data['meta'] = l_meta
+        point_y = np.array(point_y)
+        logging.debug('pointwise data packed')
+        return point_data, point_y
+
+    def _pack_pairwise(self, l_data):
         h_key_lists = dict()
         for x_name in self.l_x_name:
             h_key_lists[x_name] = []
@@ -260,7 +368,7 @@ class JointSemanticModel(Configurable):
                 else:
                     h_qid_instance_cnt[q_anchor] += 1
 
-        logging.info('paired [%d] pointwise data to [%d] pairs', len(l_data), len(l_meta))
+        logging.debug('paired [%d] pointwise data to [%d] pairs', len(l_data), len(l_meta))
         logging.debug('pairs per q %s', json.dumps(h_qid_instance_cnt))
         paired_data = self._packed_list_to_array(h_key_lists)
         paired_data['meta'] = l_meta
@@ -286,7 +394,7 @@ class JointSemanticModel(Configurable):
         X = dict()
         for key, l_data in h_key_lists.items():
             X[key] = np.array(l_data)
-            logging.info('[%s] shape %s', key, json.dumps(X[key].shape))
+            logging.debug('[%s] shape %s', key, json.dumps(X[key].shape))
         return X
 
     @classmethod
@@ -312,3 +420,82 @@ class JointSemanticModel(Configurable):
             l_data.append(h)
         logging.info('total [%d] lines [%d] kept', cnt, len(l_data))
         return l_data
+
+    @classmethod
+    def _check_target_lines(cls, in_name, s_target_qid):
+        """
+        simply read all data and parse them into given format
+        :param in_name:
+        :param s_target_qid:
+        :return:
+        """
+        cnt = 0
+        nb_target = len(s_target_qid)
+        logging.info('reading from [%s] with [%d] target qid', in_name, nb_target)
+        for line in open(in_name):
+            h = json.loads(line)
+            if s_target_qid is not None:
+                if h['meta']['qid'] not in s_target_qid:
+                    continue
+            cnt += 1
+        return cnt
+
+    @classmethod
+    def _simple_generator(cls, in_name, s_target_qid):
+        """
+        infinite loop over in_name's lines
+        :param in_name: input file
+        :param s_target_qid: qid to take
+        :return:
+        """
+        logging.info('generating from [%s] with [%d] target qid', in_name, len(s_target_qid))
+
+        while True:
+            logging.debug('(re)starting from beginning of file')
+            with open(in_name) as f:
+                l_data = []
+                current_qid = None
+                for p, line in enumerate(f):
+                    h = json.loads(line)
+                    qid = h['meta']['qid']
+                    if qid not in s_target_qid:
+                        logging.debug('qid [%s] skipped', qid)
+                        continue
+                    if current_qid is None:
+                        current_qid = qid
+                    if qid != current_qid:
+                        logging.debug('generated qid [%s]', qid)
+                        yield l_data
+                        l_data = []
+                        current_qid = qid
+                    l_data.append(h)
+                if l_data:
+                    yield l_data
+
+    @classmethod
+    def _padding(cls, ts, ts_shape):
+        """
+        reshape the 1: dim of ts
+        only support 1-4 dim
+        :param ts:
+        :param ts_shape:
+        :return:
+        """
+        nb_x = ts.shape[0]
+        new_ts = np.zeros([nb_x] + list(ts_shape))
+
+        if len(ts_shape) == 1:
+            new_ts[:, :ts_shape[0]] = ts[:, :ts_shape[0]]
+        if len(ts_shape) == 2:
+            new_ts[:, :ts_shape[0], :ts_shape[1]] = ts[:, :ts_shape[0], :ts_shape[1]]
+        if len(ts_shape) == 3:
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]] = \
+                ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2]]
+        if len(ts_shape) == 4:
+            new_ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]] = \
+                ts[:, :ts_shape[0], :ts_shape[1], :ts_shape[2], :ts_shape[3]]
+
+        return new_ts
+
+
+
