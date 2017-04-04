@@ -149,7 +149,7 @@ class SpotSentence(Configurable):
 
 if __name__ == '__main__':
     set_basic_log(logging.INFO)
-    if 3 != len(sys.argv):
+    if 2 != len(sys.argv):
         print "fetch spot support sentences from PRF"
         print "1 para: config:"
         SpotSentence.class_print_help()
