@@ -142,7 +142,7 @@ class SpotSentence(Configurable):
         l_res = []
         for spot, l_sent in h_spot_sent.items():
             for sent in l_sent:
-                line = '\t'.join([qid, query, docno, score, spot, sent])
+                line = '\t'.join([qid, query, docno, "%d" % score, spot, sent])
                 l_res.append(line)
         return l_res
 
