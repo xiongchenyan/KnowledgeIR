@@ -78,7 +78,7 @@ class SpotSentence(Configurable):
         l_sent = sent_tokenize(text)
         for sent in l_sent:
             for spot in h_spot_sent.keys():
-                if spot in sent:
+                if (" " + spot + " ") in (" " + sent + " "):
                     h_spot_sent[spot].append(sent)
 
         h_cnt = dict([(item[0], len(item[1])) for item in h_spot_sent.items()])
@@ -97,7 +97,7 @@ class SpotSentence(Configurable):
         :return:
         """
         out = open(self.out_name, 'w')
-
+        h_q_spot_cnt = {}
         for line in open(self.q_spot_in):
             h_q = json.loads(line)
             qid = h_q['qid']
@@ -113,9 +113,26 @@ class SpotSentence(Configurable):
                 l_lines = self._pretty_print(qid, h_q['query'], doc, score, h_spot_sent)
                 print >> out, '\n'.join(l_lines)
                 logging.info('[%s]-[%s] get [%d] spot sentences', qid, doc, len(l_lines))
+                h_q_spot_cnt= self._update_spot_cnt(h_q_spot_cnt, qid, h_spot_sent)
         out.close()
+        stat_out = open(self.out_name + '.stat', 'w')
+        json.dump(h_q_spot_cnt, stat_out)
+        stat_out.close()
         logging.info('finished')
         return
+
+    def _update_spot_cnt(self, h_q_spot_cnt, qid, h_spot_sent):
+        if qid not in h_q_spot_cnt:
+            h_q_spot_cnt[qid] = dict()
+        for spot, l_sent in h_spot_sent.items():
+            if spot not in h_q_spot_cnt[qid]:
+                h_q_spot_cnt[qid][spot] = len(l_sent)
+            else:
+                h_q_spot_cnt[qid][spot] += len(l_sent)
+        return h_q_spot_cnt
+
+
+
 
     def _seg_spot(self, h_q):
         l_spot = [spot_info['surface'].lower() for spot_info in h_q['spot']['query']]
