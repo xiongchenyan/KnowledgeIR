@@ -24,6 +24,7 @@ from traitlets import (
 from knowledge4ir.utils import (
     load_trec_labels_dict,
     load_py_config,
+    set_basic_log,
     load_trec_ranking_with_score,
 )
 from nltk.tokenize import sent_tokenize
@@ -128,7 +129,6 @@ class SpotSentence(Configurable):
         l_res.sort(key=lambda item: -item[1])
         return l_res
 
-    # TODO
     def _pretty_print(self, qid, query, docno, score, h_spot_sent):
         """
         form pretty print results
@@ -139,9 +139,24 @@ class SpotSentence(Configurable):
         :param h_spot_sent:
         :return:
         """
-        return []
+        l_res = []
+        for spot, l_sent in h_spot_sent.items():
+            for sent in l_sent:
+                line = '\t'.join([qid, query, docno, score, spot, sent])
+                l_res.append(line)
+        return l_res
 
 
+if __name__ == '__main__':
+    set_basic_log(logging.INFO)
+    if 3 != len(sys.argv):
+        print "fetch spot support sentences from PRF"
+        print "1 para: config:"
+        SpotSentence.class_print_help()
+        sys.exit(-1)
+
+    spot = SpotSentence(config=load_py_config(sys.argv[1]))
+    spot.process()
 
 
 
