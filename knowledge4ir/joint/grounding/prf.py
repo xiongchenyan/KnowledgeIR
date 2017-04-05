@@ -25,7 +25,7 @@ class PrfGrounder(Grounder):
         h_feature = {}
         e_id = h_e_info['id']
         h_feature['e_cmns'] = h_e_info['cmns']
-        l_rm3_e_score = self.resource.h_q_boe_rm3[h_info['qid']]
+        l_rm3_e_score = self.resource.h_q_boe_rm3.get(h_info['qid'], [])
         l_rm3_e_score = l_rm3_e_score[:self.nb_prf_e]
         h_feature.update(self._prf_embedding_vote(e_id, l_rm3_e_score))
         logging.debug('e [%s] feature %s', e_id, json.dumps(h_feature))
