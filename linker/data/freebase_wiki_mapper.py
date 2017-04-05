@@ -1,5 +1,5 @@
 from nif_parser import NIFParser
-from wiki_data_wiki_reader import WbItemsPerSite
+from wiki_sql_linker import WbItemsPerSite
 import sys, os, datetime
 
 freebase_prefix = "http://rdf.freebase.com/ns/"

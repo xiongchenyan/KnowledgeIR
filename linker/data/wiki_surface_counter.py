@@ -212,7 +212,7 @@ if __name__ == '__main__':
     logging.info('Started scanning Wiki links from NIF.')
 
     if len(sys.argv) != 6:
-        print("Usage: scan_wiki_links.py [wiki_links_NIF] [wiki_abstract_NIF] [Output path] [Pickle path]")
+        print("Usage: wiki_surface_counter.py [wiki_links_NIF] [wiki_abstract_NIF] [Output path] [Pickle path]")
         sys.exit(1)
 
     # "/media/hdd/hdd0/data/DBpedia/NIF_Abstract_Datasets/nif-text-links_en.ttl.bz2"
