@@ -46,9 +46,9 @@ class BoeRm3(Configurable):
         :param l_doc_score: docno, ranking score
         :return:
         """
-
+        l_doc_score = l_doc_score[:self.top_k_doc]
         z = float(sum([math.exp(score) for _, score in l_doc_score]))
-        l_doc_score = [(item[0], math.exp(item[1]) / z) for item in l_doc_score][:self.top_k_doc]
+        l_doc_score = [(item[0], math.exp(item[1]) / z) for item in l_doc_score]
 
         l_h_doc_tf = []
         for doc, _ in l_doc_score:
