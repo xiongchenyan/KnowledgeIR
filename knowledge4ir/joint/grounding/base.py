@@ -189,13 +189,17 @@ class Grounder(Configurable):
 
     @classmethod
     def _pool_sim_score(cls, l_sim, l_weight=None):
+        max_sim = 0
+        mean_sim = 0
+        l_bin = [0, 0, 0]
+        if not l_sim:
+            return max_sim, mean_sim, l_bin
         max_sim = max(l_sim)
         if l_weight is None:
             l_weight = [1] * len(l_sim)
         s = np.array(l_sim)
         w = np.array(l_weight)
         mean_sim = s.dot(w) / sum(l_weight)
-        l_bin = [0, 0, 0]
         for sim, weight in zip(l_sim, l_weight):
             if sim == 1:
                 l_bin[0] += weight
