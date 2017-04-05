@@ -59,7 +59,7 @@ class BoeRm3(Configurable):
             l_e = [item[0] for item in doc_info['tagme']['bodyText']]
             h_e_tf = term2lm(l_e)
             l_h_doc_tf.append(h_e_tf)
-        l_rm3_e = rm3(l_doc_score, l_h_doc_tf)
+        l_rm3_e = rm3(l_doc_score, l_h_doc_tf, None, None, None, False)
         return l_rm3_e
 
     def process(self):

@@ -387,7 +387,7 @@ def get_rel_ndcg(eva_res, base_eva_res):
     return h_q_rel_ndcg
 
 
-def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None):
+def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None, normalize=True):
     """
     rm3 model
     if h_doc_df and total_df is None, will only use tf part
@@ -399,6 +399,7 @@ def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None):
     :param l_doc_h_df: df dict for each doc
     :param total_df: total df of the corpus
     :param h_total_df: total df dict
+    :param normalize: whether normalize tf
     :return: expansion term with score in a list, [[term, exp score],...]
     """
     h_term_score = {}
@@ -415,7 +416,10 @@ def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None):
             h_df = h_total_df
         tf_z = float(sum([item[1] for item in h_tf.items()]))
         for term, tf in h_tf.items():
-            exp_score = tf / tf_z * score
+            if normalize:
+                exp_score = tf / tf_z * score
+            else:
+                exp_score = tf * score
             if h_df:
                 idf = 0.5
                 if term in h_df:
