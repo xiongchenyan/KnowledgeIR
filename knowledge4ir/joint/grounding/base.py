@@ -203,9 +203,9 @@ class Grounder(Configurable):
         for sim, weight in zip(l_sim, l_weight):
             if sim == 1:
                 l_bin[0] += weight
-            if 0.9 <= sim < 1:
+            if 0.75 <= sim < 1:
                 l_bin[1] += weight
-            if 0.8 <= sim < 0.9:
+            if 0.5 <= sim < 0.75:
                 l_bin[2] += weight
         return max_sim, mean_sim, l_bin
 
