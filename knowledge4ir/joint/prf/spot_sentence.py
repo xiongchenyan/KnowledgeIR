@@ -29,7 +29,7 @@ from knowledge4ir.utils import (
 )
 from nltk.tokenize import sent_tokenize
 import logging
-from knowledge4ir.joint import load_doc_info
+from knowledge4ir.joint import load_doc_info_json
 
 
 class SpotSentence(Configurable):
@@ -50,7 +50,7 @@ class SpotSentence(Configurable):
         logging.info('start loading data')
         self.h_qrel = load_trec_labels_dict(self.qrel_in)
         self.h_q_rank = dict(load_trec_ranking_with_score(self.q_rank_in))
-        self.h_doc_info = load_doc_info(self.doc_info_in)
+        self.h_doc_info = load_doc_info_json(self.doc_info_in)
         logging.info('data loaded')
 
     def _process_one_doc(self, l_spot_name, text):

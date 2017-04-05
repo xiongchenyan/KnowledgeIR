@@ -5,7 +5,7 @@ import logging
 import json
 
 
-def load_doc_info(doc_info_in):
+def load_doc_info_json(doc_info_in):
     h_doc_info = {}
     logging.info('start loading doc info')
 

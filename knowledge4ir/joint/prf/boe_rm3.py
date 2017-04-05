@@ -10,7 +10,7 @@ output:
 """
 
 from traitlets.config import Configurable
-from knowledge4ir.joint import load_doc_info
+from knowledge4ir.joint import load_doc_info_json
 import logging
 import json
 import math
@@ -38,7 +38,7 @@ class BoeRm3(Configurable):
     def __init__(self, **kwargs):
         super(BoeRm3, self).__init__(**kwargs)
         self.l_q_rank = load_trec_ranking_with_score(self.trec_rank_in)
-        self.h_doc_info = load_doc_info(self.doc_info_in)
+        self.h_doc_info = load_doc_info_json(self.doc_info_in)
 
     def _rm3_per_q(self, l_doc_score):
         """
