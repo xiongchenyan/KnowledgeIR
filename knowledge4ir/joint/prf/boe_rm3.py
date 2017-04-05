@@ -48,10 +48,10 @@ class BoeRm3(Configurable):
         """
 
         z = float(sum([math.exp(score) for _, score in l_doc_score]))
-        l_doc_score = [(item[0], math.exp(item[1]) / z) for item in l_doc_score]
+        l_doc_score = [(item[0], math.exp(item[1]) / z) for item in l_doc_score][:self.top_k_doc]
 
         l_h_doc_tf = []
-        for doc, _ in l_doc_score[:self.top_k_doc]:
+        for doc, _ in l_doc_score:
             doc_info = self.h_doc_info.get(doc, {})
             if not doc_info:
                 l_h_doc_tf.append({})
