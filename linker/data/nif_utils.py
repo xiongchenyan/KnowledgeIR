@@ -1,29 +1,43 @@
 import urlparse
+import sys
 
 
 class NifRelationCollector:
-    def __init__(self, *args):
-        self.__target_fields = args
+    def __init__(self, *relation_names):
+        self.__target_fields = relation_names
+        self.__validator = set(relation_names)
         self.__info = {}
         self.__count = {}
 
-    def add_arg(self, key, field_name, value):
-        self.__info[key][field_name] = value
+        sys.stdout.write("Will collection following relations:\n")
+        for n in relation_names:
+            sys.stdout.write("\t%s\n" % n)
+
+    def add_arg(self, s, relation, o):
+        r = str(relation)
+
+        if r not in self.__validator:
+            return False
 
         try:
-            self.__count[key] = 1
+            self.__info[s][r] = o
         except KeyError:
-            self.__count[key] += 1
+            self.__info[s] = {r: o}
 
-        if self.__count[key] == len(self.__target_fields):
+        try:
+            self.__count[s] += 1
+        except KeyError:
+            self.__count[s] = 1
+
+        if self.__count[s] == len(self.__target_fields):
             return True
         else:
             return False
 
-    def pop(self, key):
-        if self.__count[key] == len(self.__target_fields):
-            self.__count.pop(key)
-            return self.__info.pop(key)
+    def pop(self, s):
+        if self.__count[s] == len(self.__target_fields):
+            self.__count.pop(s)
+            return self.__info.pop(s)
 
 
 def get_resource_name(url):

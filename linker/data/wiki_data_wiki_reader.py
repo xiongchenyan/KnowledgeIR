@@ -1,31 +1,40 @@
-import sqlite3
 import sys
+import MySQLdb
+
+"""
+MySQLdb is required to read the Wikidata mapping
+"""
 
 
 class WbItemsPerSite:
-    def __init__(self, db_path):
-        self.conn = sqlite3.connect(db_path)
-        self.cursor = self.conn.cursor()
+    def __init__(self, user, passwd, db_name, host="localhost"):
+        self.db = MySQLdb.connect(host=host, user=user, passwd=passwd, db=db_name)
+        self.cursor = self.db.cursor()
 
     def page_query(self, wikidata_id, wiki_site):
-        pure_id = wikidata_id[1:]
+        pure_id = wikidata_id[1:] if wikidata_id.startswith("Q") else wikidata_id
 
-        command = '''
+        command = """
                     SELECT ips_item_id, ips_site_id, ips_site_page 
-                    from wb_items_per_site, sites
+                    from wb_items_per_site
                     WHERE ips_item_id = %s 
-                    AND ips_site_id = site_global_key
-                    AND ips_site_id = %s
-                    ''' % (pure_id, wiki_site)
+                    AND ips_site_id = '%s'
+                    """ % (pure_id, wiki_site)
 
-        for row in self.cursor.execute(command):
-            print (row)
+        self.cursor.execute(command)
 
-        # Rerutn the wiki page name for the given wikidata id.
-        return ""
+        result = self.cursor.fetchall()
+
+        if len(result) == 0:
+            return None
+
+        return result[0][2]
+
+    def close(self):
+        self.db.close()
 
 
 if __name__ == '__main__':
-    database_path = sys.argv[1]
-    wb = WbItemsPerSite(database_path)
-    wb.page_query("Q5920298", "enwiki")
+    database_name = "wikidatawiki_wb_items_per_site"
+    wb = WbItemsPerSite("hector", "hector", database_name)
+    print wb.page_query("Q167", "enwiki")

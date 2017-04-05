@@ -5,10 +5,9 @@ import json
 import io
 import sys
 import os
-import pickle
 from multiprocessing import Pool, Value
 import time, datetime
-import nif_utils
+import nif_utils, data_utils
 
 
 class SurfaceLinkMap:
@@ -229,20 +228,7 @@ if __name__ == '__main__':
     # surface_links.pickle
     surface_pickle_path = sys.argv[4]
 
-    if os.path.exists(surface_pickle_path):
-        logging.info("Loading wiki surface linking count from %s." % surface_pickle_path)
-        surface_link_map = pickle.load(open(surface_pickle_path))
-    else:
-        logging.info("Reading raw wiki links from [%s]." % wiki_links)
-
-        logging.info("Parsing wiki links.")
-        surface_link_map = parse_links(wiki_links)
-        logging.info("Done parsing wiki links.")
-
-        logging.info("Pickling links as middle results.")
-        with open(surface_pickle_path, 'w') as link_pickle_f:
-            pickle.dump(surface_link_map, link_pickle_f)
-        logging.info("Done writing down the links.")
+    surface_link_map = data_utils.run_or_load(surface_pickle_path, parse_links, wiki_links)
 
     surface_matcher = TrieTextMatcher(surface_link_map.get_anchors())
     context_counter = Value('d', 0)
