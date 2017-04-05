@@ -1,6 +1,5 @@
 import logging
 from nif_parser import NIFParser
-import urlparse
 import ahocorasick
 import json
 import io
@@ -9,6 +8,7 @@ import os
 import pickle
 from multiprocessing import Pool, Value
 import time, datetime
+import nif_utils
 
 
 class SurfaceLinkMap:
@@ -67,16 +67,6 @@ class TrieTextMatcher:
         return matched_surfaces
 
 
-def get_resource_name(url):
-    parsed = urlparse.urlparse(url)
-    return parsed.path.split("/")[-1]
-
-
-def get_resource_attribute(url, param_name):
-    parsed = urlparse.urlparse(url)
-    return urlparse.parse_qs(parsed.query)[param_name][0]
-
-
 def search_context(path):
     all_surface_count = [0] * len(surface_indices)
 
@@ -121,7 +111,7 @@ def surface_search(data):
     global context_counter
 
     s, v, o = data
-    nif_type = get_resource_attribute(s, "nif")
+    nif_type = nif_utils.get_resource_attribute(s, "nif")
 
     found_surfaces = {}
 
@@ -150,7 +140,7 @@ def parse_links(path):
     for statements in parser:
         for s, v, o in statements:
             if v.endswith("#taIdentRef"):
-                resource_name = get_resource_name(o)
+                resource_name = nif_utils.get_resource_name(o)
                 if s in anchors:
                     anchor = anchors.pop(s)
                     sl.add_surface_link(anchor.encode('utf-8'), resource_name)
