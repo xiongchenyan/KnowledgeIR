@@ -74,6 +74,7 @@ class SpotSentAttention(Configurable):
             l_qid.append(qid)
             l_sentno.append(sentno)
             l_score.append(score)
+            l_sent.append(sent)
 
         dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos', l_sent)
         logging.info('finished')
