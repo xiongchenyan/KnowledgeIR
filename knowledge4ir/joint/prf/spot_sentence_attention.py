@@ -43,7 +43,7 @@ class SpotSentAttention(Configurable):
     def embedding_cosine(self, query, sent):
         q_emb = self._avg_emb(query.lower())
         sent_emb = self._avg_emb(sent.lower())
-        if sent_emb is None:
+        if (sent_emb is None) | (q_emb is None):
             return -1
         return cosine_similarity(q_emb.reshape(1, -1), sent_emb.reshape(1, -1))
 
