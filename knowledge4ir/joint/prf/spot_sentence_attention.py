@@ -61,7 +61,7 @@ class SpotSentAttention(Configurable):
         """
 
         l_qid, l_sentno, l_score = [], [], []
-
+        l_sent = []
         for p, line in enumerate(open(self.spot_sent_in)):
             if not p % 100:
                 logging.info('processing [%d] sentence', p)
@@ -75,7 +75,7 @@ class SpotSentAttention(Configurable):
             l_sentno.append(sentno)
             l_score.append(score)
 
-        dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos')
+        dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos', l_sent)
         logging.info('finished')
         return
 

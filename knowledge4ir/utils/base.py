@@ -111,10 +111,12 @@ def dump_trec_ranking_with_score(ll_qid_ranking, out_name):
     logging.info('[%d] query ranking dumped to [%s]', len(ll_qid_ranking), out_name)
 
 
-def dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, method_name='na'):
+def dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, method_name='na', l_comment=[]):
     l_data = zip(l_qid, zip(l_docno, l_score))
     l_data.sort(key=lambda item: (int(item[0]), -item[1][1]))
-
+    h_doc_comment = dict()
+    if l_comment:
+        h_doc_comment = dict(zip(l_docno, l_comment))
     out = open(out_name, 'w')
     rank_p = 1
     this_qid = None
@@ -125,10 +127,13 @@ def dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, method_n
         if qid != this_qid:
             rank_p = 1
             this_qid = qid
-        print >> out, '%s Q0 %s %d %f # %s' %(
+        res = '%s Q0 %s %d %f # %s' %(
             qid, docno, rank_p, score,
             method_name,
         )
+        if l_comment:
+            res += ' %s' % h_doc_comment[docno]
+        print >> out, res
         rank_p += 1
 
     out.close()
