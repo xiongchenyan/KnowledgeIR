@@ -30,8 +30,11 @@ class AnchorPositions:
             self.__anchor_positions.append([(begin, end, target)])
 
     def get_article_anchors(self, article_name):
-        article_index = self.__article_indices[article_name]
-        return self.__anchor_positions[article_index]
+        if article_name in self.__article_indices:
+            article_index = self.__article_indices[article_name]
+            return self.__anchor_positions[article_index]
+        else:
+            return None
 
 
 def write_origin(context_nif, out_path):
@@ -95,7 +98,8 @@ def parse_anchor_positions(links):
 
 def parse_context_string_info(info):
     uri = nif_utils.get_resource_name(info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#sourceUrl"])
-    text = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#sourceUrl"].encode("UTF-8")
+    # text = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#isString"].encode("UTF-8")
+    text = unicode(info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#isString"])
     return uri, text
 
 
@@ -122,25 +126,33 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, out_path, bo
                 if ready:
                     uri, text = parse_context_string_info(collector.pop(s))
                     replacement = text
+
                     positions = article_anchors.get_article_anchors(uri)
+
+                    if not positions:
+                        continue
+
+                    positions = sorted(article_anchors.get_article_anchors(uri), reverse=True)
 
                     anchor_count += len(positions)
 
-                    for begin, end, wiki_id in sorted(positions, reverse=True):
+                    for begin, end, wiki_id in positions:
                         seen_ids.add(wiki_id)
                         if wiki_id in wiki_2_fb_map:
                             fb_id = wiki_2_fb_map[wiki_id]
-                            replacement[begin:end] = fb_id
+                            replacement = replacement[:begin] + fb_id + replacement[end:]
+                            # print "replacing %s [%d:%d] as %s." % (text[begin: end], begin, end, fb_id)
+                            # raw_input("Press Enter to continue...")
                         else:
                             try:
                                 wiki_missed_counter[wiki_id] += 1
                             except KeyError:
                                 wiki_missed_counter[wiki_id] = 1
 
-                    out.write(replacement)
+                    out.write(replacement.encode("utf-8"))
 
                     if both_version:
-                        out.write(text)
+                        out.write(text.encode("utf-8"))
 
                     out.write("\n")
 

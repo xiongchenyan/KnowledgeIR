@@ -44,7 +44,7 @@ class FreebaseWikiMapper:
 
     def read_wiki_fb_mapping(self):
         wiki_2_fb = {}
-        with open(os.path.join(self.mapper_dir, self.fb_wiki_mapping_file), 'w') as mapping:
+        with open(os.path.join(self.mapper_dir, self.fb_wiki_mapping_file)) as mapping:
             for line in mapping:
                 fb_id, wikipage_id, wd_id = line.strip().split("\t")
                 wiki_2_fb[wikipage_id] = fb_id
