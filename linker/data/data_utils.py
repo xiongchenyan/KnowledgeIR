@@ -15,3 +15,10 @@ def run_or_load(path, func, *args):
         logging.info("Done pickling.")
 
         return result
+
+
+def canonical_freebase_id(id):
+    if id.startswith("m."):
+        return "/m/" + id[2:]
+    else:
+        return id

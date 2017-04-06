@@ -1,6 +1,7 @@
 from nif_parser import NIFParser
 from wiki_sql_linker import WbItemsPerSite
 import sys, os, datetime
+import data_utils
 
 freebase_prefix = "http://rdf.freebase.com/ns/"
 wikidata_prefix = "http://www.wikidata.org/entity/"
@@ -29,7 +30,7 @@ class FreebaseWikiMapper:
             for statements in NIFParser(fb_wd_mapping_path):
                 for s, v, o in statements:
                     if str(v) == 'http://www.w3.org/2002/07/owl#sameAs':
-                        fb_id = str(s).replace(freebase_prefix, "")
+                        fb_id = data_utils.canonical_freebase_id(str(s).replace(freebase_prefix, ""))
                         wd_id = str(o).replace(wikidata_prefix, "")
                         wikipage_id = wb_db.page_query(wd_id, "enwiki")
 
