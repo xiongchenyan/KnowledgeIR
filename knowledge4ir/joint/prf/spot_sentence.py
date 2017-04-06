@@ -143,9 +143,12 @@ class SpotSentence(Configurable):
         :return:
         """
         l_res = []
+        sent_p = 0
         for spot, l_sent in h_spot_sent.items():
             for sent in l_sent:
-                line = '\t'.join([qid, query, docno, "%d" % score, spot, sent])
+                sent_no = docno + '_%04d' % sent_p
+                sent_p += 1
+                line = '\t'.join([qid, query, docno, "%d" % score, spot, sent_no, sent])
                 l_res.append(line)
         return l_res
 
