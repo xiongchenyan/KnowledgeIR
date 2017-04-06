@@ -9,7 +9,7 @@ class NifRelationCollector:
         self.__info = {}
         self.__count = {}
 
-        sys.stdout.write("Will collection following relations:\n")
+        sys.stdout.write("Will collect following relations:\n")
         for n in relation_names:
             sys.stdout.write("\t%s\n" % n)
 

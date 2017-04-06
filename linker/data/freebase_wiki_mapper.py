@@ -17,7 +17,13 @@ class FreebaseWikiMapper:
     def create_mapping(self, fb_wd_mapping_path, wb_database_name, db_user_id, db_passwd):
         wb_db = WbItemsPerSite(db_user_id, db_passwd, wb_database_name)
 
-        with open(os.path.join(self.mapper_dir, self.fb_wiki_mapping_file), 'w') as out:
+        mapping_file = os.path.join(self.mapper_dir, self.fb_wiki_mapping_file)
+
+        if os.path.exists(mapping_file):
+            print("Mapping file exists, not overwriting")
+            return
+
+        with open(mapping_file, 'w') as out:
             count = 0
             missed = 0
             for statements in NIFParser(fb_wd_mapping_path):
