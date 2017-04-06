@@ -62,6 +62,9 @@ class SpotSentAttention(Configurable):
             if not p % 100:
                 logging.info('processing [%d] sentence', p)
             cols = line.strip().split('\t')
+            if len(cols) != 7:
+                logging.warn('[%s] cols # [%d]', line.strip(), len(cols))
+                continue
             qid, query, _, _, _, sentno, sent = cols
             score = self.embedding_cosine(query, sent)
             l_qid.append(qid)
