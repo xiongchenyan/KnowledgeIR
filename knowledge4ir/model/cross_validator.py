@@ -84,7 +84,10 @@ class CrossValidator(Configurable):
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train(train_x, train_y, self.l_hyper_para[0])
-            logging.info('trained [%d] with loss [%f]', p, loss)
+            train_ndcg = self._dump_and_evaluate(train_x, out_dir + '/train_info', fold_k)
+            test_mid_ndcg = self._dump_and_evaluate(test_x, out_dir + '/test_info', fold_k)
+            logging.info('repeated train [%d] with loss [%f], train ndcg [%f], test ndcg [%f]',
+                         p, loss, train_ndcg, test_mid_ndcg)
             if best_train_loss is not None:
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
@@ -132,7 +135,10 @@ class CrossValidator(Configurable):
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train_with_dev(train_x, train_y, dev_x, dev_y, self.l_hyper_para)
-            logging.info('trained p with loss [%f]', loss)
+            train_ndcg = self._dump_and_evaluate(train_x, out_dir + '/train_info', fold_k)
+            test_mid_ndcg = self._dump_and_evaluate(test_x, out_dir + '/test_info', fold_k)
+            logging.info('repeated train [%d] with loss [%f], train ndcg [%f], test ndcg [%f]',
+                         p, loss, train_ndcg, test_mid_ndcg)
             if best_train_loss is not None:
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
@@ -171,7 +177,10 @@ class CrossValidator(Configurable):
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train(train_x, train_y, self.l_hyper_para[0])
-            logging.info('trained p with loss [%f]', loss)
+            train_ndcg = self._dump_and_evaluate(train_x, out_dir + '/train_info')
+            test_mid_ndcg = self._dump_and_evaluate(test_x, out_dir + '/test_info')
+            logging.info('repeated train [%d] with loss [%f], train ndcg [%f], test ndcg [%f]',
+                         p, loss, train_ndcg, test_mid_ndcg)
             if best_train_loss is not None:
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
@@ -214,12 +223,12 @@ class CrossValidator(Configurable):
         eva_out = self._form_eval_out_name(out_dir, fold_k)
         print >> open(eva_out, 'w'), eva_res.strip()
         if fold_k is not None:
-            logging.info('fold [%d] finished to [%s], result [%s]',
-                         fold_k, eva_out, eva_res.splitlines()[-1]
+            logging.debug('fold [%d] finished to [%s], result [%s]',
+                          fold_k, eva_out, eva_res.splitlines()[-1]
                          )
         else:
-            logging.info('finished to [%s], result [%s]',
-                         eva_out, eva_res.splitlines()[-1]
+            logging.debug('finished to [%s], result [%s]',
+                          eva_out, eva_res.splitlines()[-1]
                          )
         ndcg, err = eva_res.splitlines()[-1].split(',')[-2:]
         ndcg = float(ndcg)
