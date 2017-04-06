@@ -70,6 +70,10 @@ class SpotSentAttention(Configurable):
                 logging.warn('[%s] cols # [%d]', line.strip(), len(cols))
                 continue
             qid, query, _, _, _, sentno, sent = cols
+            if len(sent.split()) > 100:
+                continue
+            if (len(sent.split()) - len(query.split())) < 5:
+                continue
             score = self.embedding_cosine(query, sent)
             l_qid.append(qid)
             l_sentno.append(sentno)
