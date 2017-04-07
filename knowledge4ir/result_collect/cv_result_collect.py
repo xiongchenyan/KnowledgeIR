@@ -10,6 +10,7 @@ from knowledge4ir.utils import (
     QREL_IN,
 )
 import logging
+import ntpath
 
 
 def collect_cv_results(cv_dir, qrel_in):
@@ -19,6 +20,8 @@ def collect_cv_results(cv_dir, qrel_in):
         for file_name in file_names:
             if file_name == 'trec':
                 if 'Fold' in dir_name:
+                    if ntpath.dirname(dir_name.strip('/')) != cv_dir.strip('/'):
+                        continue
                     cnt += 1
                     l_rank_lines.extend(open(dir_name + '/' + file_name).read().splitlines())
     rank_out_name = os.path.join(cv_dir, 'trec')
