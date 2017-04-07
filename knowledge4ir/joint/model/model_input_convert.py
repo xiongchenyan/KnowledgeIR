@@ -300,7 +300,7 @@ if __name__ == '__main__':
         load_py_config,
         set_basic_log,
     )
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     if 2 != len(sys.argv):
         print "convert readable features into lists"
