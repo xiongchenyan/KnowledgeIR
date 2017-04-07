@@ -1,3 +1,4 @@
+# coding=utf-8
 from nif_parser import NIFParser
 from wiki_sql_linker import WbItemsPerSite
 import sys, os, datetime
@@ -47,19 +48,30 @@ class FreebaseWikiMapper:
         wiki_2_fb = {}
         with open(os.path.join(self.mapper_dir, self.fb_wiki_mapping_file)) as mapping:
             for line in mapping:
-                fb_id, wikipage_id, wd_id = line.strip().split("\t")
-                wiki_2_fb[wikipage_id] = fb_id
+                fb_id, wikipage_name, wd_id = line.strip().split("\t")
+
+                # The data read directly from the MySQL database use spaces.
+                formatted_wiki_name = wikipage_name.replace(" ", "_")
+
+                if wd_id == "Q3217492" or wd_id == "Q6156388":
+                    print formatted_wiki_name, wd_id, formatted_wiki_name.__class__
+
+                wiki_2_fb[formatted_wiki_name] = fb_id
         return wiki_2_fb
 
 
-if __name__ == '__main__':
-    wb_database_name = sys.argv[1]
-
+def main():
     # /media/hdd/hdd0/data/Freebase/fb2w.nt
-    fb_wd_mapping = sys.argv[2]
-
-    mapper_dir = sys.argv[3]
+    fb_wd_mapping = sys.argv[1]
+    mapper_dir = sys.argv[2]
 
     mapper = FreebaseWikiMapper(mapper_dir)
-    mapper.create_mapping(fb_wd_mapping, wb_database_name)
+    mapper.create_mapping(fb_wd_mapping, "wikidatawiki_wb_items_per_site", "hector", "hector")
     wiki_2_fb = mapper.read_wiki_fb_mapping()
+
+    print wiki_2_fb["Mount_Everest"]
+    print wiki_2_fb["Khasi–Khmuic_languages"]
+
+
+if __name__ == '__main__':
+    main()

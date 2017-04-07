@@ -6,6 +6,7 @@ import nif_utils, data_utils
 import logging
 
 wiki_prefix = "http://en.wikipedia.org/wiki/"
+dbpedia_prefix = "http://dbpedia.org/resource/"
 
 
 class AnchorPositions:
@@ -37,6 +38,32 @@ class AnchorPositions:
             return None
 
 
+def load_redirects(redirect_nif):
+    collector = NifRelationCollector(
+        "http://dbpedia.org/ontology/wikiPageRedirects",
+    )
+    redirect_to = {}
+    count = 0
+    for statements in NIFParser(redirect_nif):
+        for s, v, o in statements:
+            ready = collector.add_arg(s, v, o)
+
+            if ready:
+                count += 1
+                from_page = nif_utils.get_resource_name(s)
+                redirect_page = nif_utils.get_resource_name(
+                    collector.pop(s)["http://dbpedia.org/ontology/wikiPageRedirects"])
+                redirect_to[from_page] = redirect_page
+
+                # print from_page, "->", redirect_page
+                # raw_input("redirect")
+                sys.stdout.write("\r[%s] Parsed %d lines." % (datetime.datetime.now().time(), count))
+
+    sys.stdout.write("\nFinish loading redirects.")
+
+    return redirect_to
+
+
 def write_origin(context_nif, out_path):
     logging.info("Reading context string from %s." % context_nif)
     with open(out_path, 'w') as out:
@@ -49,6 +76,7 @@ def write_origin(context_nif, out_path):
                     out.write("\n")
                     count += 1
                     sys.stdout.write("\r[%s] Wrote %d articles." % (datetime.datetime.now().time(), count))
+    sys.stdout.write("\nFinish writing origin texts.")
 
 
 def parse_anchor_position_info(info):
@@ -103,7 +131,18 @@ def parse_context_string_info(info):
     return uri, text
 
 
-def write_context_replaced(wiki_2_fb_map, context, article_anchors, out_path, both_version=False):
+def find_fb_id(wiki_id, wiki_2_fb_map, redirects):
+    target = wiki_id.encode('utf-8')
+
+    if wiki_id in redirects:
+        target = redirects[target]
+
+    if target in wiki_2_fb_map:
+        fb_id = wiki_2_fb_map[target]
+        return fb_id
+
+
+def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, out_path, both_version=False):
     wiki_context_nif = NIFParser(context)
 
     start = time.clock()
@@ -112,6 +151,8 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, out_path, bo
     seen_ids = set()
     anchor_count = 0
     wiki_missed_counter = {}
+
+    anchor_miss_count = 0
 
     collector = NifRelationCollector(
         "http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#isString",
@@ -137,13 +178,16 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, out_path, bo
                     anchor_count += len(positions)
 
                     for begin, end, wiki_id in positions:
+                        fb_id = find_fb_id(wiki_id, wiki_2_fb_map, redirects)
                         seen_ids.add(wiki_id)
-                        if wiki_id in wiki_2_fb_map:
-                            fb_id = wiki_2_fb_map[wiki_id]
+
+                        if fb_id:
                             replacement = replacement[:begin] + fb_id + replacement[end:]
-                            # print "replacing %s [%d:%d] as %s." % (text[begin: end], begin, end, fb_id)
-                            # raw_input("Press Enter to continue...")
                         else:
+                            print "Missing wiki id: ", wiki_id, " on page", uri, " at ", text[begin: end]
+                            raw_input("Press Enter to continue...")
+
+                            anchor_miss_count += 1
                             try:
                                 wiki_missed_counter[wiki_id] += 1
                             except KeyError:
@@ -157,7 +201,17 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, out_path, bo
                     out.write("\n")
 
                     article_count += 1
-                    sys.stdout.write("\r[%s] Wrote %d articles." % (datetime.datetime.now().time(), article_count))
+
+                    missed_id_count = len(wiki_missed_counter)
+
+                    total_id_referred = missed_id_count + len(seen_ids)
+
+                    sys.stdout.write("\r[%s] Wrote %d articles, "
+                                     "%d/%d anchor misses (%.4f), "
+                                     "%d/%d resource misses (%.4f)."
+                                     % (datetime.datetime.now().time(), article_count,
+                                        anchor_miss_count, anchor_count, 1.0 * anchor_miss_count / anchor_count,
+                                        missed_id_count, total_id_referred, 1.0 * missed_id_count / total_id_referred))
 
     print("")
     logging.info("Elapsed: %.2f" % (time.clock() - start))
@@ -166,7 +220,22 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, out_path, bo
     return len(seen_ids), anchor_count, wiki_missed_counter
 
 
-if __name__ == '__main__':
+def print_replacement_stats(num_wiki_seen, num_anchor, missed_counts, out_path):
+    num_wiki_missed = len(missed_counts)
+
+    num_wiki_referred = num_wiki_seen + num_wiki_missed
+    with open(out_path, 'w') as stat_out:
+        stat_out.write("Number of wiki resources seen: %s.\n" % num_wiki_seen)
+        stat_out.write("Showing name and counts for missed resources:\n")
+        num_anchor_missed = 0
+        for resource, miss_count in missed_counts.iteritems():
+            num_anchor_missed += miss_count
+            stat_out.write("Wikipedia resource %s is not replaced successfully %d times.\n" % (resource, miss_count))
+        stat_out.write("Percentage of resources missed: %.4f.\n" % (1.0 * num_wiki_missed / num_wiki_referred))
+        stat_out.write("Percentage of anchors missed: %.4f.\n" % (1.0 * num_anchor_missed / num_anchor))
+
+
+def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
 
     # "/media/hdd/hdd0/data/freebase_wiki"
@@ -191,23 +260,22 @@ if __name__ == '__main__':
                                               parse_anchor_positions, wiki_links)
     logging.info("Done.")
 
+    logging.info("Loading redirect pages.")
+    redirects = load_redirects("/media/hdd/hdd0/data/DBpedia/201604_datasets/redirects_en.ttl.bz2")
+    logging.info("Done")
+
     logging.info("Writing down the text.")
     write_origin(wiki_context, os.path.join(output_dir, "origin.txt"))
     num_wiki_seen, num_anchor, missed_counts = write_context_replaced(wiki2fb, wiki_context, anchor_positions,
+                                                                      redirects,
                                                                       os.path.join(output_dir, "fb_replaced.txt"))
-    write_context_replaced(wiki2fb, wiki_context, anchor_positions,
+    write_context_replaced(wiki2fb, wiki_context, anchor_positions, redirects,
                            os.path.join(output_dir, "origin_and_replaced.txt"), True)
 
-    with open(os.path.join(output_dir, "replacement_stat"), 'w') as stat_out:
-        stat_out.write("Number of wiki resources seen: %s.\n" % num_wiki_seen)
-        stat_out.write("Showing name and counts for missed resources:\n")
-        num_anchor_missed = 0
-        num_resources_missed = 0
-        for resource, miss_count in missed_counts.iteritems():
-            num_anchor_missed += miss_count
-            num_resources_missed += 1
-            stat_out.write("Wikipedia resource %s is not replaced successfully %d times.\n" % (resource, miss_count))
-        stat_out.write("Percentage of resources missed: %.4f.\n" % (1.0 * num_resources_missed / num_anchor))
-        stat_out.write("Percentage of anchors missed: %.4f.\n" % (1.0 * num_anchor_missed / num_anchor))
+    print_replacement_stats(num_wiki_seen, num_anchor, missed_counts, os.path.join(output_dir, "replacement_stat"))
 
-    logging.info("Done.")
+    logging.info("All Done.")
+
+
+if __name__ == '__main__':
+    main()
