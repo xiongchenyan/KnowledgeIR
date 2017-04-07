@@ -22,9 +22,16 @@ class PrfGrounder(Grounder):
         assert external_resource.h_q_boe_rm3
 
     def extract_for_entity(self, h_e_info, h_sf_info, h_info):
-        h_feature = {}
+        h_root = super(PrfGrounder, self).extract_for_entity(h_e_info, h_sf_info, h_info)
+
+        h_feature = dict()
+        for key, score in h_root:
+            if 'bin' in key:
+                continue
+            h_feature[key] = score
+
         e_id = h_e_info['id']
-        h_feature['e_cmns'] = h_e_info['cmns']
+        # h_feature['e_cmns'] = h_e_info['cmns']
         l_rm3_e_score = self.resource.h_q_boe_rm3.get(h_info['qid'], [])
         l_rm3_e_score = l_rm3_e_score[:self.nb_prf_e]
         h_feature.update(self._prf_embedding_vote(e_id, l_rm3_e_score))
@@ -38,10 +45,10 @@ class PrfGrounder(Grounder):
 
         max_sim, mean_sim, l_bin = self._pool_sim_score(l_sim, l_weight)
         h_feature = dict()
-        h_feature['prf_vote_emb_max'] = max_sim
+        # h_feature['prf_vote_emb_max'] = max_sim
         h_feature['prf_vote_emb_mean'] = mean_sim
-        for i in xrange(len(l_bin)):
-            h_feature['prf_vote_bin_%d' % i] = l_bin[i]
+        # for i in xrange(len(l_bin)):
+        #     h_feature['prf_vote_bin_%d' % i] = l_bin[i]
         return h_feature
 
     def _calc_sim_vec(self, e_id, l_e):
