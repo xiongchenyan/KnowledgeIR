@@ -25,7 +25,7 @@ class PrfGrounder(Grounder):
         h_root = super(PrfGrounder, self).extract_for_entity(h_e_info, h_sf_info, h_info)
 
         h_feature = dict()
-        for key, score in h_root:
+        for key, score in h_root.items():
             if 'bin' in key:
                 continue
             h_feature[key] = score
