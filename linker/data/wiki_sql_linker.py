@@ -36,4 +36,4 @@ class WbItemsPerSite:
 if __name__ == '__main__':
     database_name = "wikidatawiki_wb_items_per_site"
     wb = WbItemsPerSite("hector", "hector", database_name)
-    print wb.page_query("Q3079073", "enwiki")
+    print wb.page_query("Q202785", "enwiki")

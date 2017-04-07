@@ -9,6 +9,8 @@ from multiprocessing import Pool, Value
 import time, datetime
 import nif_utils, data_utils
 
+dbpedia_prefix = "http://dbpedia.org/resource/"
+
 
 class SurfaceLinkMap:
     def __init__(self):
@@ -139,7 +141,7 @@ def parse_links(path):
     for statements in parser:
         for s, v, o in statements:
             if v.endswith("#taIdentRef"):
-                resource_name = nif_utils.get_resource_name(o)
+                resource_name = o.encode('utf-8').replace(dbpedia_prefix, "")
                 if s in anchors:
                     anchor = anchors.pop(s)
                     sl.add_surface_link(anchor.encode('utf-8'), resource_name)

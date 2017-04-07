@@ -3,7 +3,7 @@ from freebase_wiki_mapper import FreebaseWikiMapper
 from nif_parser import NIFParser
 from nif_utils import NifRelationCollector
 import nif_utils, data_utils
-import logging
+import logging, urlparse
 
 wiki_prefix = "http://en.wikipedia.org/wiki/"
 dbpedia_prefix = "http://dbpedia.org/resource/"
@@ -16,7 +16,7 @@ class AnchorPositions:
         self.__index = 0
         self.__anchor_positions = []
 
-    def add_surface_link(self, article, begin, end, target):
+    def add_surface_link(self, article, begin, end, target, anchor_text):
         try:
             article_index = self.__article_indices[article]
         except KeyError:
@@ -26,9 +26,9 @@ class AnchorPositions:
             self.__index += 1
 
         if article_index < len(self.__anchor_positions):
-            self.__anchor_positions[article_index].append((begin, end, target))
+            self.__anchor_positions[article_index].append((begin, end, target, anchor_text))
         else:
-            self.__anchor_positions.append([(begin, end, target)])
+            self.__anchor_positions.append([(begin, end, target, anchor_text)])
 
     def get_article_anchors(self, article_name):
         if article_name in self.__article_indices:
@@ -50,13 +50,12 @@ def load_redirects(redirect_nif):
 
             if ready:
                 count += 1
-                from_page = nif_utils.get_resource_name(s)
-                redirect_page = nif_utils.get_resource_name(
-                    collector.pop(s)["http://dbpedia.org/ontology/wikiPageRedirects"])
+                from_page = s.replace(dbpedia_prefix, "")
+                redirect_page = collector.pop(s)[
+                    "http://dbpedia.org/ontology/wikiPageRedirects"
+                ].replace(dbpedia_prefix, "")
                 redirect_to[from_page] = redirect_page
 
-                # print from_page, "->", redirect_page
-                # raw_input("redirect")
                 sys.stdout.write("\r[%s] Parsed %d lines." % (datetime.datetime.now().time(), count))
 
     sys.stdout.write("\nFinish loading redirects.")
@@ -82,10 +81,12 @@ def write_origin(context_nif, out_path):
 def parse_anchor_position_info(info):
     begin_index = int(info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#beginIndex"])
     end_index = int(info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#endIndex"])
-    uri = nif_utils.get_resource_name(info["http://www.w3.org/2005/11/its/rdf#taIdentRef"])
+    uri = info["http://www.w3.org/2005/11/its/rdf#taIdentRef"].replace(dbpedia_prefix)
     anchor = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#anchorOf"].encode('utf-8')
-    article = nif_utils.get_resource_name(
-        info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#referenceContext"])
+    full_article_url = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#referenceContext"]
+    parsed_url = urlparse.urlparse(full_article_url)
+    article = parsed_url[0] + ":/" + parsed_url[1] + parsed_url[2]
+
     return begin_index, end_index, uri, anchor, article
 
 
@@ -111,8 +112,8 @@ def parse_anchor_positions(links):
             ready = nif_relation_collector.add_arg(s, v, o)
             if ready:
                 info = nif_relation_collector.pop(s)
-                begin, end, resource_name, _, article = parse_anchor_position_info(info)
-                ap.add_surface_link(article, begin, end, resource_name)
+                begin, end, resource_name, anchor_text, article = parse_anchor_position_info(info)
+                ap.add_surface_link(article, begin, end, resource_name, anchor_text)
 
             count += 1
             sys.stdout.write("\r[%s] Parsed %d lines." % (datetime.datetime.now().time(), count))
@@ -125,7 +126,7 @@ def parse_anchor_positions(links):
 
 
 def parse_context_string_info(info):
-    uri = nif_utils.get_resource_name(info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#sourceUrl"])
+    uri = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#sourceUrl"].replace(wiki_prefix, "")
     # text = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#isString"].encode("UTF-8")
     text = unicode(info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#isString"])
     return uri, text
@@ -135,11 +136,14 @@ def find_fb_id(wiki_id, wiki_2_fb_map, redirects):
     target = wiki_id.encode('utf-8')
 
     if wiki_id in redirects:
-        target = redirects[target]
+        target = redirects[wiki_id]
+        print "Found redirects for ", wiki_id, " as ", target
 
     if target in wiki_2_fb_map:
         fb_id = wiki_2_fb_map[target]
         return fb_id
+    else:
+        print "Cannot find target: ", target
 
 
 def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, out_path, both_version=False):
@@ -206,12 +210,12 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, o
 
                     total_id_referred = missed_id_count + len(seen_ids)
 
-                    sys.stdout.write("\r[%s] Wrote %d articles, "
-                                     "%d/%d anchor misses (%.4f), "
-                                     "%d/%d resource misses (%.4f)."
-                                     % (datetime.datetime.now().time(), article_count,
-                                        anchor_miss_count, anchor_count, 1.0 * anchor_miss_count / anchor_count,
-                                        missed_id_count, total_id_referred, 1.0 * missed_id_count / total_id_referred))
+                    # sys.stdout.write("\r[%s] Wrote %d articles, "
+                    #                  "%d/%d anchor misses (%.4f), "
+                    #                  "%d/%d resource misses (%.4f)."
+                    #                  % (datetime.datetime.now().time(), article_count,
+                    #                     anchor_miss_count, anchor_count, 1.0 * anchor_miss_count / anchor_count,
+                    #                     missed_id_count, total_id_referred, 1.0 * missed_id_count / total_id_referred))
 
     print("")
     logging.info("Elapsed: %.2f" % (time.clock() - start))
