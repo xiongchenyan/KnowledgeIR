@@ -1,8 +1,11 @@
 # coding=utf-8
+import datetime
+import os
+import sys
+
+import data_utils
 from nif_parser import NIFParser
 from wiki_sql_linker import WbItemsPerSite
-import sys, os, datetime
-import data_utils
 
 freebase_prefix = "http://rdf.freebase.com/ns/"
 wikidata_prefix = "http://www.wikidata.org/entity/"
@@ -53,8 +56,8 @@ class FreebaseWikiMapper:
                 # The data read directly from the MySQL database use spaces.
                 formatted_wiki_name = wikipage_name.replace(" ", "_")
 
-                if wd_id == "Q3217492" or wd_id == "Q6156388":
-                    print formatted_wiki_name, wd_id, formatted_wiki_name.__class__
+                # if wd_id == "Q3217492" or wd_id == "Q6156388":
+                #     print formatted_wiki_name, wd_id, formatted_wiki_name.__class__
 
                 wiki_2_fb[formatted_wiki_name] = fb_id
         return wiki_2_fb

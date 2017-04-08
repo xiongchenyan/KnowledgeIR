@@ -1,4 +1,6 @@
-import os, logging, pickle
+import logging
+import os
+import pickle
 
 
 def run_or_load(path, func, *args):
@@ -17,8 +19,8 @@ def run_or_load(path, func, *args):
         return result
 
 
-def canonical_freebase_id(id):
-    if id.startswith("m."):
-        return "/m/" + id[2:]
+def canonical_freebase_id(freebase_id):
+    if freebase_id.startswith("m."):
+        return "/m/" + freebase_id[2:]
     else:
-        return id
+        return freebase_id
