@@ -40,9 +40,9 @@ class NifRelationCollector:
             return self.__info.pop(s)
 
 
-def get_resource_name(url):
+def strip_url_params(url):
     parsed = urlparse.urlparse(url)
-    return parsed.path.split("/")[-1]
+    return parsed[0] + "://" + parsed[1] + parsed[2]
 
 
 def get_resource_attribute(url, param_name):
