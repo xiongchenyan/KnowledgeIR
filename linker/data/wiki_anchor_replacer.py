@@ -342,6 +342,9 @@ def main():
     # "/media/hdd/hdd0/data/DBpedia/201604_datasets/redirects_en.ttl.bz2"
     redirect_path = sys.argv[5]
 
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     logging.info("Mapping Freebase to Wikipedia.")
     mapper = FreebaseWikiMapper(output_dir)
     mapper.create_mapping(fb2w, "wikidatawiki_wb_items_per_site", "hector", "hector")
