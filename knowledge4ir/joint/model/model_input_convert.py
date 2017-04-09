@@ -118,7 +118,9 @@ class ModelInputConvert(Configurable):
 
         org_shape = m_total_ts.shape
         v_total_ts = m_total_ts.reshape((-1, org_shape[-1]))
+        v_total_ts = np.maximum(v_total_ts, 0)
         v_total_ts = minmax_scale(v_total_ts, axis=0)
+
         normalized_ts = v_total_ts.reshape(m_total_ts.shape)
 
         for i in xrange(len(l_qid_ts)):
