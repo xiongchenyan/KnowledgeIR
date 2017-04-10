@@ -14,6 +14,7 @@ from knowledge4ir.joint.model.attention_les import (
     Les,
     DisAmbiAttLes,
     SfAttLes,
+    HierAttLes,
 )
 import json
 
@@ -22,6 +23,7 @@ h_model_name = {
     "les": Les,
     "att_e_les": DisAmbiAttLes,
     "att_sf_les": SfAttLes,
+    'hier_att_les': HierAttLes,
 }
 
 

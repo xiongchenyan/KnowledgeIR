@@ -352,6 +352,99 @@ class AttentionLes(JointSemanticModel):
         return ranking_model
 
 
+class HierAttLes(AttentionLes):
+    model_name = Unicode('HierAttLes')
+
+    def _build_para_layers(self):
+        """
+        an sf grounding layer
+        an entity grounding layer
+        an ltr layer
+        an entity matching layer
+        :return:
+        """
+        # 1 d cnn to calculate the surface attention
+        # attention model does not use bias to ensure padding
+        sf_ground_cnn = Conv1D(
+            nb_filter=5,
+            filter_length=1,
+            activation=self.sf_att_activation,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            input_shape=self.sf_ground_shape,
+            name=sf_ground_name + '_CNN_1',
+        )
+        sf_ground_cnn = Conv1D(
+            nb_filter=1,
+            filter_length=1,
+            activation=self.sf_att_activation,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            name=sf_ground_name + '_CNN'
+        )(sf_ground_cnn)
+
+        # a typical ltr linear model
+        ltr_dense = Dense(
+            output_dim=1,
+            bias=True,
+            input_shape=self.ltr_shape,
+            name=ltr_feature_name + '_Dense'
+        )
+
+        # 2 d cnn on each sf-e pair, size 1 means only apply a linear model on the feature dime
+        #  will result a sf-e matrix, will then be soft-maxed for probability
+        # attention model does not use bias to ensure padding
+        e_ground_cnn = Conv2D(
+            nb_filter=5,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            dim_ordering='tf',
+            input_shape=self.e_ground_shape,
+            name=e_ground_name + '_CNN_1'
+        )
+        e_ground_cnn = Conv2D(
+            nb_filter=1,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            dim_ordering='tf',
+            name=e_ground_name + '_CNN'
+        )(e_ground_cnn)
+
+        # 2 d cnn to get matching scores for entities
+        e_match_cnn = Conv2D(
+            nb_filter=5,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=True,
+            dim_ordering='tf',
+            input_shape=self.e_match_shape,
+            name=e_match_name + '_CNN_1'
+        )
+        e_match_cnn = Conv2D(
+            nb_filter=1,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=True,
+            dim_ordering='tf',
+            name=e_match_name + '_CNN'
+        )(e_match_cnn)
+
+        h_para_layers = {
+            sf_ground_name + '_CNN': sf_ground_cnn,
+            e_ground_name + '_CNN': e_ground_cnn,
+            ltr_feature_name + '_Dense': ltr_dense,
+            e_match_name + '_CNN': e_match_cnn
+        }
+        return h_para_layers
+
+
+
 class Les(AttentionLes):
     model_name = Unicode('les')
 
