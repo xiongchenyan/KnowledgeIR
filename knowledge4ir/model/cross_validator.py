@@ -14,6 +14,7 @@ from knowledge4ir.joint.model.attention_les import (
     Les,
     DisAmbiAttLes,
     SfAttLes,
+    HierAttLes,
 )
 import json
 
@@ -22,6 +23,7 @@ h_model_name = {
     "les": Les,
     "att_e_les": DisAmbiAttLes,
     "att_sf_les": SfAttLes,
+    'hier_att_les': HierAttLes,
 }
 
 
@@ -78,13 +80,16 @@ class CrossValidator(Configurable):
         s_test_qid = set(l_test[fold_k])
         train_x, train_y = self.model.train_data_reader(in_name, s_train_qid)
         test_x, _ = self.model.test_data_reader(in_name, s_test_qid)
-
+        train_valid_x, _ = self.model.test_data_reader(in_name, s_train_qid)
         best_train_loss = None
         best_ndcg = None
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train(train_x, train_y, self.l_hyper_para[0])
-            logging.info('trained [%d] with loss [%f]', p, loss)
+            train_ndcg = self._dump_and_evaluate(train_valid_x, out_dir + '/train_info', fold_k)
+            test_mid_ndcg = self._dump_and_evaluate(test_x, out_dir + '/test_info', fold_k)
+            logging.info('repeated train [%d] with loss [%f], train ndcg [%f], test ndcg [%f]',
+                         p, loss, train_ndcg, test_mid_ndcg)
             if best_train_loss is not None:
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
@@ -124,15 +129,18 @@ class CrossValidator(Configurable):
         s_dev_qid = set(l_dev[fold_k])
         train_x, train_y = self.model.train_data_reader(in_name, s_train_qid)
         dev_x, dev_y = self.model.train_data_reader(in_name, s_dev_qid)
-        test_x = self.model.test_data_reader(in_name, s_test_qid)
-
+        test_x, _ = self.model.test_data_reader(in_name, s_test_qid)
+        train_valid_x, _ = self.model.test_data_reader(in_name, s_train_qid)
         best_train_loss = None
         best_ndcg = None
         l_loss_ndcg = []
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train_with_dev(train_x, train_y, dev_x, dev_y, self.l_hyper_para)
-            logging.info('trained p with loss [%f]', loss)
+            train_ndcg = self._dump_and_evaluate(train_valid_x, out_dir + '/train_info', fold_k)
+            test_mid_ndcg = self._dump_and_evaluate(test_x, out_dir + '/test_info', fold_k)
+            logging.info('repeated train [%d] with loss [%f], train ndcg [%f], test ndcg [%f]',
+                         p, loss, train_ndcg, test_mid_ndcg)
             if best_train_loss is not None:
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
@@ -165,13 +173,16 @@ class CrossValidator(Configurable):
         s_qid = ["%d" % i for i in range(self.q_range[0], self.q_range[1] + 1)]
         train_x, train_y = self.model.train_data_reader(train_in, s_qid)
         test_x, _ = self.model.test_data_reader(test_in, s_qid)
-
+        train_valid_x, _ = self.model.test_data_reader(train_in, s_qid)
         best_train_loss = None
         best_ndcg = None
         for p in xrange(self.nb_repeat):
             logging.info('repeating training [%d]', p)
             loss = self.model.train(train_x, train_y, self.l_hyper_para[0])
-            logging.info('trained p with loss [%f]', loss)
+            train_ndcg = self._dump_and_evaluate(train_valid_x, out_dir + '/train_info')
+            test_mid_ndcg = self._dump_and_evaluate(test_x, out_dir + '/test_info')
+            logging.info('repeated train [%d] with loss [%f], train ndcg [%f], test ndcg [%f]',
+                         p, loss, train_ndcg, test_mid_ndcg)
             if best_train_loss is not None:
                 if best_train_loss < loss:
                     logging.info('no improvement in training loss [%f]>[%f],skip this training',
@@ -214,12 +225,12 @@ class CrossValidator(Configurable):
         eva_out = self._form_eval_out_name(out_dir, fold_k)
         print >> open(eva_out, 'w'), eva_res.strip()
         if fold_k is not None:
-            logging.info('fold [%d] finished to [%s], result [%s]',
-                         fold_k, eva_out, eva_res.splitlines()[-1]
+            logging.debug('fold [%d] finished to [%s], result [%s]',
+                          fold_k, eva_out, eva_res.splitlines()[-1]
                          )
         else:
-            logging.info('finished to [%s], result [%s]',
-                         eva_out, eva_res.splitlines()[-1]
+            logging.debug('finished to [%s], result [%s]',
+                          eva_out, eva_res.splitlines()[-1]
                          )
         ndcg, err = eva_res.splitlines()[-1].split(',')[-2:]
         ndcg = float(ndcg)

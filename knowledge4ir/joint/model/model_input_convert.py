@@ -38,7 +38,8 @@ from knowledge4ir.utils import (
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
-    Int
+    Int,
+    Bool
 )
 from knowledge4ir.joint import (
     MATCH_FIELD,
@@ -52,6 +53,8 @@ from knowledge4ir.joint.model import (
     e_match_name,
     ltr_feature_name
 )
+import numpy as np
+from sklearn.preprocessing import minmax_scale
 
 
 class ModelInputConvert(Configurable):
@@ -60,6 +63,9 @@ class ModelInputConvert(Configurable):
     sf_ground_f_dim = Int(6, help='sf ground feature dimension').tag(config=True)
     e_ground_f_dim = Int(5, help='e ground feature dimension').tag(config=True)
     e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
+    sf_ground_normalize = Bool(False, help="whether normalize st ground").tag(config=True)
+    e_ground_normalize = Bool(False, help="whether normalize e ground").tag(config=True)
+    # e_match_normalize = Bool(False, help="whether normalize e match").tag(config=True)
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
     qrel_in = Unicode(help='qrel in').tag(config=True)
     q_info_in = Unicode(help='q info in, with grounded features').tag(config=True)
@@ -92,6 +98,35 @@ class ModelInputConvert(Configurable):
             q_mtx_info = self._assemble_one_q(q_info)
             self.h_q_grounding_info_mtx[qid] = q_mtx_info
         logging.info('q grounding info converted')
+        if self.sf_ground_normalize:
+            self._normalize_grounding(sf_ground_name)
+        if self.e_ground_normalize:
+            self._normalize_grounding(e_ground_name)
+        return
+
+    def _normalize_grounding(self, key):
+        """
+        normalize the one in h_q_grounding_infor_mtx.values, with key -> mtx | tensor
+        mtx or tensor are both lists, will convert to a big numpy matrix, normalize, and assign back
+        :param key: the field to normalize: sf_ground_name | e_ground_name
+        :return:
+        """
+
+        l_qid_ts = [(qid, value[key]) for qid, value in self.h_q_grounding_info_mtx.items()]
+        l_total_ts = [item[1] for item in l_qid_ts]
+        m_total_ts = np.array(l_total_ts)  # the last dimension is the feature
+
+        org_shape = m_total_ts.shape
+        v_total_ts = m_total_ts.reshape((-1, org_shape[-1]))
+        v_total_ts = np.maximum(v_total_ts, 0)
+        v_total_ts = minmax_scale(v_total_ts, axis=0)
+
+        normalized_ts = v_total_ts.reshape(m_total_ts.shape)
+
+        for i in xrange(len(l_qid_ts)):
+            qid = l_qid_ts[i][0]
+            self.h_q_grounding_info_mtx[qid][key] = normalized_ts[i].tolist()
+        logging.info('[%s] normalized', key)
         return
 
     def _assemble_one_q(self, q_info):
@@ -300,7 +335,7 @@ if __name__ == '__main__':
         load_py_config,
         set_basic_log,
     )
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     if 2 != len(sys.argv):
         print "convert readable features into lists"

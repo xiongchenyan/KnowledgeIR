@@ -11,6 +11,9 @@ import logging
 import json
 from gensim.models import Word2Vec
 from knowledge4ir.utils.retrieval_model import CorpusStat
+from knowledge4ir.utils import (
+    load_trec_ranking_with_score
+)
 
 
 class JointSemanticResource(Configurable):
@@ -22,6 +25,8 @@ class JointSemanticResource(Configurable):
                                 ).tag(config=True)
     entity_field_path = Unicode(help="entity field path"
                                 ).tag(config=True)
+    boe_rm3_path = Unicode(help="boe rm3 trec rank format path"
+                           ).tag(config=True)
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
@@ -29,6 +34,7 @@ class JointSemanticResource(Configurable):
         self.h_surface_form = None
         self.h_surface_stat = None
         self.h_entity_fields = None
+        self.h_q_boe_rm3 = None
         self._load()
         self.corpus_stat = CorpusStat(**kwargs)
 
@@ -42,6 +48,7 @@ class JointSemanticResource(Configurable):
         self._load_sf()
         self._load_emb()
         self._load_sf_stat()
+        self._load_boe_rm3()
         return
 
     def _load_sf(self):
@@ -76,4 +83,9 @@ class JointSemanticResource(Configurable):
 
         logging.info('total [%d] entity fields loaded', len(self.h_entity_fields))
 
-
+    def _load_boe_rm3(self):
+        if not self.boe_rm3_path:
+            return
+        l_q_e_score = load_trec_ranking_with_score(self.boe_rm3_path)
+        self.h_q_boe_rm3 = dict(l_q_e_score)
+        return

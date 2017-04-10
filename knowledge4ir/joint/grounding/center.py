@@ -15,6 +15,7 @@ from traitlets import (
     Int
 )
 from knowledge4ir.joint.grounding.mem_e import EMemGrounder
+from knowledge4ir.joint.grounding.prf import PrfGrounder
 from knowledge4ir.joint.grounding import Grounder
 from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
@@ -26,17 +27,18 @@ class GroundCenter(Configurable):
                       ).tag(config=True)
     out_name = Unicode(help='output file name').tag(config=True)
     grounder_name = Unicode('base',
-                            help='the grounder to use, default base, choice: base|e_mem'
+                            help='the grounder to use, default base, choice: base|e_mem|prf'
                             ).tag(config=True)
+    h_name_grounder = {'base': Grounder,
+                       'e_mem': EMemGrounder,
+                       'prf': PrfGrounder,
+                       }
 
     def __init__(self, **kwargs):
         super(GroundCenter, self).__init__(**kwargs)
-        if self.grounder_name == 'e_mem':
-            logging.info('use grounder [%s]', self.grounder_name)
-            self.grounder = EMemGrounder(**kwargs)
-        else:
-            logging.info('use basic grounder')
-            self.grounder = Grounder(**kwargs)
+        assert self.grounder_name in self.h_name_grounder
+        logging.info('use grounder [%s]', self.grounder_name)
+        self.grounder = self.h_name_grounder[self.grounder_name](**kwargs)
         self.resource = JointSemanticResource(**kwargs)
         self.grounder.set_resource(self.resource)
 
@@ -44,7 +46,9 @@ class GroundCenter(Configurable):
     def class_print_help(cls, inst=None):
         super(GroundCenter, cls).class_print_help(inst)
         JointSemanticResource.class_print_help(inst)
-        Grounder.class_print_help(inst)
+        for name, grounder_class in cls.h_name_grounder.items():
+            print "grounder [%s]" % name
+            grounder_class.class_print_help(inst)
 
     def ground(self):
         """

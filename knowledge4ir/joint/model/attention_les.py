@@ -352,6 +352,163 @@ class AttentionLes(JointSemanticModel):
         return ranking_model
 
 
+class HierAttLes(AttentionLes):
+    model_name = Unicode('HierAttLes')
+
+    def formulate_intermediate_res(self, x, out_name):
+        return
+
+    def formulate_intermediate_res_generator(self, in_name, out_name, s_target_qid):
+        return
+
+    def _build_para_layers(self):
+        """
+        an sf grounding layer
+        an entity grounding layer
+        an ltr layer
+        an entity matching layer
+        :return:
+        """
+        # 1 d cnn to calculate the surface attention
+        # attention model does not use bias to ensure padding
+        l_sf_ground_cnn = list()
+        l_sf_ground_cnn.append(Conv1D(
+            nb_filter=5,
+            filter_length=1,
+            activation=self.sf_att_activation,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            input_shape=self.sf_ground_shape,
+            name=sf_ground_name + '_CNN_1',
+        ))
+        l_sf_ground_cnn.append(Conv1D(
+            nb_filter=1,
+            filter_length=1,
+            activation=self.sf_att_activation,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            name=sf_ground_name + '_CNN'
+        ))
+
+        # a typical ltr linear model
+        ltr_dense = Dense(
+            output_dim=1,
+            bias=True,
+            input_shape=self.ltr_shape,
+            name=ltr_feature_name + '_Dense'
+        )
+
+        # 2 d cnn on each sf-e pair, size 1 means only apply a linear model on the feature dime
+        #  will result a sf-e matrix, will then be soft-maxed for probability
+        # attention model does not use bias to ensure padding
+        l_e_ground_cnn = list()
+        l_e_ground_cnn.append(Conv2D(
+            nb_filter=5,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            dim_ordering='tf',
+            input_shape=self.e_ground_shape,
+            name=e_ground_name + '_CNN_1'
+        ))
+        l_e_ground_cnn.append(Conv2D(
+            nb_filter=1,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=False,
+            dim_ordering='tf',
+            name=e_ground_name + '_CNN'
+        ))
+
+        # 2 d cnn to get matching scores for entities
+        l_e_match_cnn = list()
+        l_e_match_cnn.append(Conv2D(
+            nb_filter=5,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=True,
+            dim_ordering='tf',
+            input_shape=self.e_match_shape,
+            name=e_match_name + '_CNN_1'
+        ))
+        l_e_match_cnn.append(Conv2D(
+            nb_filter=1,
+            nb_row=1,
+            nb_col=1,
+            W_regularizer=l2(self.hyper_para.l2_w),
+            bias=True,
+            dim_ordering='tf',
+            name=e_match_name + '_CNN'
+        ))
+
+        h_para_layers = {
+            sf_ground_name + '_CNN': l_sf_ground_cnn,
+            e_ground_name + '_CNN': l_e_ground_cnn,
+            ltr_feature_name + '_Dense': ltr_dense,
+            e_match_name + '_CNN': l_e_match_cnn
+        }
+        return h_para_layers
+
+    def _form_model_from_layers(self, h_para_layers, is_aux=False):
+        """
+        merge sf_ground_cnn's 1d results with e_ground_cnn's
+            sf_ground_cnn |sf| * 1, e_ground_cnn |sf||e|, multiply the vector along the cols
+            to get a |sf||e| attention matrix
+        then merge with e_match_cnn's results, a full dot to a single score
+        then add with ltr's results to get the final ranking score
+        :param h_para_layers: the returned results of _build_para_layers
+        :return:
+        """
+
+        l_sf_ground_cnn = h_para_layers[sf_ground_name + '_CNN']
+        l_e_ground_cnn = h_para_layers[e_ground_name + '_CNN']
+        ltr_dense = h_para_layers[ltr_feature_name + '_Dense']
+        l_e_match_cnn = h_para_layers[e_match_name + '_CNN']
+
+        pre = ""
+        if is_aux:
+            pre = self.aux_pre
+
+        # align inputs
+        sf_ground_input = Input(shape=self.sf_ground_shape, name=pre + sf_ground_name)
+        sf_ground_cnn = l_sf_ground_cnn[1](l_sf_ground_cnn[0](sf_ground_input))
+        sf_ground_cnn = Flatten()(sf_ground_cnn)
+
+        e_ground_input = Input(shape=self.e_ground_shape, name=pre + e_ground_name)
+        e_ground_cnn = l_e_ground_cnn[1](l_e_ground_cnn[0](e_ground_input))
+        e_ground_cnn = Reshape(self.e_match_shape[:-1])(e_ground_cnn)  # drop last dimension
+        if self.e_att_activation != 'linear':
+            e_ground_cnn = Activation(self.e_att_activation)(e_ground_cnn)
+
+        ltr_input = Input(shape=self.ltr_shape, name=pre + ltr_feature_name)
+        ltr_dense = ltr_dense(ltr_input)
+
+        e_match_input = Input(shape=self.e_match_shape, name=pre + e_match_name)
+        e_match_cnn = l_e_match_cnn[1](l_e_match_cnn[0](e_match_input))
+        e_match_cnn = Flatten()(e_match_cnn)
+
+        # broad cast the sf's score to sf-e mtx
+        sf_att = RepeatVector(self.max_e_per_spot)(sf_ground_cnn)
+        sf_att = Permute((2, 1))(sf_att)
+
+        e_combined_att = merge([sf_att, e_ground_cnn],
+                               mode='mul', name=pre + 'full_att_mtx'
+                               )
+
+        e_ranking_score = merge([Flatten()(e_combined_att), e_match_cnn],
+                                mode='dot', name=pre + 'att_e_ranking_score')
+
+        ranking_score = merge([e_ranking_score, ltr_dense],
+                              mode='sum', output_shape=(1,), name=pre+'ew_combine')
+        ranking_model = Model(input=[sf_ground_input, e_ground_input, e_match_input, ltr_input],
+                              output=ranking_score)
+
+        return ranking_model
+
+
 class Les(AttentionLes):
     model_name = Unicode('les')
 

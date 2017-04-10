@@ -32,6 +32,7 @@ from knowledge4ir.joint import (
     GROUND_FIELD,
     SPOT_FIELD,
 )
+import numpy as np
 
 
 class Grounder(Configurable):
@@ -41,7 +42,7 @@ class Grounder(Configurable):
 
     def __init__(self, **kwargs):
         super(Grounder, self).__init__(**kwargs)
-        self.resource = None # must be set
+        self.resource = None  # must be set
 
     def set_resource(self, external_resource):
         self.resource = external_resource
@@ -178,25 +179,36 @@ class Grounder(Configurable):
                     sim = self.resource.embedding.similarity(e_id, top_e_id)
                     l_sim.append(sim)
 
-        max_sim = 0
-        mean_sim = 0
-        bin_1 = 0
-        bin_2 = 0
-
-        if l_sim:
-            max_sim = max(l_sim)
-            mean_sim = sum(l_sim) / float(len(l_sim))
-            for sim in l_sim:
-                if 0.7 <= sim < 0.9:
-                    bin_2 += 1
-                if 0.9 <= sim:
-                    bin_1 += 1
-
+        max_sim, mean_sim, l_bin = self._pool_sim_score(l_sim)
         h_feature = dict()
         h_feature['e_vote_emb_max'] = max_sim
         h_feature['e_vote_emb_mean'] = mean_sim
-        h_feature['e_vote_bin_1'] = bin_1
-        h_feature['e_vote_bin_2'] = bin_2
+        for i in xrange(len(l_bin)):
+            h_feature['e_vote_bin_%d' % i] = l_bin[i]
         return h_feature
+
+    @classmethod
+    def _pool_sim_score(cls, l_sim, l_weight=None):
+        max_sim = 0
+        mean_sim = 0
+        l_bin = [0, 0, 0, 0]
+        if not l_sim:
+            return max_sim, mean_sim, l_bin
+        max_sim = max(l_sim)
+        if l_weight is None:
+            l_weight = [1] * len(l_sim)
+        s = np.array(l_sim)
+        w = np.array(l_weight)
+        mean_sim = s.dot(w) / sum(l_weight)
+        for sim, weight in zip(l_sim, l_weight):
+            if sim == 1:
+                l_bin[0] += weight
+            if 0.75 <= sim < 1:
+                l_bin[1] += weight
+            if 0.5 <= sim < 0.75:
+                l_bin[2] += weight
+            if 0.25 <= sim < 0.5:
+                l_bin[3] += weight
+        return max_sim, mean_sim, l_bin
 
 
