@@ -7,6 +7,9 @@ from gensim.models import Word2Vec
 
 import sys
 import json
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
+
 
 if len(sys.argv) != 4:
     print "I get similar words for given words and model"
