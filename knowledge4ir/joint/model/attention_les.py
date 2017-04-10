@@ -355,6 +355,12 @@ class AttentionLes(JointSemanticModel):
 class HierAttLes(AttentionLes):
     model_name = Unicode('HierAttLes')
 
+    def formulate_intermediate_res(self, x, out_name):
+        return
+
+    def formulate_intermediate_res_generator(self, in_name, out_name, s_target_qid):
+        return
+
     def _build_para_layers(self):
         """
         an sf grounding layer
