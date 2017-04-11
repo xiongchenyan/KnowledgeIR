@@ -8,7 +8,7 @@ from scipy import spatial
 import re
 import string
 from scipy.linalg import norm
-regex = re.compile('[%s]' % re.escape(string.punctuation)) #see documentation here: http://docs.python.org/2/library/string.html
+regex = re.compile('[%s]' % re.escape(string.punctuation)) # see documentation here: http://docs.python.org/2/library/string.html
 s_stopwords = set(stopwords.words('english'))
 
 
