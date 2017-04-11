@@ -19,7 +19,7 @@ out = open(sys.argv[2], 'w')
 
 for p, line in enumerate(open(sys.argv[1])):
     if not p % 1000:
-        logging.info('processed [%d] line')
+        logging.info('processed [%d] line', p)
     try:
         print >> out, raw_clean(line.strip())
     except UnicodeDecodeError:
