@@ -33,4 +33,4 @@ for t, tf in l:
     print >> out, "%s\t%d" % (t, tf)
 
 out.close()
-print "tf dumped to [%d]" % sys.argv[2]
+print "tf dumped to [%s]" % sys.argv[2]
