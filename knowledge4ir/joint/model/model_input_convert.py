@@ -60,7 +60,7 @@ from sklearn.preprocessing import minmax_scale
 class ModelInputConvert(Configurable):
     max_spot_per_q = Int(3, help='max spot allowed per q').tag(config=True)
     max_e_per_spot = Int(5, help='top e allowed per q').tag(config=True)
-    sf_ground_f_dim = Int(6, help='sf ground feature dimension').tag(config=True)
+    sf_ground_f_dim = Int(5, help='sf ground feature dimension').tag(config=True)
     e_ground_f_dim = Int(5, help='e ground feature dimension').tag(config=True)
     e_match_f_dim = Int(16, help='e match feature dimension').tag(config=True)
     sf_ground_normalize = Bool(False, help="whether normalize st ground").tag(config=True)
