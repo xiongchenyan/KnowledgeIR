@@ -6,6 +6,8 @@ import sys
 from knowledge4ir.utils import raw_clean, set_basic_log
 import logging
 
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 set_basic_log(logging.INFO)
 
