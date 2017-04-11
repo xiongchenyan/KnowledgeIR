@@ -8,14 +8,14 @@ from scipy import spatial
 import re
 import string
 from scipy.linalg import norm
-regex = re.compile('[%s]' % re.escape(string.punctuation)) # see documentation here: http://docs.python.org/2/library/string.html
+regex = re.compile('[%s]' % re.escape(string.punctuation.replace('/',''))) # see documentation here: http://docs.python.org/2/library/string.html
 s_stopwords = set(stopwords.words('english'))
 
 
 def remove_punctuation(l_words):
     l_new = []
     for word in l_words:
-        new_token = regex.sub(u'', word)
+        new_token = regex.sub(u' ', word)
         if not new_token == u'':
             l_new.append(new_token)
     return l_new
