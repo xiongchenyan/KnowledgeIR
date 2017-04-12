@@ -45,7 +45,7 @@ class PrfGrounder(Grounder):
 
         max_sim, mean_sim, l_bin = self._pool_sim_score(l_sim, l_weight)
         h_feature = dict()
-        # h_feature['prf_vote_emb_max'] = max_sim
+        h_feature['prf_vote_emb_max'] = max_sim
         h_feature['prf_vote_emb_mean'] = mean_sim
         # for i in xrange(len(l_bin)):
         #     h_feature['prf_vote_bin_%d' % i] = l_bin[i]
