@@ -111,7 +111,7 @@ class SpotSentAttention(Configurable):
             h_qid_sent[qid]= h_qid_sent[qid][:100]
 
         logging.info('qid -> prf sentences prepared')
-        json.dump(h_qid_sent, out_name, indent=1)
+        json.dump(h_qid_sent, open(out_name, 'w'), indent=1)
         logging.info('prf sentence json dict dumped to [%s]', out_name)
 
 
