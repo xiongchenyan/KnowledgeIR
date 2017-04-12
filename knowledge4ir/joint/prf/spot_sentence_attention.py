@@ -90,9 +90,29 @@ class SpotSentAttention(Configurable):
         if self.out_format == 'trec':
             dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos', l_sent)
         if self.out_format == 'json':
-            print "tbd"
+            self._dump_prf_sent_json(self.out_name, l_qid, l_sentno, l_sent, l_score)
         logging.info('finished')
         return
+
+    def _dump_prf_sent_json(self, out_name, l_qid, l_sentno, l_sent, l_score):
+        # group to qid
+        h_qid_sent = dict()
+        for p in xrange(len(l_qid)):
+            qid, sentno, sent, score =  l_qid[p], l_sentno[p], l_sent[p], l_score[p]
+            if qid not in h_qid_sent:
+                h_qid_sent[qid] = [(sentno, sent, score)]
+            else:
+                h_qid_sent[qid].append((sentno, sent, score))
+
+        # sort each item
+        # keep only top 100 to disk
+        for qid in h_qid_sent.keys():
+            h_qid_sent[qid].sort(key=lambda item: -item[-1])
+            h_qid_sent[qid]= h_qid_sent[qid][:100]
+
+        logging.info('qid -> prf sentences prepared')
+        json.dump(h_qid_sent, out_name, indent=1)
+        logging.info('prf sentence json dict dumped to [%s]', out_name)
 
 
 if __name__ == '__main__':
