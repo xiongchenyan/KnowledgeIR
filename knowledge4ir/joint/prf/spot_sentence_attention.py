@@ -24,7 +24,7 @@ import logging
 from knowledge4ir.joint.resource import JointSemanticResource
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from knowledge4ir.utils.nlp import raw_clean
+from knowledge4ir.utils.nlp import raw_clean, avg_embedding
 
 
 class SpotSentAttention(Configurable):
@@ -43,11 +43,11 @@ class SpotSentAttention(Configurable):
         JointSemanticResource.class_print_help(inst)
 
     def embedding_cosine(self, query, sent):
-        q_emb = self._avg_emb(query)
-        sent_emb = self._avg_emb(sent)
+        q_emb = avg_embedding(self.resource.embedding, query)
+        sent_emb = avg_embedding(self.resource.embedding, sent)
         if (sent_emb is None) | (q_emb is None):
             return -1
-        return cosine_similarity(q_emb.reshape(1, -1), sent_emb.reshape(1, -1)).reshape(-1)[0]
+        return float(cosine_similarity(q_emb.reshape(1, -1), sent_emb.reshape(1, -1)).reshape(-1)[0])
 
     def _avg_emb(self, text):
         l_t = [t for t in text.split() if t in self.resource.embedding]
