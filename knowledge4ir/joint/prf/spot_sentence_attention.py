@@ -26,6 +26,9 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from knowledge4ir.utils.nlp import raw_clean, avg_embedding
 
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
+
 
 class SpotSentAttention(Configurable):
     spot_sent_in = Unicode().tag(config=True)

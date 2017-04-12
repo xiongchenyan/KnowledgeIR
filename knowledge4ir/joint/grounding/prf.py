@@ -15,6 +15,10 @@ from traitlets import Int
 from knowledge4ir.utils.nlp import avg_embedding
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+import sys
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
+
 
 class PrfGrounder(Grounder):
     nb_prf_e = Int(0, help='nb of prf entities to use').tag(config=True)
