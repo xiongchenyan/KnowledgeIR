@@ -58,7 +58,7 @@ class PrfGrounder(Grounder):
                 if sent_emb is None:
                     l_sim.append(0)
                 else:
-                    sim = cosine_similarity(e_emb.reshape(1, -1), sent_emb.reshape(1, -1))
+                    sim = cosine_similarity(e_emb.reshape(1, -1), sent_emb.reshape(1, -1)).reshape(-1)[0]
                     l_sim.append(sim)
 
             v_w = np.array(l_score)  # make sure these are all positive

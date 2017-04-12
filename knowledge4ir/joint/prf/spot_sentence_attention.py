@@ -47,7 +47,7 @@ class SpotSentAttention(Configurable):
         sent_emb = self._avg_emb(sent)
         if (sent_emb is None) | (q_emb is None):
             return -1
-        return cosine_similarity(q_emb.reshape(1, -1), sent_emb.reshape(1, -1))
+        return cosine_similarity(q_emb.reshape(1, -1), sent_emb.reshape(1, -1)).reshape(-1)[0]
 
     def _avg_emb(self, text):
         l_t = [t for t in text.split() if t in self.resource.embedding]
