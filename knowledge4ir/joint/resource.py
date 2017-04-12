@@ -28,7 +28,7 @@ class JointSemanticResource(Configurable):
     boe_rm3_path = Unicode(help="boe rm3 trec rank format path"
                            ).tag(config=True)
     prf_sent_path = Unicode(help="prf sentence json dict path"
-                            ).taG(config=True)
+                            ).tag(config=True)
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
