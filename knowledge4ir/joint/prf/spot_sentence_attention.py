@@ -24,11 +24,13 @@ import logging
 from knowledge4ir.joint.resource import JointSemanticResource
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from knowledge4ir.utils.nlp import raw_clean
 
 
 class SpotSentAttention(Configurable):
     spot_sent_in = Unicode().tag(config=True)
     out_name = Unicode().tag(config=True)
+    out_format = Unicode('json', help="output format: json|trec").tag(config=True)
 
     def __init__(self, **kwargs):
         super(SpotSentAttention, self).__init__(**kwargs)
@@ -41,8 +43,8 @@ class SpotSentAttention(Configurable):
         JointSemanticResource.class_print_help(inst)
 
     def embedding_cosine(self, query, sent):
-        q_emb = self._avg_emb(query.lower())
-        sent_emb = self._avg_emb(sent.lower())
+        q_emb = self._avg_emb(query)
+        sent_emb = self._avg_emb(sent)
         if (sent_emb is None) | (q_emb is None):
             return -1
         return cosine_similarity(q_emb.reshape(1, -1), sent_emb.reshape(1, -1))
@@ -62,6 +64,7 @@ class SpotSentAttention(Configurable):
 
         l_qid, l_sentno, l_score = [], [], []
         l_sent = []
+        s_see_sent = set()
         for p, line in enumerate(open(self.spot_sent_in)):
             if not p % 100:
                 logging.info('processing [%d] sentence', p)
@@ -70,17 +73,24 @@ class SpotSentAttention(Configurable):
                 logging.warn('[%s] cols # [%d]', line.strip(), len(cols))
                 continue
             qid, query, _, _, _, sentno, sent = cols
+            query = raw_clean(query)
+            sent = raw_clean(sent)
             if len(sent.split()) > 100:
                 continue
             if (len(sent.split()) - len(query.split())) < 5:
+                continue
+            if (qid + "\t" + sent) in s_see_sent:
                 continue
             score = self.embedding_cosine(query, sent)
             l_qid.append(qid)
             l_sentno.append(sentno)
             l_score.append(score)
             l_sent.append(sent)
-
-        dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos', l_sent)
+            s_see_sent.add(qid + '\t' + sent)  # unique
+        if self.out_format == 'trec':
+            dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos', l_sent)
+        if self.out_format == 'json':
+            print "tbd"
         logging.info('finished')
         return
 
