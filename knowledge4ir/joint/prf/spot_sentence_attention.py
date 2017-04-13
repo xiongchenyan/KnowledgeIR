@@ -99,7 +99,7 @@ class SpotSentAttention(Configurable):
             l_sent.append(sent)
             s_see_sent.add(qid + '\t' + sent)  # unique
         if self.out_format == 'trec':
-            dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos', l_sent)
+            dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, "", l_sent)
         if self.out_format == 'json':
             self._dump_prf_sent_json(self.out_name, l_qid, l_sentno, l_sent, l_score)
         logging.info('finished')
