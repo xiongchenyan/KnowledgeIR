@@ -84,6 +84,7 @@ class SpotSentAttention(Configurable):
             query = raw_clean(query)
             sent = sent.decode('utf-8','ignore').encode("utf-8")
             sent = raw_clean(sent)
+            sent = ' '.join([t for t in sent.split() if t in self.resource.embedding])
             if len(sent.split()) > 100:
                 continue
             if (len(sent.split()) - len(query.split())) < 5:
