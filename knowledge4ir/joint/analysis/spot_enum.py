@@ -66,7 +66,7 @@ if __name__ == '__main__':
         qid, query = line.strip().split('\t')
         l_qt = query.lower().split()
         ll_grounding = spot_enumerate(l_qt, s_sf)
-        logging.info('[%s] has [%d] possible combinations', qid, len(ll_grounding))
+        logging.info('[%s][%s] has [%d] possible combinations', qid, query, len(ll_grounding))
         l_comb.append(len(ll_grounding))
         for p, l_brackets in enumerate(ll_grounding):
             l_spot = _bracket_to_spot(l_qt, l_brackets)
