@@ -97,7 +97,7 @@ class Grounder(Configurable):
         h_feature = {}
 
         h_feature.update(self._surface_cmns_features(h_sf_info))
-        h_feature.update(self._surface_coverage_features(h_sf_info, h_info))
+        # h_feature.update(self._surface_coverage_features(h_sf_info, h_info))
         h_feature.update(self._surface_lp(h_sf_info))
 
         logging.debug('sf [%s] feature %s', h_sf_info['surface'], json.dumps(h_feature))
@@ -140,7 +140,7 @@ class Grounder(Configurable):
         diff = l_cmns[0] - l_cmns[1]
 
         h_feature['sf_cmns_entropy'] = entropy
-        h_feature['sf_cmns_topdiff'] = diff
+        # h_feature['sf_cmns_topdiff'] = diff
 
         return h_feature
 
