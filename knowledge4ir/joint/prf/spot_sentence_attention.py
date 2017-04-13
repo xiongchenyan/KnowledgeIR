@@ -117,7 +117,9 @@ class SpotSentAttention(Configurable):
         # sort each item
         # keep only top 100 to disk
         out = open(out_name, 'w')
-        for qid in h_qid_sent.keys():
+        l = h_qid_sent.keys()
+        l.sort(key=lambda item: int(item))
+        for qid in l:
             h_qid_sent[qid].sort(key=lambda item: -item[-1])
             h_qid_sent[qid] = h_qid_sent[qid][:100]
             print >> out, '%s\t%s' % (qid, json.dumps(h_qid_sent[qid]))
