@@ -22,14 +22,13 @@ def spot_enumerate(l_terms, s_surface_form):
 
 
 def _dfs_spot(l_terms, s_surface_from, st, l_this_bracket, ll_res):
-    # end scenarios
     if st >= len(l_terms):
         if l_this_bracket:
             ll_res.append(l_this_bracket)
             logging.info('get one possible spot enum %s',
                          json.dumps(_bracket_to_spot(l_terms, l_this_bracket)))
         return
-    l_e = range(st + 1, min(len(l_terms), st + max_sf_len))
+    l_e = range(st + 1, min(len(l_terms), st + max_sf_len) + 1)
     l_e.sort(reverse=True)
     for ed in l_e:
         sf = ' '.join(l_terms[st:ed])
@@ -70,7 +69,7 @@ if __name__ == '__main__':
         logging.info('[%s] has [%d] possible combinations', qid, len(ll_grounding))
         l_comb.append(len(ll_grounding))
         for p, l_brackets in enumerate(ll_grounding):
-            l_spot = _bracket_to_spot(l_qt, ll_grounding)
+            l_spot = _bracket_to_spot(l_qt, l_brackets)
             print >> out, qid + '\t%d\t' % p + json.dumps(l_spot)
 
     out.close()
