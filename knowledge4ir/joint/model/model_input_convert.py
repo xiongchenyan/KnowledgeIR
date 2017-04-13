@@ -33,7 +33,8 @@ import json
 import sys
 import logging
 from knowledge4ir.utils import (
-    load_trec_labels_dict
+    load_trec_labels_dict,
+    load_svm_feature,
 )
 from traitlets.config import Configurable
 from traitlets import (
@@ -67,6 +68,7 @@ class ModelInputConvert(Configurable):
     e_ground_normalize = Bool(False, help="whether normalize e ground").tag(config=True)
     # e_match_normalize = Bool(False, help="whether normalize e match").tag(config=True)
     ltr_f_dim = Int(1, help='ltr feature dimension').tag(config=True)
+    ltr_f_in = Unicode(help="pre extracted letor features").tag(config=True)
     qrel_in = Unicode(help='qrel in').tag(config=True)
     q_info_in = Unicode(help='q info in, with grounded features').tag(config=True)
     q_d_match_info_in = Unicode(help='matched pairs info in, with matching features'
@@ -81,6 +83,17 @@ class ModelInputConvert(Configurable):
         self.h_sf_grounding_feature_id = dict()
         self.h_e_grounding_feature_id = dict()
         self.h_e_matching_feature_id = dict()
+        self.h_qid_docno_ltr_feature = dict()
+        if self.ltr_f_in:
+            self._load_svm_ltr_feature()
+
+    def _load_svm_ltr_feature(self):
+        logging.info('loading svm ltr feature [%s]', self.ltr_f_in)
+        l_svm_data = load_svm_feature(self.ltr_f_in)
+        for svm_data in l_svm_data:
+            qid, docno, h_feature = svm_data['qid'], svm_data['comment'], svm_data['feature']
+            self.h_qid_docno_ltr_feature[qid + '\t' + docno] = h_feature
+        logging.info('loaded [%d] pairs of pre extracted ltr feature', len(self.h_qid_docno_ltr_feature))
 
     def _form_q_grounding_info_mtx(self):
         """
@@ -205,7 +218,19 @@ class ModelInputConvert(Configurable):
 
         converted_mtx_info['meta'] = {'qid': qid, 'docno': docno}
         converted_mtx_info['label'] = label
-        converted_mtx_info[ltr_feature_name] = [pair_info['base_score']]  # 1 dim ltr feature for now
+        if not self.h_qid_docno_ltr_feature:
+            converted_mtx_info[ltr_feature_name] = [pair_info['base_score']]  # 1 dim ltr feature for now
+        else:
+            # add in external ltr feature
+            h_feature = self.h_qid_docno_ltr_feature.get(qid + '\t' + docno, {})
+            if h_feature:
+                l_item = h_feature.items()
+                l_item.sort(key=lambda item: int(item[0]))
+                l_score = [item[1] for item in l_item]
+                assert len(l_score) == self.ltr_f_dim
+            else:
+                l_score = [0 for _ in xrange(self.ltr_f_dim)]
+            converted_mtx_info[ltr_feature_name] = l_score
 
         # get q's grounding part
         l_spot_loc = q_grounding_info[sf_ground_ref]
