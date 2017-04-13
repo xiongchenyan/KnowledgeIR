@@ -51,7 +51,7 @@ class PrfGrounder(Grounder):
 
     def _prf_sent_vote(self, e_id, l_prf_sent_score):
         max_sim, mean_sim, w_mean_sim = 0, 0, 0
-        if (e_id in self.resource.embedding) & l_prf_sent_score:
+        if (e_id in self.resource.embedding) & (len(l_prf_sent_score) != 0):
             e_emb = self.resource.embedding[e_id]
             l_score = [item[-1] for item in l_prf_sent_score]
             l_sent = [item[1] for item in l_prf_sent_score]
