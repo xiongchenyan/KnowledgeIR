@@ -27,6 +27,8 @@ class JointSemanticResource(Configurable):
                                 ).tag(config=True)
     boe_rm3_path = Unicode(help="boe rm3 trec rank format path"
                            ).tag(config=True)
+    prf_sent_path = Unicode(help="prf sentence json dict path"
+                            ).tag(config=True)
     
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
@@ -35,6 +37,7 @@ class JointSemanticResource(Configurable):
         self.h_surface_stat = None
         self.h_entity_fields = None
         self.h_q_boe_rm3 = None
+        self.h_q_prf_sent = None
         self._load()
         self.corpus_stat = CorpusStat(**kwargs)
 
@@ -49,6 +52,7 @@ class JointSemanticResource(Configurable):
         self._load_emb()
         self._load_sf_stat()
         self._load_boe_rm3()
+        self._load_prf_sent()
         return
 
     def _load_sf(self):
@@ -88,4 +92,10 @@ class JointSemanticResource(Configurable):
             return
         l_q_e_score = load_trec_ranking_with_score(self.boe_rm3_path)
         self.h_q_boe_rm3 = dict(l_q_e_score)
+        return
+
+    def _load_prf_sent(self):
+        if not self.prf_sent_path:
+            return
+        self.h_q_prf_sent = json.load(open(self.prf_sent_path))
         return

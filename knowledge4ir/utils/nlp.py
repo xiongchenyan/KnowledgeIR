@@ -4,18 +4,18 @@ basic stuff about nlp
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from scipy import spatial
-
+import numpy as np
 import re
 import string
 from scipy.linalg import norm
-regex = re.compile('[%s]' % re.escape(string.punctuation)) #see documentation here: http://docs.python.org/2/library/string.html
+regex = re.compile('[%s]' % re.escape(string.punctuation.replace('/',''))) # see documentation here: http://docs.python.org/2/library/string.html
 s_stopwords = set(stopwords.words('english'))
 
 
 def remove_punctuation(l_words):
     l_new = []
     for word in l_words:
-        new_token = regex.sub(u'', word)
+        new_token = regex.sub(u' ', word)
         if not new_token == u'':
             l_new.append(new_token)
     return l_new
@@ -102,3 +102,10 @@ def text_cosine(text_a, text_b):
     return lm_cosine(lm_a, lm_b)
 
 
+def avg_embedding(word2vec, text):
+    l_t = raw_clean(text).split()
+    l_v = [word2vec[t] for t in l_t if t in word2vec]
+    if not l_v:
+        return None
+    avg_v = np.mean(np.array(l_v), axis=0)
+    return avg_v

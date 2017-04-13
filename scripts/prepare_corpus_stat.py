@@ -15,6 +15,8 @@ from knowledge4ir.utils import (
     body_field
 )
 import pickle
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 if 3 != len(sys.argv):
