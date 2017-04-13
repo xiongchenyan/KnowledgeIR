@@ -38,7 +38,7 @@ class SpotSentAttention(Configurable):
     def __init__(self, **kwargs):
         super(SpotSentAttention, self).__init__(**kwargs)
         self.resource = JointSemanticResource(**kwargs)
-        assert self.resource.embedding
+        # assert self.resource.embedding
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -76,6 +76,11 @@ class SpotSentAttention(Configurable):
                 logging.warn('[%s] cols # [%d]', line.strip(), len(cols))
                 continue
             qid, query, _, _, _, sentno, sent = cols
+            try:
+                s = json.dumps({'test': sent})
+            except UnicodeDecodeError:
+                logging.warn('send [%s] decode error', sent)
+                continue
             query = raw_clean(query)
             sent = sent.decode('utf-8','ignore').encode("utf-8")
             sent = raw_clean(sent)
@@ -85,7 +90,8 @@ class SpotSentAttention(Configurable):
                 continue
             if (qid + "\t" + sent) in s_see_sent:
                 continue
-            score = self.embedding_cosine(query, sent)
+            score = 0
+            # score = self.embedding_cosine(query, sent)
             l_qid.append(qid)
             l_sentno.append(sentno)
             l_score.append(score)
