@@ -69,9 +69,9 @@ if __name__ == '__main__':
         ll_grounding = spot_enumerate(l_qt, s_sf)
         logging.info('[%s] has [%d] possible combinations', qid, len(ll_grounding))
         l_comb.append(len(ll_grounding))
-        for l_brackets in ll_grounding:
+        for p, l_brackets in enumerate(ll_grounding):
             l_spot = _bracket_to_spot(l_qt, ll_grounding)
-            print >> out, qid + '\t' + json.dumps(l_spot)
+            print >> out, qid + '\t%d\t' % p + json.dumps(l_spot)
 
     out.close()
     logging.info('finished with [%d] q, average [%f] grounding per q',
