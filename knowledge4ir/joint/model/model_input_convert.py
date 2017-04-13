@@ -229,7 +229,7 @@ class ModelInputConvert(Configurable):
                 l_score = [item[1] for item in l_item]
                 assert len(l_score) == self.ltr_f_dim
             else:
-                l_score = [0 for _ in xrange(len(self.ltr_f_dim))]
+                l_score = [0 for _ in xrange(self.ltr_f_dim)]
             converted_mtx_info[ltr_feature_name] = l_score
 
         # get q's grounding part
