@@ -117,16 +117,16 @@ class SpotSentAttention(Configurable):
 
         # sort each item
         # keep only top 100 to disk
-        out = open(out_name, 'w')
+        # out = open(out_name, 'w')
         l = h_qid_sent.keys()
         l.sort(key=lambda item: int(item))
         for qid in l:
             h_qid_sent[qid].sort(key=lambda item: -item[-1])
             h_qid_sent[qid] = h_qid_sent[qid][:100]
-            print >> out, '%s\t%s' % (qid, json.dumps(h_qid_sent[qid]))
-        out.close()
-        logging.info('qid -> prf sentences prepared')
-        # json.dump(h_qid_sent, open(out_name, 'w'), indent=1)
+            # print >> out, '%s\t%s' % (qid, json.dumps(h_qid_sent[qid]))
+        # out.close()
+        logging.info('qid -> prf sentences prepared, start dumping to one json dict')
+        json.dump(h_qid_sent, open(out_name, 'w'), indent=1)
         logging.info('prf sentence json dict dumped to [%s]', out_name)
 
 
