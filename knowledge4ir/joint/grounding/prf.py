@@ -68,9 +68,9 @@ class PrfGrounder(Grounder):
             v_w = np.array(l_score)  # make sure these are all positive
             v_w = v_w / np.sum(v_w)
             v_sim = np.array(l_sim)
-            max_sim = np.max(v_sim)
-            mean_sim = np.mean(v_sim)
-            w_mean_sim = v_sim.dot(v_w)
+            max_sim = float(np.max(v_sim))
+            mean_sim = float(np.mean(v_sim))
+            w_mean_sim = float(v_sim.dot(v_w))
 
         h_feature = {"prf_sent_vote_max": max_sim,
                      "prf_sent_vote_mean": mean_sim,
