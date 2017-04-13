@@ -77,6 +77,7 @@ class SpotSentAttention(Configurable):
                 continue
             qid, query, _, _, _, sentno, sent = cols
             query = raw_clean(query)
+            sent = sent.decode('utf-8','ignore').encode("utf-8")
             sent = raw_clean(sent)
             if len(sent.split()) > 100:
                 continue
