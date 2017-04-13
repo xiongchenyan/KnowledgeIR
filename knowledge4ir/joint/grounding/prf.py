@@ -66,7 +66,11 @@ class PrfGrounder(Grounder):
                     l_sim.append(sim)
 
             v_w = np.array(l_score)  # make sure these are all positive
-            v_w = v_w / np.sum(v_w)
+            z = np.sum(v_w)
+            if z == 0:
+                logging.warn('prfs sent start with [%s] has zero score sum', l_prf_sent_score[0][1])
+            else:
+                v_w = v_w / np.sum(v_w)
             v_sim = np.array(l_sim)
             max_sim = float(np.max(v_sim))
             mean_sim = float(np.mean(v_sim))
