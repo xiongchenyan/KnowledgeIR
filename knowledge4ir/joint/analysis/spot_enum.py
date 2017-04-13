@@ -30,12 +30,16 @@ def _dfs_spot(l_terms, s_surface_from, st, l_this_bracket, ll_res):
         return
     l_e = range(st + 1, min(len(l_terms), st + max_sf_len) + 1)
     l_e.sort(reverse=True)
+    b_current_t_spotted = False
     for ed in l_e:
         sf = ' '.join(l_terms[st:ed])
         if sf in s_surface_from:
             logging.info('[%d, %d) [%s] spotted', st, ed, sf)
+            if (ed - st) == 1:
+                b_current_t_spotted = True
             _dfs_spot(l_terms, s_surface_from, ed, l_this_bracket + [(st, ed)], ll_res)
-    _dfs_spot(l_terms, s_surface_from, st + 1, l_this_bracket, ll_res)
+    if not b_current_t_spotted:
+        _dfs_spot(l_terms, s_surface_from, st + 1, l_this_bracket, ll_res)
     return
 
 
