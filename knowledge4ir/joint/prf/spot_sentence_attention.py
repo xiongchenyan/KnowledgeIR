@@ -38,7 +38,7 @@ class SpotSentAttention(Configurable):
     def __init__(self, **kwargs):
         super(SpotSentAttention, self).__init__(**kwargs)
         self.resource = JointSemanticResource(**kwargs)
-        assert self.resource.embedding
+        # assert self.resource.embedding
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -76,22 +76,30 @@ class SpotSentAttention(Configurable):
                 logging.warn('[%s] cols # [%d]', line.strip(), len(cols))
                 continue
             qid, query, _, _, _, sentno, sent = cols
+            try:
+                s = json.dumps({'test': sent})
+            except UnicodeDecodeError:
+                logging.warn('send [%s] decode error', sent)
+                continue
             query = raw_clean(query)
+            sent = sent.decode('utf-8','ignore').encode("utf-8")
             sent = raw_clean(sent)
+            sent = ' '.join([t for t in sent.split() if t in self.resource.embedding])
             if len(sent.split()) > 100:
                 continue
             if (len(sent.split()) - len(query.split())) < 5:
                 continue
             if (qid + "\t" + sent) in s_see_sent:
                 continue
-            score = self.embedding_cosine(query, sent)
+            score = 0
+            # score = self.embedding_cosine(query, sent)
             l_qid.append(qid)
             l_sentno.append(sentno)
             l_score.append(score)
             l_sent.append(sent)
             s_see_sent.add(qid + '\t' + sent)  # unique
         if self.out_format == 'trec':
-            dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, 'emb_cos', l_sent)
+            dump_trec_out_from_ranking_score(l_qid, l_sentno, l_score, self.out_name, "", l_sent)
         if self.out_format == 'json':
             self._dump_prf_sent_json(self.out_name, l_qid, l_sentno, l_sent, l_score)
         logging.info('finished')
@@ -109,14 +117,16 @@ class SpotSentAttention(Configurable):
 
         # sort each item
         # keep only top 100 to disk
-        out = open(out_name, 'w')
-        for qid in h_qid_sent.keys():
+        # out = open(out_name, 'w')
+        l = h_qid_sent.keys()
+        l.sort(key=lambda item: int(item))
+        for qid in l:
             h_qid_sent[qid].sort(key=lambda item: -item[-1])
             h_qid_sent[qid] = h_qid_sent[qid][:100]
-            print >> out, '%s\t%s' % (qid, json.dumps(h_qid_sent[qid]))
-        out.close()
-        logging.info('qid -> prf sentences prepared')
-        # json.dump(h_qid_sent, open(out_name, 'w'), indent=1)
+            # print >> out, '%s\t%s' % (qid, json.dumps(h_qid_sent[qid]))
+        # out.close()
+        logging.info('qid -> prf sentences prepared, start dumping to one json dict')
+        json.dump(h_qid_sent, open(out_name, 'w'), indent=1)
         logging.info('prf sentence json dict dumped to [%s]', out_name)
 
 
