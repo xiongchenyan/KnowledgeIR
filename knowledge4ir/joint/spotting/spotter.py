@@ -26,12 +26,14 @@ from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from knowledge4ir.joint import (
     SPOT_FIELD
 )
+from knowledge4ir.utils.nlp import rm_stopword
 
 
 class Spotter(Configurable):
     max_surface_len = Int(5, help='max surface form length').tag(config=True)
     max_candidate_per_surface = Int(5, help='max candidate per surface').tag(config=True)
     only_longest = Bool(False, help='whether only keep longest').tag(config=True)
+    rm_stopwords = Bool(False, help='where to rm phrases that only contain stopwords').tag(config=True)
 
     def __init__(self, **kwargs):
         super(Spotter, self).__init__(**kwargs)
@@ -61,7 +63,8 @@ class Spotter(Configurable):
                 if ed > len(l_terms):
                     continue
                 sub_str = ' '.join(l_terms[st: ed])
-
+                if self._pre_filter_candidate_phrase(sub_str):
+                    continue
                 if len(sub_str) > 3:
                     # manual set capitalization priority
                     l_variation_ngram = [sub_str.title(), sub_str]
@@ -102,6 +105,14 @@ class Spotter(Configurable):
         logging.debug('[%s] [%d] candidate', ngram, len(l_mid_ana))
         l_ana = deepcopy(l_mid_ana[:self.max_candidate_per_surface])
         return l_ana
+
+    def _pre_filter_candidate_phrase(self, sub_str):
+        if self.rm_stopwords:
+            if not rm_stopword(sub_str):
+                return True
+        return False
+
+
 
     def pipe_spot_query_json(self, q_info_in, spot_out_name):
         """
