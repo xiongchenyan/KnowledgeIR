@@ -34,10 +34,16 @@ class Spotter(Configurable):
     max_candidate_per_surface = Int(5, help='max candidate per surface').tag(config=True)
     only_longest = Bool(False, help='whether only keep longest').tag(config=True)
     rm_stopwords = Bool(False, help='where to rm phrases that only contain stopwords').tag(config=True)
+    pre_defined_segments = Unicode(help="pre defined segmentations, in json format"
+                                   ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(Spotter, self).__init__(**kwargs)
         self.resource = JointSemanticResource(**kwargs)  # can be initialized here or by set_resource
+        self.h_q_seg = dict()
+        if self.pre_defined_segments:
+            self.h_q_seg = json.load(open(self.pre_defined_segments))
+            logging.info('loaded predefined segmentations')
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -48,7 +54,7 @@ class Spotter(Configurable):
         # share one resource
         self.resource = joint_resource
 
-    def spot_text(self, l_terms):
+    def spot_text(self, l_terms, key=None):
         """
         l_terms is the tokenized terms of the text
         :param l_terms:
@@ -63,7 +69,7 @@ class Spotter(Configurable):
                 if ed > len(l_terms):
                     continue
                 sub_str = ' '.join(l_terms[st: ed])
-                if self._pre_filter_candidate_phrase(sub_str):
+                if self._pre_filter_candidate_phrase(sub_str, key):
                     continue
                 if len(sub_str) > 3:
                     # manual set capitalization priority
@@ -106,13 +112,16 @@ class Spotter(Configurable):
         l_ana = deepcopy(l_mid_ana[:self.max_candidate_per_surface])
         return l_ana
 
-    def _pre_filter_candidate_phrase(self, sub_str):
+    def _pre_filter_candidate_phrase(self, sub_str, key=None):
         if self.rm_stopwords:
             if not rm_stopword(sub_str):
                 return True
+        if key:
+            if self.h_q_seg:
+                l_seg = self.h_q_seg.get(key, [])
+                if sub_str.lower() not in l_seg:
+                    return True
         return False
-
-
 
     def pipe_spot_query_json(self, q_info_in, spot_out_name):
         """
@@ -139,7 +148,7 @@ class Spotter(Configurable):
         h = dict()
         q = h_q['query']
         l_qt = q.lower().split()
-        l_ana = self.spot_text(l_qt)
+        l_ana = self.spot_text(l_qt, key=h_q['qid'])
         h['query'] = ' '.join(l_qt)
         h['qid'] = h_q['qid']
         h[SPOT_FIELD] = {'query': l_ana}
