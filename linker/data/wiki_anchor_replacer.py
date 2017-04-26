@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-import urlparse
+import codecs
 
 import data_utils
 import nif_utils
@@ -42,6 +42,9 @@ class AnchorPositions:
             return self.__anchor_positions[article_index]
         else:
             return None
+
+    def get_articles(self):
+        return self.__articles
 
 
 def load_redirects(redirect_nif):
@@ -90,8 +93,7 @@ def parse_anchor_position_info(info):
     uri = info["http://www.w3.org/2005/11/its/rdf#taIdentRef"].replace(dbpedia_prefix, '')
     anchor = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#anchorOf"].encode('utf-8')
     full_article_url = info["http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#referenceContext"]
-    parsed_url = urlparse.urlparse(full_article_url)
-    article = parsed_url[0] + ":/" + parsed_url[1] + parsed_url[2]
+    article = nif_utils.strip_url_params(full_article_url).replace(dbpedia_prefix, '')
 
     return begin_index, end_index, uri, anchor, article
 
@@ -143,6 +145,7 @@ def find_fb_id(wiki_id, wiki_2_fb_map, redirects):
 
     if wiki_id in redirects:
         target = redirects[wiki_id]
+        # print "Using redirect %s in place of %s" %(target, wiki_id)
 
     if target in wiki_2_fb_map:
         fb_id = wiki_2_fb_map[target]
@@ -152,10 +155,10 @@ def find_fb_id(wiki_id, wiki_2_fb_map, redirects):
 def do_replace(text, begin, end, replacement, expected_text):
     status = 0
 
-    if text[begin:end] == expected_text:
+    if text[begin:end].encode('utf-8') == expected_text:
         text = text[:begin] + replacement + text[end:]
     else:
-        # print "Text not matching, doing left search."
+        # print "Text not matching (%s != %s), doing left search." %(text_at_span, expected_text)
         for left_offset in range(1, 11):
             # Conduct left search. If succeed, status will be 1, if not , will be 2
             new_begin = begin - left_offset
@@ -164,26 +167,36 @@ def do_replace(text, begin, end, replacement, expected_text):
             if new_begin < 0:
                 break
 
-            fragment = text[new_begin: new_end]
+            fragment = text[new_begin: new_end].encode('utf-8')
 
             # print "Trying new fragment ", fragment
 
-            if text == fragment:
-                # print "Matches!"
+            if expected_text == fragment:
+                # print "Matches using %d:%d instead" % (new_begin, new_end)
                 text = text[:new_begin] + replacement + text[new_end:]
                 status = 1
+                return status, text
+
+        for right_offset in range(1, 6):
+            new_begin = begin + right_offset
+            new_end = end + right_offset
+
+            if new_end > len(text):
                 break
 
-            # After left search, no text fragment meets the requirement.
-            status = 2
+            fragment = text[new_begin: new_end].encode('utf-8')
 
-            # print "Status is ", status
-            # raw_input("Press enter to continue.")
+            if expected_text == fragment:
+                text = text[:new_begin] + replacement + text[new_end:]
+                status = 2
+                return status, text
+
+        status = 3
 
     return status, text
 
 
-def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, out_path, error_log, both_version=False):
+def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, error_log, out_path, both_version=False):
     wiki_context_nif = NIFParser(context)
 
     start = time.clock()
@@ -194,13 +207,16 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, o
     wiki_missed_counter = {}
 
     anchor_miss_count = 0
+    anchor_left_search_count = 0
+    anchor_right_search_count = 0
+    anchor_replace_failures = 0
 
     collector = NifRelationCollector(
         "http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#isString",
         "http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#sourceUrl"
     )
 
-    with open(out_path, 'w') as out, open(error_log, 'w') as error:
+    with open(out_path, 'w') as out, codecs.open(error_log, 'w', 'utf-8') as error:
         for statements in wiki_context_nif:
             for s, v, o in statements:
                 ready = collector.add_arg(s, v, o)
@@ -223,19 +239,33 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, o
                         seen_ids.add(wiki_id)
 
                         if fb_id:
-                            status, replaced_text = do_replace(replaced_text, begin, end, fb_id, anchor_count)
+                            status, replaced_text = do_replace(replaced_text, begin, end, fb_id, anchor_text)
+
                             if status == 1:
-                                error.write('[Warning] %s replaces %s on page %s at [%d:%d], done by left search.\n' % (
-                                    fb_id, anchor_text, begin, end, article_name))
+                                error.write('[Warning] %s replaces %s at [%d:%d] on page %s, done by left search.\n' % (
+                                    fb_id, anchor_text.decode('utf-8'), begin, end, article_name))
+                                anchor_left_search_count += 1
                             elif status == 2:
+                                error.write('[Warning] %s replaces %s at [%d:%d] on page %s, done by right search.\n' % (
+                                    fb_id, anchor_text.decode('utf-8'), begin, end, article_name))
+                                anchor_right_search_count += 1
+
+                            elif status == 3:
                                 error.write('[Warning] %s cannot replace %s at [%d:%d] on page %s.\n' % (
-                                    fb_id, anchor_text, begin, end, article_name))
-                                # raw_input("Press Enter to continue...")
+                                    fb_id, anchor_text.decode('utf-8'), begin, end, article_name))
+                                # sys.stdout.write('[Warning] %s cannot replace %s at [%d:%d] on page %s, '
+                                #                  'origin span maps to %s\n' % (
+                                #                      fb_id, anchor_text.decode('utf-8'), begin, end, article_name,
+                                #                      text[begin:end].encode('utf-8')))
+                                # sys.stdout.write(replaced_text.encode('utf-8'))
+                                #
+                                # raw_input("Wait.")
+
+                                anchor_replace_failures += 1
                         else:
                             # print "Missing wiki id: ", wiki_id, " on page", article_name, " at ", text[begin: end]
                             error.write('[Warning] Missing wiki id: %s on page %s at [%d:%d].\n' % (
-                                fb_id, article_name, begin, end))
-
+                                wiki_id, article_name, begin, end))
                             # raw_input("Press Enter to continue...")
 
                             anchor_miss_count += 1
@@ -259,10 +289,19 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, o
 
                     sys.stdout.write("\r[%s] Wrote %d articles, "
                                      "%d/%d anchor misses (%.4f), "
-                                     "%d/%d resource misses (%.4f)."
+                                     "%d/%d resource misses (%.4f), "
+                                     "%d/%d anchor replaced with left search (%.4f), "
+                                     "%d/%d anchor replaced with right search (%.4f), "
+                                     "%d/%d anchor replace failures (%.4f)."
                                      % (datetime.datetime.now().time(), article_count,
                                         anchor_miss_count, anchor_count, 1.0 * anchor_miss_count / anchor_count,
-                                        missed_id_count, total_id_referred, 1.0 * missed_id_count / total_id_referred))
+                                        missed_id_count, total_id_referred, 1.0 * missed_id_count / total_id_referred,
+                                        anchor_left_search_count, anchor_count,
+                                        1.0 * anchor_left_search_count / anchor_count,
+                                        anchor_right_search_count, anchor_count,
+                                        1.0 * anchor_right_search_count / anchor_count,
+                                        anchor_replace_failures, anchor_count,
+                                        1.0 * anchor_replace_failures / anchor_count))
 
     print("")
     logging.info("Elapsed: %.2f" % (time.clock() - start))
@@ -325,8 +364,10 @@ def main():
     write_origin(wiki_context, os.path.join(output_dir, "origin.txt"))
     num_wiki_seen, num_anchor, missed_counts = write_context_replaced(wiki2fb, wiki_context, anchor_positions,
                                                                       redirects,
+                                                                      os.path.join(output_dir, "fb_replace.log"),
                                                                       os.path.join(output_dir, "fb_replaced.txt"))
     write_context_replaced(wiki2fb, wiki_context, anchor_positions, redirects,
+                           os.path.join(output_dir, "fb_replace_both.log"),
                            os.path.join(output_dir, "origin_and_replaced.txt"), True)
 
     print_replacement_stats(num_wiki_seen, num_anchor, missed_counts, os.path.join(output_dir, "replacement_stat"))
