@@ -349,7 +349,7 @@ def main():
 
     logging.info("Mapping Freebase to Wikipedia.")
     mapper = FreebaseWikiMapper(output_dir)
-    mapper.create_mapping(fb2w, "wikidatawiki_wb_items_per_site", "hector", "hector")
+    mapper.create_mapping_wiki_data_sql(fb2w, "wikidatawiki_wb_items_per_site", "hector", "hector")
     wiki2fb = mapper.read_wiki_fb_mapping()
     logging.info("Done.")
 
