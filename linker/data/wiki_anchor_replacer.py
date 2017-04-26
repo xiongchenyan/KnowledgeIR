@@ -246,8 +246,9 @@ def write_context_replaced(wiki_2_fb_map, context, article_anchors, redirects, e
                                     fb_id, anchor_text.decode('utf-8'), begin, end, article_name))
                                 anchor_left_search_count += 1
                             elif status == 2:
-                                error.write('[Warning] %s replaces %s at [%d:%d] on page %s, done by right search.\n' % (
-                                    fb_id, anchor_text.decode('utf-8'), begin, end, article_name))
+                                error.write(
+                                    '[Warning] %s replaces %s at [%d:%d] on page %s, done by right search.\n' % (
+                                        fb_id, anchor_text.decode('utf-8'), begin, end, article_name))
                                 anchor_right_search_count += 1
 
                             elif status == 3:
@@ -320,7 +321,8 @@ def print_replacement_stats(num_wiki_seen, num_anchor, missed_counts, out_path):
         num_anchor_missed = 0
         for resource, miss_count in missed_counts.iteritems():
             num_anchor_missed += miss_count
-            stat_out.write("Wikipedia resource %s is not replaced successfully %d times.\n" % (resource, miss_count))
+            stat_out.write("Wikipedia resource %s is not found as a FB entity %d times.\n" % (
+                resource.encode('utf-8'), miss_count))
         stat_out.write("Percentage of resources missed: %.4f.\n" % (1.0 * num_wiki_missed / num_wiki_referred))
         stat_out.write("Percentage of anchors missed: %.4f.\n" % (1.0 * num_anchor_missed / num_anchor))
 
@@ -370,7 +372,7 @@ def main():
                            os.path.join(output_dir, "fb_replace_both.log"),
                            os.path.join(output_dir, "origin_and_replaced.txt"), True)
 
-    print_replacement_stats(num_wiki_seen, num_anchor, missed_counts, os.path.join(output_dir, "replacement_stat"))
+    print_replacement_stats(num_wiki_seen, num_anchor, missed_counts, os.path.join(output_dir, "replacement_stat.txt"))
 
     logging.info("All Done.")
 
