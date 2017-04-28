@@ -47,31 +47,6 @@ class AnchorPositions:
         return self.__articles
 
 
-def load_redirects(redirect_nif):
-    collector = NifRelationCollector(
-        "http://dbpedia.org/ontology/wikiPageRedirects",
-    )
-    redirect_to = {}
-    count = 0
-    for statements in NIFParser(redirect_nif):
-        for s, v, o in statements:
-            ready = collector.add_arg(s, v, o)
-
-            if ready:
-                count += 1
-                from_page = s.replace(dbpedia_prefix, "")
-                redirect_page = collector.pop(s)[
-                    "http://dbpedia.org/ontology/wikiPageRedirects"
-                ].replace(dbpedia_prefix, "")
-                redirect_to[from_page] = redirect_page
-
-                sys.stdout.write("\r[%s] Parsed %d lines." % (datetime.datetime.now().time(), count))
-
-    sys.stdout.write("\nFinish loading redirects.")
-
-    return redirect_to
-
-
 def write_origin(context_nif, out_path):
     logging.info("Reading context string from %s." % context_nif)
     with open(out_path, 'w') as out:
@@ -359,7 +334,8 @@ def main():
     logging.info("Done.")
 
     logging.info("Loading redirect pages.")
-    redirects = data_utils.run_or_load(os.path.join(output_dir, "redirects.pickle"), load_redirects, redirect_path)
+    redirects = data_utils.run_or_load(os.path.join(output_dir, "redirects.pickle"), data_utils.load_redirects,
+                                       redirect_path)
     logging.info("Done")
 
     logging.info("Writing down the text.")
