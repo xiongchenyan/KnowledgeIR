@@ -38,6 +38,10 @@ class NIFParser:
     def __iter__(self):
         return self
 
+    def __next__(self):
+        # Python 3 compatibility.
+        pass
+
     def next(self):
         pass
 

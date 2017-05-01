@@ -3,9 +3,11 @@ import datetime
 import os
 import sys
 
-import data_utils
-from nif_parser import NIFParser
-from wiki_sql_linker import WbItemsPerSite
+from . import data_utils
+from .nif_parser import NIFParser
+
+if sys.version_info[0] == 2:
+    from .wiki_sql_linker import WbItemsPerSite
 
 freebase_prefix = "http://rdf.freebase.com/ns/"
 wikidata_prefix = "http://www.wikidata.org/entity/"
@@ -40,6 +42,10 @@ class FreebaseWikiMapper:
             print("\nTotally %s mappings created." % count)
 
     def create_mapping_wiki_data_sql(self, fb_wd_mapping_path, wb_database_name, db_user_id, db_passwd):
+        if sys.version_info[0] == 3:
+            print("Error: MySQL not implemented for Python 3.")
+            exit(1)
+
         wb_db = WbItemsPerSite(db_user_id, db_passwd, wb_database_name)
 
         mapping_file = os.path.join(self.mapper_dir, self.fb_wiki_mapping_file)
@@ -86,8 +92,8 @@ def main():
     mapper.create_mapping_wiki_data_sql(fb_wd_mapping, "wikidatawiki_wb_items_per_site", "hector", "hector")
     wiki_2_fb = mapper.read_wiki_fb_mapping()
 
-    print wiki_2_fb["Mount_Everest"]
-    print wiki_2_fb["Khasi–Khmuic_languages"]
+    print(wiki_2_fb["Mount_Everest"])
+    print(wiki_2_fb["Khasi–Khmuic_languages"])
 
 
 if __name__ == '__main__':

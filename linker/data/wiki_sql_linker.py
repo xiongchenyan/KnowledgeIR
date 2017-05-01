@@ -1,7 +1,8 @@
 import MySQLdb
 
 """
-MySQLdb is required to read the Wikidata mapping
+MySQLdb is required to read the Wikidata mapping.
+This is seems only available in Python2
 """
 
 
@@ -36,4 +37,4 @@ class WbItemsPerSite:
 if __name__ == '__main__':
     database_name = "wikidatawiki_wb_items_per_site"
     wb = WbItemsPerSite("hector", "hector", database_name)
-    print wb.page_query("Q202785", "enwiki")
+    print(wb.page_query("Q202785", "enwiki"))

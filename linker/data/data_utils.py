@@ -1,8 +1,8 @@
 import logging
 import os
 import pickle
-from nif_parser import NIFParser
-from nif_utils import NifRelationCollector
+from .nif_parser import NIFParser
+from .nif_utils import NifRelationCollector
 import datetime
 import sys
 

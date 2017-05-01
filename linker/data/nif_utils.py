@@ -1,6 +1,9 @@
-import urlparse
 import sys
 
+if sys.version_info[0] == 2:
+    import urlparse as parse
+elif sys.version_info[0] == 3:
+    from urllib import parse
 
 class NifRelationCollector:
     def __init__(self, *relation_names):
@@ -41,10 +44,10 @@ class NifRelationCollector:
 
 
 def strip_url_params(url):
-    parsed = urlparse.urlparse(url)
+    parsed = parse.urlparse(url)
     return parsed[0] + "://" + parsed[1] + parsed[2]
 
 
 def get_resource_attribute(url, param_name):
-    parsed = urlparse.urlparse(url)
-    return urlparse.parse_qs(parsed.query)[param_name][0]
+    parsed = parse.urlparse(url)
+    return parse.parse_qs(parsed.query)[param_name][0]
