@@ -16,7 +16,7 @@ def run_or_load(path, func, *args):
         result = func(*args)
         logging.info("Done processing, pickling as middle results.")
 
-        with open(path, 'w') as link_pickle_f:
+        with open(path, 'wb') as link_pickle_f:
             pickle.dump(result, link_pickle_f)
         logging.info("Done pickling.")
 
