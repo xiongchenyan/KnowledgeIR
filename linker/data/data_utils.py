@@ -6,6 +6,7 @@ from .nif_utils import NifRelationCollector
 import datetime
 import sys
 
+
 def run_or_load(path, func, *args):
     if os.path.exists(path):
         logging.info("Loading data from %s." % path)

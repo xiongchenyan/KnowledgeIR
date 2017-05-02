@@ -24,10 +24,15 @@ class NIFParser:
         else:
             self.__nif = open(self.__url)
 
+        self.__batch_model = True
+
         if batch:
+            print("Using the batch mode.")
             self.next = self.batch_read
+            self.__next__ = self.batch_read
         else:
             self.next = self.read
+            self.__next__ = self.read
 
     def __enter__(self):
         return self
@@ -40,6 +45,10 @@ class NIFParser:
 
     def __next__(self):
         # Python 3 compatibility.
+        if self.__batch_model:
+            return self.batch_read()
+        else:
+            return self.read()
         pass
 
     def next(self):
@@ -49,7 +58,8 @@ class NIFParser:
         lines = self.__nif.readlines(self.__batch_size)
         if not lines:
             raise StopIteration
-        return parse_nif_as_list("".join(lines))
+
+        return parse_nif_as_list(b''.join(lines).decode())
 
     def read(self):
         return parse_nif_as_list(self.__nif.next())
