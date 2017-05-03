@@ -10,7 +10,7 @@ import sys
 def run_or_load(path, func, *args):
     if os.path.exists(path):
         logging.info("Loading data from %s." % path)
-        return pickle.load(open(path))
+        return pickle.load(open(path, 'rb'))
     else:
         logging.info("No saved data found.")
         result = func(*args)
