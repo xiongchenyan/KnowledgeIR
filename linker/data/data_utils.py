@@ -52,6 +52,6 @@ def load_redirects(redirect_nif):
 
                 sys.stdout.write("\r[%s] Parsed %d lines." % (datetime.datetime.now().time(), count))
 
-    sys.stdout.write("\nFinish loading redirects.")
+    sys.stdout.write("\nFinish loading redirects.\n")
 
     return redirect_to
