@@ -20,8 +20,6 @@ import logging
 sys.setdefaultencoding('UTF8')
 
 
-
-
 def extract_html(html_text, parser):
     try:
         extractor = Extractor(extractor=parser, html=html_text)
