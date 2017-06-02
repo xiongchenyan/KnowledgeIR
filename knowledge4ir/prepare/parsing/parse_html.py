@@ -38,7 +38,7 @@ def parse_docs(in_name, out_name, parser):
     logging.info('parsing [%s]', in_name)
     for line in open(in_name):
         docno, html_text = line.strip().split('\t')
-        html_text = html_text.lower()[html_text.find('<html'):]
+        html_text = html_text[html_text.find('<html'):]
         if not html_text:
             continue
         if html_text.strip() == "":
@@ -61,10 +61,11 @@ if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
     set_basic_log()
     if 3 > len(sys.argv):
-        print "2+ para: html doc in, docno+html one per line + outname + parser "
-        print "(default parse: ArticleExtractor, can be: DefaultExtractor, KeepEverythingExtractor, LargestContentExtractor)"
+        print "2+ para: html doc in, docno+html one per line + out name + parser "
+        print "default parse: KeepEverythingExtractor, " \
+              "can be: DefaultExtractor, ArticleExtractor, LargestContentExtractor"
         sys.exit(-1)
-    parser = 'ArticleExtractor'
+    parser = 'KeepEverythingExtractor'
     if len(sys.argv) > 3:
         parser = sys.argv[3]
     parse_docs(sys.argv[1], sys.argv[2], parser)
