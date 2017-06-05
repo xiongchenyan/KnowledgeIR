@@ -14,19 +14,15 @@ def create_dir(path):
 
 
 def prepare_dataset(path, out_dir):
-    text_dir = os.path.join(out_dir, "text")
+    for docno, title, formatted_text in get_data(path):
+        text_out_path = os.path.join(out_dir, "text", docno)
+        with codecs.open(text_out_path, 'w', "utf-8") as o:
+            o.write(title)
+            o.write("\n")
+            o.write(formatted_text)
 
-    create_dir(out_dir)
-    create_dir(os.path.join(out_dir, "text"))
-    create_dir(os.path.join(out_dir, "preprocessed"))
-    create_dir(os.path.join(out_dir, "joint"))
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-
-    if not os.path.exists(text_dir):
-        os.makedirs(text_dir)
-
+def get_data(path):
     with open(path) as infile:
         for line in infile:
             all_spot_results = json.loads(line)
@@ -36,14 +32,7 @@ def prepare_dataset(path, out_dir):
 
             formatted_text = nlp_utils.reformat_text(body_text)
 
-            text_out_path = os.path.join(text_dir, docno)
-
-            with codecs.open(text_out_path, 'w', "utf-8") as o:
-                o.write(title)
-                o.write("\n")
-                o.write(formatted_text)
-
-    return text_dir
+            yield docno, title, formatted_text
 
 
 def run_coref(input_path, out_dir, engine_type):
@@ -54,8 +43,20 @@ def run_coref(input_path, out_dir, engine_type):
     else:
         raise RuntimeError("Unknown engine type.")
 
-    text_dir = prepare_dataset(input_path, out_dir)
-    engine.run_directory(text_dir, out_dir)
+    create_dir(out_dir)
+    if engine_type == "berkeley":
+        # We process all data and use Berkeley to run on the directory.
+        text_dir = os.path.join(out_dir, "text")
+        create_dir(text_dir)
+        create_dir(os.path.join(out_dir, "preprocessed"))
+        create_dir(os.path.join(out_dir, "joint"))
+        prepare_dataset(input_path, out_dir)
+        engine.run_directory(text_dir, out_dir)
+    elif engine_type == "stanford":
+        # Stanford can be run as a server so we could run each file incrementally.
+        for docno, title, formatted_text in get_data(input_path):
+            combined = title + "\n" + formatted_text
+            engine.run_coref(combined)
 
 
 def get_entity_replaced_text(text, spots):

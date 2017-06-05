@@ -3,6 +3,9 @@ from subprocess import Popen, PIPE
 from config import BerkeleyConfig
 import os
 from shutil import copyfile
+from stanfordcorenlp import StanfordCoreNLP
+from config import StanfordConfig
+import logging
 
 
 class CorefEngineRunner:
@@ -12,10 +15,22 @@ class CorefEngineRunner:
     def run_coref(self, text):
         pass
 
+    def run_directory(self, dir):
+        pass
+
 
 class StanfordEntityCoref(CorefEngineRunner):
+    def __init__(self):
+        CorefEngineRunner.__init__(self)
+        logging.info("Initializing Stanford CoreNLP models.")
+        self.nlp = StanfordCoreNLP(StanfordConfig.system_path, memory='8g')
+        self.props = {'annotators': 'tokenize, ssplit, pos, lemma, ner, parse, depparse, dcoref'}
+        logging.info("Initialization done.")
+
     def run_coref(self, text):
-        pass
+        result = self.nlp.annotate(text, properties=self.props)
+        print result
+        raw_input("Wait")
 
     def run_directory(self, dir):
         pass
