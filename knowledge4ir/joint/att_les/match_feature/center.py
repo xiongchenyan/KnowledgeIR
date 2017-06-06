@@ -17,23 +17,25 @@ for each line in TREC ranking
         matrix for each q and d spot: q e -> d e (ESR, TODO
 """
 
-
-import logging
 import json
+import logging
 import sys
-from knowledge4ir.joint.resource import JointSemanticResource
-from knowledge4ir.joint.matching import QeDTextMatchFeatureExtractor
-from traitlets.config import Configurable
+
 from traitlets import (
     Unicode,
     Set,
 )
-from knowledge4ir.utils import (
-    load_trec_ranking_with_score
-)
+from traitlets.config import Configurable
+
 from knowledge4ir.joint import (
     MATCH_FIELD
 )
+from knowledge4ir.joint.att_les.match_feature import QeDTextMatchFeatureExtractor
+from knowledge4ir.joint.resource import JointSemanticResource
+from knowledge4ir.utils import (
+    load_trec_ranking_with_score
+)
+
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
