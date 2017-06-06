@@ -36,6 +36,7 @@ class Spotter(Configurable):
     rm_stopwords = Bool(False, help='where to rm phrases that only contain stopwords').tag(config=True)
     pre_defined_segments = Unicode(help="pre defined segmentations, in json format"
                                    ).tag(config=True)
+    ignore_capital = Bool(True, help='whether to ignore capitalization in the data').tag(config=True)
 
     def __init__(self, **kwargs):
         super(Spotter, self).__init__(**kwargs)
@@ -43,7 +44,7 @@ class Spotter(Configurable):
         self.h_q_seg = dict()
         if self.pre_defined_segments:
             self.h_q_seg = json.load(open(self.pre_defined_segments))
-            logging.info('loaded predefined segmentations')
+            logging.info('loaded predefined segments')
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -71,11 +72,7 @@ class Spotter(Configurable):
                 sub_str = ' '.join(l_terms[st: ed])
                 if self._pre_filter_candidate_phrase(sub_str, key):
                     continue
-                if len(sub_str) > 3:
-                    # manual set capitalization priority
-                    l_variation_ngram = [sub_str.title(), sub_str]
-                else:
-                    l_variation_ngram = [sub_str]
+                l_variation_ngram = self._capitalization_ngrams(sub_str)
                 spotted = False
                 for ngram in l_variation_ngram:
                     l_ana = self._get_candidate(ngram)
@@ -98,6 +95,18 @@ class Spotter(Configurable):
 
         logging.info('[%d] terms resulted in [%d] surfaces', len(l_terms), len(l_spot))
         return l_spot
+
+    def _capitalization_ngrams(self, sub_str):
+        l_variation_ngram = []
+        if self.ignore_capital:
+            if len(sub_str) > 3:
+                # manual set capitalization priority
+                l_variation_ngram = [sub_str.title(), sub_str]
+            else:
+                l_variation_ngram = [sub_str]
+        else:
+            l_variation_ngram = [sub_str]
+        return l_variation_ngram
 
     def _get_candidate(self, ngram):
         """
