@@ -16,6 +16,7 @@ from traitlets import (
     List,
     Bool
 )
+import nltk
 from knowledge4ir.utils import (
     set_basic_log,
     load_py_config
@@ -36,6 +37,8 @@ class Spotter(Configurable):
     rm_stopwords = Bool(False, help='where to rm phrases that only contain stopwords').tag(config=True)
     pre_defined_segments = Unicode(help="pre defined segmentations, in json format"
                                    ).tag(config=True)
+    ignore_capital = Bool(True, help='whether to ignore capitalization in the data').tag(config=True)
+    tokenize = Bool(True, help='whether to tokenize to input text').tag(config=True)
 
     def __init__(self, **kwargs):
         super(Spotter, self).__init__(**kwargs)
@@ -43,7 +46,7 @@ class Spotter(Configurable):
         self.h_q_seg = dict()
         if self.pre_defined_segments:
             self.h_q_seg = json.load(open(self.pre_defined_segments))
-            logging.info('loaded predefined segmentations')
+            logging.info('loaded predefined segments')
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -71,11 +74,7 @@ class Spotter(Configurable):
                 sub_str = ' '.join(l_terms[st: ed])
                 if self._pre_filter_candidate_phrase(sub_str, key):
                     continue
-                if len(sub_str) > 3:
-                    # manual set capitalization priority
-                    l_variation_ngram = [sub_str.title(), sub_str]
-                else:
-                    l_variation_ngram = [sub_str]
+                l_variation_ngram = self._capitalization_ngrams(sub_str)
                 spotted = False
                 for ngram in l_variation_ngram:
                     l_ana = self._get_candidate(ngram)
@@ -98,6 +97,18 @@ class Spotter(Configurable):
 
         logging.info('[%d] terms resulted in [%d] surfaces', len(l_terms), len(l_spot))
         return l_spot
+
+    def _capitalization_ngrams(self, sub_str):
+        l_variation_ngram = []
+        if self.ignore_capital:
+            if len(sub_str) > 3:
+                # manual set capitalization priority
+                l_variation_ngram = [sub_str.title(), sub_str]
+            else:
+                l_variation_ngram = [sub_str]
+        else:
+            l_variation_ngram = [sub_str]
+        return l_variation_ngram
 
     def _get_candidate(self, ngram):
         """
@@ -147,7 +158,7 @@ class Spotter(Configurable):
     def spot_query_json(self, h_q):
         h = dict()
         q = h_q['query']
-        l_qt = q.lower().split()
+        l_qt = self._text_preprocess(q)
         l_ana = self.spot_text(l_qt, key=h_q['qid'])
         h['query'] = ' '.join(l_qt)
         h['qid'] = h_q['qid']
@@ -181,13 +192,22 @@ class Spotter(Configurable):
             if field not in h_d:
                 continue
             text = h_d[field]
-            l_term = text.lower().split()
+            l_term = self._text_preprocess(text)
             l_ana = self.spot_text(l_term)
             h[field] = ' '.join(l_term)
             h[SPOT_FIELD][field] = l_ana
             h['docno'] = h_d['docno']
 
         return h
+
+    def _text_preprocess(self, text):
+        if self.ignore_capital:
+            text = text.lower()
+        if not self.tokenize:
+            l_term = text.split()
+        else:
+            l_term = nltk.word_tokenize(text)
+        return l_term
 
 
 class MainConf(Configurable):
