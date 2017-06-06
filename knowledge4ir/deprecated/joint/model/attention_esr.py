@@ -14,26 +14,16 @@ from keras.layers import (
     Embedding,
     Reshape,
 )
-from keras.regularizers import (
-    l2,
-)
 from keras.models import (
     Model,
     Sequential,
 )
-from knowledge4ir.joint import (
-    JointSemanticResource,
+from keras.regularizers import (
+    l2,
 )
-from knowledge4ir.joint.model import JointSemanticModel
 
-from traitlets.config import Configurable
-from traitlets import (
-    Float,
-    Int,
-    Tuple,
-    Unicode
-)
-from knowledge4ir.joint.kernel_pooling import kernel_pooling
+from knowledge4ir.joint.model import JointSemanticModel
+from knowledge4ir.joint.model.kernel_pooling import kernel_pooling
 
 
 # TODO: wrong!

@@ -9,17 +9,18 @@ the logic here is only input-output stream control
 
 import json
 import logging
-from traitlets.config import Configurable
+from copy import deepcopy
+
+# from knowledge4ir.joint.grounding.mem_e import EMemGrounder
 from traitlets import (
-    Unicode,
-    Int
+    Unicode
 )
-from knowledge4ir.joint.grounding.mem_e import EMemGrounder
-from knowledge4ir.joint.grounding.prf import PrfGrounder
+from traitlets.config import Configurable
+
+# from knowledge4ir.deprecated.joint.grounding.prf import PrfGrounder
 from knowledge4ir.joint.grounding import Grounder
 from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
-from copy import deepcopy
 
 
 class GroundCenter(Configurable):
@@ -30,8 +31,8 @@ class GroundCenter(Configurable):
                             help='the grounder to use, default base, choice: base|e_mem|prf'
                             ).tag(config=True)
     h_name_grounder = {'base': Grounder,
-                       'e_mem': EMemGrounder,
-                       'prf': PrfGrounder,
+                       # 'e_mem': EMemGrounder,
+                       # 'prf': PrfGrounder,
                        }
 
     def __init__(self, **kwargs):
