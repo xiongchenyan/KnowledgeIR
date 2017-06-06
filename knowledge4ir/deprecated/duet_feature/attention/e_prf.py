@@ -8,7 +8,7 @@ from traitlets import (
     Int
 )
 
-from knowledge4ir.depreciated.duet_feature.attention.t_prf import TermPrfAttentionFeature
+from knowledge4ir.deprecated.duet_feature.attention.t_prf import TermPrfAttentionFeature
 from knowledge4ir.duet_feature.attention import (
     EntityAttentionFeature,
     mul_update,
