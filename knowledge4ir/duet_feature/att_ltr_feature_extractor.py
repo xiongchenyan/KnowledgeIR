@@ -36,7 +36,7 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.depreciated.duet_feature.attention.e_text import EntityTextAttentionFeature
+from knowledge4ir.deprecated.duet_feature.attention.e_text import EntityTextAttentionFeature
 from knowledge4ir.duet_feature import LeToRFeatureExternalInfo
 from knowledge4ir.duet_feature.attention.e_ambiguity import EntityAmbiguityAttentionFeature
 from knowledge4ir.duet_feature.attention.e_embedding import EntityEmbeddingAttentionFeature

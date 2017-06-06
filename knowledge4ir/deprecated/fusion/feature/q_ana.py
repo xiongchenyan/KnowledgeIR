@@ -7,7 +7,7 @@ from traitlets import (
     List,
 )
 
-from knowledge4ir.depreciated.fusion import QAttFeatureExtractor
+from knowledge4ir.deprecated.fusion import QAttFeatureExtractor
 from knowledge4ir.utils import (
     load_query_info,
 )

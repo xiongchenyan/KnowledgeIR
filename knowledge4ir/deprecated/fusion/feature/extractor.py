@@ -17,7 +17,7 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.depreciated.fusion.feature.q_ana import QAttAnaFeatureExtractor
+from knowledge4ir.deprecated.fusion.feature.q_ana import QAttAnaFeatureExtractor
 from knowledge4ir.utils import (
     load_query_info,
     feature_hash,

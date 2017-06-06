@@ -24,7 +24,7 @@ from traitlets import (
     Unicode,
     Int,
 )
-from knowledge4ir.joint.resource import JointSemanticResource
+# from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from copy import deepcopy
 from scipy import stats
