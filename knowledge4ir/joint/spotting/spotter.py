@@ -16,6 +16,7 @@ from traitlets import (
     List,
     Bool
 )
+import nltk
 from knowledge4ir.utils import (
     set_basic_log,
     load_py_config
@@ -37,6 +38,7 @@ class Spotter(Configurable):
     pre_defined_segments = Unicode(help="pre defined segmentations, in json format"
                                    ).tag(config=True)
     ignore_capital = Bool(True, help='whether to ignore capitalization in the data').tag(config=True)
+    tokenize = Bool(True, help='whether to tokenize to input text').tag(config=True)
 
     def __init__(self, **kwargs):
         super(Spotter, self).__init__(**kwargs)
@@ -156,7 +158,7 @@ class Spotter(Configurable):
     def spot_query_json(self, h_q):
         h = dict()
         q = h_q['query']
-        l_qt = q.lower().split()
+        l_qt = self._text_preprocess(q)
         l_ana = self.spot_text(l_qt, key=h_q['qid'])
         h['query'] = ' '.join(l_qt)
         h['qid'] = h_q['qid']
@@ -190,13 +192,22 @@ class Spotter(Configurable):
             if field not in h_d:
                 continue
             text = h_d[field]
-            l_term = text.lower().split()
+            l_term = self._text_preprocess(text)
             l_ana = self.spot_text(l_term)
             h[field] = ' '.join(l_term)
             h[SPOT_FIELD][field] = l_ana
             h['docno'] = h_d['docno']
 
         return h
+
+    def _text_preprocess(self, text):
+        if self.ignore_capital:
+            text = text.lower()
+        if not self.tokenize:
+            l_term = text.split()
+        else:
+            l_term = nltk.word_tokenize(text)
+        return l_term
 
 
 class MainConf(Configurable):
