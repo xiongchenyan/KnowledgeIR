@@ -100,7 +100,7 @@ class RetrievalModel(Configurable):
         avg_doc_len = corpus_stat.h_field_avg_len[field]
         return self.set_from_raw(h_q_terms, h_doc_terms, h_df, total_df, avg_doc_len)
 
-    def set_from_raw(self, h_q_terms, h_doc_terms, h_df, total_df=None, avg_doc_len=None):
+    def set_from_raw(self, h_q_terms, h_doc_terms, h_df={}, total_df=None, avg_doc_len=None):
         """
         set term stat by raw data
         :param h_q_terms: query term -> tf
@@ -268,3 +268,9 @@ class RetrievalModel(Configurable):
         normed_idf = np.log(1 + self.total_df / np.maximum(self.v_q_df, 1))
         normed_tf = self.v_tf / self.doc_len
         return normed_idf.dot(normed_tf)
+
+    def tf(self):
+        if self.doc_len == 0:
+            return 0
+        normed_tf = self.v_tf / self.doc_len
+        return sum(normed_tf)

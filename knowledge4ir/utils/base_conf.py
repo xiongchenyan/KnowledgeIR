@@ -15,6 +15,7 @@ DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 body_field = 'bodyText'
 title_field = 'title'
 TARGET_TEXT_FIELDS = [title_field, body_field, ]
+QUERY_FIELD = 'query'
 MS_ENTITY_KEY = '3c552f84af52430482da7285e4da8ad9'
 QREL_IN = "/bos/usr0/cx/tmp/knowledge4ir/data/qrel.all"
 e_desp_field = 'desp'
