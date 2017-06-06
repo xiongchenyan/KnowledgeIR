@@ -5,7 +5,7 @@ import codecs
 from operator import itemgetter
 from cwc.utils import nlp_utils
 import argparse
-from cwc.coref.coref_engine_runner import BerkeleyEntityCoref, StanfordEntityCoref
+from cwc.coref.coref_engine import BerkeleyEntityCoref, StanfordEntityCoref
 
 
 def create_dir(path):
@@ -35,16 +35,20 @@ def get_data(path):
             yield docno, title, formatted_text
 
 
-def run_coref(input_path, out_dir, engine_type):
+def get_engine(engine_type):
     if "berkeley" == engine_type:
-        engine = BerkeleyEntityCoref()
+        engine = BerkeleyEntityCoref(engine_type)
     elif "stanford" == engine_type:
-        engine = StanfordEntityCoref()
+        engine = StanfordEntityCoref(engine_type)
     else:
         raise RuntimeError("Unknown engine type.")
 
+    return engine
+
+
+def run_coref(input_path, out_dir, engine):
     create_dir(out_dir)
-    if engine_type == "berkeley":
+    if engine.get_name() == "berkeley":
         # We process all data and use Berkeley to run on the directory.
         text_dir = os.path.join(out_dir, "text")
         create_dir(text_dir)
@@ -52,7 +56,7 @@ def run_coref(input_path, out_dir, engine_type):
         create_dir(os.path.join(out_dir, "joint"))
         prepare_dataset(input_path, out_dir)
         engine.run_directory(text_dir, out_dir)
-    elif engine_type == "stanford":
+    elif engine.get_name() == "stanford":
         # Stanford can be run as a server so we could run each file incrementally.
         for docno, title, formatted_text in get_data(input_path):
             combined = title + "\n" + formatted_text
@@ -83,4 +87,5 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--engine', choices=['berkeley', 'stanford'], help='The coreference engine type.')
     args = parser.parse_args()
 
-    run_coref(args.input, args.output, args.engine)
+    engine = get_engine(args.engine)
+    run_coref(args.input, args.output, engine)

@@ -20,6 +20,6 @@ def split_sentences(text, limit=100):
         tokens = sent.split()
         if len(tokens) > limit:
             for i in range(0, len(tokens), limit):
-                yield " ".join(tokens[i: i + limit]) + "."
+                yield " ".join(tokens[i: i + limit])
         else:
             yield sent
