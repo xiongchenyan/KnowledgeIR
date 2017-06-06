@@ -10,15 +10,13 @@ one for each sf (st, ed)-> e candidate pair
 import json
 import logging
 
-from knowledge4ir.joint.matching import MatchFeatureExtractor
+from traitlets.config import Configurable
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     ENTITY_TEXT_FIELDS,
     e_name_field,
-    term2lm,
     text2lm,
 )
-from knowledge4ir.joint.resource import JointSemanticResource
 from traitlets import (
     Unicode,
     Set,
@@ -32,7 +30,7 @@ from knowledge4ir.joint import (
 )
 
 
-class QeDTextMatchFeatureExtractor(MatchFeatureExtractor):
+class QeDTextMatchFeatureExtractor(Configurable):
     feature_name_pre = Unicode('QeD')
     l_entity_fields = List(Unicode, default_value=ENTITY_TEXT_FIELDS).tag(config=True)
 
