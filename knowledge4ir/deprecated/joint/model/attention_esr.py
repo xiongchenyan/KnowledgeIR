@@ -22,8 +22,8 @@ from keras.regularizers import (
     l2,
 )
 
-from knowledge4ir.joint.model import JointSemanticModel
-from knowledge4ir.joint.model.kernel_pooling import kernel_pooling
+from knowledge4ir.joint.att_les import JointSemanticModel
+from knowledge4ir.joint.att_les.kernel_pooling import kernel_pooling
 
 
 # TODO: wrong!

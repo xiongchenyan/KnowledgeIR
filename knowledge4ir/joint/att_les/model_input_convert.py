@@ -46,7 +46,7 @@ from knowledge4ir.joint import (
     MATCH_FIELD,
     GROUND_FIELD
 )
-from knowledge4ir.joint.model import (
+from knowledge4ir.joint.att_les import (
     sf_ground_name,
     sf_ground_ref,
     e_ground_name,

@@ -9,7 +9,7 @@ from traitlets.config import Configurable, Config
 from knowledge4ir.model.hyper_para import HyperParameter
 from knowledge4ir.utils import load_py_config, GDEVAL_PATH
 from knowledge4ir.utils.model import fix_kfold_partition
-from knowledge4ir.joint.model.attention_les import (
+from knowledge4ir.joint.att_les.attention_les import (
     AttentionLes,
     Les,
     DisAmbiAttLes,

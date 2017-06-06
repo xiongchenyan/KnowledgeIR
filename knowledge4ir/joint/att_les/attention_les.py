@@ -34,7 +34,7 @@ from keras.regularizers import (
 
 import logging
 import json
-from knowledge4ir.joint.model import (
+from knowledge4ir.joint.att_les import (
     l_input_name,
     sf_ground_name,
     e_match_name,
