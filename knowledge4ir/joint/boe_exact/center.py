@@ -24,7 +24,8 @@ from knowledge4ir.utils import (
 )
 import json
 from knowledge4ir.joint.boe_exact.boe_feature import (
-    AnaMatch
+    AnaMatch,
+    CoreferenceMatch,
 )
 import json
 import logging
@@ -39,7 +40,7 @@ from traitlets import (
 
 class BoeLeToRFeatureExtractCenter(Configurable):
     l_feature_group = List(Unicode, default_value=['AnaExact']).tag(config=True)
-    h_feature_extractor = {"AnaExact": AnaMatch}
+    h_feature_extractor = {"AnaExact": AnaMatch, "CoRef": CoreferenceMatch}
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
     q_info_in = Unicode(help='prepared query info in').tag(config=True)

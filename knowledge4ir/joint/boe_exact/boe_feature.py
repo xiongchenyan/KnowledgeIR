@@ -23,7 +23,10 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     body_field,
     QUERY_FIELD,
-    term2lm
+    term2lm,
+    mean_pool_feature,
+    log_sum_feature,
+
 )
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,
@@ -99,9 +102,27 @@ class CoreferenceMatch(BoeFeature):
         # of different name variations (total only)
         # of clusters (total only)
     """
+    feature_name_pre = Unicode('CoRef')
 
     def extract_pair(self, q_info, doc_info):
-        return
+        """
+        extract features using doc_infor's coreference field
+        :param q_info:
+        :param doc_info:
+        :return: h_feature
+        """
+        l_q_e_id = [ana['entities'][0]['id'] for ana in q_info[SPOT_FIELD]['query']]
+
+        l_h_stats = []
+        for q_e_id in l_q_e_id:
+            l_mentions = self._find_match_mentions(q_e_id, doc_info)
+            h_stats = self._mention_stats(l_mentions)
+            l_h_stats.append(h_stats)
+        h_feature = self._pull_stats_to_features(l_h_stats)
+        h_feature = dict([(self.feature_name_pre + key, value)
+                          for key, value in h_feature.items()
+                          ])
+        return h_feature
 
     def _find_match_mentions(self, e_id, doc_info):
         """
@@ -127,6 +148,36 @@ class CoreferenceMatch(BoeFeature):
                 l_mentions.append(mention_cluster)
 
         return l_mentions
+
+    @classmethod
+    def _mention_stats(cls, l_mentions):
+        h_stats = dict()
+        h_stats['nb_mentions'] = len(l_mentions)
+
+        h_field_cnt = dict(zip(TARGET_TEXT_FIELDS, [0] * TARGET_TEXT_FIELDS))
+        s_name = set()
+        for mention_cluster in l_mentions:
+            for sf in mention_cluster:
+                h_field_cnt[sf['source'] + '_cnt'] += 1
+                s_name.add(sf['surface'])
+        h_stats.update(h_field_cnt)
+        h_stats['name_variants'] = len(s_name)
+        return h_stats
+
+    @classmethod
+    def _pull_stats_to_features(cls, l_h_stats):
+        """
+        combina stats to features
+            mean
+            log product, with min -20
+        :param l_h_stats:
+        :return: h_feature
+        """
+
+        h_feature = dict()
+        h_feature.update(mean_pool_feature(l_h_stats))
+        h_feature.update(log_sum_feature(l_h_stats))
+        return h_feature
 
     @classmethod
     def _get_e_location(cls, e_id, doc_info):
@@ -167,35 +218,6 @@ class CoreferenceMatch(BoeFeature):
                     if h_loc[field][st] > head_pos:
                         return True
         return False
-
-    @classmethod
-    def _mention_stats(cls, l_mentions):
-        h_stats = dict()
-        h_stats['nb_mentions'] = len(l_mentions)
-
-        h_field_cnt = dict(zip(TARGET_TEXT_FIELDS, [0] * TARGET_TEXT_FIELDS))
-        s_name = set()
-        for mention_cluster in l_mentions:
-            for sf in mention_cluster:
-                h_field_cnt[sf['source'] + '_cnt'] += 1
-                s_name.add(sf['surface'])
-        h_stats.update(h_field_cnt)
-        h_stats['name_variants'] = len(s_name)
-        return h_stats
-
-    @classmethod
-    def _pull_stats_to_features(cls, l_h_stats):
-        """
-        combina stats to features
-            mean
-            log product, with min -20
-        :param l_h_stats:
-        :return: h_feature
-        """
-
-        h_feature = dict()
-
-
 
 
 
