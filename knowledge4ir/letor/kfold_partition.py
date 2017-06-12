@@ -35,6 +35,17 @@ def kfold_q_pool_uniform(q_st, q_ed, nb_folds=default_K):
 
 
 def kfold_svm_data(svm_in, q_st, q_ed, out_dir, nb_folds=default_K, with_dev=False):
+    """
+    partition svm data to k folds in out_dir
+    :param svm_in:
+    :param q_st:
+    :param q_ed:
+    :param out_dir:
+    :param nb_folds:
+    :param with_dev:
+    :return:
+    """
+
     h_test_fold = kfold_q_pool_uniform(q_st, q_ed, nb_folds)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
