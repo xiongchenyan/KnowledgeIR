@@ -111,7 +111,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
 
         h_name = dump_svm_from_raw(self.out_name, l_qid, l_docno, l_label, l_h_feature)
         logging.info('ranking features dumped to [%s]', self.out_name)
-        json.dump(open(self.out_name + '_name.json', 'w'), h_name, indent=1)
+        json.dump(h_name, open(self.out_name + '_name.json', 'w'), indent=1)
         logging.info('ranking name dumped to [%s_name.json]', self.out_name)
         return
 
