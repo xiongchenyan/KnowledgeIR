@@ -42,6 +42,7 @@ class BoeFeature(Configurable):
 
 class AnaMatch(BoeFeature):
     feature_name_pre = Unicode('AnaMatch')
+    ana_format = Unicode('spot', help='annotation format, tagme or spot').tag(config=True)
 
     def extract_pair(self, q_info, doc_info):
         """
@@ -70,14 +71,25 @@ class AnaMatch(BoeFeature):
         l_field_doc_e = [(field, self._get_field_entity(doc_info, field)) for field in TARGET_TEXT_FIELDS]
         return l_field_doc_e
 
-    @classmethod
-    def _get_field_entity(cls, h_info, field):
+    def _get_field_entity(self, h_info, field):
+        if self.ana_format == 'spot':
+            return self._get_spot_field_entity(h_info, field)
+        else:
+            return self._get_tagme_field_entity(h_info, field)
+
+    def _get_spot_field_entity(self, h_info, field):
         l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
         l_e = []
         for ana in l_ana:
             e = ana['entities'][0]['id']
             l_e.append(e)
         return l_e
+
+    def _get_tagme_field_entity(self, h_info, field):
+        l_ana = h_info.get('tagme', {}).get(field, [])
+        l_e = [ana[0] for ana in l_ana]
+        return l_e
+
 
     @classmethod
     def _match_qe_de(cls, l_qe, l_de):
