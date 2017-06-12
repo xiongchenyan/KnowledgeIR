@@ -39,7 +39,7 @@ from traitlets import (
 
 class BoeLeToRFeatureExtractCenter(Configurable):
     l_feature_group = List(Unicode, default_value=['AnaExact']).tag(config=True)
-    h_feature_extractor = {"AnaExtract": AnaMatch}
+    h_feature_extractor = {"AnaExactcd ": AnaMatch}
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
     q_info_in = Unicode(help='prepared query info in').tag(config=True)
