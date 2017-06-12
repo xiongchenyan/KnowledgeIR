@@ -60,7 +60,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
     def _set_extractor(self, **kwargs):
         for name in self.l_feature_group:
             if name not in self.h_feature_extractor:
-                logging.error('[%s] not in dict %s', name, json.dumps(self.h_feature_extractor))
+                logging.error('[%s] not in %s', name, json.dumps(self.h_feature_extractor.keys()))
             assert name in self.h_feature_extractor
             self.l_feature_group.append(self.h_feature_extractor[name](**kwargs))
             logging.info('init [%s] extractor', name)
