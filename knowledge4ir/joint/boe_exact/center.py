@@ -58,6 +58,12 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         self._set_extractor(**kwargs)
         self._load_data()
 
+    @classmethod
+    def class_print_help(cls, inst=None):
+        super(BoeLeToRFeatureExtractCenter, cls).class_print_help(inst)
+        AnaMatch.class_print_help(inst)
+        CoreferenceMatch.class_print_help(inst)
+
     def _set_extractor(self, **kwargs):
         for name in self.l_feature_group:
             if name not in self.h_feature_extractor:

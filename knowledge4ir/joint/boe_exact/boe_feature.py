@@ -44,6 +44,10 @@ class AnaMatch(BoeFeature):
     feature_name_pre = Unicode('AnaMatch')
     ana_format = Unicode('spot', help='annotation format, tagme or spot').tag(config=True)
 
+    def __init__(self, **kwargs):
+        super(AnaMatch, self).__init__(**kwargs)
+        logging.info('ana match features uses [%s] annotation', self.ana_format)
+
     def extract_pair(self, q_info, doc_info):
         """
 
