@@ -329,7 +329,6 @@ def _dumps_svm_line(svm_data):
 
 
 def dump_svm_from_raw(out_name, l_qid, l_docno, l_score, l_h_feature):
-    h_feature_name = {}
     out = open(out_name, 'w')
     l_h_hash_feature, h_feature_name = feature_hash(l_h_feature)
     for p in range(len(l_qid)):
@@ -347,6 +346,11 @@ def dump_svm_from_raw(out_name, l_qid, l_docno, l_score, l_h_feature):
 
 
 def feature_hash(l_h_feature):
+    """
+    hash feature id
+    :param l_h_feature: list of feature
+    :return: hashed feature, together with feature name
+    """
     l_h_hashed_feature = []
     h_name = {}
     for h_feature in l_h_feature:
@@ -360,6 +364,8 @@ def feature_hash(l_h_feature):
             h_new_feature[name] = score
         l_h_hashed_feature.append(h_new_feature)
     return l_h_hashed_feature, h_name
+
+
 
 
 def load_gdeval_res(in_name, with_mean=True):

@@ -19,8 +19,8 @@ from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
     load_trec_labels_dict,
-    dump_svm_feature,
-    set_basic_log
+    dump_svm_from_raw,
+    set_basic_log,
 )
 import json
 from knowledge4ir.joint.boe_exact.boe_feature import (
@@ -70,21 +70,28 @@ class BoeLeToRFeatureExtractCenter(Configurable):
 
     def _load_data(self):
         self.h_qrel = load_trec_labels_dict(self.qrel_in)
+        logging.info('loaded qrel [%s]', self.qrel_in)
 
         l_h_data = [json.loads(line) for line in open(self.q_info_in)]
         l_qid = [h['qid'] for h in l_h_data]
         self.h_q_info = dict(zip(l_qid, l_h_data))
+        logging.info('loaded [%d] q info [%s]', len(self.h_q_info), self.q_info_in)
 
         l_h_data = [json.loads(line) for line in open(self.doc_info_in)]
         l_docno = [h['docno'] for h in l_h_data]
         self.h_doc_info = dict(zip(l_docno, l_h_data))
+        logging.info('loaded [%d] doc info [%s]', len(self.h_doc_info), self.doc_info_in)
 
     def extract(self):
         l_q_rank = load_trec_ranking_with_score(self.trec_rank_in)
         l_svm_data = []
-
+        l_qid = []
+        l_docno = []
+        l_h_feature = []
+        l_label = []
         for q, ranking in l_q_rank:
             q_info = self.h_q_info[q]
+            logging.info('start extracting q [%s]', q)
             for docno, base_score in ranking:
                 doc_info = self.h_doc_info.get(docno, {})
                 label = self.h_qrel.get(q, {}).get(docno, 0)
@@ -94,17 +101,18 @@ class BoeLeToRFeatureExtractCenter(Configurable):
                 for extractor in self.l_extractor:
                     h_feature.update(extractor.extract_pair(q_info, doc_info))
 
-                svm_data = {
-                    "qid": q,
-                    "score": label,
-                    "feature": h_feature,
-                    "comment": docno
-                }
-                l_svm_data.append(svm_data)
+                l_qid.append(q)
+                l_docno.append(docno)
+                l_h_feature.append(h_feature)
+                l_label.append(label)
+                logging.debug('[%s][%s] feature %s', q, docno, json.dumps(h_feature))
 
         logging.info('extraction finished, dumping...')
-        dump_svm_feature(l_svm_data, self.out_name)
+
+        h_name = dump_svm_from_raw(self.out_name, l_qid, l_docno, l_label, l_h_feature)
         logging.info('ranking features dumped to [%s]', self.out_name)
+        json.dump(open(self.out_name + '_name.json', 'w'), h_name, indent=1)
+        logging.info('ranking name dumped to [%s_name.json]', self.out_name)
         return
 
 
