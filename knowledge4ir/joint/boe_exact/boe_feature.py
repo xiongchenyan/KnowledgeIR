@@ -15,9 +15,13 @@ from traitlets import (
     Bool
 )
 import logging
-from knowledge4ir.joint import SPOT_FIELD
+from knowledge4ir.joint import (
+    SPOT_FIELD,
+    COREFERENCE_FIELD
+)
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
+    body_field,
     QUERY_FIELD,
     term2lm
 )
@@ -65,7 +69,7 @@ class AnaMatch(BoeFeature):
 
     @classmethod
     def _get_field_entity(cls, h_info, field):
-        l_ana = h_info[SPOT_FIELD][field]
+        l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
         l_e = []
         for ana in l_ana:
             e = ana['entities'][0]['id']
@@ -92,8 +96,8 @@ class CoreferenceMatch(BoeFeature):
     06/12/2017 version includes:
         has coreference in fields
         # of coreferences in fields
-        # of different name variations (body only)
-        # of clusters (body only)
+        # of different name variations (total only)
+        # of clusters (total only)
     """
 
     def extract_pair(self, q_info, doc_info):
@@ -104,7 +108,7 @@ class CoreferenceMatch(BoeFeature):
         find matched mentions with e_id
         1: get all loc of e_id (in fields)
         2: find all mentions in coreferences that aligns e_id's location
-            align == equal st, head in e_id's location
+            align == head in e_id's location and equal st
         :param e_id:
         :param doc_info:
         :return: l_mentions = [mentions of e_id in coreferences]
@@ -113,8 +117,16 @@ class CoreferenceMatch(BoeFeature):
         h_loc = self._get_e_location(e_id, doc_info)
 
         l_mentions = []
+        for mention in doc_info[COREFERENCE_FIELD]:
+            mention_cluster = mention['mentions']
+            for p in xrange(len(mention_cluster)):
+                if mention_cluster[p]['source'] == 'body':
+                    mention_cluster[p]['source'] = body_field
 
+            if self._mention_aligned(h_loc, mention_cluster):
+                l_mentions.append(mention_cluster)
 
+        return l_mentions
 
     @classmethod
     def _get_e_location(cls, e_id, doc_info):
@@ -134,6 +146,59 @@ class CoreferenceMatch(BoeFeature):
                     st, ed = ana['loc']
                     h_loc[field][st] = ed
         return h_loc
+
+    @classmethod
+    def _mention_aligned(cls, h_loc, mention_cluster):
+        """
+        check if the mention cluster (coreferences) is aligned with h_loc
+        alignment definition
+            has a surface's head location in h_loc, and equal
+        :param h_loc: field->st->ed
+        :param mention_cluster: a mention cluster of coreferences,
+        :return:
+        """
+
+        for sf in mention_cluster:
+            field = sf['source']
+            head_pos = sf['head']
+            st = sf['loc'][0]
+            if field in h_loc:
+                if st in h_loc[field][st]:
+                    if h_loc[field][st] > head_pos:
+                        return True
+        return False
+
+    @classmethod
+    def _mention_stats(cls, l_mentions):
+        h_stats = dict()
+        h_stats['nb_mentions'] = len(l_mentions)
+
+        h_field_cnt = dict(zip(TARGET_TEXT_FIELDS, [0] * TARGET_TEXT_FIELDS))
+        s_name = set()
+        for mention_cluster in l_mentions:
+            for sf in mention_cluster:
+                h_field_cnt[sf['source'] + '_cnt'] += 1
+                s_name.add(sf['surface'])
+        h_stats.update(h_field_cnt)
+        h_stats['name_variants'] = len(s_name)
+        return h_stats
+
+    @classmethod
+    def _pull_stats_to_features(cls, l_h_stats):
+        """
+        combina stats to features
+            mean
+            log product, with min -20
+        :param l_h_stats:
+        :return: h_feature
+        """
+
+        h_feature = dict()
+
+
+
+
+
 
 
 
