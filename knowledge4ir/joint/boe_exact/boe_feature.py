@@ -86,6 +86,54 @@ class AnaMatch(BoeFeature):
         return l_sim
 
 
+class CoreferenceMatch(BoeFeature):
+    """
+    coreference features
+    06/12/2017 version includes:
+        has coreference in fields
+        # of coreferences in fields
+        # of different name variations (body only)
+        # of clusters (body only)
+    """
+
+    def extract_pair(self, q_info, doc_info):
+        return
+
+    def _find_match_mentions(self, e_id, doc_info):
+        """
+        find matched mentions with e_id
+        1: get all loc of e_id (in fields)
+        2: find all mentions in coreferences that aligns e_id's location
+            align == equal st, head in e_id's location
+        :param e_id:
+        :param doc_info:
+        :return: l_mentions = [mentions of e_id in coreferences]
+        """
+
+        h_loc = self._get_e_location(e_id, doc_info)
+
+        l_mentions = []
+
+
+
+    @classmethod
+    def _get_e_location(cls, e_id, doc_info):
+        """
+        find location of e_id
+        :param e_id: target
+        :param doc_info: spotted and coreferenced document
+        :return: h_loc field-> st -> ed
+        """
+        h_loc = dict()
+        for field in TARGET_TEXT_FIELDS:
+            l_ana = doc_info[SPOT_FIELD][field]
+            h_loc[field] = dict()
+            for ana in l_ana:
+                e = ana['entities'][0]['id']
+                if e == e_id:
+                    st, ed = ana['loc']
+                    h_loc[field][st] = ed
+        return h_loc
 
 
 
