@@ -299,6 +299,16 @@ def add_svm_feature(h_feature_a, h_feature_b):
 
 
 def dump_svm_feature(l_svm_data, out_name):
+    """
+    svm_data:
+            'qid': qid,
+            'score': score,
+            'feature': h_feature,
+            'comment': comment
+    :param l_svm_data:
+    :param out_name:
+    :return:
+    """
     out = open(out_name, 'w')
     l_svm_data.sort(key=lambda item: int(item['qid'])) # sort
     for svm_data in l_svm_data:
