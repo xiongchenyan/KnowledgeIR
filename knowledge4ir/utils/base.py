@@ -545,6 +545,19 @@ def load_doc_info(in_name):
     return h_doc_info
 
 
+def load_json_info(in_name, key_field):
+    """
+    load json format info file
+    :param in_name: input, each line is a json (dict)
+    :param key_field: the field to index
+    :return: h_info key->dict
+    """
+    l_h = [json.loads(line) for line in open(in_name)]
+    l_key = [h[key_field] for h in l_h]
+    h_info = dict(zip(l_key, l_h))
+    return h_info
+
+
 def load_corpus_stat(in_pre, l_field=TARGET_TEXT_FIELDS):
     l_field_h_df = []
     logging.info('start loading corpus stat from [%s], target field %s',
