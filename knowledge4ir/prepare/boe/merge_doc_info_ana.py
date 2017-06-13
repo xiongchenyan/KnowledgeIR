@@ -25,13 +25,11 @@ def merge_one(h_doc_info_title, h_doc_info_body):
 
 
 def load_title_infos(title_info_in):
-    logging.info('start loading title infors...')
-
+    logging.info('start loading title info...')
     h_doc_h_info = {}
     for line in open(title_info_in):
-        cols = line.split('\t')
-        docno = cols[0]
-        h_info = json.loads('\t'.join(cols[1:]))
+        h_info = json.loads(line)
+        docno = h_info['docno']
         h_doc_h_info[docno] = h_info
     logging.info('loaded [%d] docs')
     return h_doc_h_info
@@ -48,10 +46,8 @@ def merge(title_info_in, body_info_in, out_name):
     h_doc_h_info_title = load_title_infos(title_info_in)
     out = open(out_name, 'w')
     for line in open(body_info_in):
-        cols = line.split('\t')
-        docno = cols[0]
-        h_body_info = json.loads('\t'.join(cols[1:]))
-
+        h_body_info = json.loads(line)
+        docno = h_body_info['docno']
         h_title_info = h_doc_h_info_title[docno]
         h_total_info = merge_one(h_title_info, h_body_info)
         print >> out, docno + '\t' + json.dumps(h_total_info).replace('\t', ' ')

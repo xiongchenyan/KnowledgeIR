@@ -6,7 +6,7 @@ input:
     wiki id -> fb id dict
 output:
     doc info in json format
-        doc no \t json dict
+        json dict per line
 
 
 """
@@ -67,7 +67,7 @@ def process(tagme_in, wiki_fb_dict_in, out_name, tagged_field):
         if not cnt % 1000:
             logging.info('process [%d] lines', cnt)
         docno, h = wrap_doc(line.strip(), h_wiki_fb, tagged_field)
-        print >> out, docno + '\t' + json.dumps(h)
+        print >> out, json.dumps(h)
 
     out.close()
     logging.info('finished')
