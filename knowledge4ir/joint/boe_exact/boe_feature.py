@@ -135,7 +135,7 @@ class CoreferenceMatch(BoeFeature):
             h_stats = self._mention_stats(l_mentions)
             l_h_stats.append(h_stats)
         h_feature = self._pull_stats_to_features(l_h_stats)
-        h_feature = dict([(self.feature_name_pre + key, value)
+        h_feature = dict([(self.feature_name_pre + '_' + key, value)
                           for key, value in h_feature.items()
                           ])
         return h_feature
