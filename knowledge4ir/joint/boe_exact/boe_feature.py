@@ -170,7 +170,7 @@ class CoreferenceMatch(BoeFeature):
         h_stats = dict()
         h_stats['nb_mentions'] = len(l_mentions)
 
-        h_field_cnt = dict(zip(TARGET_TEXT_FIELDS, [0] * TARGET_TEXT_FIELDS))
+        h_field_cnt = dict(zip(TARGET_TEXT_FIELDS, [0] * len(TARGET_TEXT_FIELDS)))
         s_name = set()
         for mention_cluster in l_mentions:
             for sf in mention_cluster:
