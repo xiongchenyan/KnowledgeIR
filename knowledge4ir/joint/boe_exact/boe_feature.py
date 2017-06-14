@@ -150,9 +150,9 @@ class CoreferenceMatch(BoeFeature):
         :param doc_info:
         :return: l_mentions = [mentions of e_id in coreferences]
         """
-
+        logging.debug('finding matched mentions for [%s]', e_id)
         h_loc = self._get_e_location(e_id, doc_info)
-
+        logging.debug('[%s] locations in doc %s', e_id, json.dumps(h_loc))
         l_mentions = []
         for mention in doc_info[COREFERENCE_FIELD]:
             mention_cluster = mention['mentions']
@@ -162,7 +162,7 @@ class CoreferenceMatch(BoeFeature):
 
             if self._mention_aligned(h_loc, mention_cluster):
                 l_mentions.append(mention_cluster)
-
+        logging.debug('mentions on coref %s', json.dumps(l_mentions))
         return l_mentions
 
     @classmethod

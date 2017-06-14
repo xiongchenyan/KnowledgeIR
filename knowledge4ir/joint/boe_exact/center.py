@@ -39,7 +39,9 @@ from traitlets import (
 
 
 class BoeLeToRFeatureExtractCenter(Configurable):
-    l_feature_group = List(Unicode, default_value=['AnaExact']).tag(config=True)
+    l_feature_group = List(Unicode, default_value=['AnaExact'],
+                           help="list of feature groups to use, current supporting: AnaExact,CoRef"
+                           ).tag(config=True)
     h_feature_extractor = {"AnaExact": AnaMatch, "CoRef": CoreferenceMatch}
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
@@ -124,7 +126,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
 
 if __name__ == '__main__':
     import sys
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
 
     if 2 != len(sys.argv):
         print "1 para: config"
