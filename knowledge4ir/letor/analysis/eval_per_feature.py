@@ -68,9 +68,9 @@ def main(svm_in, feature_name_in, out_name):
 if __name__ == '__main__':
     import sys
 
-    if 3 != len(sys.argv):
-        print "svm in + qrel in"
+    if 4 != len(sys.argv):
+        print "svm in + feature name + qrel in"
         sys.exit()
     global qrel_path
     qrel_path = sys.argv[2]
-    main(sys.argv[1], sys.argv[1] + '_feature_name', sys.argv[1] + '_feature_name.eval')
+    main(sys.argv[1], sys.argv[2], sys.argv[1] + '.feature_eval')
