@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     if 4 != len(sys.argv):
         print "svm in + feature name + qrel in"
-        sys.exit()
+        sys.exit(-1)
     global qrel_path
-    qrel_path = sys.argv[2]
+    qrel_path = sys.argv[3]
     main(sys.argv[1], sys.argv[2], sys.argv[1] + '.feature_eval')
