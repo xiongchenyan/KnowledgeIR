@@ -177,8 +177,9 @@ class CoreferenceMatch(BoeFeature):
         s_name = set()
         for mention_cluster in l_mentions:
             for sf in mention_cluster:
-                h_field_cnt[sf['source'] + '_cnt'] += 1
+                h_field_cnt[sf['source']] += 1
                 s_name.add(sf['surface'])
+        h_field_cnt = dict([(item[0] + '_cnt', item[1]) for item in h_field_cnt.items()])
         h_stats.update(h_field_cnt)
         h_stats['name_variants'] = len(s_name)
         return h_stats
