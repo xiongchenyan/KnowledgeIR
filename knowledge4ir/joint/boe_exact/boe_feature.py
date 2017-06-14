@@ -195,7 +195,7 @@ class CoreferenceMatch(BoeFeature):
         """
 
         h_feature = dict()
-        # h_feature.update(mean_pool_feature(l_h_stats))
+        h_feature.update(mean_pool_feature(l_h_stats))
         h_feature.update(log_sum_feature(l_h_stats))
         return h_feature
 
