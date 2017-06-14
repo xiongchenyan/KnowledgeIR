@@ -64,7 +64,7 @@ class AnaMatch(BoeFeature):
         for field, l_e in l_field_doc_e:
             l_name_score = self._match_qe_de(l_q_e, l_e)
             for name, score in l_name_score:
-                h_feature[self.feature_name_pre + name] = score
+                h_feature[self.feature_name_pre + '_' + field + '_' + name] = score
 
         return h_feature
 
@@ -195,7 +195,7 @@ class CoreferenceMatch(BoeFeature):
         """
 
         h_feature = dict()
-        h_feature.update(mean_pool_feature(l_h_stats))
+        # h_feature.update(mean_pool_feature(l_h_stats))
         h_feature.update(log_sum_feature(l_h_stats))
         return h_feature
 
