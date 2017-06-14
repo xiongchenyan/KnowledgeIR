@@ -50,7 +50,7 @@ def merge(title_info_in, body_info_in, out_name):
         docno = h_body_info['docno']
         h_title_info = h_doc_h_info_title[docno]
         h_total_info = merge_one(h_title_info, h_body_info)
-        print >> out, docno + '\t' + json.dumps(h_total_info).replace('\t', ' ')
+        print >> out, json.dumps(h_total_info)
         logging.info('[%s] merged', docno)
     logging.info('finished')
     out.close()
