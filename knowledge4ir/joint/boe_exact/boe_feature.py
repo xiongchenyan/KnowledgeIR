@@ -154,7 +154,7 @@ class CoreferenceMatch(BoeFeature):
         h_loc = self._get_e_location(e_id, doc_info)
         logging.debug('[%s] locations in doc %s', e_id, json.dumps(h_loc))
         l_mentions = []
-        for mention in doc_info[COREFERENCE_FIELD]:
+        for mention in doc_info.get(COREFERENCE_FIELD, []):
             mention_cluster = mention['mentions']
             for p in xrange(len(mention_cluster)):
                 if mention_cluster[p]['source'] == 'body':
@@ -205,7 +205,7 @@ class CoreferenceMatch(BoeFeature):
         """
         h_loc = dict()
         for field in TARGET_TEXT_FIELDS:
-            l_ana = doc_info[SPOT_FIELD][field]
+            l_ana = doc_info.get(SPOT_FIELD, {}).get(field, [])
             h_loc[field] = dict()
             for ana in l_ana:
                 e = ana['entities'][0]['id']

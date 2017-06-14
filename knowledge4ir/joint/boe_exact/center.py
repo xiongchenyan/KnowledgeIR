@@ -92,7 +92,6 @@ class BoeLeToRFeatureExtractCenter(Configurable):
 
     def extract(self):
         l_q_rank = load_trec_ranking_with_score(self.trec_rank_in)
-        l_svm_data = []
         l_qid = []
         l_docno = []
         l_h_feature = []
