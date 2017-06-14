@@ -240,10 +240,10 @@ class CoreferenceMatch(BoeFeature):
                         logging.debug('matched %s', json.dumps(sf))
                         flag = True
                         break
-        if flag:
-            logging.debug('cluster [%s] matched', json.dumps(mention_cluster))
-        else:
-            logging.debug('cluster [%s] no match', json.dumps(mention_cluster))
+        # if flag:
+        #     logging.debug('cluster [%s] matched', json.dumps(mention_cluster))
+        # else:
+        #     logging.debug('cluster [%s] no match', json.dumps(mention_cluster))
         return flag
 
 

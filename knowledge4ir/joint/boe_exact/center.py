@@ -103,7 +103,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
                 doc_info = self.h_doc_info.get(docno, {})
                 label = self.h_qrel.get(q, {}).get(docno, 0)
                 h_feature = dict()
-                h_feature['0_base'] = base_score
+                h_feature['base'] = base_score
 
                 for extractor in self.l_extractor:
                     h_feature.update(extractor.extract_pair(q_info, doc_info))
