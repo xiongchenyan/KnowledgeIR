@@ -233,8 +233,9 @@ class CoreferenceMatch(BoeFeature):
             head_pos = sf['head']
             st = sf['loc'][0]
             if field in h_loc:
-                if st in h_loc[field][st]:
-                    if h_loc[field][st] > head_pos:
+                if st in h_loc[field]:
+                    ed = h_loc[field][st]
+                    if ed > head_pos:
                         return True
         return False
 
