@@ -125,7 +125,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
 
 if __name__ == '__main__':
     import sys
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     if 2 != len(sys.argv):
         print "1 para: config"
