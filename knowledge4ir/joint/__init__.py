@@ -21,4 +21,5 @@ from .base import *
 GROUND_FIELD = 'ground'
 SPOT_FIELD = 'spot'
 MATCH_FIELD = 'match'
+COREFERENCE_FIELD = 'coreferences'
 

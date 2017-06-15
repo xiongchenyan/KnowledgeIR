@@ -299,6 +299,16 @@ def add_svm_feature(h_feature_a, h_feature_b):
 
 
 def dump_svm_feature(l_svm_data, out_name):
+    """
+    svm_data:
+            'qid': qid,
+            'score': score,
+            'feature': h_feature,
+            'comment': comment
+    :param l_svm_data:
+    :param out_name:
+    :return:
+    """
     out = open(out_name, 'w')
     l_svm_data.sort(key=lambda item: int(item['qid'])) # sort
     for svm_data in l_svm_data:
@@ -319,7 +329,6 @@ def _dumps_svm_line(svm_data):
 
 
 def dump_svm_from_raw(out_name, l_qid, l_docno, l_score, l_h_feature):
-    h_feature_name = {}
     out = open(out_name, 'w')
     l_h_hash_feature, h_feature_name = feature_hash(l_h_feature)
     for p in range(len(l_qid)):
@@ -337,6 +346,11 @@ def dump_svm_from_raw(out_name, l_qid, l_docno, l_score, l_h_feature):
 
 
 def feature_hash(l_h_feature):
+    """
+    hash feature id
+    :param l_h_feature: list of feature
+    :return: hashed feature, together with feature name
+    """
     l_h_hashed_feature = []
     h_name = {}
     for h_feature in l_h_feature:
@@ -350,6 +364,8 @@ def feature_hash(l_h_feature):
             h_new_feature[name] = score
         l_h_hashed_feature.append(h_new_feature)
     return l_h_hashed_feature, h_name
+
+
 
 
 def load_gdeval_res(in_name, with_mean=True):
@@ -529,6 +545,19 @@ def load_doc_info(in_name):
     return h_doc_info
 
 
+def load_json_info(in_name, key_field):
+    """
+    load json format info file
+    :param in_name: input, each line is a json (dict)
+    :param key_field: the field to index
+    :return: h_info key->dict
+    """
+    l_h = [json.loads(line) for line in open(in_name)]
+    l_key = [h[key_field] for h in l_h]
+    h_info = dict(zip(l_key, l_h))
+    return h_info
+
+
 def load_corpus_stat(in_pre, l_field=TARGET_TEXT_FIELDS):
     l_field_h_df = []
     logging.info('start loading corpus stat from [%s], target field %s',
@@ -542,3 +571,23 @@ def load_corpus_stat(in_pre, l_field=TARGET_TEXT_FIELDS):
     h_corpus_stat = pickle.load(open(in_pre + '.stat'))
     logging.info('corpus stats loaded')
     return l_field_h_df, h_corpus_stat
+
+
+def mean_pool_feature(l_h_feature):
+    h_res = dict()
+    z = float(len(l_h_feature))
+    for h_feature in l_h_feature:
+        for key, v in h_feature.items():
+            h_res[key + "_Mean"] = v / z + h_res.get(key, 0)
+    return h_res
+
+
+def log_sum_feature(l_h_feature):
+    h_res = dict()
+    for h_feature in l_h_feature:
+        for key, v in h_feature.items():
+            h_res[key + "_LogSum"] = math.log(max(v, math.exp(-20))) + h_res.get(key, 0)
+    return h_res
+
+
+

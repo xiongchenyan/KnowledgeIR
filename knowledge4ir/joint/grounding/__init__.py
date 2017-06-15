@@ -8,5 +8,4 @@ will extract features for both surface forms and entities
 """
 from .base import *
 
-# todo: 06/06/2017, refactor grounder in base.py to abstract a root class
 

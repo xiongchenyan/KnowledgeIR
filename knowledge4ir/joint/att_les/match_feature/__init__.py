@@ -5,5 +5,4 @@ will include:
         q e to doc text fields
 """
 
-from .base import *
 from .qe_d import *

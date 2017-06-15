@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     if 3 != len(sys.argv):
         print "svm in + qrel in"
-        sys.exit()
+        sys.exit(-1)
     global qrel_path
     qrel_path = sys.argv[2]
-    main(sys.argv[1], sys.argv[1] + '_feature_name', sys.argv[1] + '_feature_name.eval')
+    main(sys.argv[1], sys.argv[1] + '_name.json', sys.argv[1] + '.feature_eval')
