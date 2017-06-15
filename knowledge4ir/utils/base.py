@@ -578,7 +578,7 @@ def mean_pool_feature(l_h_feature):
     z = float(len(l_h_feature))
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
-            h_res[key + "Mean"] = v / z + h_res.get(key, 0)
+            h_res[key + "_Mean"] = v / z + h_res.get(key, 0)
     return h_res
 
 
@@ -586,7 +586,7 @@ def log_sum_feature(l_h_feature):
     h_res = dict()
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
-            h_res[key + "LogSum"] = math.log(max(v, math.exp(-20))) + h_res.get(key, 0)
+            h_res[key + "_LogSum"] = math.log(max(v, math.exp(-20))) + h_res.get(key, 0)
     return h_res
 
 
