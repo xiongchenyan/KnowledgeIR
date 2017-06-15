@@ -102,11 +102,12 @@ class BoeFeature(Configurable):
         h_loc = dict()
         for field in TARGET_TEXT_FIELDS:
             l_ana = doc_info.get('tagme', {}).get(field, [])
+            h_loc[field] = dict()
             for ana in l_ana:
                 if e_id != ana[0]:
                     continue
                 st, ed = ana[1:3]
-                h_loc[field[st]] = ed
+                h_loc[field][st] = ed
         return h_loc
 
 
