@@ -115,7 +115,7 @@ class AttentionBoe(Configurable):
         :return:
         """
         assert self.resource
-        logging.info('constructing attention-boe for [%s]', in_name)
+        logging.info('constructing attention-boe for [%s], to [%s]', in_name, out_name)
         out = open(out_name, 'w')
         for p, line in enumerate(open(in_name)):
             if not p % 100:
@@ -146,8 +146,8 @@ if __name__ == '__main__':
         set_basic_log,
     )
     set_basic_log(logging.INFO)
-    if 2 != len(sys.argv):
-        print "config:"
+    if 2 > len(sys.argv):
+        print "config + spot in (opt) + out name (opt):"
         AttBoeMainPara.class_print_help()
         AttentionBoe.class_print_help()
         JointSemanticResource.class_print_help()
@@ -157,8 +157,12 @@ if __name__ == '__main__':
     semantic_resource = JointSemanticResource(config=conf)
     boe_constructor = AttentionBoe(config=conf)
     boe_constructor.set_resource(semantic_resource)
+    if len(sys.argv) < 4:
+        boe_constructor.pipe_run(main_para.spotted_info_in, main_para.out_name)
+    else:
+        boe_constructor.pipe_run(sys.argv[2], sys.argv[3])
 
-    boe_constructor.pipe_run(main_para.spotted_info_in, main_para.out_name)
+
 
 
 
