@@ -11,11 +11,10 @@ from knowledge4ir.joint import (
     SPOT_FIELD
 )
 
+
 def get_per_ana_entities(line):
     h = json.loads(line)
-
-    spot_data = h.get('spot', [])
-
+    spot_data = h.get('spot', {})
     l_ana = []
     for field in ['query'] + TARGET_TEXT_FIELDS:
         l_ana.extend(spot_data.get(field, []))
@@ -26,18 +25,16 @@ def get_per_ana_entities(line):
 
 
 def get_all_spotted_entities(in_name, out_name):
-    l_total_e = []
-
-    for line in open(in_name):
+    h_e_tf = {}
+    for p, line in enumerate(open(in_name)):
+        if not p % 100:
+            print "processed [%d] line" % p
         l_e = get_per_ana_entities(line)
-        l_total_e.extend(l_e)
-
-    h_e_tf = term2lm(l_total_e)
-    l_e_tf = h_e_tf.items()
-    l_e_tf.sort(key=lambda  item: item[1], reverse=True)
+        for e in l_e:
+            h_e_tf[e] = h_e_tf.get(e, 0) + 1
 
     out = open(out_name, 'w')
-    for e, cnt in l_e_tf:
+    for e, cnt in h_e_tf.items():
         print >> out, e + '\t%d' % cnt
     out.close()
     return
