@@ -50,13 +50,13 @@ class AttentionBoe(Configurable):
         super(AttentionBoe, self).__init__(**kwargs)
         self.resource = None
         for f_group in self.l_feature_group:
-            assert  f_group in self.s_supported_feature
+            assert f_group in self.s_supported_feature
 
     def set_resource(self, resource):
         self.resource = resource
         if 'e_vote' in self.l_feature_group:
             assert self.resource.entity_embedding
-        if 'w_vote' in self.l_feature_group | 'uw_w_vote' in self.l_feature_group:
+        if ('w_vote' in self.l_feature_group) | ('uw_w_vote' in self.l_feature_group):
             assert self.resource.embedding
         # if 'sf_ambiguity' in self.l_feature_group:
         #     assert self.resource.h_surface_stat
