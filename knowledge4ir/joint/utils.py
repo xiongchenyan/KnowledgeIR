@@ -19,7 +19,7 @@ def form_boe_per_field(h_info, field):
     for ana in l_ana:
         sf = ana['surface']
         loc = ana['loc']
-        e = ana['entities'][0]
+        e = ana['entities'][0]['id']
         h = {'surface': sf, 'loc': loc, 'id': e}
         l_e.append(h)
     return l_e

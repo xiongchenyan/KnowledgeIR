@@ -94,7 +94,7 @@ class AttentionBoe(Configurable):
         e_id = e_info['id']
         sf = e_info['surface']
         loc = e_info['loc']
-
+        logging.info('extracting [%s] [%s]', json.dumps(e_id), json.dumps(loc))
         if 'e_vote' in self.l_feature_group:
             h_feature.update(entity_embedding_vote(e_id, h_info, field, self.resource))
         if 'w_vote' in self.l_feature_group:
