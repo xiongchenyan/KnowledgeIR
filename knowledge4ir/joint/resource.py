@@ -83,8 +83,8 @@ class JointSemanticResource(Configurable):
     def _load_e_emb(self):
         if not self.entity_embedding_path:
             return
-        logging.info('loading entity embedding [%s]', self.embedding_path)
-        self.entity_embedding = Word2Vec.load_word2vec_format(self.embedding_path)
+        logging.info('loading entity embedding [%s]', self.entity_embedding_path)
+        self.entity_embedding = Word2Vec.load_word2vec_format(self.entity_embedding_path)
         logging.info('entity embedding loaded')
 
     def _load_entity_fields(self):
