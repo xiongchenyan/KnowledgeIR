@@ -151,7 +151,7 @@ def entity_embedding_vote(e_id, h_info, field, resource):
         for other_e_id in l_e_id:
             if other_e_id not in embedding:
                 continue
-            sim = resource.embedding.similarity(e_id, other_e_id)
+            sim = embedding.similarity(e_id, other_e_id)
             l_sim.append(sim)
 
     max_sim, mean_sim, l_bin = pool_sim_score(l_sim)
