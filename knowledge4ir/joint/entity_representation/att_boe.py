@@ -54,6 +54,12 @@ class AttentionBoe(Configurable):
 
     def set_resource(self, resource):
         self.resource = resource
+        if 'e_vote' in self.l_feature_group:
+            assert self.resource.entity_embedding
+        if 'w_vote' in self.l_feature_group | 'uw_w_vote' in self.l_feature_group:
+            assert self.resource.embedding
+        # if 'sf_ambiguity' in self.l_feature_group:
+        #     assert self.resource.h_surface_stat
 
     def form_boe(self, h_info):
         """
@@ -97,7 +103,7 @@ class AttentionBoe(Configurable):
             h_feature.update(uw_word_embedding_vote(e_id, h_info, field, loc, self.resource))
         if 'sf_ambiguity' in self.l_feature_group:
             h_feature.update(surface_ambiguity_feature(e_id, h_info, field))
-            h_feature.update(surface_lp(sf, self.resource))
+            # h_feature.update(surface_lp(sf, self.resource))
         if 'cmns' in self.l_feature_group:
             h_feature.update(cmns_feature(e_id, h_info, field))
 
