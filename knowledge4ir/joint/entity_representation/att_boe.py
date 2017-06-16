@@ -14,8 +14,6 @@ from knowledge4ir.joint.resource import JointSemanticResource
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
-    Int,
-    Bool,
     List
 )
 import logging
@@ -24,7 +22,9 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     QUERY_FIELD,
 )
-from knowledge4ir.joint import SPOT_FIELD
+from knowledge4ir.joint.utils import (
+    form_boe_per_field,
+)
 
 
 class AttentionBoe(Configurable):
@@ -54,19 +54,8 @@ class AttentionBoe(Configurable):
         h_field_boe = dict()
         for field in self.l_target_field:
             if field in h_info:
-                h_field_boe[field] = self._form_boe_per_field(h_info, field)
+                h_field_boe[field] = form_boe_per_field(h_info, field)
         return h_field_boe
-
-    def _form_boe_per_field(self, h_info, field):
-        l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
-        l_e = []
-        for ana in l_ana:
-            sf = ana['surface']
-            loc = ana['loc']
-            e = ana['entities'][0]
-            h = {'surface':sf, 'loc':loc, 'id':e}
-            l_e.append(h)
-        return l_e
 
     def extract_att_feature(self, h_info, h_field_boe):
         """

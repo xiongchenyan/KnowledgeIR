@@ -31,6 +31,10 @@ from knowledge4ir.utils import (
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,
 )
+from knowledge4ir.joint.utils import (
+    form_boe_per_field,
+    form_boe_tagme_field,
+)
 
 
 class BoeFeature(Configurable):
@@ -41,23 +45,21 @@ class BoeFeature(Configurable):
         raise NotImplementedError
 
     def _get_field_entity(self, h_info, field):
+        l_h_e = []
         if self.ana_format == 'spot':
-            return self._get_spot_field_entity(h_info, field)
+            l_h_e = form_boe_per_field(h_info, field)
         else:
-            return self._get_tagme_field_entity(h_info, field)
+            l_h_e = form_boe_tagme_field(h_info, field)
+        return [h['id'] for h in l_h_e]
 
-    def _get_spot_field_entity(self, h_info, field):
-        l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
-        l_e = []
-        for ana in l_ana:
-            e = ana['entities'][0]['id']
-            l_e.append(e)
-        return l_e
-
-    def _get_tagme_field_entity(self, h_info, field):
-        l_ana = h_info.get('tagme', {}).get(field, [])
-        l_e = [ana[0] for ana in l_ana]
-        return l_e
+    # def _get_spot_field_entity(self, h_info, field):
+    #     l_h_e = form_boe_per_field(h_info, field)
+    #     l_e = [h['id'] for h in l_h_e]
+    #     return l_e
+    #
+    # def _get_tagme_field_entity(self, h_info, field):
+    #     l_e = [ana['id'] for ana in form_boe_tagme_field(h_info, field)]
+    #     return l_e
 
     def _get_q_entity(self, q_info):
         return self._get_field_entity(q_info, QUERY_FIELD)
@@ -70,45 +72,52 @@ class BoeFeature(Configurable):
         """
         find location of e_id
         :param e_id: target
-        :param doc_info: spotted and coreferenced document
+        :param doc_info: spotted and coreference document
         :return: h_loc field-> st -> ed
         """
-        if self.ana_format == 'spot':
-            return self._get_e_spot_location(e_id, doc_info)
-        else:
-            return self._get_e_tagme_location(e_id, doc_info)
-
-    @classmethod
-    def _get_e_spot_location(cls, e_id, doc_info):
         h_loc = dict()
         for field in TARGET_TEXT_FIELDS:
-            l_ana = doc_info.get(SPOT_FIELD, {}).get(field, [])
             h_loc[field] = dict()
-            for ana in l_ana:
-                e = ana['entities'][0]['id']
-                if e == e_id:
-                    st, ed = ana['loc']
+            if self.ana_format == 'spot':
+                l_h_e = form_boe_per_field(doc_info, field)
+            else:
+                l_h_e = form_boe_tagme_field(doc_info, field)
+            for h_e in l_h_e:
+                if h_e['id'] == e_id:
+                    st, ed = h_e['loc']
                     h_loc[field][st] = ed
         return h_loc
 
-    @classmethod
-    def _get_e_tagme_location(cls, e_id, doc_info):
-        """
-        get location from TagMe ana
-        :param e_id:
-        :param doc_info:
-        :return:
-        """
-        h_loc = dict()
-        for field in TARGET_TEXT_FIELDS:
-            l_ana = doc_info.get('tagme', {}).get(field, [])
-            h_loc[field] = dict()
-            for ana in l_ana:
-                if e_id != ana[0]:
-                    continue
-                st, ed = ana[1:3]
-                h_loc[field][st] = ed
-        return h_loc
+    # @classmethod
+    # def _get_e_spot_location(cls, e_id, doc_info):
+    #     h_loc = dict()
+    #     for field in TARGET_TEXT_FIELDS:
+    #         h_loc[field] = dict()
+    #         l_h_e = form_boe_tagme_field(doc_info, field)
+    #         for h_e in l_h_e:
+    #             if h_e['id'] == e_id:
+    #                 st, ed = h_e['loc']
+    #                 h_loc[field][st] = ed
+    #     return h_loc
+    #
+    # @classmethod
+    # def _get_e_tagme_location(cls, e_id, doc_info):
+    #     """
+    #     get location from TagMe ana
+    #     :param e_id:
+    #     :param doc_info:
+    #     :return:
+    #     """
+    #     h_loc = dict()
+    #     for field in TARGET_TEXT_FIELDS:
+    #         l_ana = doc_info.get('tagme', {}).get(field, [])
+    #         h_loc[field] = dict()
+    #         for ana in l_ana:
+    #             if e_id != ana[0]:
+    #                 continue
+    #             st, ed = ana[1:3]
+    #             h_loc[field][st] = ed
+    #     return h_loc
 
 
 class AnaMatch(BoeFeature):
