@@ -24,6 +24,12 @@ from knowledge4ir.utils import (
 )
 from knowledge4ir.joint.utils import (
     form_boe_per_field,
+    surface_ambiguity_feature,
+    surface_lp,
+    word_embedding_vote,
+    entity_embedding_vote,
+    uw_word_embedding_vote,
+    cmns_feature,
 )
 
 
@@ -32,14 +38,19 @@ class AttentionBoe(Configurable):
     for (feature) attention based BOE representation
         no soft alignment for now
     """
-    l_feature_group = List(Unicode, default_value=['e_vote', 'w_vote', 'sf_ambiguity', 'cmns',],
-                           help="attention feature groups: e_vote, w_vote, sf_ambiguity, cmns, coref"
+    l_feature_group = List(Unicode, default_value=['e_vote', 'w_vote', 'sf_ambiguity', 'cmns'],
+                           help="attention feature groups: e_vote, w_vote,"
+                                "uw_w_vote, sf_ambiguity, cmns"
                            ).tag(config=True)
     l_target_field = [QUERY_FIELD] + TARGET_TEXT_FIELDS
+
+    s_supported_feature = {'e_vote', 'w_vote', 'sf_ambiguity', 'cmns', 'uw_w_vote'}
 
     def __init__(self, **kwargs):
         super(AttentionBoe, self).__init__(**kwargs)
         self.resource = None
+        for f_group in self.l_feature_group:
+            assert  f_group in self.s_supported_feature
 
     def set_resource(self, resource):
         self.resource = resource
@@ -64,7 +75,33 @@ class AttentionBoe(Configurable):
         :param h_field_boe:
         :return: add feature in h_field_boe's each element
         """
-        return {}
+
+        for field, l_e_info in h_field_boe.items():
+            for p in xrange(len(l_e_info)):
+                h_feature = self._extract_per_e_att_feature(l_e_info[p], h_info, field)
+                h_field_boe[field][p]['feature'] = h_feature
+
+        return h_field_boe
+
+    def _extract_per_e_att_feature(self, e_info, h_info, field):
+        h_feature = dict()
+        e_id = e_info['id']
+        sf = e_info['surface']
+        loc = e_info['loc']
+
+        if 'e_vote' in self.l_feature_group:
+            h_feature.update(entity_embedding_vote(e_id, h_info, field, self.resource))
+        if 'w_vote' in self.l_feature_group:
+            h_feature.update(word_embedding_vote(e_id, h_info, field, self.resource))
+        if 'uw_w_vote' in self.l_feature_group:
+            h_feature.update(uw_word_embedding_vote(e_id, h_info, field, loc, self.resource))
+        if 'sf_ambiguity' in self.l_feature_group:
+            h_feature.update(surface_ambiguity_feature(e_id, h_info, field))
+            h_feature.update(surface_lp(sf, self.resource))
+        if 'cmns' in self.l_feature_group:
+            h_feature.update(cmns_feature(e_id, h_info, field))
+
+        return h_feature
 
     def pipe_run(self, in_name, out_name):
         """
@@ -117,9 +154,9 @@ if __name__ == '__main__':
         sys.exit(-1)
     conf = load_py_config(sys.argv[1])
     main_para = AttBoeMainPara(config=conf)
-    resource = JointSemanticResource(config=conf)
+    semantic_resource = JointSemanticResource(config=conf)
     boe_constructor = AttentionBoe(config=conf)
-    boe_constructor.set_resource(resource)
+    boe_constructor.set_resource(semantic_resource)
 
     boe_constructor.pipe_run(main_para.spotted_info_in, main_para.out_name)
 

@@ -61,17 +61,27 @@ def pool_sim_score(l_sim, l_weight=None):
     return max_sim, mean_sim, l_bin
 
 
-def cmns_features(self, e_id, field, h_info):
-    h_sf_info = {}
+def cmns_feature(e_id, h_info, field):
+    h_feature = {'cmns': 0}
     for ana in h_info.get(SPOT_FIELD, {}).get(field, []):
         if ana['entities'][0] == e_id:
-            h_sf_info = ana
-    h_feature = surface_cmns_feature(h_sf_info)
-    h_feature = [(field + '_' + item[0], item[1]) for item in h_feature.items()]
+            cmns = ana['entities'][0]['cmns']
+            h_feature['cmns'] = cmns
+            break
     return h_feature
 
 
-def surface_cmns_feature(h_sf_info):
+def surface_ambiguity_feature(e_id, h_info, field):
+    h_sf_info = {}
+    for ana in h_info.get(SPOT_FIELD, {}).get(field, []):
+        if ana['entities'][0]['id'] == e_id:
+            h_sf_info = ana
+    h_feature = calc_surface_ambiguity(h_sf_info)
+    # h_feature = [(field + '_' + item[0], item[1]) for item in h_feature.items()]
+    return h_feature
+
+
+def calc_surface_ambiguity(h_sf_info):
     h_feature = dict()
     l_e = h_sf_info.get('entities', {})
     l_cmns = [e_info.get('cmns', 0) for e_info in l_e]
@@ -105,19 +115,29 @@ def surface_lp(sf, resource):
     return h_feature
 
 
-def word_embedding_vote(self, e_id, h_info, field, resource):
+def word_embedding_vote(e_id, h_info, field, resource):
     l_sim = []
     if e_id in resource.embedding:
         text = h_info[field]
         for t in text.lower().split():
-            if t in self.resource.embedding:
-                sim = self.resource.embedding.similarity(e_id, t)
+            if t in resource.embedding:
+                sim = resource.embedding.similarity(e_id, t)
                 l_sim.append(sim)
 
     max_sim, mean_sim, l_bin = pool_sim_score(l_sim)
     h_feature = dict()
     h_feature['w_vote_emb_max'] = max_sim
     h_feature['w_vote_emb_mean'] = mean_sim
+    return h_feature
+
+
+def uw_word_embedding_vote(e_id, h_info, field, loc, resource):
+    text = h_info.get(field, "")
+    text = text[loc[0]-20:loc[1]+20]
+    text = ' '.join(text.split()[1:-1])
+    h_raw = {'uw_text': text}
+    h_mid = word_embedding_vote(e_id, h_raw, 'uw_text', resource)
+    h_feature = [('uw_' + item[0], item[1]) for item in h_mid.items()]
     return h_feature
 
 

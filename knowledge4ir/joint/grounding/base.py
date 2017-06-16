@@ -32,7 +32,7 @@ from knowledge4ir.joint import (
     SPOT_FIELD,
 )
 from knowledge4ir.joint.utils import (
-    surface_cmns_feature,
+    calc_surface_ambiguity,
     surface_coverage_features,
     surface_lp,
     word_embedding_vote,
@@ -101,7 +101,7 @@ class Grounder(Configurable):
         """
         h_feature = {}
 
-        h_feature.update(surface_cmns_feature(h_sf_info))
+        h_feature.update(calc_surface_ambiguity(h_sf_info))
         h_feature.update(surface_coverage_features(h_sf_info, h_info))
         h_feature.update(surface_lp(h_sf_info['surface'], self.resource))
 
