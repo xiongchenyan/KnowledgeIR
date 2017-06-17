@@ -126,7 +126,10 @@ class AttentionBoe(Configurable):
             if not p % 10:
                 logging.info('constructed [%d] line', p)
             h_info = json.loads(line)
-            logging.info('constructing for [%s]', h_info['docno'])
+            key = h_info.get('docno', "")
+            if not key:
+                key = h_info.get('qid', "")
+            logging.info('constructing for [%s]', key)
             h_field_boe = self.form_boe(h_info)
             h_field_att_boe = self.extract_att_feature(h_info, h_field_boe)
             for key in h_field_att_boe.keys():
