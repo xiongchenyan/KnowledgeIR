@@ -86,7 +86,6 @@ class AttentionBoe(Configurable):
             for p in xrange(len(l_e_info)):
                 h_feature = self._extract_per_e_att_feature(l_e_info[p], h_info, field)
                 h_field_boe[field][p]['feature'] = h_feature
-
         return h_field_boe
 
     def _extract_per_e_att_feature(self, e_info, h_info, field):
@@ -124,17 +123,20 @@ class AttentionBoe(Configurable):
         logging.info('constructing attention-boe for [%s], to [%s]', in_name, out_name)
         out = open(out_name, 'w')
         for p, line in enumerate(open(in_name)):
-            if not p % 100:
+            if not p % 10:
                 logging.info('constructed [%d] line', p)
-
             h_info = json.loads(line)
+            logging.info('constructing for [%s]', h_info['docno'])
             h_field_boe = self.form_boe(h_info)
             h_field_att_boe = self.extract_att_feature(h_info, h_field_boe)
+            for key in h_field_att_boe.keys():
+                logging.info('[%s][%d] entities', key, len(h_field_att_boe[key]))
+            h_res = {'boe': h_field_att_boe}
             for field in self.l_target_field:
                 if field in h_info:
-                    h_field_att_boe[field] = h_info[field]
+                    h_res[field] = h_info[field]
 
-            print >> out, json.dumps(h_field_att_boe)
+            print >> out, json.dumps(h_res)
         out.close()
         logging.info('attention boe representations dumped to [%s]', out_name)
         return
