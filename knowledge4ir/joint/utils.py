@@ -96,7 +96,7 @@ def surface_ambiguity_feature(e_id, h_info, field, pos=None):
 
 def calc_surface_ambiguity(h_sf_info):
     h_feature = dict()
-    l_e = h_sf_info.get('entities', {})
+    l_e = h_sf_info.get('entities', [])
     l_cmns = [e_info.get('cmns', 0) for e_info in l_e]
     entropy = stats.entropy(l_cmns)
     l_cmns.sort(reverse=True)
