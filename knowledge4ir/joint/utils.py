@@ -11,6 +11,7 @@ from knowledge4ir.utils import (
 )
 import numpy as np
 from scipy import stats
+import logging
 
 
 def form_boe_per_field(h_info, field):
@@ -101,6 +102,8 @@ def calc_surface_ambiguity(h_sf_info):
     entropy = stats.entropy(l_cmns)
     l_cmns.sort(reverse=True)
     l_cmns.append(0)
+    if len(l_cmns) < 2:
+        logging.warn('%s no cmns', json.dumps(h_sf_info))
     diff = l_cmns[0] - l_cmns[1]
 
     h_feature['cmns_entropy'] = entropy
