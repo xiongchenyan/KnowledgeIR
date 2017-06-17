@@ -75,9 +75,9 @@ def cmns_feature(e_id, h_info, field, pos=None):
     h_feature = {'cmns': 0}
     l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
 
-    if not pos:
+    if pos is None:
         pos = get_e_pos(e_id, l_ana)
-    if pos:
+    if pos is not None:
         cmns = l_ana[pos]['entities'][0]['cmns']
         h_feature['cmns'] = cmns
     return h_feature
@@ -86,9 +86,9 @@ def cmns_feature(e_id, h_info, field, pos=None):
 def surface_ambiguity_feature(e_id, h_info, field, pos=None):
     h_sf_info = {}
     l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
-    if not pos:
+    if pos is None:
         pos = get_e_pos(e_id, l_ana)
-    if pos:
+    if pos is not None:
         h_sf_info = l_ana[pos]
     h_feature = calc_surface_ambiguity(h_sf_info)
     # h_feature = [(field + '_' + item[0], item[1]) for item in h_feature.items()]
