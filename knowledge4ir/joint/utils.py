@@ -149,6 +149,8 @@ def entity_embedding_vote(e_id, h_info, field, resource):
     if e_id in embedding:
         l_e_id = [ana["id"] for ana in form_boe_per_field(h_info, field)]
         for other_e_id in l_e_id:
+            if other_e_id == e_id:
+                continue
             if other_e_id not in embedding:
                 continue
             sim = embedding.similarity(e_id, other_e_id)
