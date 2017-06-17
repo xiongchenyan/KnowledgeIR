@@ -64,8 +64,9 @@ def pool_sim_score(l_sim, l_weight=None):
 def get_e_pos(e_id, l_ana):
     pos = None
     for p in xrange(len(l_ana)):
-        if l_ana[p]['entities'][0] == e_id:
+        if l_ana[p]['entities'][0]['id'] == e_id:
             pos = p
+            break
     return pos
 
 

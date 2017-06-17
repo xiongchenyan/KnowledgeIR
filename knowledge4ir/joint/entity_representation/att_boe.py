@@ -84,16 +84,16 @@ class AttentionBoe(Configurable):
 
         for field, l_e_info in h_field_boe.items():
             for p in xrange(len(l_e_info)):
-                h_feature = self._extract_per_e_att_feature(l_e_info[p], h_info, field)
+                h_feature = self._extract_per_e_att_feature(l_e_info[p], h_info, field, p)
                 h_field_boe[field][p]['feature'] = h_feature
         return h_field_boe
 
-    def _extract_per_e_att_feature(self, e_info, h_info, field):
+    def _extract_per_e_att_feature(self, e_info, h_info, field, pos):
         h_feature = dict()
         e_id = e_info['id']
         sf = e_info['surface']
         loc = e_info['loc']
-        logging.debug('extracting [%s] [%s]', json.dumps(e_id), json.dumps(loc))
+        logging.debug('extracting [%d][%s] [%s]', pos, json.dumps(e_id), json.dumps(loc))
         if 'e_vote' in self.l_feature_group:
             h_feature.update(entity_embedding_vote(e_id, h_info, field, self.resource))
         if 'w_vote' in self.l_feature_group:
@@ -101,10 +101,10 @@ class AttentionBoe(Configurable):
         if 'uw_w_vote' in self.l_feature_group:
             h_feature.update(uw_word_embedding_vote(e_id, h_info, field, loc, self.resource))
         if 'sf_ambiguity' in self.l_feature_group:
-            h_feature.update(surface_ambiguity_feature(e_id, h_info, field))
+            h_feature.update(surface_ambiguity_feature(e_id, h_info, field, pos))
             # h_feature.update(surface_lp(sf, self.resource))
         if 'cmns' in self.l_feature_group:
-            h_feature.update(cmns_feature(e_id, h_info, field))
+            h_feature.update(cmns_feature(e_id, h_info, field, pos))
 
         return h_feature
 
