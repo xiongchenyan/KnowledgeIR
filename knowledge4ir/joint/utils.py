@@ -61,21 +61,33 @@ def pool_sim_score(l_sim, l_weight=None):
     return max_sim, mean_sim, l_bin
 
 
-def cmns_feature(e_id, h_info, field):
+def get_e_pos(e_id, l_ana):
+    pos = None
+    for p in xrange(len(l_ana)):
+        if l_ana[p]['entities'][0] == e_id:
+            pos = p
+    return pos
+
+
+def cmns_feature(e_id, h_info, field, pos=None):
     h_feature = {'cmns': 0}
-    for ana in h_info.get(SPOT_FIELD, {}).get(field, []):
-        if ana['entities'][0] == e_id:
-            cmns = ana['entities'][0]['cmns']
-            h_feature['cmns'] = cmns
-            break
+    l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
+
+    if not pos:
+        pos = get_e_pos(e_id, l_ana)
+    if pos:
+        cmns = l_ana[pos]['entities'][0]['cmns']
+        h_feature['cmns'] = cmns
     return h_feature
 
 
-def surface_ambiguity_feature(e_id, h_info, field):
+def surface_ambiguity_feature(e_id, h_info, field, pos=None):
     h_sf_info = {}
-    for ana in h_info.get(SPOT_FIELD, {}).get(field, []):
-        if ana['entities'][0]['id'] == e_id:
-            h_sf_info = ana
+    l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
+    if not pos:
+        pos = get_e_pos(e_id, l_ana)
+    if pos:
+        h_sf_info = l_ana[pos]
     h_feature = calc_surface_ambiguity(h_sf_info)
     # h_feature = [(field + '_' + item[0], item[1]) for item in h_feature.items()]
     return h_feature
