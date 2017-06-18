@@ -61,11 +61,10 @@ def convert_boe_info(h_info, h_e_id, h_feature_id):
         if field not in h_info['boe']:
             continue
         ll_feature = []
-        l_e_id = []
-        l_e = h_info['boe']
-        l_e_id = [h_e_id[e['id']] for e in l_e]
-        for e in l_e:
-            h_f = e['feature']
+        l_ana = [ana for ana in h_info['boe'] if ana['id'] in h_e_id]
+        l_e_id = [h_e_id[ana['id']] for ana in l_ana]
+        for ana in l_ana:
+            h_f = ana['feature']
             l_feature_vector, h_feature_id = _hash_feature(h_f, h_feature_id)
             ll_feature.append(l_feature_vector)
 
