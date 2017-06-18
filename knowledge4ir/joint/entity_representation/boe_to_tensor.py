@@ -24,7 +24,7 @@ def _hash_feature(h_feature, h_feature_id):
     if not h_feature_id:
         h_feature_id = dict([(key, p) for p, key in enumerate(h_feature.keys())])
     l_res = [0] * len(h_feature_id)
-    for name, score in h_feature:
+    for name, score in h_feature.items():
         p = h_feature_id[name]
         l_res[p] = score
     return l_res, h_feature_id
