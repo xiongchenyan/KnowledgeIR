@@ -53,6 +53,7 @@ def convert_boe_info(h_info, h_e_id, h_feature_id):
     """
     convert one boe info
     :param h_info: packed q or doc's att_boe info
+    :param h_e_id: e -> id
     :param h_feature_id: feature name -> id
     :return: e id hashed, att feature put in one matrix,
     """
@@ -61,7 +62,7 @@ def convert_boe_info(h_info, h_e_id, h_feature_id):
         if field not in h_info['boe']:
             continue
         ll_feature = []
-        l_ana = [ana for ana in h_info['boe'] if ana['id'] in h_e_id]
+        l_ana = [ana for ana in h_info['boe'][field] if ana['id'] in h_e_id]
         l_e_id = [h_e_id[ana['id']] for ana in l_ana]
         for ana in l_ana:
             h_f = ana['feature']
