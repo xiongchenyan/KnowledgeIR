@@ -19,6 +19,8 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
 )
 
+dump_emb = False
+
 
 def _hash_feature(h_feature, h_feature_id):
     if not h_feature_id:
@@ -42,10 +44,14 @@ def load_embedding(word2vec_in):
             logging.info('loaded %d lines', p)
         cols = line.split()
         l_e.append(cols[0])
-        l_emb.append(cols[1:])
+        if dump_emb:
+            l_emb.append(cols[1:])
     h_e_id = dict(zip(l_e, range(len(l_e))))
-    emb_mtx = np.array(l_emb)
-    logging.info('loaded [%d] entities, emb matrix shape: %s', len(h_e_id), json.dumps(emb_mtx.shape))
+    emb_mtx = None
+    logging.info('loaded [%d] entities', len(h_e_id))
+    if dump_emb:
+        emb_mtx = np.array(l_emb)
+        logging.info('dump emb matrix shape: %s', json.dumps(emb_mtx.shape))
     return h_e_id, emb_mtx
 
 
@@ -77,7 +83,8 @@ def convert_boe_info(h_info, h_e_id, h_feature_id):
 def process(in_name, emb_name, out_name):
     out = open(out_name, 'w')
     h_e_id, emb_mtx = load_embedding(emb_name)
-    np.save(out_name + '.emb', emb_mtx)
+    if dump_emb:
+        np.save(out_name + '.emb', emb_mtx)
     h_feature_id = {}
     for p, line in enumerate(open(in_name)):
         if not p % 1000:
@@ -98,10 +105,14 @@ if __name__ == '__main__':
         set_basic_log,
     )
     set_basic_log(logging.INFO)
-    if 4 != len(sys.argv):
+    if 4 > len(sys.argv):
         print "convert boe to tensor format"
-        print "3 para: boe info in + embedding name + out_name"
+        print "3+ para: boe info in + embedding name + out_name + dump emb mtx (default 0)"
         sys.exit(-1)
-
-    process(*sys.argv[1:])
+    global dump_emb
+    dump_emb = False
+    if len(sys.argv) > 4:
+        dump_emb = bool(int(sys.argv[4]))
+        logging.info('will dump embedding mtx')
+    process(*sys.argv[1:4])
 
