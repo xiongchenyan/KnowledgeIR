@@ -43,7 +43,7 @@ def load_embedding(word2vec_in):
         cols = line.split()
         l_e.append(cols[0])
         l_emb.append(cols[1:])
-    h_e_id = zip(l_e, range(len(l_e)))
+    h_e_id = dict(zip(l_e, range(len(l_e))))
     emb_mtx = np.array(l_emb)
     logging.info('loaded [%d] entities, emb matrix shape: %s', len(h_e_id), json.dumps(emb_mtx.shape))
     return h_e_id, emb_mtx
