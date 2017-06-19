@@ -22,11 +22,11 @@ class KernelPooling(Layer):
     
     def __init__(self, mu, sigma, **kwargs):
         super(KernelPooling, self).__init__(**kwargs)
-        self.mu = mu
-        self.sigma = sigma
+        self.mu = np.array(mu)
+        self.sigma = np.array(sigma)
 
     def compute_output_shape(self, input_shape):
-        return input_shape[0], input_shape[1], self.mu.shape[0]
+        return input_shape[0], input_shape[1]
 
     def call(self, inputs, **kwargs):
         """
@@ -46,7 +46,7 @@ class KernelPooling(Layer):
         k_pool = K.sum(raw_k_pool, 3)
 
         # log sum along the q axis
-        k_pool = K.sum(K.log(k_pool), -1)
+        k_pool = K.sum(K.log(k_pool), 1)
 
         return k_pool
 
