@@ -19,7 +19,7 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
 )
 
-dump_emb = False
+# dump_emb = False
 
 
 def _hash_feature(h_feature, h_feature_id):
