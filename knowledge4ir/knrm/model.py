@@ -24,9 +24,11 @@ class KernelPooling(Layer):
         super(KernelPooling, self).__init__(**kwargs)
         self.mu = np.array(mu)
         self.sigma = np.array(sigma)
+        assert mu.shape == sigma.shape
+        self.nb_k = self.mu.shape[0]
 
     def compute_output_shape(self, input_shape):
-        return input_shape[0], input_shape[1]
+        return input_shape[0], self.nb_k
 
     def call(self, inputs, **kwargs):
         """
@@ -36,6 +38,8 @@ class KernelPooling(Layer):
         :return:
         """
         output = None
+
+        # broad cast, d0: batch, d1: q, d2: doc, d3: kernel
         m = K.expand_dims(inputs, -1)
 
         sq_diff = -K.square(m - self.mu)
@@ -43,13 +47,28 @@ class KernelPooling(Layer):
         raw_k_pool = K.exp(sq_diff / mod)
 
         # sum up the document dimension
-        k_pool = K.sum(raw_k_pool, 3)
+        # from batch, q, doc, kernel to batch, q, kernel
+
+        k_pool = K.sum(raw_k_pool, 2)
 
         # log sum along the q axis
+        # from batch, q, k to batch, k
         k_pool = K.sum(K.log(k_pool), 1)
-
         return k_pool
 
 
+if __name__ == '__main__':
+    x = np.array([[[1, 1, 1], [0, 1, 2]], [[2, 2, 2], [0, 2, 4]]])
+    from keras.models import Sequential
 
-
+    m = Sequential()
+    mu = np.array([1,2])
+    sigma = np.array([2, 2])
+    m.add(
+        KernelPooling(
+            mu, sigma,
+            input_shape=(2, None)
+        )
+    )
+    y = m.predict(x)
+    print y.tolist()
