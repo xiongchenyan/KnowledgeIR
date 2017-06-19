@@ -1,9 +1,5 @@
 """
-the model part of knrm
-
-KP layer
-
-and KNRM model ranking inits
+Kernel Pooling layer in keras
 """
 
 from keras import backend as K
