@@ -59,11 +59,16 @@ class KNRM(Configurable):
     q_len = Int(5, help='maximum q entity length')
     aux_pre = Unicode('aux')
     l_d_field = List(Unicode, default_value=TARGET_TEXT_FIELDS,
-                   help='fields in the documents').tag(config=True)
+                     help='fields in the documents').tag(config=True)
     l_d_field_len = List(Int, default_value=[10, 500],
-                       help='max len of each field').tag(config=True)
-    mu = List(Float, help='mu of kernel pooling').tag(config=True)
-    sigma = List(Float, help='sigma of kernel pooling').tag(config=True)
+                         help='max len of each field').tag(config=True)
+    mu = List(Float,
+              default_value=[1, 0.9, 0.7, 0.5, 0.3, 0.1, -0.1, -0.3, -0.5, -0.7, -0.9],
+              help='mu of kernel pooling'
+              ).tag(config=True)
+    sigma = List(Float,
+                 default_value=[1e-3] + [0.1] * 10,
+                 help='sigma of kernel pooling').tag(config=True)
 
     def __init__(self, **kwargs):
         super(KNRM, self).__init__(**kwargs)
@@ -100,7 +105,7 @@ class KNRM(Configurable):
         for field, f_len in zip(self.l_d_field, self.l_d_field_len):
             l_field_input.append(
                 Input(shape=(f_len,),
-                      name=pre + field + '_' + self.d_name,
+                      name=pre + self.d_name + '_' + field,
                       dtype='int32')
             )
         return q_input, l_field_input
@@ -119,34 +124,35 @@ class KNRM(Configurable):
             Dense
         :return:
         """
-        emb_layer = Embedding(
-            len(self.vocab_size + 1),
+        self.emb_layer = Embedding(
+            len(self.vocab_size),
             self.embedding_dim,
             weights=[self.emb],
-            mask_zero=True,
+            # mask_zero=True,
+            name="embedding_layer"
         )
-        q = emb_layer(Input(shape=(None,), dtype='int32'))
+        q = self.emb_layer(Input(shape=(None,), dtype='int32'))
 
         l_d_layer = []
         for field, f_len in zip(self.l_d_field, self.l_d_field_len):
-            d_layer = emb_layer(Input(shape=(None, ), dtype='int32'))
+            d_layer = self.emb_layer(Input(shape=(None, ), dtype='int32'))
             l_d_layer.append(d_layer)
 
         # translation matrices
-        l_cos_layer = [dot(q, d, axes=-1, normalize=True) for d in l_d_layer]
+        self.l_cos_layer = [dot(q, d, axes=-1, normalize=True, name='translation_mtx_%s' % name) for d, name in zip(l_d_layer, self.l_d_field)]
 
         # kp results of each field
-        l_kp_features = [KernelPooling(self.mu, self.sigma)(trans_mtx)
-                         for trans_mtx in l_cos_layer]
+        l_kp_features = [KernelPooling(self.mu, self.sigma, name='kp_%s' % name)(trans_mtx)
+                         for trans_mtx, name in zip(self.l_cos_layer, self.l_d_field)]
 
         # put features to one vector
-        ranking_features = concatenate(l_kp_features)
-        ranking_layer = Dense(1)(ranking_features)
+        ranking_features = concatenate(l_kp_features, name='ranking_features')
+        ranking_layer = Dense(1, name='letor')(ranking_features)
         self.ranking_layer = ranking_layer
         return ranking_layer
 
     def _pack_layer_to_ranker(self, q_input, l_field_input, ranking_layer):
-        ranker = Model(inputs=[q_input] + l_field_input, outputs=ranking_layer)
+        ranker = Model(input=[q_input] + l_field_input, output=ranking_layer)
         return ranker
 
     def _pack_layer_to_trainer(self, q_input, l_field_input, l_aux_field_input, ranking_layer):
@@ -168,6 +174,39 @@ class KNRM(Configurable):
         )
         return self.ranker, self.trainer
 
+
+if __name__ == '__main__':
+    # unit test
+
+    emb_mtx = np.ones((50, 16))
+    for i in xrange(emb_mtx.shape[0]):
+        emb_mtx[i, :] = i
+    k_nrm = KNRM()
+    k_nrm.set_embedding(emb_mtx)
+    q = np.array([0, 1])
+    k_nrm.l_d_field = ['title']
+    title = np.array([2, 3, 4])
+    h_in = {'q': q, 'd_title': title}
+
+    k_nrm._init_inputs()
+    ranking_layer = k_nrm._init_layers()
+
+    print "q embedding"
+    model = Sequential(k_nrm.emb_layer)
+    model.summary()
+    print model.predict(q)
+
+    print 'd embedding'
+    print model.predict(title)
+
+    print "translation mtx"
+    model = Model(input=[k_nrm.q_input] + k_nrm.l_field_input, output=k_nrm.l_cos_layer[0])
+    print model.predict(h_in)
+    ranker, trainer = k_nrm.build()
+    print "ranker:"
+    ranker.summary()
+    print "trainer"
+    trainer.summary()
 
 
 
