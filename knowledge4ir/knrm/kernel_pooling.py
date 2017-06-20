@@ -33,13 +33,12 @@ class KernelPooling(Layer):
         :param inputs:
         :return:
         """
-        output = None
 
         # broad cast, d0: batch, d1: q, d2: doc, d3: kernel
         m = K.expand_dims(inputs, -1)
 
         sq_diff = -K.square(m - self.mu)
-        mod = 2 * K.square(self.sigma)
+        mod = 2.0 * K.square(self.sigma)
         raw_k_pool = K.exp(sq_diff / mod)
 
         # sum up the document dimension
@@ -50,6 +49,7 @@ class KernelPooling(Layer):
         # log sum along the q axis
         # from batch, q, k to batch, k
         k_pool = K.sum(K.log(k_pool), 1)
+        # k_pool = inputs
         return k_pool
 
 
