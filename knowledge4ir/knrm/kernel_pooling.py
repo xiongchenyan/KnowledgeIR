@@ -5,7 +5,8 @@ Kernel Pooling layer in keras
 from keras import backend as K
 from keras.engine.topology import Layer
 import numpy as np
-
+# from theano.tensor import *
+from theano import shared
 
 class KernelPooling(Layer):
     """
@@ -18,10 +19,10 @@ class KernelPooling(Layer):
     
     def __init__(self, mu, sigma, **kwargs):
         super(KernelPooling, self).__init__(**kwargs)
-        self.mu = np.array(mu)
-        self.sigma = np.array(sigma)
-        assert mu.shape == sigma.shape
-        self.nb_k = self.mu.shape[0]
+        self.mu = np.array(mu, dtype='float32')
+        self.sigma = np.array(sigma, dtype='float32')
+        # assert mu.shape == sigma.shape
+        self.nb_k = len(mu)
 
     def compute_output_shape(self, input_shape):
         return input_shape[0], self.nb_k
@@ -35,6 +36,7 @@ class KernelPooling(Layer):
         """
 
         # broad cast, d0: batch, d1: q, d2: doc, d3: kernel
+
         m = K.expand_dims(inputs, -1)
 
         sq_diff = -K.square(m - self.mu)
@@ -49,7 +51,7 @@ class KernelPooling(Layer):
         # log sum along the q axis
         # from batch, q, k to batch, k
         k_pool = K.sum(K.log(k_pool), 1)
-        # k_pool = inputs
+        # k_pool = shared(self.mu.reshape(1, self.mu.shape[0]))
         return k_pool
 
 

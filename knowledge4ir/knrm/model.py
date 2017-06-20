@@ -213,15 +213,15 @@ if __name__ == '__main__':
     ranker.summary()
     print "trainer"
     trainer.summary()
-
-    print "q embedding"
-    model = Model(inputs=k_nrm.q_input, outputs=k_nrm.q_emb)
-    model.summary()
-    print model.predict(q)
     #
-    print 'd embedding'
-    model = Model(inputs=k_nrm.l_field_input[0], outputs=k_nrm.l_d_layer[0])
-    print model.predict(title)
+    # print "q embedding"
+    # model = Model(inputs=k_nrm.q_input, outputs=k_nrm.q_emb)
+    # model.summary()
+    # print model.predict(q)
+    # #
+    # print 'd embedding'
+    # model = Model(inputs=k_nrm.l_field_input[0], outputs=k_nrm.l_d_layer[0])
+    # print model.predict(title)
     #
     # print "translation mtx"
     # model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_cos_layer[0])
@@ -229,17 +229,17 @@ if __name__ == '__main__':
     # print trans_mtx
     # print trans_mtx.shape
     #
-    print "kp res:"
-    model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
-    kp = model.predict(h_in)
-    print kp
-    print kp.shape
-
-    print 'aux kp res:'
-    model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
-    kp = model.predict([q, aux_title])
-    print kp
-    print kp.shape
+    # print "kp res:"
+    # model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
+    # kp = model.predict(h_in)
+    # print kp
+    # print kp.shape
+    #
+    # print 'aux kp res:'
+    # model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
+    # kp = model.predict([q, aux_title])
+    # print kp
+    # print kp.shape
 
     # trainer.compile('nadam', loss='hinge')
     # trainer.fit(h_in, np.array([-1]))
