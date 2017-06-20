@@ -81,8 +81,8 @@ class KNRM(Configurable):
         self.ranking_layer = None
         self.ranker = None
         self.trainer = None
-        self.mu = np.array(self.mu)
-        self.sigma = np.array(self.sigma)
+        # self.mu = np.array(self.mu)
+        # self.sigma = np.array(self.sigma)
 
     def set_embedding(self, pretrained_emb):
         self.emb = pretrained_emb
@@ -142,7 +142,7 @@ class KNRM(Configurable):
         self.l_cos_layer = [dot(q, d, axes=-1, normalize=True, name='translation_mtx_%s' % name) for d, name in zip(l_d_layer, self.l_d_field)]
 
         # kp results of each field
-        l_kp_features = [KernelPooling(self.mu, self.sigma, name='kp_%s' % name)(trans_mtx)
+        l_kp_features = [KernelPooling(np.array(self.mu), np.array(self.sigma), name='kp_%s' % name)(trans_mtx)
                          for trans_mtx, name in zip(self.l_cos_layer, self.l_d_field)]
 
         # put features to one vector

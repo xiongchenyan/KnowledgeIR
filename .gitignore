@@ -2,3 +2,15 @@
 *.xml
 
 *.iml
+
+knowledge4ir.egg-info/dependency_links.txt
+
+knowledge4ir.egg-info/PKG-INFO
+
+knowledge4ir.egg-info/requires.txt
+
+knowledge4ir.egg-info/SOURCES.txt
+
+knowledge4ir.egg-info/top_level.txt
+
+*.pyc
