@@ -227,17 +227,17 @@ if __name__ == '__main__':
     emb_mtx = np.ones((50, 2))
     for i in xrange(emb_mtx.shape[0]):
         emb_mtx[i, :] = i
-    emb_mtx[0, :] = np.array([-1, 1])
-    emb_mtx[2, 1] = -2
-    emb_mtx[3, 0] = -3
+    # emb_mtx[0, :] = np.array([-1, 1])
+    # emb_mtx[2, 1] = -2
+    # emb_mtx[3, 0] = -3
     k_nrm = KNRM()
     k_nrm.set_embedding(emb_mtx)
     # k_nrm.mu = [1]
     # k_nrm.sigma = [1]
     q = np.array([[0, 1, 2]])
     k_nrm.l_d_field = ['title']
-    title = np.array([[0, 1]])
-    aux_title = np.array([[1, 2]])
+    title = np.array([[4, 5, 6, 7]])
+    aux_title = np.array([[1, 2, 3, 4]])
     h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title,}
     y = np.array([1])
     # k_nrm._init_inputs()
@@ -254,15 +254,15 @@ if __name__ == '__main__':
     model.summary()
     print model.predict(q)
     # #
-    # print 'd embedding'
-    # model = Model(inputs=k_nrm.l_field_input[0], outputs=k_nrm.l_d_layer[0])
-    # print model.predict(title)
-    #
-    # print "translation mtx"
-    # model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_cos_layer[0])
-    # trans_mtx = model.predict(h_in)
-    # print trans_mtx
-    # print trans_mtx.shape
+    print 'd embedding'
+    model = Model(inputs=k_nrm.l_field_input[0], outputs=k_nrm.l_d_layer[0])
+    print model.predict(title)
+
+    print "translation mtx"
+    model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_cos_layer[0])
+    trans_mtx = model.predict(h_in)
+    print trans_mtx
+    print trans_mtx.shape
     #
     # print "kp res:"
     # model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
