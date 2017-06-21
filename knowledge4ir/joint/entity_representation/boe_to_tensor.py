@@ -45,12 +45,15 @@ def load_embedding(word2vec_in):
         cols = line.split()
         l_e.append(cols[0])
         if dump_emb:
-            l_emb.append(cols[1:])
+            emb = [float(col) for col in cols[1:]]
+            if not l_emb:
+                l_emb.append([0] * len(emb))
+            l_emb.append(emb)
     h_e_id = dict(zip(l_e, range(1, 1 + len(l_e))))
     emb_mtx = None
     logging.info('loaded [%d] entities', len(h_e_id))
     if dump_emb:
-        emb_mtx = np.array([0] * len(l_emb[0]) + l_emb)
+        emb_mtx = np.array(l_emb)
         logging.info('dump emb matrix shape: %s', json.dumps(emb_mtx.shape))
     return h_e_id, emb_mtx
 
