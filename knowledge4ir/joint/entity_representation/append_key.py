@@ -33,7 +33,7 @@ for line in open(sys.argv[1]):
     l_h.append(h_slim)
 
 print "loading [%s]" % sys.argv[2]
-for p, line in open(sys.argv[2]):
+for p, line in enumerate(open(sys.argv[2])):
     h = json.loads(line)
     for field in l_field:
         assert h.get(field, "") == l_h[p].get(field, "")
