@@ -31,6 +31,20 @@ import logging
 import numpy as np
 
 
+def mask(boe, max_len):
+    boe = [i + 1 for i in boe]
+    while len(boe) < max_len:
+        boe.append(0)
+    return boe
+
+
+def mask_list(ll, max_len):
+    n = len(ll[0])
+    while len(ll) < n:
+        ll.append([0] * n)
+    return ll
+
+
 def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_att=False):
     logging.info('start read pointwise')
     h_q_info = load_json_info(q_info_in, 'qid')
@@ -53,6 +67,7 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
                 continue
         logging.info('constructing for q [%s]', q)
         q_boe = h_q_info[q]['query']['boe']
+        q_boe = mask(q_boe, q_len)
         q_att = h_q_info[q]['query']['att_mtx']
         for docno, score in rank:
             if docno not in h_doc_info:
@@ -67,13 +82,13 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
 
             for p in xrange(len(TARGET_TEXT_FIELDS)):
                 field = TARGET_TEXT_FIELDS[p]
-                ll_doc_field[p].append(doc_info[field]['boe'])
+                ll_doc_field[p].append(mask(doc_info[field]['boe'], l_field_len[p]))
 
             if with_att:
                 l_q_att.append(q_att)
                 for p in xrange(len(TARGET_TEXT_FIELDS)):
                     field = TARGET_TEXT_FIELDS[p]
-                    ll_doc_att[p].append(doc_info[field]['att_mtx'])
+                    ll_doc_att[p].append(mask_list(doc_info[field]['att_mtx'], l_field_len[p]))
     if with_att:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field, l_q_att, ll_doc_att)
     else:
@@ -107,6 +122,7 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
                 continue
         logging.info('constructing for q [%s]', q)
         q_boe = h_q_info[q]['query']['boe']
+        q_boe = mask(q_boe, q_len)
         q_att = h_q_info[q]['query']['att_mtx']
         for i in xrange(len(rank)):
             docno, doc_score = rank[i]
@@ -134,15 +150,15 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
 
                 for p in xrange(len(TARGET_TEXT_FIELDS)):
                     field = TARGET_TEXT_FIELDS[p]
-                    ll_doc_field[p].append(doc_info[field]['boe'])
-                    ll_aux_doc_field.append(aux_doc_info[field]['boe'])
+                    ll_doc_field[p].append(mask(doc_info[field]['boe'], l_field_len[p]))
+                    ll_aux_doc_field[p].append(mask(aux_doc_info[field]['boe'], l_field_len[p]))
 
                 if with_att:
                     l_q_att.append(q_att)
                     for p in xrange(len(TARGET_TEXT_FIELDS)):
                         field = TARGET_TEXT_FIELDS[p]
-                        ll_doc_att[p].append(doc_info[field]['att_mtx'])
-                        ll_aux_doc_att[p].append(aux_doc_info[field]['att_mtx'])
+                        ll_doc_att[p].append(mask_list(doc_info[field]['att_mtx'], l_field_len[p]))
+                        ll_aux_doc_att[p].append(mask_list(aux_doc_info[field]['att_mtx'], l_field_len[p]))
 
     if with_att:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field, l_q_att, ll_doc_att)

@@ -51,6 +51,9 @@ from knowledge4ir.knrm import (
     d_att_name
 )
 
+# TODO WARNING, the padding mask is not implemented.
+# TODO Now there will be 0 translation matrix elements counted by the kernels.
+
 
 class KNRM(Configurable):
     """
@@ -66,7 +69,7 @@ class KNRM(Configurable):
     ltr_feature_name = ltr_feature_name
     aux_pre = aux_pre
 
-    ltr_feature_dim = Int(0, help='ltr feature dimension, if 0 then no feature').tag(config=True)
+    ltr_feature_dim = Int(1, help='ltr feature dimension, if 0 then no feature').tag(config=True)
     l_d_field = List(Unicode, default_value=TARGET_TEXT_FIELDS,
                      help='fields in the documents').tag(config=True)
     # q_len = Int(5, help='maximum q entity length')
