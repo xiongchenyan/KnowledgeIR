@@ -129,7 +129,7 @@ class KNRM(Configurable):
 
     def _init_layers(self):
         self.emb_layer = Embedding(
-            self.vocab_size + 1,
+            self.vocab_size,
             self.embedding_dim,
             weights=[self.emb],
             mask_zero=True,
