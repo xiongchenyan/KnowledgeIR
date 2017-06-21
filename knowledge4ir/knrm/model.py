@@ -173,7 +173,12 @@ class KNRM(Configurable):
                                            name=pre + 'ranking_features_with_ltr')
 
         ranking_layer = self.ltr_layer(ranking_features)
-        ranker = Model(inputs=[q_input] + l_field_input, outputs=ranking_layer, name=pre + 'ranker')
+        l_full_inputs = [q_input] + l_field_input
+        if ltr_input:
+            l_full_inputs.append(ltr_input)
+        ranker = Model(inputs=l_full_inputs,
+                       outputs=ranking_layer,
+                       name=pre + 'ranker')
 
         if not aux:
             self.l_d_layer = l_d_layer
