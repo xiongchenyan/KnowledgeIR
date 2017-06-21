@@ -41,6 +41,8 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
     l_ltr = []
     ll_doc_field = [[] for __ in TARGET_TEXT_FIELDS]
     ll_doc_att = [[] for __ in TARGET_TEXT_FIELDS]
+    l_qid = []
+    l_docno = []
 
     for q, rank in l_q_rank:
         if s_qid is not None:
@@ -56,6 +58,9 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
             l_label.append(label)
             l_q_in.append(q_boe)
             doc_info = h_doc_info[docno]
+            l_qid.append(q)
+            l_docno.append(docno)
+
             for p in xrange(len(TARGET_TEXT_FIELDS)):
                 field = TARGET_TEXT_FIELDS[p]
                 ll_doc_field[p].append(doc_info[field]['boe'])
@@ -69,6 +74,8 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field, l_q_att, ll_doc_att)
     else:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field)
+    x['qid'] = l_qid
+    x['docno'] = l_docno
     return x, y
 
 

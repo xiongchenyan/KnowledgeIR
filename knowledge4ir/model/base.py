@@ -31,19 +31,19 @@ class ModelBase(Configurable):
         yield NotImplementedError
 
     def train_with_dev(self, x, y, dev_x, dev_y, l_hyper_para):
-        yield NotImplementedError
+        pass
 
     def generate_ranking(self, x, out_name):
         yield NotImplementedError
 
     def train_generator(self, in_name, hyper_para, s_target_qid):
-        yield NotImplementedError
+        pass
 
     def predict_generator(self, in_name, s_target_qid):
-        yield NotImplementedError
+        pass
 
     def generate_ranking_generator(self, in_name, out_name, s_target_qid):
-        yield NotImplementedError
+        pass
 
     def train_data_reader(self, in_name, s_target_qid=None):
         yield NotImplementedError
@@ -52,7 +52,7 @@ class ModelBase(Configurable):
         yield NotImplementedError
 
     def train_data_generator(self, in_name, s_target_qid):
-        yield NotImplementedError
+        pass
 
     def test_data_generator(self, in_name, s_target_qid):
-        yield NotImplementedError
+        pass
