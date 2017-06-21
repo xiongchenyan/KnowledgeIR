@@ -133,7 +133,7 @@ class KNRM(Configurable):
             self.vocab_size,
             self.embedding_dim,
             weights=[self.emb],
-            # mask_zero=True,
+            mask_zero=True,
             name="embedding",
             trainable=False,
         )
