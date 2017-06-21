@@ -244,5 +244,5 @@ if __name__ == '__main__':
     # trainer.compile('nadam', loss='hinge')
     # trainer.fit(h_in, np.array([-1]))
     trainer.compile('nadam', loss='hinge')
-    trainer.fit(h_in, np.array([-1]))
+    trainer.fit(h_in, np.array([-1]), epochs=1000, verbose=2)
 
