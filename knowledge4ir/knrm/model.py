@@ -33,17 +33,22 @@ from knowledge4ir.knrm.kernel_pooling import KernelPooling
 import numpy as np
 from traitlets.config import Configurable
 from traitlets import (
-    Bool,
     Int,
     Unicode,
     List,
     Float,
 )
-import keras.backend as K
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
 )
-from keras.layers.normalization import BatchNormalization
+from knowledge4ir.knrm import (
+    aux_pre,
+    q_in_name,
+    d_in_name,
+    ltr_feature_name,
+    q_att_name,
+    d_att_name
+)
 
 
 class KNRM(Configurable):
@@ -53,19 +58,19 @@ class KNRM(Configurable):
     """
     embedding_dim = Int(50, help='embedding dim').tag(config=True)
     vocab_size = Int(help='vocab size').tag(config=True)
-    q_name = Unicode('q')
-    d_name = Unicode('d')
-    # use_ltr_feature = Bool(False, help='whether to use classical ltr features').tag(config=True)
-    ltr_feature_name = Unicode('ltr_feature')
+    q_name = q_in_name
+    d_name = d_in_name
+    d_att_name = d_att_name
+    q_att_name = q_att_name
+    ltr_feature_name = ltr_feature_name
+    aux_pre = aux_pre
+
     ltr_feature_dim = Int(0, help='ltr feature dimension, if 0 then no feature').tag(config=True)
-    d_att_name = Unicode('d_att')
-    q_att_name = Unicode('q_att')
-    q_len = Int(5, help='maximum q entity length')
-    aux_pre = Unicode('aux_')
     l_d_field = List(Unicode, default_value=TARGET_TEXT_FIELDS,
                      help='fields in the documents').tag(config=True)
-    l_d_field_len = List(Int, default_value=[10, 500],
-                         help='max len of each field').tag(config=True)
+    # q_len = Int(5, help='maximum q entity length')
+    # l_d_field_len = List(Int, default_value=[10, 500],
+    #                      help='max len of each field').tag(config=True)
     mu = List(Float,
               default_value=[1, 0.9, 0.7, 0.5, 0.3, 0.1, -0.1, -0.3, -0.5, -0.7, -0.9],
               help='mu of kernel pooling'
@@ -111,7 +116,7 @@ class KNRM(Configurable):
             pre = self.aux_pre
         q_input = Input(shape=(None,), name=pre + self.q_name, dtype='int32')
         l_field_input = []
-        for field, f_len in zip(self.l_d_field, self.l_d_field_len):
+        for field in self.l_d_field:
             l_field_input.append(
                 Input(shape=(None,),
                       name=pre + self.d_name + '_' + field,
@@ -132,8 +137,12 @@ class KNRM(Configurable):
             trainable=False,
         )
         self.kernel_pool = KernelPooling(np.array(self.mu), np.array(self.sigma), name='kp')
-        self.ltr_layer = Dense(1, name='letor', use_bias=False,
-                               input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim)
+        self.ltr_layer = Dense(
+            1,
+            name='letor',
+            use_bias=False,
+            input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
+        )
 
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """
@@ -156,7 +165,7 @@ class KNRM(Configurable):
 
         # translation matrices
         l_cos_layer = [dot([q, d], axes=-1, normalize=True, name=pre + 'translation_mtx_' + name)
-                            for d, name in zip(l_d_layer, self.l_d_field)]
+                       for d, name in zip(l_d_layer, self.l_d_field)]
 
         # kp results of each field
         l_kp_features = [self.kernel_pool(trans_mtx)

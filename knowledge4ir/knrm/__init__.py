@@ -22,4 +22,9 @@ two stage setup:
         evaluation
 """
 
-
+q_in_name = 'q'
+d_in_name = 'd'
+d_att_name = 'd_att'
+q_att_name = 'q_att'
+ltr_feature_name = 'ltr_feature'
+aux_pre = 'aux_'
