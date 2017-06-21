@@ -76,7 +76,10 @@ def convert_boe_info(h_info, h_e_id, h_feature_id):
             ll_feature.append(l_feature_vector)
 
         h_boe_tensor[field] = {'boe': l_e_id, 'att_mtx': ll_feature}
-
+    l_key = ['qid', 'docno']
+    for key in l_key:
+        if key in h_info:
+            h_boe_tensor[key] = h_info[key]
     return h_boe_tensor, h_feature_id
 
 

@@ -138,6 +138,7 @@ class AttentionBoe(Configurable):
             for field in self.l_target_field:
                 if field in h_info:
                     h_res[field] = h_info[field]
+            h_res[key] = h_info[key]
 
             print >> out, json.dumps(h_res)
         out.close()
