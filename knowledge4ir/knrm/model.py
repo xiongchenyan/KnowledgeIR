@@ -96,8 +96,7 @@ class KNRM(Configurable):
         self.trainer = None
 
     def set_embedding(self, pretrained_emb):
-        self.emb = np.zeros((pretrained_emb.shape[0] + 1, pretrained_emb.shape[1]))
-        self.emb[1:, :] = pretrained_emb
+        self.emb = pretrained_emb
         self.vocab_size, self.embedding_dim = self.emb.shape
 
     def _init_inputs(self):
