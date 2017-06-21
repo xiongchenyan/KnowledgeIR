@@ -129,10 +129,10 @@ class KNRM(Configurable):
 
     def _init_layers(self):
         self.emb_layer = Embedding(
-            self.vocab_size,
+            self.vocab_size + 1,
             self.embedding_dim,
             weights=[self.emb],
-            # mask_zero=True,
+            mask_zero=True,
             name="embedding",
             trainable=False,
         )
@@ -234,13 +234,12 @@ if __name__ == '__main__':
     k_nrm.set_embedding(emb_mtx)
     # k_nrm.mu = [1]
     # k_nrm.sigma = [1]
-    q = np.array([[0, 1], [2, 3]])
+    q = np.array([[0, 1, 2]])
     k_nrm.l_d_field = ['title']
-    title = np.array([[0, 1], [2, 1]])
-    aux_title = np.array([[0, 1], [0, 1]])
-    h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title,
-            }
-    y = np.array([1, -1])
+    title = np.array([[0, 1]])
+    aux_title = np.array([[1, 2]])
+    h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title,}
+    y = np.array([1])
     # k_nrm._init_inputs()
     # ranking_layer = k_nrm._init_layers()
 
@@ -249,11 +248,11 @@ if __name__ == '__main__':
     test_ranker.summary()
     print "trainer"
     test_trainer.summary()
-    #
-    # print "q embedding"
-    # model = Model(inputs=k_nrm.q_input, outputs=k_nrm.q_emb)
-    # model.summary()
-    # print model.predict(q)
+
+    print "q embedding"
+    model = Model(inputs=k_nrm.q_input, outputs=k_nrm.q_emb)
+    model.summary()
+    print model.predict(q)
     # #
     # print 'd embedding'
     # model = Model(inputs=k_nrm.l_field_input[0], outputs=k_nrm.l_d_layer[0])
@@ -279,6 +278,6 @@ if __name__ == '__main__':
 
     # trainer.compile('nadam', loss='hinge')
     # trainer.fit(h_in, np.array([-1]))
-    test_trainer.compile('nadam', loss='hinge')
-    test_trainer.fit(h_in, y, epochs=10, verbose=2)
+    # test_trainer.compile('nadam', loss='hinge')
+    # test_trainer.fit(h_in, y, epochs=10, verbose=2)
 

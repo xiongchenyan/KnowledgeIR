@@ -16,7 +16,9 @@ from knowledge4ir.knrm import (
     d_in_name,
     ltr_feature_name,
     q_att_name,
-    d_att_name
+    d_att_name,
+    q_len,
+    l_field_len,
 )
 from knowledge4ir.utils import (
     load_trec_labels_dict,
