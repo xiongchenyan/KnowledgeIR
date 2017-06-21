@@ -92,7 +92,8 @@ class KNRM(Configurable):
         self.trainer = None
 
     def set_embedding(self, pretrained_emb):
-        self.emb = pretrained_emb
+        self.emb = np.zeros((pretrained_emb.shape[0] + 1, pretrained_emb.shape[1]))
+        self.emb[1:, :] = pretrained_emb
         self.vocab_size, self.embedding_dim = pretrained_emb.shape
 
     def _init_inputs(self):
@@ -226,7 +227,7 @@ if __name__ == '__main__':
 
     emb_mtx = np.ones((50, 2))
     for i in xrange(emb_mtx.shape[0]):
-        emb_mtx[i, :] = i
+        emb_mtx[i, :] = i + 1
     # emb_mtx[0, :] = np.array([-1, 1])
     # emb_mtx[2, 1] = -2
     # emb_mtx[3, 0] = -3
@@ -236,9 +237,9 @@ if __name__ == '__main__':
     # k_nrm.sigma = [1]
     q = np.array([[0, 1, 2]])
     k_nrm.l_d_field = ['title']
-    title = np.array([[4, 5, 6, 7]])
-    aux_title = np.array([[1, 2, 3, 4]])
-    h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title,}
+    title = np.array([[4, 0, 0, 0]])
+    aux_title = np.array([[0, 0, 0, 0]])
+    h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title}
     y = np.array([1])
     # k_nrm._init_inputs()
     # ranking_layer = k_nrm._init_layers()
@@ -264,11 +265,11 @@ if __name__ == '__main__':
     print trans_mtx
     print trans_mtx.shape
     #
-    # print "kp res:"
-    # model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
-    # kp = model.predict(h_in)
-    # print kp
-    # print kp.shape
+    print "kp res:"
+    model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
+    kp = model.predict(h_in)
+    print kp
+    print kp.shape
     #
     # print 'aux kp res:'
     # model = Model(inputs=[k_nrm.q_input] + k_nrm.l_field_input, outputs=k_nrm.l_kp_features[0])
@@ -278,6 +279,6 @@ if __name__ == '__main__':
 
     # trainer.compile('nadam', loss='hinge')
     # trainer.fit(h_in, np.array([-1]))
-    # test_trainer.compile('nadam', loss='hinge')
-    # test_trainer.fit(h_in, y, epochs=10, verbose=2)
+    test_trainer.compile('nadam', loss='hinge')
+    test_trainer.fit(h_in, y, epochs=10, verbose=2)
 
