@@ -50,9 +50,12 @@ from knowledge4ir.knrm import (
     q_att_name,
     d_att_name
 )
-
-# TODO WARNING, the padding mask is not implemented.
-# TODO Now there will be 0 translation matrix elements counted by the kernels.
+"""TODO
+WARNING, the padding is not masked.
+Now there will be 0 translation matrix elements counted by the kernels.
+When using attention, since padding's attention feature is always 0, this will be addressed.
+Keras's dot merge seems not propagating masking correctly.
+"""
 
 
 class KNRM(Configurable):
