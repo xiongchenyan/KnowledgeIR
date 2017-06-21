@@ -5,8 +5,7 @@ Kernel Pooling layer in keras
 from keras import backend as K
 from keras.engine.topology import Layer
 import numpy as np
-# from theano.tensor import *
-from theano import shared
+
 
 class KernelPooling(Layer):
     """
