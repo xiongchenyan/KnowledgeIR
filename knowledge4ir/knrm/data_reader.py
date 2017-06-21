@@ -30,11 +30,12 @@ import numpy as np
 
 
 def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_att=False):
+    logging.info('start read pointwise')
     h_q_info = load_json_info(q_info_in, 'qid')
     h_doc_info = load_json_info(doc_info_in, 'docno')
     l_q_rank = load_trec_ranking_with_score(trec_in)
     h_qrel = load_trec_labels_dict(qrel_in)
-
+    logging.info('input data loaded')
     l_label = []
     l_q_in = []
     l_q_att = []
@@ -48,6 +49,7 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
         if s_qid is not None:
             if q not in s_qid:
                 continue
+        logging.info('constructing for q [%s]', q)
         q_boe = h_q_info[q]['query']['boe']
         q_att = h_q_info[q]['query']['att_mtx']
         for docno, score in rank:
@@ -76,15 +78,17 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field)
     x['qid'] = l_qid
     x['docno'] = l_docno
+    logging.info('pointwise data constructed [%d] q, [%d] doc', len(l_q_in), len(l_label))
     return x, y
 
 
 def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_att=False):
+    logging.info('start read pairwise')
     h_q_info = load_json_info(q_info_in, 'qid')
     h_doc_info = load_json_info(doc_info_in, 'docno')
     l_q_rank = load_trec_ranking_with_score(trec_in)
     h_qrel = load_trec_labels_dict(qrel_in)
-
+    logging.info('input data loaded')
     l_label = []
     l_q_in = []
     l_q_att = []
@@ -99,6 +103,7 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
         if s_qid is not None:
             if q not in s_qid:
                 continue
+        logging.info('constructing for q [%s]', q)
         q_boe = h_q_info[q]['query']['boe']
         q_att = h_q_info[q]['query']['att_mtx']
         for i in xrange(len(rank)):
@@ -143,6 +148,7 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
     else:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field)
         x = _add_aux(x, l_aux_ltr, ll_aux_doc_field)
+    logging.info('pairwise data constructed [%d] q, [%d] pair', len(l_q_in), len(l_label))
     return x, y
 
 
