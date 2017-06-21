@@ -243,6 +243,6 @@ if __name__ == '__main__':
 
     # trainer.compile('nadam', loss='hinge')
     # trainer.fit(h_in, np.array([-1]))
-    ranker.compile('nadam', loss='hinge')
-    ranker.fit(h_in, np.array([1]))
+    trainer.compile('nadam', loss='hinge')
+    trainer.fit(h_in, np.array([-1]))
 
