@@ -55,6 +55,9 @@ class KNRM(Configurable):
     vocab_size = Int(help='vocab size').tag(config=True)
     q_name = Unicode('q')
     d_name = Unicode('d')
+    # use_ltr_feature = Bool(False, help='whether to use classical ltr features').tag(config=True)
+    ltr_feature_name = Unicode('ltr_feature')
+    ltr_feature_dim = Int(0, help='ltr feature dimension, if 0 then no feature').tag(config=True)
     d_att_name = Unicode('d_att')
     q_att_name = Unicode('q_att')
     q_len = Int(5, help='maximum q entity length')
@@ -82,22 +85,27 @@ class KNRM(Configurable):
         self.ranking_layer = None
         self.ranker = None
         self.trainer = None
-        # self.mu = np.array(self.mu)
-        # self.sigma = np.array(self.sigma)
 
     def set_embedding(self, pretrained_emb):
         self.emb = pretrained_emb
         self.vocab_size, self.embedding_dim = pretrained_emb.shape
 
     def _init_inputs(self):
-        q_input, l_field_input = self._init_one_side_input()
-        __, l_aux_field_input = self._init_one_side_input(aux=True)
+        q_input, l_field_input = self._init_boe_input()
+        __, l_aux_field_input = self._init_boe_input(aux=True)
         self.q_input = q_input
         self.l_field_input = l_field_input
         self.l_aux_field_input = l_aux_field_input
-        return q_input, l_field_input, l_aux_field_input
+        if self.ltr_feature_dim > 0:
+            ltr_input = Input(shape=(self.ltr_feature_dim,),
+                              name=self.ltr_feature_name)
+            aux_ltr_input = Input(shape=(self.ltr_feature_dim,),
+                                  name=self.aux_pre + self.ltr_feature_name)
+            return q_input, l_field_input, l_aux_field_input, ltr_input, aux_ltr_input
+        else:
+            return q_input, l_field_input, l_aux_field_input, None, None
 
-    def _init_one_side_input(self, aux=False):
+    def _init_boe_input(self, aux=False):
         pre = ""
         if aux:
             pre = self.aux_pre
@@ -124,9 +132,18 @@ class KNRM(Configurable):
             trainable=False,
         )
         self.kernel_pool = KernelPooling(np.array(self.mu), np.array(self.sigma), name='kp')
-        self.ltr_layer = Dense(1, name='letor', use_bias=False, input_dim=len(self.l_d_field) * len(self.mu))
+        self.ltr_layer = Dense(1, name='letor', use_bias=False,
+                               input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim)
 
-    def _init_ranker(self, q_input, l_field_input, aux=False):
+    def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
+        """
+        construct ranker for given inputs
+        :param q_input:
+        :param l_field_input:
+        :param ltr_input: if use ltr features to combine
+        :param aux:
+        :return:
+        """
         pre = ""
         if aux:
             pre = self.aux_pre
@@ -147,9 +164,14 @@ class KNRM(Configurable):
 
         # put features to one vector
         if len(l_kp_features) > 1:
-            ranking_features = concatenate(l_kp_features, name= pre + 'ranking_features')
+            ranking_features = concatenate(l_kp_features, name=pre + 'ranking_features')
         else:
             ranking_features = l_kp_features[0]
+
+        if ltr_input:
+            ranking_features = concatenate([ranking_features, ltr_input],
+                                           name=pre + 'ranking_features_with_ltr')
+
         ranking_layer = self.ltr_layer(ranking_features)
         ranker = Model(inputs=[q_input] + l_field_input, outputs=ranking_layer, name=pre + 'ranker')
 
@@ -160,10 +182,9 @@ class KNRM(Configurable):
 
         return ranker
 
-    def construct_model(self, q_input, l_field_input, l_aux_field_input):
-
-        ranker = self._init_ranker(q_input, l_field_input)
-        aux_ranker = self._init_ranker(q_input, l_aux_field_input, True)
+    def construct_model(self, q_input, l_field_input, l_aux_field_input, ltr_input, aux_ltr_input):
+        ranker = self._init_ranker(q_input, l_field_input, ltr_input)
+        aux_ranker = self._init_ranker(q_input, l_aux_field_input, aux_ltr_input, True)
         # trainer = concatenate([ranker, aux_ranker])
         # trainer = Lambda(lambda x: x[0] - x[1])(trainer)
         trainer = Sequential()
@@ -178,10 +199,10 @@ class KNRM(Configurable):
 
     def build(self):
         assert self.emb is not None
-        q_input, l_field_input, l_aux_field_input = self._init_inputs()
+        q_input, l_field_input, l_aux_field_input, ltr_input, aux_ltr_input = self._init_inputs()
         self._init_layers()
         self.ranker, self.trainer = self.construct_model(
-            q_input, l_field_input, l_aux_field_input
+            q_input, l_field_input, l_aux_field_input, ltr_input, aux_ltr_input
         )
         return self.ranker, self.trainer
 
@@ -193,26 +214,30 @@ if __name__ == '__main__':
     for i in xrange(emb_mtx.shape[0]):
         emb_mtx[i, :] = i
     emb_mtx[0, :] = np.array([-1, 1])
-    emb_mtx[2,1] = -2
-    emb_mtx[3,0] = -3
+    emb_mtx[2, 1] = -2
+    emb_mtx[3, 0] = -3
     k_nrm = KNRM()
     k_nrm.set_embedding(emb_mtx)
+    k_nrm.ltr_feature_dim = 3
     # k_nrm.mu = [1]
     # k_nrm.sigma = [1]
     q = np.array([[0, 1]])
     k_nrm.l_d_field = ['title']
-    title = np.array([[2, 3, 4]])
+    title = np.array([[0, 1]])
     aux_title = np.array([[0, 1]])
-    h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title}
+    h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title,
+            'ltr_feature': np.array([[1, 1, 3]]),
+            'aux_ltr_feature': np.array([[0, 0, 0]])
+            }
 
     # k_nrm._init_inputs()
     # ranking_layer = k_nrm._init_layers()
 
-    ranker, trainer = k_nrm.build()
+    test_ranker, test_trainer = k_nrm.build()
     print "ranker:"
-    ranker.summary()
+    test_ranker.summary()
     print "trainer"
-    trainer.summary()
+    test_trainer.summary()
     #
     # print "q embedding"
     # model = Model(inputs=k_nrm.q_input, outputs=k_nrm.q_emb)
@@ -243,6 +268,6 @@ if __name__ == '__main__':
 
     # trainer.compile('nadam', loss='hinge')
     # trainer.fit(h_in, np.array([-1]))
-    trainer.compile('nadam', loss='hinge')
-    trainer.fit(h_in, np.array([-1]), epochs=1000, verbose=2)
+    test_trainer.compile('nadam', loss='hinge')
+    test_trainer.fit(h_in, np.array([-1]), epochs=1000, verbose=2)
 
