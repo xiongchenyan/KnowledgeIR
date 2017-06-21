@@ -232,18 +232,15 @@ if __name__ == '__main__':
     emb_mtx[3, 0] = -3
     k_nrm = KNRM()
     k_nrm.set_embedding(emb_mtx)
-    k_nrm.ltr_feature_dim = 3
     # k_nrm.mu = [1]
     # k_nrm.sigma = [1]
-    q = np.array([[0, 1]])
+    q = np.array([[0, 1], [2, 3]])
     k_nrm.l_d_field = ['title']
-    title = np.array([[0, 1]])
-    aux_title = np.array([[0, 1]])
+    title = np.array([[0, 1], [2]])
+    aux_title = np.array([[0, 1, 2], [0, 1]])
     h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title,
-            'ltr_feature': np.array([[1, 1, 3]]),
-            'aux_ltr_feature': np.array([[0, 0, 0]])
             }
-
+    y = np.array([1, -1])
     # k_nrm._init_inputs()
     # ranking_layer = k_nrm._init_layers()
 
@@ -283,5 +280,5 @@ if __name__ == '__main__':
     # trainer.compile('nadam', loss='hinge')
     # trainer.fit(h_in, np.array([-1]))
     test_trainer.compile('nadam', loss='hinge')
-    test_trainer.fit(h_in, np.array([-1]), epochs=10, verbose=2)
+    test_trainer.fit(h_in, y, epochs=10, verbose=2)
 
