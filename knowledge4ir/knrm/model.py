@@ -133,7 +133,7 @@ class KNRM(Configurable):
             self.vocab_size,
             self.embedding_dim,
             weights=[self.emb],
-            mask_zero=True,
+            # mask_zero=True,
             name="embedding",
             trainable=False,
         )
@@ -233,7 +233,7 @@ if __name__ == '__main__':
     # emb_mtx[3, 0] = -3
     k_nrm = KNRM()
     k_nrm.set_embedding(emb_mtx)
-    k_nrm.emb[0,0] = 1
+    k_nrm.emb[0, 0] = 1
     # k_nrm.mu = [1]
     # k_nrm.sigma = [1]
     q = np.array([[0, 1, 2]])
