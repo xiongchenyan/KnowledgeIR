@@ -236,8 +236,8 @@ if __name__ == '__main__':
     # k_nrm.sigma = [1]
     q = np.array([[0, 1], [2, 3]])
     k_nrm.l_d_field = ['title']
-    title = np.array([[0, 1], [2]])
-    aux_title = np.array([[0, 1, 2], [0, 1]])
+    title = np.array([[0, 1], [2, 1]])
+    aux_title = np.array([[0, 1], [0, 1]])
     h_in = {'q': q, 'd_title': title, 'aux_d_title': aux_title,
             }
     y = np.array([1, -1])
