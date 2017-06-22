@@ -47,8 +47,10 @@ def padding_2d(ll, max_len):
 
 def dynamic_load(trec, qrel, q_info, doc_info):
     if type(trec) == str:
+        logging.info('loading ranking from [%s]', trec)
         l_q_rank = load_trec_ranking_with_score(trec)
     else:
+        print type(trec)
         l_q_rank = trec
     if type(qrel) == str:
         h_qrel = load_trec_labels_dict(qrel)
