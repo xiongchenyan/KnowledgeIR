@@ -22,6 +22,27 @@ import os
 import logging
 import numpy as np
 import keras.backend as K
+from keras.models import Model
+from keras.layers import (
+    Embedding,
+    dot,
+    Input
+)
+
+
+def cos_model(emb_mtx):
+    m = Embedding(
+        emb_mtx.shape[0],
+        emb_mtx.shape[1],
+        weights=[emb_mtx],
+        name="embedding",
+        trainable=False,
+    )
+    q = m(Input(shape=(None,), name='q'))
+    d = m(Input(shape=(None,), name='d'))
+    cos = dot([q, d], axes=-1, normalize=True, name='translation_mtx')
+    model = Model(inputs=[q, d], outputs=cos)
+    return model
 
 
 def batch_cos(q_batch, d_batch):
@@ -29,7 +50,7 @@ def batch_cos(q_batch, d_batch):
     return cos
 
 
-def compute_translation_mtx(in_dir, aux=False):
+def compute_translation_mtx(in_dir, calc_cos_model, aux=False):
     q = np.load('q.npy')
     logging.info('q shape %s', json.dumps(q.shape))
 
@@ -39,7 +60,7 @@ def compute_translation_mtx(in_dir, aux=False):
         fname = os.path.join(in_dir, name)
         d = np.load(fname)
         logging.info('[%s] shape %s', name, json.dumps(d.shape))
-        cos = batch_cos(q, d)
+        cos = calc_cos_model.predict([q, d])
         logging.info('cos shape %s', json.dumps(cos.shape))
         np.save(os.path.join(in_dir, 'translation_mtx_' + name), cos)
 
@@ -48,7 +69,7 @@ def compute_translation_mtx(in_dir, aux=False):
             fname = os.path.join(in_dir, 'aux_' + name)
             d = np.load(fname)
             logging.info('[%s] shape %s', name, json.dumps(d.shape))
-            cos = batch_cos(q, d)
+            cos = calc_cos_model.predict([q, d])
             logging.info('cos shape %s', json.dumps(cos.shape))
             np.save(os.path.join(in_dir, 'aux_translation_mtx_' + name), cos)
     logging.info('[%s] finished')
@@ -56,11 +77,14 @@ def compute_translation_mtx(in_dir, aux=False):
 
 if __name__ == '__main__':
     import sys
-    if 2 != len(sys.argv):
+    if 3 != len(sys.argv):
         print "pre compute translation matrix"
-        print "1 para: the processed npy data folder"
+        print "2 para: the processed npy data folder + embeding npy"
         sys.exit(-1)
-    compute_translation_mtx(os.path.join(sys.argv[1], 'pairwise'), True)
-    compute_translation_mtx(os.path.join(sys.argv[1], 'pointwise'), False)
+
+    emb_mtx = np.load(sys.argv[2])
+    calc_cos_model = cos_model(emb_mtx)
+    compute_translation_mtx(os.path.join(sys.argv[1], 'pairwise'), calc_cos_model, True)
+    compute_translation_mtx(os.path.join(sys.argv[1], 'pointwise'), calc_cos_model, False)
 
 
