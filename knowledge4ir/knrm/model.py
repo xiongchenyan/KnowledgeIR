@@ -141,8 +141,8 @@ class KNRM(Configurable):
 
     def _init_layers(self):
         to_train = False
-        if self.metric_learning:
-            to_train = True
+        # if self.metric_learning:
+        #     to_train = True
         self.emb_layer = Embedding(
             self.vocab_size,
             self.embedding_dim,
@@ -158,9 +158,9 @@ class KNRM(Configurable):
             use_bias=False,
             input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
         )
-        # if self.metric_learning:
-        #     # self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
-        #     self.distance_metric = Dense(50, input_dim=self.embedding_dim ,use_bias=False)
+        if self.metric_learning:
+            self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
+            # self.distance_metric = Dense(50, input_dim=self.embedding_dim ,use_bias=False)
 
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """
@@ -175,15 +175,15 @@ class KNRM(Configurable):
         if aux:
             pre = self.aux_pre
         q = self.emb_layer(q_input)
-        # if self.metric_learning:
-        #     q = self.distance_metric(q)
+        if self.metric_learning:
+            q = self.distance_metric(q)
         self.q_emb = q
 
         l_d_layer = []
         for field, f_in in zip(self.l_d_field, l_field_input):
             d_layer = self.emb_layer(f_in)
-            # if self.metric_learning:
-            #     d_layer = self.distance_metric(d_layer)
+            if self.metric_learning:
+                d_layer = self.distance_metric(d_layer)
             l_d_layer.append(d_layer)
 
         # translation matrices
