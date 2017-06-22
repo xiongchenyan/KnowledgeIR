@@ -149,7 +149,7 @@ class KNRM(Configurable):
             weights=[self.emb],
             # mask_zero=True,
             name="embedding",
-            trainable=to_train,
+            trainable=False,
         )
         self.kernel_pool = KernelPooling(np.array(self.mu), np.array(self.sigma), name='kp')
         self.ltr_layer = Dense(
