@@ -74,7 +74,7 @@ def compute_translation_mtx(in_dir, calc_cos_model, aux=False):
             cos = calc_cos_model.predict([q, d])
             logging.info('cos shape %s', json.dumps(cos.shape))
             np.save(os.path.join(in_dir, 'aux_translation_mtx_' + name), cos)
-    logging.info('[%s] finished')
+    logging.info('[%s] finished', in_dir)
     return
 
 if __name__ == '__main__':
