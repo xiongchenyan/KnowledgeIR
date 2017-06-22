@@ -13,9 +13,11 @@ from knowledge4ir.knrm.model import KNRM
 from knowledge4ir.knrm.data_reader import (
     pairwise_reader,
     pointwise_reader,
-    dynamic_load
+    dynamic_load,
+    load_data,
 )
 import json
+import os
 import logging
 from traitlets import (
     Unicode,
@@ -37,6 +39,7 @@ class KNRMCenter(ModelBase):
     qrel_in = Unicode(help='qrel').tag(config=True)
     q_info_in = Unicode(help='q info tensor').tag(config=True)
     doc_info_in = Unicode(help='doc infor tensor').tag(config=True)
+    io_format = Unicode('raw', help='raw json or npy mtxs in a folder').tag(config=True)
     embedding_npy_in = Unicode(help='np saved embedding with id aligned').tag(config=True)
     
     def __init__(self, **kwargs):
@@ -94,13 +97,19 @@ class KNRMCenter(ModelBase):
         return y.reshape(-1)
 
     def train_data_reader(self, in_name, s_target_qid=None):
-        l_q_rank = load_trec_ranking_with_score(in_name)
-        x, y = pairwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
+        if self.io_format == 'raw':
+            l_q_rank = load_trec_ranking_with_score(in_name)
+            x, y = pairwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
+        else:
+            x, y = load_data(os.path.join(in_name, 'pairwise'), s_target_qid)
         return x, y
 
     def test_data_reader(self, in_name, s_target_qid=None):
-        l_q_rank = load_trec_ranking_with_score(in_name)
-        x, y = pairwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
+        if self.io_format == 'raw':
+            l_q_rank = load_trec_ranking_with_score(in_name)
+            x, y = pointwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
+        else:
+            x, y = load_data(os.path.join(in_name, 'pointwise'), s_target_qid)
         return x, y
 
     def generate_ranking(self, x, out_name):
@@ -112,8 +121,8 @@ class KNRMCenter(ModelBase):
         """
         y = self.predict(x)
         l_score = y.tolist()
-        l_qid = [x['qid']]
-        l_docno = [x['docno']]
+        l_qid = x['qid'].tolist()
+        l_docno = x['docno'].tolist()
         dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, self.model_name)
         logging.info('ranking results dumped to [%s]', out_name)
         return

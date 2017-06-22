@@ -29,6 +29,7 @@ from knowledge4ir.utils import (
 import json
 import logging
 import numpy as np
+import os
 
 
 def padding(boe, max_len):
@@ -109,8 +110,8 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field, l_q_att, ll_doc_att)
     else:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field)
-    x['qid'] = l_qid
-    x['docno'] = l_docno
+    x['qid'] = np.array(l_qid)
+    x['docno'] = np.array(l_docno)
     logging.info('pointwise data constructed [%d] q, [%d] doc', len(l_q_in), len(l_label))
     return x, y
 
@@ -182,8 +183,8 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
     else:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field)
         x = _add_aux(x, l_aux_ltr, ll_aux_doc_field)
-    x['qid'] = l_qid
-    x['docno_pair'] = l_docno_pair
+    x['qid'] = np.array(l_qid)
+    x['docno_pair'] = np.array(l_docno_pair)
     logging.info('pairwise data constructed [%d] q, [%d] pair', len(l_q_in), len(l_label))
     return x, y
 
@@ -217,6 +218,51 @@ def _add_aux(x, l_aux_ltr, ll_aux_doc_field, ll_aux_doc_att=None):
     return x
 
 
-def dump_pairwise(x, y):
+def dump_data(x, y, out_dir):
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    np.save(os.path.join(out_dir, 'y'), y)
+    for key, arr in x.items():
+        np.save(os.path.join(out_dir, key), arr)
     return
+
+
+def load_data(in_dir, s_target_qid=None):
+    x = dict()
+    y = None
+    for dirname, l_subdir, l_files in os.walk(in_dir):
+        for fname in l_files:
+            if not fname.endswith('.npy'):
+                continue
+            key = fname.replace('.npy', '')
+            logging.info('get [%s]', key)
+            arr = np.load(os.path.join(dirname, fname))
+            if key == 'y':
+                y = arr
+            else:
+                x[key] = arr
+    if s_target_qid is not None:
+        x, y = filter_data(x, y, s_target_qid)
+    return x, y
+
+
+def filter_data(x, y, s_target_qid):
+    v_qid = x['qid']
+    l_keep_idx = []
+    before = y.shape[0]
+    for p in xrange(len(v_qid)):
+        if v_qid[p] in s_target_qid:
+            l_keep_idx.append(p)
+
+    for key in x.keys():
+        # if type(x[key]) == list:
+        #     x[key] = np.array(x[key])[l_keep_idx].tolist()
+        # else:
+        x[key] = x[key][l_keep_idx]
+    y = y[l_keep_idx]
+    after = y.shape[0]
+    logging.info('filtered from [%d] to [%d]', before, after)
+    return x, y
+
 
