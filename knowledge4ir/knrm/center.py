@@ -126,3 +126,10 @@ class KNRMCenter(ModelBase):
         dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, self.model_name)
         logging.info('ranking results dumped to [%s]', out_name)
         return
+
+
+if __name__ == '__main__':
+    """
+    show config
+    """
+    KNRMCenter.class_print_help()
