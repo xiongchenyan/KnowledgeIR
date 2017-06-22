@@ -86,7 +86,7 @@ class KNRMCenter(ModelBase):
             hyper_para.loss,
         )
 
-        logging.info('start training with [%d] data with full batch', batch_size)
+        logging.info('start training with [%d] data with batch [%d]', y.shape[0], batch_size)
 
         res = self.learner.fit(
             x,
