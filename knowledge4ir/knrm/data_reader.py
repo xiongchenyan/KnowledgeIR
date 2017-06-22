@@ -26,7 +26,6 @@ from knowledge4ir.utils import (
     load_json_info,
     TARGET_TEXT_FIELDS
 )
-import json
 import logging
 import numpy as np
 import os
@@ -35,14 +34,14 @@ import os
 def padding(boe, max_len):
     while len(boe) < max_len:
         boe.append(0)
-    return boe
+    return boe[:max_len]
 
 
 def padding_2d(ll, max_len):
     n = len(ll[0])
     while len(ll) < max_len:
         ll.append([0] * n)
-    return ll
+    return ll[:max_len]
 
 
 def dynamic_load(trec, qrel, q_info, doc_info):
