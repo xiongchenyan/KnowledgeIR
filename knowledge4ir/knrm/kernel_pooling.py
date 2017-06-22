@@ -40,7 +40,7 @@ class KernelPooling(Layer):
 
         sq_diff = -K.square(m - self.mu)
         mod = 2.0 * K.square(self.sigma)
-        raw_k_pool = K.exp(sq_diff / mod) * 0.001
+        raw_k_pool = K.exp(sq_diff / mod)
 
         # sum up the document dimension
         # from batch, q, doc, kernel to batch, q, kernel
@@ -49,7 +49,8 @@ class KernelPooling(Layer):
 
         # log sum along the q axis
         # from batch, q, k to batch, k
-        k_pool = K.sum(K.log(k_pool), 1)
+        kde = K.log(K.maximum(k_pool, 1e-10))
+        k_pool = K.sum(kde, 1)
         # k_pool = shared(self.mu.reshape(1, self.mu.shape[0]))
         return k_pool
 
