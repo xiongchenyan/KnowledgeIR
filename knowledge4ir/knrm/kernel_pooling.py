@@ -40,7 +40,7 @@ class KernelPooling(Layer):
 
         sq_diff = -K.square(m - self.mu)
         mod = 2.0 * K.square(self.sigma)
-        raw_k_pool = K.exp(sq_diff / mod)
+        raw_k_pool = K.exp(sq_diff / mod) * 0.001
 
         # sum up the document dimension
         # from batch, q, doc, kernel to batch, q, kernel
