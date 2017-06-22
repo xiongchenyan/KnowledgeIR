@@ -118,7 +118,9 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
 
 def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_att=False):
     logging.info('start read pairwise')
-    l_q_rank, h_qrel, h_q_info, h_doc_info = dynamic_load(trec_in, qrel_in, q_info_in, doc_info_in)
+    l_q_rank, h_qrel, h_q_info, h_doc_info = dynamic_load(
+        trec_in, qrel_in, q_info_in, doc_info_in)
+    logging.debug('ranking: %s', json.dumps(l_q_rank))
     logging.info('input data loaded')
     l_label = []
     l_q_in = []
@@ -281,7 +283,7 @@ if __name__ == '__main__':
     class MainPara(Configurable):
         qrel_in = Unicode(help='qrel').tag(config=True)
         q_info_in = Unicode(help='q info tensor').tag(config=True)
-        doc_info_in = Unicode(help='doc infor tensor').tag(config=True)
+        doc_info_in = Unicode(help='doc info tensor').tag(config=True)
         trec_in = Unicode(help='candidate ranking').tag(config=True)
         out_dir = Unicode(help='out_dir').tag(config=True)
         testing = Bool(False, help='testing').tag(config=True)
