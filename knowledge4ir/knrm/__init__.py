@@ -29,5 +29,5 @@ q_att_name = 'q_att'
 ltr_feature_name = 'ltr_feature'
 aux_pre = 'aux_'
 q_len = 5
-l_field_len = [3, 300]
+l_field_len = [5, 500]
 
