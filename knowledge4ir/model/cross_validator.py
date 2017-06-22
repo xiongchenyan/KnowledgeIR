@@ -16,6 +16,7 @@ from knowledge4ir.joint.att_les.attention_les import (
     SfAttLes,
     HierAttLes,
 )
+from knowledge4ir.knrm.center import KNRMCenter
 import json
 
 h_model_name = {
@@ -24,12 +25,13 @@ h_model_name = {
     "att_e_les": DisAmbiAttLes,
     "att_sf_les": SfAttLes,
     'hier_att_les': HierAttLes,
+    'k_nrm': KNRMCenter,
 }
 
 
 class CrossValidator(Configurable):
     nb_folds = Int(10).tag(config=True)
-    model_name = Unicode('att_les', help="the model name").tag(config=True)
+    model_name = Unicode('att_les', help="the model name: " + json.dumps(h_model_name.keys())).tag(config=True)
     model_conf = Unicode(help='the model config file').tag(config=True)
     q_range = List(Int, default_value=[1, 200]).tag(config=True)
     l_hyper_para_in = List(Unicode, help="the file names of hyper paras, if dev, then explore the list,"

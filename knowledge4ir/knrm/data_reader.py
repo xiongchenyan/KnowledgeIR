@@ -44,12 +44,29 @@ def padding_2d(ll, max_len):
     return ll
 
 
+def dynamic_load(trec, qrel, q_info, doc_info):
+    if type(trec) == str:
+        l_q_rank = load_trec_ranking_with_score(trec)
+    else:
+        l_q_rank = trec
+    if type(qrel) == str:
+        h_qrel = load_trec_labels_dict(qrel)
+    else:
+        h_qrel = qrel
+    if type(q_info) == str:
+        h_q_info = load_json_info(q_info, 'qid')
+    else:
+        h_q_info = q_info
+    if type(doc_info) == str:
+        h_doc_info = load_json_info(doc_info, 'docno')
+    else:
+        h_doc_info = doc_info
+    return l_q_rank, h_qrel, h_q_info, h_doc_info
+
+
 def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_att=False):
     logging.info('start read pointwise')
-    h_q_info = load_json_info(q_info_in, 'qid')
-    h_doc_info = load_json_info(doc_info_in, 'docno')
-    l_q_rank = load_trec_ranking_with_score(trec_in)
-    h_qrel = load_trec_labels_dict(qrel_in)
+    l_q_rank, h_qrel, h_q_info, h_doc_info = dynamic_load(trec_in, qrel_in, q_info_in, doc_info_in)
     logging.info('input data loaded')
     l_label = []
     l_q_in = []
@@ -100,10 +117,7 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
 
 def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_att=False):
     logging.info('start read pairwise')
-    h_q_info = load_json_info(q_info_in, 'qid')
-    h_doc_info = load_json_info(doc_info_in, 'docno')
-    l_q_rank = load_trec_ranking_with_score(trec_in)
-    h_qrel = load_trec_labels_dict(qrel_in)
+    l_q_rank, h_qrel, h_q_info, h_doc_info = dynamic_load(trec_in, qrel_in, q_info_in, doc_info_in)
     logging.info('input data loaded')
     l_label = []
     l_q_in = []
@@ -114,7 +128,8 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
     ll_doc_att = [[] for __ in TARGET_TEXT_FIELDS]
     ll_aux_doc_field = [[] for __ in TARGET_TEXT_FIELDS]
     ll_aux_doc_att = [[] for __ in TARGET_TEXT_FIELDS]
-
+    l_qid = []
+    l_docno_pair = []
     for q, rank in l_q_rank:
         if s_qid is not None:
             if q not in s_qid:
@@ -137,6 +152,8 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
                 aux_label = h_qrel.get(q, {}).get(aux_docno, 0)
                 if label == aux_label:
                     continue
+                l_qid.append(q)
+                l_docno_pair.append([docno, aux_docno])
                 if label > aux_label:
                     pair_label = 1
                 else:
@@ -165,6 +182,8 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
     else:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field)
         x = _add_aux(x, l_aux_ltr, ll_aux_doc_field)
+    x['qid'] = l_qid
+    x['docno_pair'] = l_docno_pair
     logging.info('pairwise data constructed [%d] q, [%d] pair', len(l_q_in), len(l_label))
     return x, y
 
@@ -196,3 +215,8 @@ def _add_aux(x, l_aux_ltr, ll_aux_doc_field, ll_aux_doc_att=None):
             field = TARGET_TEXT_FIELDS[p]
             x[aux_pre + d_att_name + field] = np.array(ll_aux_doc_att[p])
     return x
+
+
+def dump_pairwise(x, y):
+    return
+
