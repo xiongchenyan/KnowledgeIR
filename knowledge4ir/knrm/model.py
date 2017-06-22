@@ -159,7 +159,6 @@ class KNRM(Configurable):
             self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
                 # Dense(50, input_dim=self.embedding_dim ,use_bias=False)
 
-
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """
         construct ranker for given inputs
@@ -174,14 +173,14 @@ class KNRM(Configurable):
             pre = self.aux_pre
         q = self.emb_layer(q_input)
         if self.metric_learning:
-            q = Activation('tanh')(self.distance_metric(q))
+            q = self.distance_metric(q)
         self.q_emb = q
 
         l_d_layer = []
         for field, f_in in zip(self.l_d_field, l_field_input):
             d_layer = self.emb_layer(f_in)
             if self.metric_learning:
-                d_layer = Activation('tanh')(self.distance_metric(d_layer))
+                d_layer = self.distance_metric(d_layer)
             l_d_layer.append(d_layer)
 
         # translation matrices
