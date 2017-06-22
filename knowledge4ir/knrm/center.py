@@ -52,7 +52,10 @@ class KNRMCenter(ModelBase):
         emb_mtx = np.load(self.embedding_npy_in)
         self.k_nrm.set_embedding(emb_mtx)
         self.ranker, self.learner = self.k_nrm.build()
-
+        logging.info('built ranking model:')
+        self.ranker.summary()
+        logging.info('pairwise training model:')
+        self.learner.summary()
         if self.io_format == 'raw':
             self.h_q_info = load_json_info(self.q_info_in, 'qid')
             self.h_doc_info = load_json_info(self.doc_info_in, 'docno')
