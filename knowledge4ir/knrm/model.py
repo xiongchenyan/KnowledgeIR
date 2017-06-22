@@ -26,6 +26,7 @@ from keras.layers import (
     Merge,
     LSTM,
 )
+from keras.activations import tanh, softmax
 from keras.models import (
     Sequential,
     Model
@@ -155,7 +156,8 @@ class KNRM(Configurable):
             input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
         )
         if self.metric_learning:
-            self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
+            self.distance_metric = Dense(50, input_dim=self.embedding_dim ,use_bias=False)
+                # DiagnalMetric(input_dim=self.embedding_dim)
 
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """

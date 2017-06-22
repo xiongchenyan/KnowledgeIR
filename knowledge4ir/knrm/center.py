@@ -90,7 +90,7 @@ class KNRMCenter(ModelBase):
             x,
             y,
             batch_size=batch_size,
-            nb_epoch=hyper_para.nb_epoch,
+            epochs=hyper_para.nb_epoch,
             callbacks=[EarlyStopping(monitor='loss',
                                      patience=hyper_para.early_stopping_patient
                                      )],
