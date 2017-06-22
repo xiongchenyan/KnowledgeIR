@@ -31,7 +31,7 @@ class DiagnalMetric(Layer):
         self.built = True
 
     def call(self, inputs, **kwargs):
-        output = inputs * K.clip(self.metric, -1, 1)
+        output = inputs * (K.clip(self.metric, -1, 1) + 1.1)
         return output
 
     def compute_output_shape(self, input_shape):
