@@ -38,10 +38,12 @@ def cos_model(emb_mtx):
         name="embedding",
         trainable=False,
     )
-    q = m(Input(shape=(None,), name='q'))
-    d = m(Input(shape=(None,), name='d'))
+    q_in = Input(shape=(None,), name='q')
+    d_in = Input(shape=(None,), name='d')
+    q = m(q_in)
+    d = m(d_in)
     cos = dot([q, d], axes=-1, normalize=True, name='translation_mtx')
-    model = Model(inputs=[q, d], outputs=cos)
+    model = Model(inputs=[q_in, d_in], outputs=cos)
     return model
 
 
