@@ -31,6 +31,7 @@ from keras.models import (
     Model
 )
 from knowledge4ir.knrm.kernel_pooling import KernelPooling
+from knowledge4ir.knrm.distance_metric import DiagnalMetric
 import numpy as np
 from traitlets.config import Configurable
 from traitlets import (
@@ -38,6 +39,7 @@ from traitlets import (
     Unicode,
     List,
     Float,
+    Bool,
 )
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
@@ -65,6 +67,8 @@ class KNRM(Configurable):
     """
     embedding_dim = Int(50, help='embedding dim').tag(config=True)
     vocab_size = Int(help='vocab size').tag(config=True)
+    metric_learning = Bool(False, help='whether to learn the distance metric upon embedding'
+                           ).tag(config=True)
     q_name = q_in_name
     d_name = d_in_name
     d_att_name = d_att_name
@@ -150,6 +154,8 @@ class KNRM(Configurable):
             use_bias=False,
             input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
         )
+        if self.metric_learning:
+            self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
 
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """
@@ -164,10 +170,15 @@ class KNRM(Configurable):
         if aux:
             pre = self.aux_pre
         q = self.emb_layer(q_input)
+        if self.metric_learning:
+            q = self.distance_metric(q)
         self.q_emb = q
+
         l_d_layer = []
         for field, f_in in zip(self.l_d_field, l_field_input):
             d_layer = self.emb_layer(f_in)
+            if self.metric_learning:
+                d_layer = self.distance_metric(d_layer)
             l_d_layer.append(d_layer)
 
         # translation matrices
