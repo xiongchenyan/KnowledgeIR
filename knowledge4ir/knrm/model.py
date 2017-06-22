@@ -184,7 +184,11 @@ class KNRM(Configurable):
             l_d_layer.append(d_layer)
 
         # translation matrices
-        l_cos_layer = [dot([q, d], axes=-1, normalize=True, name=pre + 'translation_mtx_' + name)
+        use_norm = True
+        if self.metric_learning:
+            use_norm = False
+
+        l_cos_layer = [dot([q, d], axes=-1, normalize=use_norm, name=pre + 'translation_mtx_' + name)
                        for d, name in zip(l_d_layer, self.l_d_field)]
 
         # kp results of each field
