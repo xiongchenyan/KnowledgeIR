@@ -47,7 +47,6 @@ def padding_2d(ll, max_len):
 
 def dynamic_load(trec, qrel, q_info, doc_info):
     if (type(trec) is str) | (type(trec) is unicode):
-        logging.info('loading ranking from [%s]', trec)
         l_q_rank = load_trec_ranking_with_score(trec)
     else:
         l_q_rank = trec
@@ -113,7 +112,7 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field)
     x['qid'] = np.array(l_qid)
     x['docno'] = np.array(l_docno)
-    logging.info('pointwise data constructed [%d] q, [%d] doc', len(l_q_in), len(l_label))
+    logging.info('pointwise data constructed [%d] q, [%d] doc', len(l_q_rank), len(l_label))
     return x, y
 
 
@@ -121,7 +120,6 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
     logging.info('start read pairwise')
     l_q_rank, h_qrel, h_q_info, h_doc_info = dynamic_load(
         trec_in, qrel_in, q_info_in, doc_info_in)
-    logging.debug('ranking: %s', json.dumps(l_q_rank))
     logging.info('input data loaded')
     l_label = []
     l_q_in = []
@@ -190,7 +188,7 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
         x = _add_aux(x, l_aux_ltr, ll_aux_doc_field)
     x['qid'] = np.array(l_qid)
     x['docno_pair'] = np.array(l_docno_pair)
-    logging.info('pairwise data constructed [%d] q, [%d] pair', len(l_q_in), len(l_label))
+    logging.info('pairwise data constructed [%d] q, [%d] pair', len(l_q_rank), len(l_label))
     return x, y
 
 
@@ -200,14 +198,14 @@ def _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field, l_q_att_in=None, ll_doc_a
     x[ltr_feature_name] = np.array(l_ltr)
     for p in xrange(len(TARGET_TEXT_FIELDS)):
         field = TARGET_TEXT_FIELDS[p]
-        x[d_in_name + field] = np.array(ll_doc_field[p])
+        x[d_in_name + '_' + field] = np.array(ll_doc_field[p])
     y = np.array(l_label)
 
     if l_q_att_in is not None:
         x[q_att_name] = np.array(l_q_att_in)
         for p in xrange(len(TARGET_TEXT_FIELDS)):
             field = TARGET_TEXT_FIELDS[p]
-            x[d_att_name + field] = np.array(ll_doc_att[p])
+            x[d_att_name + '_' + field] = np.array(ll_doc_att[p])
     return x, y
 
 
@@ -215,11 +213,11 @@ def _add_aux(x, l_aux_ltr, ll_aux_doc_field, ll_aux_doc_att=None):
     x[aux_pre + ltr_feature_name] = np.array(l_aux_ltr)
     for p in xrange(len(TARGET_TEXT_FIELDS)):
         field = TARGET_TEXT_FIELDS[p]
-        x[aux_pre + d_in_name + field] = np.array(ll_aux_doc_field[p])
+        x[aux_pre + d_in_name + '_' + field] = np.array(ll_aux_doc_field[p])
     if ll_aux_doc_att is not None:
         for p in xrange(len(TARGET_TEXT_FIELDS)):
             field = TARGET_TEXT_FIELDS[p]
-            x[aux_pre + d_att_name + field] = np.array(ll_aux_doc_att[p])
+            x[aux_pre + d_att_name + '_'+ field] = np.array(ll_aux_doc_att[p])
     return x
 
 
