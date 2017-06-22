@@ -39,21 +39,24 @@ class KNRMCenter(ModelBase):
     qrel_in = Unicode(help='qrel').tag(config=True)
     q_info_in = Unicode(help='q info tensor').tag(config=True)
     doc_info_in = Unicode(help='doc infor tensor').tag(config=True)
-    io_format = Unicode('raw', help='raw json or npy mtxs in a folder').tag(config=True)
+    io_format = Unicode('raw',
+                        help='raw json or npy mtxs in a folder, if npy then no meta data is needed'
+                        ).tag(config=True)
     embedding_npy_in = Unicode(help='np saved embedding with id aligned').tag(config=True)
     
     def __init__(self, **kwargs):
         super(KNRMCenter, self).__init__(**kwargs)
+
         self.k_nrm = KNRM(**kwargs)
         self.hyper_para = HyperParameter(**kwargs)
-
         emb_mtx = np.load(self.embedding_npy_in)
         self.k_nrm.set_embedding(emb_mtx)
-
         self.ranker, self.learner = self.k_nrm.build()
-        self.h_q_info = load_json_info(self.q_info_in, 'qid')
-        self.h_doc_info = load_json_info(self.doc_info_in, 'docno')
-        self.h_qrel = load_trec_labels_dict(self.qrel_in)
+
+        if self.io_format == 'raw':
+            self.h_q_info = load_json_info(self.q_info_in, 'qid')
+            self.h_doc_info = load_json_info(self.doc_info_in, 'docno')
+            self.h_qrel = load_trec_labels_dict(self.qrel_in)
 
     @classmethod
     def class_print_help(cls, inst=None):
