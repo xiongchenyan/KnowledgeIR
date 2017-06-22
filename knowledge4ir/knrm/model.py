@@ -109,7 +109,8 @@ class KNRM(Configurable):
             [self.d_name + '_' + field for field in self.l_d_field] +
             [self.aux_pre + self.d_name + '_' + field for field in self.l_d_field] +
             [self.d_att_name + '_' + field for field in self.l_d_field] +
-            [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field]
+            [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field] +
+            ['qid', 'docno', 'docno_pair']
         )
 
     def set_embedding(self, pretrained_emb):

@@ -110,7 +110,7 @@ class KNRMCenter(ModelBase):
             x, y = pairwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
         else:
             x, y = load_data(os.path.join(in_name, 'pairwise'),
-                             self.k_nrm.s_target_inputs, s_target_qid)
+                             None, s_target_qid)
         return x, y
 
     def test_data_reader(self, in_name, s_target_qid=None):
@@ -119,7 +119,7 @@ class KNRMCenter(ModelBase):
             x, y = pointwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
         else:
             x, y = load_data(os.path.join(in_name, 'pointwise'),
-                             self.k_nrm.s_target_inputs,
+                             None,
                              s_target_qid)
         return x, y
 
