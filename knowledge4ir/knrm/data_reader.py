@@ -288,7 +288,7 @@ if __name__ == '__main__':
         out_dir = Unicode(help='out_dir').tag(config=True)
         testing = Bool(False, help='testing').tag(config=True)
 
-    set_basic_log()
+    set_basic_log(logging.DEBUG)
 
     if 2 != len(sys.argv):
         print "convert raw json ts to pairwise and pointwise training data"
