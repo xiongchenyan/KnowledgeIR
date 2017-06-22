@@ -46,21 +46,20 @@ def padding_2d(ll, max_len):
 
 
 def dynamic_load(trec, qrel, q_info, doc_info):
-    if type(trec) == str:
+    if (type(trec) is str) | (type(trec) is unicode):
         logging.info('loading ranking from [%s]', trec)
         l_q_rank = load_trec_ranking_with_score(trec)
     else:
-        print type(trec)
         l_q_rank = trec
-    if type(qrel) == str:
+    if (type(qrel) is str) | (type(qrel) is unicode):
         h_qrel = load_trec_labels_dict(qrel)
     else:
         h_qrel = qrel
-    if type(q_info) == str:
+    if (type(q_info) is str) | (type(q_info) is unicode):
         h_q_info = load_json_info(q_info, 'qid')
     else:
         h_q_info = q_info
-    if type(doc_info) == str:
+    if (type(doc_info) is str) | (type(doc_info) is unicode):
         h_doc_info = load_json_info(doc_info, 'docno')
     else:
         h_doc_info = doc_info
