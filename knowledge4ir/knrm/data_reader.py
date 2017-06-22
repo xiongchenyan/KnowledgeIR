@@ -266,3 +266,51 @@ def filter_data(x, y, s_target_qid):
     return x, y
 
 
+if __name__ == '__main__':
+    from traitlets.config import Configurable
+    from traitlets import (
+        Unicode,
+        Bool,
+    )
+    import sys
+    from knowledge4ir.utils import (
+        load_py_config,
+        set_basic_log
+    )
+
+    class MainPara(Configurable):
+        qrel_in = Unicode(help='qrel').tag(config=True)
+        q_info_in = Unicode(help='q info tensor').tag(config=True)
+        doc_info_in = Unicode(help='doc infor tensor').tag(config=True)
+        trec_in = Unicode(help='candidate ranking').tag(config=True)
+        out_dir = Unicode(help='out_dir').tag(config=True)
+        testing = Bool(False, help='testing').tag(config=True)
+
+    set_basic_log()
+
+    if 2 != len(sys.argv):
+        print "convert raw json ts to pairwise and pointwise training data"
+        print "1 para, config:"
+        MainPara.class_print_help()
+        sys.exit(-1)
+
+    para = MainPara(config=load_py_config(sys.argv[1]))
+    s_qid = None
+    if para.testing:
+        s_qid = set(['%s' % i for i in range(1, 11)])  # testing
+    pair_x, pair_y = pairwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid)
+    logging.info('dumping pairwise x, y')
+    dump_data(pair_x, pair_y, os.path.join(para.out_dir, 'pairwise'))
+
+    point_x, point_y = pointwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid)
+    logging.info('dumping pointwise x, y')
+    dump_data(point_x, point_y, os.path.join(para.out_dir, 'pointwise'))
+
+    if para.testing:
+        logging.info('testing load and dump with filter')
+        x, y = load_data(os.path.join(para.out_dir, 'pairwise'), {'1'})
+        dump_data(x, y, os.path.join(para.out_dir, 'pairwise_test'))
+        x, y = load_data(os.path.join(para.out_dir, 'pointwise'), {'1'})
+        dump_data(x, y, os.path.join(para.out_dir, 'pointwise_test'))
+
+    logging.info('finished')
