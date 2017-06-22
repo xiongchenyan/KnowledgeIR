@@ -144,6 +144,8 @@ def pairwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_a
         q_att = h_q_info[q]['query']['att_mtx']
         for i in xrange(len(rank)):
             docno, doc_score = rank[i]
+            if docno not in h_doc_info:
+                continue
             doc_info = h_doc_info[docno]
             label = h_qrel.get(q, {}).get(docno, 0)
             if docno not in h_doc_info:
