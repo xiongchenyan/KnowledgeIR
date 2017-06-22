@@ -109,7 +109,8 @@ class KNRMCenter(ModelBase):
             l_q_rank = load_trec_ranking_with_score(in_name)
             x, y = pairwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
         else:
-            x, y = load_data(os.path.join(in_name, 'pairwise'), s_target_qid)
+            x, y = load_data(os.path.join(in_name, 'pairwise'),
+                             self.k_nrm.s_target_inputs, s_target_qid)
         return x, y
 
     def test_data_reader(self, in_name, s_target_qid=None):
@@ -117,7 +118,9 @@ class KNRMCenter(ModelBase):
             l_q_rank = load_trec_ranking_with_score(in_name)
             x, y = pointwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
         else:
-            x, y = load_data(os.path.join(in_name, 'pointwise'), s_target_qid)
+            x, y = load_data(os.path.join(in_name, 'pointwise'),
+                             self.k_nrm.s_target_inputs,
+                             s_target_qid)
         return x, y
 
     def generate_ranking(self, x, out_name):

@@ -230,7 +230,7 @@ def dump_data(x, y, out_dir):
     return
 
 
-def load_data(in_dir, s_target_qid=None):
+def load_data(in_dir, s_target_name=None, s_target_qid=None):
     x = dict()
     y = None
     for dirname, l_subdir, l_files in os.walk(in_dir):
@@ -238,6 +238,9 @@ def load_data(in_dir, s_target_qid=None):
             if not fname.endswith('.npy'):
                 continue
             key = fname.replace('.npy', '')
+            if s_target_name is not None:
+                if key not in s_target_name:
+                    continue
             logging.info('get [%s]', key)
             arr = np.load(os.path.join(dirname, fname))
             if key == 'y':

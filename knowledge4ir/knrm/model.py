@@ -83,6 +83,8 @@ class KNRM(Configurable):
     # q_len = Int(5, help='maximum q entity length')
     # l_d_field_len = List(Int, default_value=[10, 500],
     #                      help='max len of each field').tag(config=True)
+
+
     mu = List(Float,
               default_value=[1, 0.9, 0.7, 0.5, 0.3, 0.1, -0.1, -0.3, -0.5, -0.7, -0.9],
               help='mu of kernel pooling'
@@ -102,6 +104,13 @@ class KNRM(Configurable):
         self.ranking_layer = None
         self.ranker = None
         self.trainer = None
+        self.s_target_inputs = set(
+            [self.q_name, self.q_att_name, self.ltr_feature_name, 'y'] +
+            [self.d_name + '_' + field for field in self.l_d_field] +
+            [self.aux_pre + self.d_name + '_' + field for field in self.l_d_field] +
+            [self.d_att_name + '_' + field for field in self.l_d_field] +
+            [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field]
+        )
 
     def set_embedding(self, pretrained_emb):
         self.emb = pretrained_emb
