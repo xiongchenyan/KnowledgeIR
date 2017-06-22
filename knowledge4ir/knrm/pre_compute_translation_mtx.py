@@ -79,6 +79,8 @@ def compute_translation_mtx(in_dir, calc_cos_model, aux=False):
 
 if __name__ == '__main__':
     import sys
+    from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if 3 != len(sys.argv):
         print "pre compute translation matrix"
         print "2 para: the processed npy data folder + embeding npy"
