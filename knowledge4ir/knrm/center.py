@@ -78,7 +78,9 @@ class KNRMCenter(ModelBase):
         if not hyper_para:
             hyper_para = self.hyper_para
         logging.info('training with para: %s', hyper_para.pretty_print())
-        batch_size = y.shape[0]
+        batch_size = hyper_para.batch_size
+        if -1 == batch_size:
+            batch_size = y.shape[0]
         self.learner.compile(
             hyper_para.opt,
             hyper_para.loss,
