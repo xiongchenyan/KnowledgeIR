@@ -53,7 +53,7 @@ def batch_cos(q_batch, d_batch):
 
 
 def compute_translation_mtx(in_dir, calc_cos_model, aux=False):
-    q = np.load('q.npy')
+    q = np.load(os.path.join(in_dir, 'q.npy'))
     logging.info('q shape %s', json.dumps(q.shape))
 
     l_name = ['d_title.npy', 'd_bodyText.npy']
