@@ -38,7 +38,11 @@ def padding(boe, max_len):
 
 
 def padding_2d(ll, max_len):
-    n = len(ll[0])
+    if not ll:
+        logging.warn('no attention matrix')
+        n = 9
+    else:
+        n = len(ll[0])
     while len(ll) < max_len:
         ll.append([0] * n)
     return ll[:max_len]
