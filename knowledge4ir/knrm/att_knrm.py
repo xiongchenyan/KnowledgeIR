@@ -7,7 +7,7 @@ from keras.engine import Model
 from keras.layers import Dense, concatenate, Reshape, multiply
 from keras.legacy.layers import Merge
 from keras.models import Sequential
-from traitlets import Bool, Int
+from traitlets import Bool, Int, Unicode
 
 from knowledge4ir.knrm.distance_metric import DiagnalMetric
 from knowledge4ir.knrm.kernel_pooling import KernelPooling, KpLogSum
@@ -28,6 +28,11 @@ class AttKNRM(KNRM):
     translation_mtx_in = 'translation_mtx'
     with_attention = Bool(False, help='whether to use attention').tag(config=True)
     att_dim = Int(7, help='attention feature dimension').tag(config=True)
+
+    # overide not in use configs
+    embedding_dim = Int()
+    vocab_size = Int()
+    metric_learning = Unicode()
 
     def __init__(self, **kwargs):
         super(AttKNRM, self).__init__(**kwargs)
@@ -211,14 +216,14 @@ class AttKNRM(KNRM):
 if __name__ == '__main__':
     """
     unit testing
-    0) compile and check the model parameters
-    1) whether the translation matrices are correct
-    2) whether the kernel pooling is right
-    3) whether kp_logsum is correct
+    0) compile and check the model parameters: pass
+    1) whether the translation matrices are correct: pass
+    2) whether the kernel pooling is right: pass
+    3) whether kp_logsum is correct: pass
     4) whether the attention works
     """
     import numpy as np
-
+    # 0)
     att_knrm = AttKNRM()
     att_knrm.build()
     att_knrm.ranker.summary()
@@ -229,11 +234,13 @@ if __name__ == '__main__':
         [0.5, 0, 0, 0, 1]
     ]]
 
+    # 1)
     # trans_mtx = (np.array(range(10)) / 10.0).reshape((1, 2, 5))
     trans_mtx = np.array(ll)
     print trans_mtx
     tr_in = att_knrm.l_field_translation
 
+    # 2)
     kp = Model(inputs=att_knrm.l_field_translation[0],
                outputs=att_knrm.l_d_layer[0])
     kp_res = kp.predict(trans_mtx)
@@ -241,9 +248,11 @@ if __name__ == '__main__':
     print kp_res.shape
     print kp_res
 
+    # 3)
     kp = Model(inputs=att_knrm.l_field_translation[0],
                outputs=att_knrm.kp_logsum(att_knrm.l_d_layer[0]))
     kp_res = kp.predict(trans_mtx)
     print 'log summed kernel features'
     print kp_res.shape
     print kp_res
+
