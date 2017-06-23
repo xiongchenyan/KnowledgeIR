@@ -235,7 +235,6 @@ if __name__ == '__main__':
     print kp_res.shape
     print kp_res
 
-    att_knrm.kp_logsum()
     kp = Model(inputs=att_knrm.l_field_translation[0],
                outputs=att_knrm.kp_logsum(att_knrm.l_d_layer[0]))
     kp_res = kp.predict(trans_mtx)
