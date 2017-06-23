@@ -31,7 +31,10 @@ from keras.models import (
     Sequential,
     Model
 )
-from knowledge4ir.knrm.kernel_pooling import KernelPooling
+from knowledge4ir.knrm.kernel_pooling import (
+    KernelPooling,
+    KpLogSum,
+)
 from knowledge4ir.knrm.distance_metric import DiagnalMetric
 import numpy as np
 from traitlets.config import Configurable
@@ -270,8 +273,131 @@ class AttKNRM(KNRM):
         alone corresponding dimension (q:1, d:2)
     attention mechanism is a dense layer with input features for now (06/22/2017)
     """
+    translation_mtx_in = 'translation_mtx'
+    with_attention = Bool(False, help='whether to use attention').tag(config=True)
 
+    def __init__(self, **kwargs):
+        super(AttKNRM, self).__init__(**kwargs)
+        self.s_target_inputs = set(
+            [self.q_att_name, self.ltr_feature_name, 'y'] +
+            [self.translation_mtx_in + '_' + self.d_name + '_' + field for field in self.l_d_field] +
+            [self.aux_pre + self.translation_mtx_in + '_' + self.d_name + '_' + field for field in self.l_d_field] +
+            [self.d_att_name + '_' + field for field in self.l_d_field] +
+            [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field] +
+            ['qid', 'docno', 'docno_pair']
+        )
 
+    def set_embedding(self, pretrained_emb):
+        pass
+
+    def _init_inputs(self):
+        l_field_translation = self._init_translation_input()
+        l_aux_field_translation = self._init_translation_input(aux=True)
+
+        ltr_input, aux_ltr_input = None, None
+        if self.ltr_feature_dim > 0:
+            ltr_input = Input(shape=(self.ltr_feature_dim,),
+                              name=self.ltr_feature_name)
+            aux_ltr_input = Input(shape=(self.ltr_feature_dim,),
+                                  name=self.aux_pre + self.ltr_feature_name)
+
+        return l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input
+
+    def _init_translation_input(self, aux=False):
+        pre = ""
+        if aux:
+            pre = self.aux_pre
+        l_field_translation = []
+        for field in self.l_d_field:
+            l_field_translation.append(
+                Input(shape=(None,),
+                      name=pre + self.translation_mtx_in + '_' + self.d_name + '_' + field,
+                      dtype='int32')
+            )
+        return l_field_translation
+
+    def _init_att_input(self, aux=False):
+        yield NotImplementedError
+
+    def _init_layers(self):
+        to_train = False
+        # if self.metric_learning:
+        #     to_train = True
+        self.kernel_pool = KernelPooling(np.array(self.mu), np.array(self.sigma), use_raw=True, name='kp')
+        self.kp_logsum = KpLogSum()
+        self.ltr_layer = Dense(
+            1,
+            name='letor',
+            use_bias=False,
+            input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
+        )
+        if self.metric_learning == 'diag':
+            self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
+        if self.metric_learning == 'dense':
+            self.distance_metric = Dense(50, input_dim=self.embedding_dim, use_bias=False)
+
+    def _init_translation_ranker(self, l_field_translate, ltr_input=None, aux=False):
+        """
+        construct ranker for given inputs
+        :param q_input:
+        :param l_field_translate: translaiton matrices
+        :param ltr_input: if use ltr features to combine
+        :param aux:
+        :return:
+        """
+        pre = ""
+        if aux:
+            pre = self.aux_pre
+
+        # perform kernel pooling (TODO with attention)
+        l_kp_features = []
+        for field, f_in in zip(self.l_d_field, l_field_translate):
+            d_layer = self.kernel_pool(f_in)
+            # TODO add attention here
+            d_layer = self.kp_logsum(d_layer, name=pre + 'kp' + field)
+            l_kp_features.append(d_layer)
+
+        # put features to one vector
+        if len(l_kp_features) > 1:
+            ranking_features = concatenate(l_kp_features, name=pre + 'ranking_features')
+        else:
+            ranking_features = l_kp_features[0]
+
+        if ltr_input:
+            ranking_features = concatenate([ranking_features, ltr_input],
+                                           name=pre + 'ranking_features_with_ltr')
+
+        ranking_layer = self.ltr_layer(ranking_features)
+        l_full_inputs = l_field_translate
+        if ltr_input:
+            l_full_inputs.append(ltr_input)
+        ranker = Model(inputs=l_full_inputs,
+                       outputs=ranking_layer,
+                       name=pre + 'ranker')
+
+        return ranker
+
+    def construct_model_via_translation(self, l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input):
+        ranker = self._init_translation_ranker(l_field_translation, ltr_input)
+        aux_ranker = self._init_translation_ranker(l_aux_field_translation, aux_ltr_input, True)
+        trainer = Sequential()
+        trainer.add(
+            Merge([ranker, aux_ranker],
+                  mode=lambda x: x[0] - x[1],
+                  output_shape=(1,),
+                  name='training_pairwise'
+                  )
+        )
+        return ranker, trainer
+
+    def build(self):
+        assert self.emb is not None
+        l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input = self._init_inputs()
+        self._init_layers()
+        self.ranker, self.trainer = self.construct_model_via_translation(
+            l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input
+        )
+        return self.ranker, self.trainer
 
 
 
