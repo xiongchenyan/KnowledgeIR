@@ -134,6 +134,7 @@ class AttKNRM(KNRM):
             pre = self.aux_pre
         q_att = None
         l_field_att = []
+        self.l_d_layers = []  # for unit test
         if self.with_attention:
             q_att = self.q_att(q_att_input)
             l_field_att = [self.l_field_att[p](l_field_att_input[p]) for p in xrange(len(self.l_field_att))]
@@ -151,6 +152,8 @@ class AttKNRM(KNRM):
                 d_layer = multiply([d_layer, q_att])
                 l_field_att[p] = Reshape(target_shape=(1, -1, 1))(l_field_att[p])
                 d_layer = multiply([d_layer, l_field_att[p]])
+            if not aux:
+                self.l_d_layers.append(d_layer)
             d_layer = self.kp_logsum(d_layer, name=pre + 'kp' + field)
             l_kp_features.append(d_layer)
 
@@ -190,9 +193,36 @@ class AttKNRM(KNRM):
     def build(self):
         assert self.emb is not None
         l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input = self._init_inputs()
+        self.l_field_translation = l_field_translation
         self._init_layers()
         self.ranker, self.trainer = self.construct_model_via_translation(
             l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input
         )
         return self.ranker, self.trainer
+
+
+if __name__ == '__main__':
+    """
+    unit testing
+    0) compile and check the model parameters
+    1) whether the translation matrices are correct
+    2) whether the kernel pooling is right
+    3) whether kp_logsum is correct
+    4) whether the attention works
+    """
+    import numpy as np
+
+    att_knrm = AttKNRM()
+    att_knrm.build()
+    att_knrm.ranker.summary()
+    att_knrm.trainer.summary()
+
+    trans_mtx = (np.array(range(10)) / 10).reshape((1, 2, 5))
+    print trans_mtx
+    tr_in = att_knrm.l_field_translation
+
+    kp = Model(inputs=att_knrm.l_field_translation[0],
+               outputs=att_knrm.l_d_layer[0])
+    kp_res = kp.predict(trans_mtx)
+    print kp_res
 
