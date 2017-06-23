@@ -134,7 +134,8 @@ class AttKNRM(KNRM):
         pre = ""
         if aux:
             pre = self.aux_pre
-
+        q_att = None
+        l_field_att = []
         if self.with_attention:
             if not aux:
                 self.l_q_att_in = q_att_input
@@ -178,7 +179,7 @@ class AttKNRM(KNRM):
         ranking_layer = self.ltr_layer(ranking_features)
         l_full_inputs = l_field_translate
         if self.with_attention:
-            l_full_inputs.append(q_att)
+            l_full_inputs.append(q_att_input)
             l_full_inputs.extend(l_field_att_input)
         if ltr_input:
             l_full_inputs.append(ltr_input)
