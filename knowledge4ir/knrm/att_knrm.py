@@ -4,7 +4,7 @@ knrm with attention
 import numpy as np
 from keras import Input
 from keras.engine import Model
-from keras.layers import Dense, concatenate, Reshape, multiply
+from keras.layers import Dense, concatenate, Reshape, multiply, Conv1D
 from keras.legacy.layers import Merge
 from keras.models import Sequential
 from traitlets import Bool, Int, Unicode
@@ -108,14 +108,21 @@ class AttKNRM(KNRM):
             input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
         )
         if self.with_attention:
-            self.q_att = Dense(1, use_bias=False,
-                               input_dim=self.att_dim,
-                               name='dense_q_att')
+            self.q_att = Conv1D(
+                nb_filter=1,
+                filter_length=1,
+                bias=False,
+                input_dim=self.att_dim,
+                name='dense_q_att'
+            )
             self.l_field_att = [
-                Dense(1, use_bias=False,
-                      input_dim=self.att_dim,
-                      name='dense_d_%s_att' % field
-                      )
+                Conv1D(
+                    nb_filter=1,
+                    filter_length=1,
+                    bias=False,
+                    input_dim=self.att_dim,
+                    name='dense_d_%s_att' % field
+                    )
                 for field in self.l_d_field
                 ]
 
@@ -140,8 +147,11 @@ class AttKNRM(KNRM):
             if not aux:
                 self.l_q_att_in = q_att_input
                 self.l_field_att_in = l_field_att_input
-            q_att = self.q_att(q_att_input)
-            l_field_att = [self.l_field_att[p](l_field_att_input[p]) for p in xrange(len(self.l_field_att))]
+            q_att = Reshape(target_shape=(-1, 1, 1))(self.q_att(q_att_input))
+            l_field_att = [
+                Reshape(target_shape=(1, -1, 1))(self.l_field_att[p](l_field_att_input[p]))
+                for p in xrange(len(self.l_field_att))
+                ]
 
         # perform kernel pooling
         l_kp_features = []
@@ -153,9 +163,9 @@ class AttKNRM(KNRM):
             if self.with_attention:
                 # need custom multiple layer to do * along target axes
                 # use broadcast reshape attention to targeted dimensions, and then use multiply
-                q_att = Reshape(target_shape=(-1, 1, 1))(q_att)
+                # q_att = Reshape(target_shape=(-1, 1, 1))(q_att)
                 d_layer = multiply([d_layer, q_att])
-                l_field_att[p] = Reshape(target_shape=(1, -1, 1))(l_field_att[p])
+                # l_field_att[p] = Reshape(target_shape=(1, -1, 1))(l_field_att[p])
                 d_layer = multiply([d_layer, l_field_att[p]])
             if not aux:
                 self.l_d_layer.append(d_layer)
