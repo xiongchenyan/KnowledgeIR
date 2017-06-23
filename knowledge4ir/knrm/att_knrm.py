@@ -12,6 +12,7 @@ from traitlets import Bool, Int, Unicode
 from knowledge4ir.knrm.distance_metric import DiagnalMetric
 from knowledge4ir.knrm.kernel_pooling import KernelPooling, KpLogSum
 from knowledge4ir.knrm.model import KNRM
+from knowledge4ir.knrm import q_len, l_field_len
 import logging
 
 
@@ -46,6 +47,8 @@ class AttKNRM(KNRM):
             l_att_names = [self.aux_pre + name for name in l_att_names]
             self.s_target_inputs |= set([self.q_att_name] + l_att_names)
         self.l_d_layer = []
+        self.q_len = q_len
+        self.l_field_len = l_field_len
 
     def set_embedding(self, pretrained_emb):
         logging.warn('att knrm does not use embedding')
@@ -80,8 +83,10 @@ class AttKNRM(KNRM):
         if aux:
             pre = self.aux_pre
         else:
-            q_att_input = Input(shape=(None, self.att_dim,), name=self.q_att_name)
-        l_field_att_input = [Input(shape=(None, self.att_dim,), name=pre + self.d_att_name + '_' + field) for field in self.l_d_field]
+            q_att_input = Input(shape=(self.q_len, self.att_dim,), name=self.q_att_name)
+        l_field_att_input = [Input(shape=(f_len, self.att_dim,), name=pre + self.d_att_name + '_' + field)
+                             for field, f_len in zip(self.l_d_field, self.l_field_len)
+                             ]
         return q_att_input, l_field_att_input
 
     def _init_translation_input(self, aux=False):
@@ -112,18 +117,18 @@ class AttKNRM(KNRM):
                 nb_filter=1,
                 filter_length=1,
                 bias=False,
-                input_dim=self.att_dim,
+                input_shape=(self.q_len, self.att_dim),
                 name='dense_q_att'
             )
             self.l_field_att = [
                 Conv1D(
-                    nb_filter=1,
-                    filter_length=1,
+                    filters=1,
+                    kernel_size=1,
                     bias=False,
-                    input_dim=self.att_dim,
+                    input_shape=(f_len, self.att_dim),
                     name='dense_d_%s_att' % field
                     )
-                for field in self.l_d_field
+                for field, f_len in zip(self.l_d_field, self.l_field_len)
                 ]
 
     def _init_translation_ranker(self, l_field_translate, ltr_input=None,
