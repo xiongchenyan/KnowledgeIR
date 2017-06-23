@@ -224,7 +224,13 @@ if __name__ == '__main__':
     att_knrm.ranker.summary()
     att_knrm.trainer.summary()
 
-    trans_mtx = (np.array(range(10)) / 10.0).reshape((1, 2, 5))
+    ll = [[
+        [1, 0.5, 0.9, 0, 0.3],
+        [0.5, 0, 0, 0, 1]
+    ]]
+
+    # trans_mtx = (np.array(range(10)) / 10.0).reshape((1, 2, 5))
+    trans_mtx = np.array(ll)
     print trans_mtx
     tr_in = att_knrm.l_field_translation
 
