@@ -82,7 +82,7 @@ class AttKNRM(KNRM):
         l_field_translation = []
         for field in self.l_d_field:
             l_field_translation.append(
-                Input(shape=(None,),
+                Input(shape=(None, None,),
                       name=pre + self.translation_mtx_in + '_' + self.d_name + '_' + field,
                       dtype='int32')
             )
