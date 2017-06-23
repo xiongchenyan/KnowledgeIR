@@ -74,7 +74,6 @@ class KpLogSum(Layer):
         :param kwargs:
         """
         super(KpLogSum, self).__init__(**kwargs)
-        self.test=True
 
     def compute_output_shape(self, input_shape):
         return input_shape[0], input_shape[-1]
