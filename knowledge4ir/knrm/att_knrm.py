@@ -93,7 +93,7 @@ class AttKNRM(KNRM):
         # if self.metric_learning:
         #     to_train = True
         self.kernel_pool = KernelPooling(np.array(self.mu), np.array(self.sigma), use_raw=True, name='kp')
-        self.kp_logsum = KpLogSum()
+        self.kp_logsum = KpLogSum(name='kp_logsum')
         self.ltr_layer = Dense(
             1,
             name='letor',
@@ -153,7 +153,7 @@ class AttKNRM(KNRM):
                 d_layer = multiply([d_layer, l_field_att[p]])
             if not aux:
                 self.l_d_layers.append(d_layer)
-            d_layer = self.kp_logsum(d_layer, name=pre + 'kp' + field)
+            d_layer = self.kp_logsum(d_layer)
             l_kp_features.append(d_layer)
 
         # put features to one vector
