@@ -66,6 +66,36 @@ class KernelPooling(Layer):
         return k_pool
 
 
+class KpLogSum(Layer):
+    """
+    the log sum layer for kp
+    """
+    def __init__(self, **kwargs):
+        """
+        :param kwargs:
+        """
+        super(KpLogSum, self).__init__(**kwargs)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape[0], self.input_shape[-1]
+
+    def call(self, inputs, **kwargs):
+        """
+        :param inputs: a batch of kernel score tensors, first dim is batch, 2 and 3 forms the q-d translation matrix,
+        4 is the kernel dimension
+        :return: log sum results
+        """
+
+        # sum up the document dimension
+        # from batch, q, doc, kernel to batch, q, kernel
+        k_pool = K.sum(inputs, 2)
+        # log sum along the q axis
+        # from batch, q, k to batch, k
+        kde = K.log(K.maximum(k_pool, 1e-10))
+        k_pool = K.sum(kde, 1)
+        return k_pool
+
+
 if __name__ == '__main__':
     x = np.array([[[1, 1, 1], [0, 1, 2]], [[2, 2, 2], [0, 2, 4]]])
     from keras.models import Sequential
@@ -76,7 +106,8 @@ if __name__ == '__main__':
     m.add(
         KernelPooling(
             mu, sigma,
-            input_shape=(2, None)
+            input_shape=(2, None),
+            use_raw=True,
         )
     )
     y = m.predict(x)
