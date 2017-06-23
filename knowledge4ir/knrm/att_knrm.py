@@ -89,10 +89,8 @@ class AttKNRM(KNRM):
         return l_field_translation
 
     def _init_layers(self):
-        to_train = False
-        # if self.metric_learning:
-        #     to_train = True
-        self.kernel_pool = KernelPooling(np.array(self.mu), np.array(self.sigma), use_raw=True, name='kp')
+        self.kernel_pool = KernelPooling(
+            self.mu, self.sigma, use_raw=True, name='kp')
         self.kp_logsum = KpLogSum(name='kp_logsum')
         self.ltr_layer = Dense(
             1,
@@ -100,10 +98,6 @@ class AttKNRM(KNRM):
             use_bias=False,
             input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
         )
-        if self.metric_learning == 'diag':
-            self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
-        if self.metric_learning == 'dense':
-            self.distance_metric = Dense(50, input_dim=self.embedding_dim, use_bias=False)
         if self.with_attention:
             self.q_att = Dense(1, use_bias=False,
                                input_dim=self.att_dim,
@@ -131,16 +125,16 @@ class AttKNRM(KNRM):
         pre = ""
         if aux:
             pre = self.aux_pre
-        q_att = None
-        l_field_att = []
         self.l_d_layers = []  # for unit test
+
         if self.with_attention:
             q_att = self.q_att(q_att_input)
             l_field_att = [self.l_field_att[p](l_field_att_input[p]) for p in xrange(len(self.l_field_att))]
-        # perform kernel pooling (TODO test)
+
+        # perform kernel pooling
         l_kp_features = []
         for p in xrange(len(self.l_d_field)):
-            field = self.l_d_field[p]
+            # field = self.l_d_field[p]
             f_in = l_field_translate[p]
             d_layer = self.kernel_pool(f_in)
             # TODO test
@@ -161,6 +155,10 @@ class AttKNRM(KNRM):
             ranking_features = concatenate(l_kp_features, name=pre + 'ranking_features')
         else:
             ranking_features = l_kp_features[0]
+
+        # test
+        test_model = Model(inputs=l_field_translate, outputs=ranking_features)
+        test_model.summary()
 
         if ltr_input:
             ranking_features = concatenate([ranking_features, ltr_input],
