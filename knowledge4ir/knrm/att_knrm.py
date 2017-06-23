@@ -39,6 +39,7 @@ class AttKNRM(KNRM):
             [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field] +
             ['qid', 'docno', 'docno_pair']
         )
+        self.l_d_layer = []
 
     def set_embedding(self, pretrained_emb):
         logging.warn('att knrm does not use embedding')
@@ -125,7 +126,6 @@ class AttKNRM(KNRM):
         pre = ""
         if aux:
             pre = self.aux_pre
-        self.l_d_layers = []  # for unit test
 
         if self.with_attention:
             q_att = self.q_att(q_att_input)
@@ -146,7 +146,7 @@ class AttKNRM(KNRM):
                 l_field_att[p] = Reshape(target_shape=(1, -1, 1))(l_field_att[p])
                 d_layer = multiply([d_layer, l_field_att[p]])
             if not aux:
-                self.l_d_layers.append(d_layer)
+                self.l_d_layer.append(d_layer)
             d_layer = self.kp_logsum(d_layer)
             l_kp_features.append(d_layer)
 
@@ -156,9 +156,9 @@ class AttKNRM(KNRM):
         else:
             ranking_features = l_kp_features[0]
 
-        # test
-        test_model = Model(inputs=l_field_translate, outputs=ranking_features)
-        test_model.summary()
+        # # test
+        # test_model = Model(inputs=l_field_translate, outputs=ranking_features)
+        # test_model.summary()
 
         if ltr_input:
             ranking_features = concatenate([ranking_features, ltr_input],
@@ -224,7 +224,7 @@ if __name__ == '__main__':
     att_knrm.ranker.summary()
     att_knrm.trainer.summary()
 
-    trans_mtx = (np.array(range(10)) / 10).reshape((1, 2, 5))
+    trans_mtx = (np.array(range(10)) / 10.0).reshape((1, 2, 5))
     print trans_mtx
     tr_in = att_knrm.l_field_translation
 
