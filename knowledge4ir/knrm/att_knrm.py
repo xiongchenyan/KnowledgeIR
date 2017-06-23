@@ -121,7 +121,6 @@ class AttKNRM(KNRM):
                                  aux=False):
         """
         construct ranker for given inputs
-        :param q_input:
         :param l_field_translate: translaiton matrices
         :param ltr_input: if use ltr features to combine
         :param q_att_input: q attention input
@@ -177,9 +176,16 @@ class AttKNRM(KNRM):
 
         return ranker
 
-    def construct_model_via_translation(self, l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input):
-        ranker = self._init_translation_ranker(l_field_translation, ltr_input)
-        aux_ranker = self._init_translation_ranker(l_aux_field_translation, aux_ltr_input, True)
+    def construct_model_via_translation(
+            self, l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input,
+            q_att_input, l_field_att_input, l_aux_field_att_input
+    ):
+        ranker = self._init_translation_ranker(l_field_translation, ltr_input,
+                                               q_att_input, l_field_att_input
+                                               )
+        aux_ranker = self._init_translation_ranker(l_aux_field_translation, aux_ltr_input,
+                                                   q_att_input, l_aux_field_att_input,
+                                                   True)
         trainer = Sequential()
         trainer.add(
             Merge([ranker, aux_ranker],
@@ -191,11 +197,15 @@ class AttKNRM(KNRM):
         return ranker, trainer
 
     def build(self):
-        l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input = self._init_inputs()
-        self.l_field_translation = l_field_translation
+        l_inputs = self._init_inputs()
+        self.l_field_translation = l_inputs[0]
+        l_field_translation, l_aux_field_translation = l_inputs[:2]
+        ltr_input, aux_ltr_input = l_inputs[2:4]
+        q_att_input, l_field_att_input, l_aux_field_att_input = l_inputs[4:]
         self._init_layers()
         self.ranker, self.trainer = self.construct_model_via_translation(
-            l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input
+            l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input,
+            q_att_input, l_field_att_input, l_aux_field_att_input
         )
         return self.ranker, self.trainer
 
