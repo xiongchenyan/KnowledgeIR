@@ -91,7 +91,7 @@ class AttKNRM(KNRM):
             l_field_translation.append(
                 Input(shape=(None, None,),
                       name=pre + self.translation_mtx_in + '_' + self.d_name + '_' + field,
-                      dtype='int32')
+                      dtype='float32')
             )
         return l_field_translation
 
