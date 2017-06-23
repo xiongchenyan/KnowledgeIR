@@ -13,7 +13,6 @@ from knowledge4ir.knrm.model import KNRM
 from knowledge4ir.knrm.data_reader import (
     pairwise_reader,
     pointwise_reader,
-    dynamic_load,
     load_data,
 )
 import json
