@@ -191,7 +191,6 @@ class AttKNRM(KNRM):
         return ranker, trainer
 
     def build(self):
-        assert self.emb is not None
         l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input = self._init_inputs()
         self.l_field_translation = l_field_translation
         self._init_layers()
