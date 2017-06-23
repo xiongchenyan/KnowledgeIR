@@ -80,8 +80,8 @@ class AttKNRM(KNRM):
         if aux:
             pre = self.aux_pre
         else:
-            q_att_input = Input(shape=(self.att_dim,), name=self.q_att_name)
-        l_field_att_input = [Input(shape=(self.att_dim,), name=pre + self.d_att_name + '_' + field) for field in self.l_d_field]
+            q_att_input = Input(shape=(None, self.att_dim,), name=self.q_att_name)
+        l_field_att_input = [Input(shape=(None, self.att_dim,), name=pre + self.d_att_name + '_' + field) for field in self.l_d_field]
         return q_att_input, l_field_att_input
 
     def _init_translation_input(self, aux=False):
