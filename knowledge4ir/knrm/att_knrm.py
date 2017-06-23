@@ -76,9 +76,11 @@ class AttKNRM(KNRM):
 
     def _init_att_input(self, aux=False):
         pre = ""
+        q_att_input = None
         if aux:
             pre = self.aux_pre
-        q_att_input = Input(shape=(self.att_dim,), name=pre + self.q_att_name)
+        else:
+            q_att_input = Input(shape=(self.att_dim,), name=self.q_att_name)
         l_field_att_input = [Input(shape=(self.att_dim,), name=pre + self.d_att_name + '_' + field) for field in self.l_d_field]
         return q_att_input, l_field_att_input
 
@@ -108,11 +110,11 @@ class AttKNRM(KNRM):
         if self.with_attention:
             self.q_att = Dense(1, use_bias=False,
                                input_dim=self.att_dim,
-                               name='q_att')
+                               name='dense_q_att')
             self.l_field_att = [
                 Dense(1, use_bias=False,
                       input_dim=self.att_dim,
-                      name='d_%s_att' % field
+                      name='dense_d_%s_att' % field
                       )
                 for field in self.l_d_field
                 ]
