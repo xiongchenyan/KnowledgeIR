@@ -276,6 +276,8 @@ if __name__ == '__main__':
     print 'raw kernel scores with attention'
     print kp_res.shape
     print kp_res
+    print 'first kernel scores'
+    print kp_res[0, :, :, 0]
 
     # 3)
     kp = Model(inputs=[att_knrm.l_field_translation[0],
