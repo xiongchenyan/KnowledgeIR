@@ -139,7 +139,7 @@ class AttKNRM(KNRM):
             l_field_att = [self.l_field_att[p](l_field_att_input[p]) for p in xrange(len(self.l_field_att))]
         # perform kernel pooling (TODO test)
         l_kp_features = []
-        for p in xrange(self.l_d_field):
+        for p in xrange(len(self.l_d_field)):
             field = self.l_d_field[p]
             f_in = l_field_translate[p]
             d_layer = self.kernel_pool(f_in)
