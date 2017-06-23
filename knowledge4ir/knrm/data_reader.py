@@ -32,6 +32,7 @@ import os
 
 att_dim = 7
 
+
 def padding(boe, max_len):
     while len(boe) < max_len:
         boe.append(0)
