@@ -36,14 +36,15 @@ class AttKNRM(KNRM):
 
     def __init__(self, **kwargs):
         super(AttKNRM, self).__init__(**kwargs)
+        l_in_names = [self.ltr_feature_name] + [self.translation_mtx_in + '_' + self.d_name + '_' + field for field in self.l_d_field]
+        l_in_names += [self.aux_pre + name for name in l_in_names]
         self.s_target_inputs = set(
-            [self.q_att_name, self.ltr_feature_name, 'y'] +
-            [self.translation_mtx_in + '_' + self.d_name + '_' + field for field in self.l_d_field] +
-            [self.aux_pre + self.translation_mtx_in + '_' + self.d_name + '_' + field for field in self.l_d_field] +
-            [self.d_att_name + '_' + field for field in self.l_d_field] +
-            [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field] +
-            ['qid', 'docno', 'docno_pair']
+            l_in_names + ['qid', 'docno', 'docno_pair', 'y']
         )
+        if self.with_attention:
+            l_att_names = [self.d_att_name + '_' + field for field in self.l_d_field]
+            l_att_names = [self.aux_pre + name for name in l_att_names]
+            self.s_target_inputs |= set([self.q_att_name] + l_att_names)
         self.l_d_layer = []
 
     def set_embedding(self, pretrained_emb):

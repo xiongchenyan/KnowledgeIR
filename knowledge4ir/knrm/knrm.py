@@ -30,6 +30,7 @@ from traitlets import (
     Unicode,
     List,
     Float,
+    Bool
 )
 from traitlets.config import Configurable
 
@@ -73,14 +74,13 @@ class KNRM(Configurable):
     q_att_name = q_att_name
     ltr_feature_name = ltr_feature_name
     aux_pre = aux_pre
-
+    with_attention = Bool(False).tag(config=True)
     ltr_feature_dim = Int(1, help='ltr feature dimension, if 0 then no feature').tag(config=True)
     l_d_field = List(Unicode, default_value=TARGET_TEXT_FIELDS,
                      help='fields in the documents').tag(config=True)
     # q_len = Int(5, help='maximum q entity length')
     # l_d_field_len = List(Int, default_value=[10, 500],
     #                      help='max len of each field').tag(config=True)
-
 
     mu = List(Float,
               default_value=[1, 0.9, 0.7, 0.5, 0.3, 0.1, -0.1, -0.3, -0.5, -0.7, -0.9],
@@ -102,12 +102,12 @@ class KNRM(Configurable):
         self.ranker = None
         self.trainer = None
         self.s_target_inputs = set(
-            [self.q_name, self.q_att_name, self.ltr_feature_name, 'y'] +
+            [self.q_name, self.q_att_name, self.ltr_feature_name, self.aux_pre + self.ltr_feature_name] +
             [self.d_name + '_' + field for field in self.l_d_field] +
             [self.aux_pre + self.d_name + '_' + field for field in self.l_d_field] +
             [self.d_att_name + '_' + field for field in self.l_d_field] +
             [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field] +
-            ['qid', 'docno', 'docno_pair']
+            ['qid', 'docno', 'docno_pair', 'y']
         )
 
     def set_embedding(self, pretrained_emb):
