@@ -279,10 +279,10 @@ if __name__ == '__main__':
 
     # 3)
     kp = Model(inputs=[att_knrm.l_field_translation[0],
-                      att_knrm.l_q_att_in,
-                      att_knrm.l_field_att_in[0]],
+                       att_knrm.l_q_att_in,
+                       att_knrm.l_field_att_in[0]],
                outputs=att_knrm.kp_logsum(att_knrm.l_d_layer[0]))
-    kp_res = kp.predict(trans_mtx)
+    kp_res = kp.predict([trans_mtx, q_att, d_att])
     print 'log summed kernel features'
     print kp_res.shape
     print kp_res
