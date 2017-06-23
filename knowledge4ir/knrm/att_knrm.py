@@ -177,6 +177,9 @@ class AttKNRM(KNRM):
 
         ranking_layer = self.ltr_layer(ranking_features)
         l_full_inputs = l_field_translate
+        if self.with_attention:
+            l_full_inputs.append(q_att)
+            l_full_inputs.extend(l_field_att_input)
         if ltr_input:
             l_full_inputs.append(ltr_input)
         ranker = Model(inputs=l_full_inputs,
