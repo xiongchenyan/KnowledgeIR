@@ -30,6 +30,7 @@ import logging
 import numpy as np
 import os
 
+att_dim = 7
 
 def padding(boe, max_len):
     while len(boe) < max_len:
@@ -39,8 +40,7 @@ def padding(boe, max_len):
 
 def padding_2d(ll, max_len):
     if not ll:
-        logging.warn('no attention matrix')
-        n = 9
+        n = att_dim
     else:
         n = len(ll[0])
     while len(ll) < max_len:
@@ -89,7 +89,7 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
         q_boe = h_q_info[q]['query']['boe']
         q_boe = padding(q_boe, q_len)
         if with_att:
-            logging.debug('padding q [%s]', q)
+            # logging.debug('padding q [%s]', q)
             q_att = padding_2d(h_q_info[q]['query']['att_mtx'], q_len)
         for docno, score in rank:
             if docno not in h_doc_info:
@@ -110,7 +110,7 @@ def pointwise_reader(trec_in, qrel_in, q_info_in, doc_info_in, s_qid=None, with_
                 l_q_att.append(q_att)
                 for p in xrange(len(TARGET_TEXT_FIELDS)):
                     field = TARGET_TEXT_FIELDS[p]
-                    logging.debug('padding [%s]', docno)
+                    # logging.debug('padding [%s]', docno)
                     ll_doc_att[p].append(padding_2d(doc_info[field]['att_mtx'], l_field_len[p]))
     if with_att:
         x, y = _pack_inputs(l_label, l_q_in, l_ltr, ll_doc_field, l_q_att, ll_doc_att)
@@ -284,6 +284,7 @@ if __name__ == '__main__':
     from traitlets import (
         Unicode,
         Bool,
+        Int,
     )
     import sys
     from knowledge4ir.utils import (
@@ -299,8 +300,9 @@ if __name__ == '__main__':
         out_dir = Unicode(help='out_dir').tag(config=True)
         testing = Bool(False, help='testing').tag(config=True)
         with_att = Bool(False, help='whether to dump attention').tag(config=True)
+        att_dim = Int(7, help='attention feature dimension').tag(config=True)
 
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     if 2 != len(sys.argv):
         print "convert raw json ts to pairwise and pointwise training data"
@@ -309,14 +311,24 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     para = MainPara(config=load_py_config(sys.argv[1]))
+    global att_dim
+    att_dim = para.att_dim
     s_qid = None
     if para.testing:
         s_qid = set(['%s' % i for i in range(1, 11)])  # testing
-    pair_x, pair_y = pairwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid, para.with_att)
+    pair_x, pair_y = pairwise_reader(
+        para.trec_in, para.qrel_in,
+        para.q_info_in, para.doc_info_in,
+        s_qid, para.with_att)
+
     logging.info('dumping pairwise x, y')
     dump_data(pair_x, pair_y, os.path.join(para.out_dir, 'pairwise'))
 
-    point_x, point_y = pointwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid, para.with_att)
+    point_x, point_y = pointwise_reader(
+        para.trec_in, para.qrel_in,
+        para.q_info_in, para.doc_info_in,
+        s_qid, para.with_att)
+
     logging.info('dumping pointwise x, y')
     dump_data(point_x, point_y, os.path.join(para.out_dir, 'pointwise'))
 

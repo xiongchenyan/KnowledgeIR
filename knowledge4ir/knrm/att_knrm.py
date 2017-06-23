@@ -27,7 +27,7 @@ class AttKNRM(KNRM):
     """
     translation_mtx_in = 'translation_mtx'
     with_attention = Bool(False, help='whether to use attention').tag(config=True)
-    att_dim = Int(9, help='attention feature dimension').tag(config=True)
+    att_dim = Int(7, help='attention feature dimension').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttKNRM, self).__init__(**kwargs)
