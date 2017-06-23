@@ -290,6 +290,7 @@ if __name__ == '__main__':
         trec_in = Unicode(help='candidate ranking').tag(config=True)
         out_dir = Unicode(help='out_dir').tag(config=True)
         testing = Bool(False, help='testing').tag(config=True)
+        with_att = Bool(False, help='whether to dump attention').tag(config=True)
 
     set_basic_log(logging.DEBUG)
 
@@ -303,11 +304,11 @@ if __name__ == '__main__':
     s_qid = None
     if para.testing:
         s_qid = set(['%s' % i for i in range(1, 11)])  # testing
-    pair_x, pair_y = pairwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid)
+    pair_x, pair_y = pairwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid, para.with_att)
     logging.info('dumping pairwise x, y')
     dump_data(pair_x, pair_y, os.path.join(para.out_dir, 'pairwise'))
 
-    point_x, point_y = pointwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid)
+    point_x, point_y = pointwise_reader(para.trec_in, para.qrel_in, para.q_info_in, para.doc_info_in, s_qid, para.with_att)
     logging.info('dumping pointwise x, y')
     dump_data(point_x, point_y, os.path.join(para.out_dir, 'pointwise'))
 
