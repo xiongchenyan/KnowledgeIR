@@ -48,7 +48,6 @@ class KernelPooling(Layer):
         # broad cast, d0: batch, d1: q, d2: doc, d3: kernel
 
         m = K.expand_dims(inputs, -1)
-
         sq_diff = -K.square(m - self.mu)
         mod = 2.0 * K.square(self.sigma)
         raw_k_pool = K.exp(sq_diff / mod)
@@ -75,9 +74,10 @@ class KpLogSum(Layer):
         :param kwargs:
         """
         super(KpLogSum, self).__init__(**kwargs)
+        self.test=True
 
     def compute_output_shape(self, input_shape):
-        return input_shape[0], self.input_shape[-1]
+        return input_shape[0], input_shape[-1]
 
     def call(self, inputs, **kwargs):
         """
