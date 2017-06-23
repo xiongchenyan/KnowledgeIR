@@ -68,8 +68,9 @@ class KNRM(Configurable):
     """
     embedding_dim = Int(50, help='embedding dim').tag(config=True)
     vocab_size = Int(help='vocab size').tag(config=True)
-    metric_learning = Bool(False, help='whether to learn the distance metric upon embedding'
-                           ).tag(config=True)
+    # metric_learning = Bool(False, help='whether to learn the distance metric upon embedding'
+    #                        ).tag(config=True)
+    metric_learning = Unicode(help='diag | dense. how to learn the distance metric in the embedding space').tag(config=True)
     q_name = q_in_name
     d_name = d_in_name
     d_att_name = d_att_name
@@ -168,9 +169,10 @@ class KNRM(Configurable):
             use_bias=False,
             input_dim=len(self.l_d_field) * len(self.mu) + self.ltr_feature_dim
         )
-        if self.metric_learning:
+        if self.metric_learning == 'diag':
             self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
-            # self.distance_metric = Dense(50, input_dim=self.embedding_dim ,use_bias=False)
+        if self.metric_learning == 'dense':
+            self.distance_metric = Dense(50, input_dim=self.embedding_dim, use_bias=False)
 
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """
@@ -256,6 +258,21 @@ class KNRM(Configurable):
             q_input, l_field_input, l_aux_field_input, ltr_input, aux_ltr_input
         )
         return self.ranker, self.trainer
+
+
+class AttKNRM(KNRM):
+    """
+    attention version of KNRM
+    will directly take input of the calculated translation matrix
+        q-d field matrix
+    can config whether to use attention or not
+    q att and d att is to be multiplied to the kernel pooled raw score tensors,
+        alone corresponding dimension (q:1, d:2)
+    attention mechanism is a dense layer with input features for now (06/22/2017)
+    """
+
+
+
 
 
 if __name__ == '__main__':
