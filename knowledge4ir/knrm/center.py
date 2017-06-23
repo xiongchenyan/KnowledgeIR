@@ -34,7 +34,7 @@ from keras.callbacks import EarlyStopping
 
 
 class KNRMCenter(ModelBase):
-    model_name = Unicode('KRNM', help='choose from KNRM and AttKNRM').tag(config=True)
+    model_name = Unicode('KNRM', help='choose from KNRM and AttKNRM').tag(config=True)
     qrel_in = Unicode(help='qrel').tag(config=True)
     q_info_in = Unicode(help='q info tensor').tag(config=True)
     doc_info_in = Unicode(help='doc info tensor').tag(config=True)
@@ -53,8 +53,12 @@ class KNRMCenter(ModelBase):
 
         self.k_nrm = self.h_model[self.model_name](**kwargs)
         self.hyper_para = HyperParameter(**kwargs)
-        emb_mtx = np.load(self.embedding_npy_in)
-        self.k_nrm.set_embedding(emb_mtx)
+        if self.embedding_npy_in:
+            logging.info('loading embedding for model [%s]', self.model_name)
+            emb_mtx = np.load(self.embedding_npy_in)
+            self.k_nrm.set_embedding(emb_mtx)
+        else:
+            logging.info('model [%s] not using embedding', self.model_name)
         self.ranker, self.learner = self.k_nrm.build()
         logging.info('built ranking model:')
         self.ranker.summary()
