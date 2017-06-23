@@ -9,7 +9,7 @@ hyper-parameter maintained via model.hyper_parameter
 
 from knowledge4ir.model.base import ModelBase
 from knowledge4ir.model.hyper_para import HyperParameter
-from knowledge4ir.knrm.model import KNRM
+from knowledge4ir.knrm.model import KNRM, AttKNRM
 from knowledge4ir.knrm.data_reader import (
     pairwise_reader,
     pointwise_reader,
@@ -34,19 +34,24 @@ from keras.callbacks import EarlyStopping
 
 
 class KNRMCenter(ModelBase):
-    model_name = Unicode('KRNM')
+    model_name = Unicode('KRNM', help='choose from KNRM and AttKNRM').tag(config=True)
     qrel_in = Unicode(help='qrel').tag(config=True)
     q_info_in = Unicode(help='q info tensor').tag(config=True)
-    doc_info_in = Unicode(help='doc infor tensor').tag(config=True)
-    io_format = Unicode('raw',
-                        help='raw json or npy mtxs in a folder, if npy then no meta data is needed'
-                        ).tag(config=True)
-    embedding_npy_in = Unicode(help='np saved embedding with id aligned').tag(config=True)
+    doc_info_in = Unicode(help='doc info tensor').tag(config=True)
+    io_format = Unicode(
+        'raw',
+        help='raw json or npy matrix in a folder, if npy then no meta data is needed,\
+         data organized as defined in the model\'s s_target_inputs'
+        ).tag(config=True)
+    embedding_npy_in = Unicode(
+        help='np saved embedding with id aligned, only needed for KNRM'
+                               ).tag(config=True)
+    h_model = {'KNRM': KNRM, 'AttKNRM': AttKNRM}
     
     def __init__(self, **kwargs):
         super(KNRMCenter, self).__init__(**kwargs)
 
-        self.k_nrm = KNRM(**kwargs)
+        self.k_nrm = self.h_model[self.model_name](**kwargs)
         self.hyper_para = HyperParameter(**kwargs)
         emb_mtx = np.load(self.embedding_npy_in)
         self.k_nrm.set_embedding(emb_mtx)
@@ -64,6 +69,7 @@ class KNRMCenter(ModelBase):
     def class_print_help(cls, inst=None):
         super(KNRMCenter, cls).class_print_help(inst)
         KNRM.class_print_help(inst)
+        AttKNRM.class_print_help(inst)
         HyperParameter.class_print_help(inst)
 
     def train(self, x, y, hyper_para=None):
@@ -109,7 +115,7 @@ class KNRMCenter(ModelBase):
             x, y = pairwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
         else:
             x, y = load_data(os.path.join(in_name, 'pairwise'),
-                             None, s_target_qid)
+                             self.k_nrm.s_target_inputs, s_target_qid)
         return x, y
 
     def test_data_reader(self, in_name, s_target_qid=None):
@@ -118,7 +124,7 @@ class KNRMCenter(ModelBase):
             x, y = pointwise_reader(l_q_rank, self.h_qrel, self.h_q_info, self.doc_info_in, s_target_qid)
         else:
             x, y = load_data(os.path.join(in_name, 'pointwise'),
-                             None,
+                             self.k_nrm.s_target_inputs,
                              s_target_qid)
         return x, y
 

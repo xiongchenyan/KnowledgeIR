@@ -4,7 +4,7 @@ knrm with attention
 import numpy as np
 from keras import Input
 from keras.engine import Model
-from keras.layers import Dense, concatenate
+from keras.layers import Dense, concatenate, Reshape, multiply
 from keras.legacy.layers import Merge
 from keras.models import Sequential
 from traitlets import Bool, Int
@@ -12,6 +12,7 @@ from traitlets import Bool, Int
 from knowledge4ir.knrm.distance_metric import DiagnalMetric
 from knowledge4ir.knrm.kernel_pooling import KernelPooling, KpLogSum
 from knowledge4ir.knrm.model import KNRM
+import logging
 
 
 class AttKNRM(KNRM):
@@ -40,6 +41,7 @@ class AttKNRM(KNRM):
         )
 
     def set_embedding(self, pretrained_emb):
+        logging.warn('att knrm does not use embedding')
         pass
 
     def _init_inputs(self):
@@ -144,10 +146,11 @@ class AttKNRM(KNRM):
             # TODO test
             if self.with_attention:
                 # need custom multiple layer to do * along target axes
-                # use broadcast? reshape attention to targeted dimensions, and then use multiply
-                raise NotImplementedError
-                # d_layer = multiply([d_layer, q_att], axes=[-3, -1])
-                # d_layer = multiply([d_layer, l_field_att[p]], axes=[-2, -1])
+                # use broadcast reshape attention to targeted dimensions, and then use multiply
+                q_att = Reshape(target_shape=(-1, 1, 1))(q_att)
+                d_layer = multiply([d_layer, q_att])
+                l_field_att[p] = Reshape(target_shape=(1, -1, 1))(l_field_att[p])
+                d_layer = multiply([d_layer, l_field_att[p]])
             d_layer = self.kp_logsum(d_layer, name=pre + 'kp' + field)
             l_kp_features.append(d_layer)
 
@@ -192,3 +195,4 @@ class AttKNRM(KNRM):
             l_field_translation, l_aux_field_translation, ltr_input, aux_ltr_input
         )
         return self.ranker, self.trainer
+
