@@ -114,9 +114,9 @@ class AttKNRM(KNRM):
         )
         if self.with_attention:
             self.q_att = Conv1D(
-                nb_filter=1,
-                filter_length=1,
-                bias=False,
+                filters=1,
+                kernel_size=1,
+                use_bias=False,
                 input_shape=(self.q_len, self.att_dim),
                 name='dense_q_att'
             )
@@ -124,7 +124,7 @@ class AttKNRM(KNRM):
                 Conv1D(
                     filters=1,
                     kernel_size=1,
-                    bias=False,
+                    use_bias=False,
                     input_shape=(f_len, self.att_dim),
                     name='dense_d_%s_att' % field
                     )
@@ -258,8 +258,8 @@ if __name__ == '__main__':
         [1, 0.5, 0.9, 0, 0.3],
         [0.5, 0, 0, 0, 1]
     ]]
-    q_att = np.array([[1, 1] + [0] * 5, [0] * 7])
-    d_att = np.zeros((5, 7))
+    q_att = np.array([[[1, 1] + [0] * 5, [0] * 7]])
+    d_att = np.zeros((1, 5, 7))
     d_att[0:3, 0] = 1
     # 1)
     trans_mtx = np.array(ll)
