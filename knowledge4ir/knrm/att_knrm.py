@@ -26,7 +26,7 @@ class AttKNRM(KNRM):
     attention mechanism is a dense layer with input features for now (06/22/2017)
     """
     translation_mtx_in = 'translation_mtx'
-    with_attention = Bool(False, help='whether to use attention').tag(config=True)
+    with_attention = Bool(True, help='whether to use attention').tag(config=True)
     att_dim = Int(7, help='attention feature dimension').tag(config=True)
 
     # overide not in use configs
@@ -134,6 +134,9 @@ class AttKNRM(KNRM):
             pre = self.aux_pre
 
         if self.with_attention:
+            if not aux:
+                self.l_q_att_in = q_att_input
+                self.l_field_att_in = l_field_att_input
             q_att = self.q_att(q_att_input)
             l_field_att = [self.l_field_att[p](l_field_att_input[p]) for p in xrange(len(self.l_field_att))]
 
@@ -234,26 +237,28 @@ if __name__ == '__main__':
         [1, 0.5, 0.9, 0, 0.3],
         [0.5, 0, 0, 0, 1]
     ]]
-
+    q_att = np.array([[1, 1] + [0] * 5, [0] * 7])
+    d_att = np.zeros((5, 7))
+    d_att[0:3, 0] = 1
     # 1)
-    # trans_mtx = (np.array(range(10)) / 10.0).reshape((1, 2, 5))
     trans_mtx = np.array(ll)
     print trans_mtx
-    tr_in = att_knrm.l_field_translation
 
-    # 2)
-    kp = Model(inputs=att_knrm.l_field_translation[0],
+    # 2) + 4)
+    kp = Model(inputs=[att_knrm.l_field_translation[0],
+                       att_knrm.l_q_att_in,
+                       att_knrm.l_field_att_in[0]],
                outputs=att_knrm.l_d_layer[0])
-    kp_res = kp.predict(trans_mtx)
-    print 'raw kernel scores'
+    kp_res = kp.predict([trans_mtx, q_att, d_att])
+    print 'raw kernel scores with attention'
     print kp_res.shape
     print kp_res
 
-    # 3)
-    kp = Model(inputs=att_knrm.l_field_translation[0],
-               outputs=att_knrm.kp_logsum(att_knrm.l_d_layer[0]))
-    kp_res = kp.predict(trans_mtx)
-    print 'log summed kernel features'
-    print kp_res.shape
-    print kp_res
+    # # 3)
+    # kp = Model(inputs=att_knrm.l_field_translation[0],
+    #            outputs=att_knrm.kp_logsum(att_knrm.l_d_layer[0]))
+    # kp_res = kp.predict(trans_mtx)
+    # print 'log summed kernel features'
+    # print kp_res.shape
+    # print kp_res
 
