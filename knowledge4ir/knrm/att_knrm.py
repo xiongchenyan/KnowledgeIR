@@ -250,6 +250,8 @@ if __name__ == '__main__':
     import numpy as np
     # 0)
     att_knrm = AttKNRM()
+    att_knrm.q_len = 2
+    att_knrm.l_field_len = [5, 5]
     att_knrm.build()
     att_knrm.ranker.summary()
     att_knrm.trainer.summary()
