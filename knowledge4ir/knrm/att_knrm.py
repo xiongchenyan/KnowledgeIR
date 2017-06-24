@@ -262,10 +262,14 @@ if __name__ == '__main__':
         [1, 0.5, 0.9, 0, 0.3],
         [0.5, 0, 0, 0, 1]
     ]]
-    q_att = np.array([[[1, 1] + [0] * 5, [0] * 7]])
+    q_att = np.array([[[1, 1] + [1] * 5, [1] * 7]])
     d_att = np.zeros((1, 5, 7))
     d_att[0:3, 0] = 1
     # 1)
+    print 'q attention'
+    print q_att
+    print 'd attention'
+    print d_att
     trans_mtx = np.array(ll)
     print trans_mtx
 
