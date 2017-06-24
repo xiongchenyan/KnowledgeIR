@@ -247,7 +247,7 @@ if __name__ == '__main__':
     1) whether the translation matrices are correct: pass
     2) whether the kernel pooling is right: pass
     3) whether kp_logsum is correct: pass
-    4) whether the attention works
+    4) whether the attention works: pass
     """
     import numpy as np
     # 0)
