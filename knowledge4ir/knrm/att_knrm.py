@@ -266,7 +266,7 @@ if __name__ == '__main__':
     ]]
     q_att = np.array([[[1, 1] + [1] * 5, [1] * 7]])
     d_att = np.ones((1, 5, 7))
-    d_att[0, 0:3, 0] = 1
+    d_att[0, 3:, :] = 0
     # 1)
     print 'q attention'
     print q_att
