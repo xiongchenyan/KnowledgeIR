@@ -118,6 +118,7 @@ class AttKNRM(KNRM):
                 kernel_size=1,
                 use_bias=False,
                 input_shape=(self.q_len, self.att_dim),
+                activation='relu',
                 name='dense_q_att'
             )
             self.l_field_att = [
@@ -125,6 +126,7 @@ class AttKNRM(KNRM):
                     filters=1,
                     kernel_size=1,
                     use_bias=False,
+                    activation='relu',
                     input_shape=(f_len, self.att_dim),
                     name='dense_d_%s_att' % field
                     )
