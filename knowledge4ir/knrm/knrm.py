@@ -101,12 +101,14 @@ class KNRM(Configurable):
         self.ranking_layer = None
         self.ranker = None
         self.trainer = None
+        l_doc_in_name = [self.d_name + '_' + field for field in self.l_d_field]
+        l_att_doc_in_name = [self.d_att_name + '_' + field for field in self.l_d_field]
+        l_doc_in_name += [self.aux_pre + name for name in l_doc_in_name]
+        l_att_doc_in_name += [self.aux_pre + name for name in l_att_doc_in_name]
+
         self.s_target_inputs = set(
             [self.q_name, self.q_att_name, self.ltr_feature_name, self.aux_pre + self.ltr_feature_name] +
-            [self.d_name + '_' + field for field in self.l_d_field] +
-            [self.aux_pre + self.d_name + '_' + field for field in self.l_d_field] +
-            [self.d_att_name + '_' + field for field in self.l_d_field] +
-            [self.aux_pre + self.d_att_name + '_' + field for field in self.l_d_field] +
+            l_doc_in_name + l_att_doc_in_name +
             ['qid', 'docno', 'docno_pair', 'y']
         )
 

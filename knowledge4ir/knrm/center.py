@@ -10,18 +10,15 @@ hyper-parameter maintained via model.hyper_parameter
 from knowledge4ir.model.base import ModelBase
 from knowledge4ir.model.hyper_para import HyperParameter
 from knowledge4ir.knrm.model import KNRM, AttKNRM
-from knowledge4ir.knrm.data_reader import (
+from knowledge4ir.knrm.io import (
     pairwise_reader,
     pointwise_reader,
     load_data,
 )
-import json
 import os
 import logging
 from traitlets import (
     Unicode,
-    Int,
-    List,
 )
 from knowledge4ir.utils import (
     load_json_info,

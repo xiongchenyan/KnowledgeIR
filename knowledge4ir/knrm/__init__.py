@@ -30,4 +30,5 @@ ltr_feature_name = 'ltr_feature'
 aux_pre = 'aux_'
 q_len = 5
 l_field_len = [10, 500]
-
+from model import KNRM, AttKNRM
+from center import KNRMCenter

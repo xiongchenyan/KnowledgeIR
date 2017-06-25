@@ -96,6 +96,9 @@ class KpLogSum(Layer):
 
 
 if __name__ == '__main__':
+    """
+    unit test
+    """
     x = np.array([[[1, 1, 1], [0, 1, 2]], [[2, 2, 2], [0, 2, 4]]])
     from keras.models import Sequential
 
