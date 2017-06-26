@@ -14,6 +14,7 @@ from knowledge4ir.knrm.kernel_pooling import KernelPooling, KpLogSum
 from knowledge4ir.knrm.model import KNRM
 from knowledge4ir.knrm import q_len, l_field_len
 import logging
+import json
 
 
 class AttKNRM(KNRM):
@@ -46,6 +47,7 @@ class AttKNRM(KNRM):
             l_att_names = [self.d_att_name + '_' + field for field in self.l_d_field]
             l_att_names = [self.aux_pre + name for name in l_att_names]
             self.s_target_inputs |= set([self.q_att_name] + l_att_names)
+        logging.info('target inputs %s', json.dumps(self.s_target_inputs))
         self.l_d_layer = []
         self.q_len = q_len
         self.l_field_len = l_field_len
