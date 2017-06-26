@@ -51,6 +51,7 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
 )
 import json
+import logging
 
 """TODO
 WARNING, the padding is not masked.
