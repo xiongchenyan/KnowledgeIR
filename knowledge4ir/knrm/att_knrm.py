@@ -45,7 +45,7 @@ class AttKNRM(KNRM):
         )
         if self.with_attention:
             l_att_names = [self.d_att_name + '_' + field for field in self.l_d_field]
-            l_att_names = [self.aux_pre + name for name in l_att_names]
+            l_att_names.extend([self.aux_pre + name for name in l_att_names])
             self.s_target_inputs |= set([self.q_att_name] + l_att_names)
         logging.info('target inputs %s', json.dumps(list(self.s_target_inputs)))
         self.l_d_layer = []
