@@ -20,6 +20,7 @@ from keras.layers import (
     dot,
     concatenate,
     Merge,
+    Conv1D,
 )
 from keras.models import (
     Sequential,
@@ -68,6 +69,7 @@ class KNRM(Configurable):
     # metric_learning = Bool(False, help='whether to learn the distance metric upon embedding'
     #                        ).tag(config=True)
     metric_learning = Unicode(help='diag | dense. how to learn the distance metric in the embedding space').tag(config=True)
+    project_dim = Int(10, help='projection output dimension').tag(config=True)
     q_name = q_in_name
     d_name = d_in_name
     d_att_name = d_att_name
@@ -168,7 +170,12 @@ class KNRM(Configurable):
         if self.metric_learning == 'diag':
             self.distance_metric = DiagnalMetric(input_dim=self.embedding_dim)
         if self.metric_learning == 'dense':
-            self.distance_metric = Dense(50, input_dim=self.embedding_dim, use_bias=False)
+            self.distance_metric = Conv1D(filters=self.project_dim,
+                                          kernel_size=1,
+                                          use_bias=False,
+                                          input_shape=(None, self.embedding_dim),
+                                          name='projection_cnn'
+                                          )
 
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """
