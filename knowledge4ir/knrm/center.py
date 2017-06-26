@@ -10,18 +10,15 @@ hyper-parameter maintained via model.hyper_parameter
 from knowledge4ir.model.base import ModelBase
 from knowledge4ir.model.hyper_para import HyperParameter
 from knowledge4ir.knrm.model import KNRM, AttKNRM
-from knowledge4ir.knrm.data_reader import (
+from knowledge4ir.knrm.io import (
     pairwise_reader,
     pointwise_reader,
     load_data,
 )
-import json
 import os
 import logging
 from traitlets import (
     Unicode,
-    Int,
-    List,
 )
 from knowledge4ir.utils import (
     load_json_info,
@@ -36,8 +33,8 @@ from keras.callbacks import EarlyStopping
 class KNRMCenter(ModelBase):
     model_name = Unicode('KNRM', help='choose from KNRM and AttKNRM').tag(config=True)
     qrel_in = Unicode(help='qrel').tag(config=True)
-    q_info_in = Unicode(help='q info tensor').tag(config=True)
-    doc_info_in = Unicode(help='doc info tensor').tag(config=True)
+    q_info_in = Unicode(help='q info tensor, only needed when using raw io').tag(config=True)
+    doc_info_in = Unicode(help='doc info tensor, only needed when using raw io').tag(config=True)
     io_format = Unicode(
         'raw',
         help='raw json or npy matrix in a folder, if npy then no meta data is needed,\
@@ -50,7 +47,6 @@ class KNRMCenter(ModelBase):
     
     def __init__(self, **kwargs):
         super(KNRMCenter, self).__init__(**kwargs)
-
         self.k_nrm = self.h_model[self.model_name](**kwargs)
         self.hyper_para = HyperParameter(**kwargs)
         if self.embedding_npy_in:

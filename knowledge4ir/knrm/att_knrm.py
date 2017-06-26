@@ -118,6 +118,7 @@ class AttKNRM(KNRM):
                 kernel_size=1,
                 use_bias=False,
                 input_shape=(self.q_len, self.att_dim),
+                activation='relu',
                 name='dense_q_att'
             )
             self.l_field_att = [
@@ -125,6 +126,7 @@ class AttKNRM(KNRM):
                     filters=1,
                     kernel_size=1,
                     use_bias=False,
+                    activation='relu',
                     input_shape=(f_len, self.att_dim),
                     name='dense_d_%s_att' % field
                     )
@@ -245,13 +247,15 @@ if __name__ == '__main__':
     1) whether the translation matrices are correct: pass
     2) whether the kernel pooling is right: pass
     3) whether kp_logsum is correct: pass
-    4) whether the attention works
+    4) whether the attention works: pass
     """
     import numpy as np
     # 0)
     att_knrm = AttKNRM()
     att_knrm.q_len = 2
     att_knrm.l_field_len = [5, 5]
+    att_knrm.mu = [1, 0]
+    att_knrm.sigma = [1, 1]
     att_knrm.build()
     att_knrm.ranker.summary()
     att_knrm.trainer.summary()
@@ -260,10 +264,14 @@ if __name__ == '__main__':
         [1, 0.5, 0.9, 0, 0.3],
         [0.5, 0, 0, 0, 1]
     ]]
-    q_att = np.array([[[1, 1] + [0] * 5, [0] * 7]])
-    d_att = np.zeros((1, 5, 7))
-    d_att[0:3, 0] = 1
+    q_att = np.array([[[1, 1] + [1] * 5, [1] * 7]])
+    d_att = np.ones((1, 5, 7))
+    d_att[0, 3:, :] = 0
     # 1)
+    print 'q attention'
+    print q_att
+    print 'd attention'
+    print d_att
     trans_mtx = np.array(ll)
     print trans_mtx
 
