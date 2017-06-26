@@ -50,6 +50,7 @@ from knowledge4ir.knrm.kernel_pooling import (
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
 )
+import json
 
 """TODO
 WARNING, the padding is not masked.
@@ -113,6 +114,7 @@ class KNRM(Configurable):
             l_doc_in_name + l_att_doc_in_name +
             ['qid', 'docno', 'docno_pair', 'y']
         )
+        logging.info('target inputs %s', json.dumps(self.s_target_inputs))
 
     def set_embedding(self, pretrained_emb):
         self.emb = pretrained_emb
