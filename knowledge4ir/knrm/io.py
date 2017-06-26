@@ -244,11 +244,14 @@ def load_data(in_dir, s_target_name=None, s_target_qid=None):
     y = None
     for dirname, l_subdir, l_files in os.walk(in_dir):
         for fname in l_files:
+            logging.info('find file [%s]', fname)
             if not fname.endswith('.npy'):
+                logging.info('skip none .npy files')
                 continue
             key = fname.replace('.npy', '')
             if s_target_name is not None:
                 if key not in s_target_name:
+                    logging.info('[%s] no a targeted input name', key)
                     continue
             logging.info('get [%s]', key)
             arr = np.load(os.path.join(dirname, fname))
