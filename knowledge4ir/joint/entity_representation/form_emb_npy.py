@@ -19,7 +19,7 @@ h_e_idx = json.load(open(sys.argv[2]))
 print "%d entity" % len(h_e_idx)
 filled_cnt = 0
 emb_mtx = np.array([])
-for p, line in open(sys.argv[1]):
+for p, line in enumerate(open(sys.argv[1])):
     if not p:
         __, dim = [int(col) for col in line.strip().split()]
         print "%d dim" % dim
