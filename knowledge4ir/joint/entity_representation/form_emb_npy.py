@@ -35,6 +35,7 @@ for p, line in enumerate(open(sys.argv[1])):
     emb = [float(col) for col in cols[1:]]
     idx = h_e_idx[e_id]
     emb_mtx[idx] = np.array(emb)
+    filled_cnt += 1
 
 print "emb mtx shape"
 print emb_mtx.shape
