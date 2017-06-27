@@ -26,7 +26,7 @@ print "bins: %s" % json.dumps(l_bin)
 
 print "loading npy"
 m = np.load(sys.argv[1])
-
+print m.shape
 l_bin_cnt = []
 for st, ed in l_bin:
     cnt = np.sum((m < ed) & (m >= st))
