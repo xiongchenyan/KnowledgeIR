@@ -10,7 +10,7 @@ hyper-parameter maintained via model.hyper_parameter
 from knowledge4ir.model.base import ModelBase
 from knowledge4ir.model.hyper_para import HyperParameter
 from knowledge4ir.knrm.model import KNRM, AttKNRM
-from knowledge4ir.knrm.io import (
+from knowledge4ir.knrm.data_io import (
     pairwise_reader,
     pointwise_reader,
     load_data,
