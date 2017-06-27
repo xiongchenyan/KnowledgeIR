@@ -21,6 +21,7 @@ from keras.layers import (
     concatenate,
     Merge,
     Conv1D,
+    Dropout,
 )
 from keras.models import (
     Sequential,
@@ -72,6 +73,7 @@ class KNRM(Configurable):
     #                        ).tag(config=True)
     metric_learning = Unicode(help='diag | dense. how to learn the distance metric in the embedding space').tag(config=True)
     project_dim = Int(10, help='projection output dimension').tag(config=True)
+    metric_dropout_rate = Float(0, help='dense metric learning\'s dropout rate').tag(config=True)
     q_name = q_in_name
     d_name = d_in_name
     d_att_name = d_att_name
@@ -181,6 +183,8 @@ class KNRM(Configurable):
                                           input_shape=(None, self.embedding_dim),
                                           name='projection_cnn'
                                           )
+            if self.metric_dropout_rate > 0:
+                self.distance_metric = Dropout(self.metric_dropout_rate)(self.distance_metric)
 
     def _init_ranker(self, q_input, l_field_input, ltr_input=None, aux=False):
         """
