@@ -21,6 +21,8 @@ class JointSemanticResource(Configurable):
                                 ).tag(config=True)
     embedding_path = Unicode(help="embedding location (word2vec format)"
                              ).tag(config=True)
+    entity_embedding_path = Unicode(help="entity only embedding location word2vec format"
+                                    ).tag(config=True)
     surface_stat_path = Unicode(help="the location of surface form stat dict in json"
                                 ).tag(config=True)
     entity_field_path = Unicode(help="entity field path"
@@ -33,6 +35,7 @@ class JointSemanticResource(Configurable):
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
         self.embedding = None
+        self.entity_embedding = None
         self.h_surface_form = None
         self.h_surface_stat = None
         self.h_entity_fields = None
@@ -50,6 +53,7 @@ class JointSemanticResource(Configurable):
         self._load_entity_fields()
         self._load_sf()
         self._load_emb()
+        self._load_e_emb()
         self._load_sf_stat()
         self._load_boe_rm3()
         self._load_prf_sent()
@@ -75,6 +79,13 @@ class JointSemanticResource(Configurable):
         logging.info('loading embedding [%s]', self.embedding_path)
         self.embedding = Word2Vec.load_word2vec_format(self.embedding_path)
         logging.info('embedding loaded')
+
+    def _load_e_emb(self):
+        if not self.entity_embedding_path:
+            return
+        logging.info('loading entity embedding [%s]', self.entity_embedding_path)
+        self.entity_embedding = Word2Vec.load_word2vec_format(self.entity_embedding_path)
+        logging.info('entity embedding loaded')
 
     def _load_entity_fields(self):
         if not self.entity_field_path:

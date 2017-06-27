@@ -31,18 +31,97 @@ from knowledge4ir.utils import (
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,
 )
+from knowledge4ir.joint.utils import (
+    form_boe_per_field,
+    form_boe_tagme_field,
+)
 
 
 class BoeFeature(Configurable):
     feature_name_pre = Unicode()
+    ana_format = Unicode('spot', help='annotation format, tagme or spot').tag(config=True)
 
     def extract_pair(self, q_info, doc_info):
         raise NotImplementedError
 
+    def _get_field_entity(self, h_info, field):
+        l_h_e = []
+        if self.ana_format == 'spot':
+            l_h_e = form_boe_per_field(h_info, field)
+        else:
+            l_h_e = form_boe_tagme_field(h_info, field)
+        return [h['id'] for h in l_h_e]
+
+    # def _get_spot_field_entity(self, h_info, field):
+    #     l_h_e = form_boe_per_field(h_info, field)
+    #     l_e = [h['id'] for h in l_h_e]
+    #     return l_e
+    #
+    # def _get_tagme_field_entity(self, h_info, field):
+    #     l_e = [ana['id'] for ana in form_boe_tagme_field(h_info, field)]
+    #     return l_e
+
+    def _get_q_entity(self, q_info):
+        return self._get_field_entity(q_info, QUERY_FIELD)
+
+    def _get_doc_entity(self, doc_info):
+        l_field_doc_e = [(field, self._get_field_entity(doc_info, field)) for field in TARGET_TEXT_FIELDS]
+        return l_field_doc_e
+
+    def _get_e_location(self, e_id, doc_info):
+        """
+        find location of e_id
+        :param e_id: target
+        :param doc_info: spotted and coreference document
+        :return: h_loc field-> st -> ed
+        """
+        h_loc = dict()
+        for field in TARGET_TEXT_FIELDS:
+            h_loc[field] = dict()
+            if self.ana_format == 'spot':
+                l_h_e = form_boe_per_field(doc_info, field)
+            else:
+                l_h_e = form_boe_tagme_field(doc_info, field)
+            for h_e in l_h_e:
+                if h_e['id'] == e_id:
+                    st, ed = h_e['loc']
+                    h_loc[field][st] = ed
+        return h_loc
+
+    # @classmethod
+    # def _get_e_spot_location(cls, e_id, doc_info):
+    #     h_loc = dict()
+    #     for field in TARGET_TEXT_FIELDS:
+    #         h_loc[field] = dict()
+    #         l_h_e = form_boe_tagme_field(doc_info, field)
+    #         for h_e in l_h_e:
+    #             if h_e['id'] == e_id:
+    #                 st, ed = h_e['loc']
+    #                 h_loc[field][st] = ed
+    #     return h_loc
+    #
+    # @classmethod
+    # def _get_e_tagme_location(cls, e_id, doc_info):
+    #     """
+    #     get location from TagMe ana
+    #     :param e_id:
+    #     :param doc_info:
+    #     :return:
+    #     """
+    #     h_loc = dict()
+    #     for field in TARGET_TEXT_FIELDS:
+    #         l_ana = doc_info.get('tagme', {}).get(field, [])
+    #         h_loc[field] = dict()
+    #         for ana in l_ana:
+    #             if e_id != ana[0]:
+    #                 continue
+    #             st, ed = ana[1:3]
+    #             h_loc[field][st] = ed
+    #     return h_loc
+
 
 class AnaMatch(BoeFeature):
     feature_name_pre = Unicode('AnaMatch')
-    ana_format = Unicode('spot', help='annotation format, tagme or spot').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AnaMatch, self).__init__(**kwargs)
@@ -67,33 +146,6 @@ class AnaMatch(BoeFeature):
                 h_feature[self.feature_name_pre + '_' + field + '_' + name] = score
 
         return h_feature
-
-    def _get_q_entity(self, q_info):
-        return self._get_field_entity(q_info, QUERY_FIELD)
-
-    def _get_doc_entity(self, doc_info):
-        l_field_doc_e = [(field, self._get_field_entity(doc_info, field)) for field in TARGET_TEXT_FIELDS]
-        return l_field_doc_e
-
-    def _get_field_entity(self, h_info, field):
-        if self.ana_format == 'spot':
-            return self._get_spot_field_entity(h_info, field)
-        else:
-            return self._get_tagme_field_entity(h_info, field)
-
-    def _get_spot_field_entity(self, h_info, field):
-        l_ana = h_info.get(SPOT_FIELD, {}).get(field, [])
-        l_e = []
-        for ana in l_ana:
-            e = ana['entities'][0]['id']
-            l_e.append(e)
-        return l_e
-
-    def _get_tagme_field_entity(self, h_info, field):
-        l_ana = h_info.get('tagme', {}).get(field, [])
-        l_e = [ana[0] for ana in l_ana]
-        return l_e
-
 
     @classmethod
     def _match_qe_de(cls, l_qe, l_de):
@@ -127,7 +179,7 @@ class CoreferenceMatch(BoeFeature):
         :param doc_info:
         :return: h_feature
         """
-        l_q_e_id = [ana['entities'][0]['id'] for ana in q_info[SPOT_FIELD]['query']]
+        l_q_e_id = self._get_q_entity(q_info)
 
         l_h_stats = []
         for q_e_id in l_q_e_id:
@@ -150,11 +202,9 @@ class CoreferenceMatch(BoeFeature):
         :param doc_info:
         :return: l_mentions = [mentions of e_id in coreferences]
         """
-        if doc_info:
-            logging.debug('finding matched mentions for [%s]', e_id)
+        logging.debug('finding matched mentions for [%s]', e_id)
         h_loc = self._get_e_location(e_id, doc_info)
-        if doc_info:
-            logging.debug('[%s] locations in doc %s', e_id, json.dumps(h_loc))
+        logging.debug('[%s] locations in doc %s', e_id, json.dumps(h_loc))
         l_mentions = []
         for mention in doc_info.get(COREFERENCE_FIELD, []):
             mention_cluster = mention['mentions']
@@ -164,8 +214,7 @@ class CoreferenceMatch(BoeFeature):
 
             if self._mention_aligned(h_loc, mention_cluster):
                 l_mentions.append(mention_cluster)
-        if doc_info:
-            logging.debug('mentions on coref %s', json.dumps(l_mentions))
+        logging.debug('mentions on coref %s', json.dumps(l_mentions))
         return l_mentions
 
     @classmethod
@@ -200,25 +249,6 @@ class CoreferenceMatch(BoeFeature):
         return h_feature
 
     @classmethod
-    def _get_e_location(cls, e_id, doc_info):
-        """
-        find location of e_id
-        :param e_id: target
-        :param doc_info: spotted and coreferenced document
-        :return: h_loc field-> st -> ed
-        """
-        h_loc = dict()
-        for field in TARGET_TEXT_FIELDS:
-            l_ana = doc_info.get(SPOT_FIELD, {}).get(field, [])
-            h_loc[field] = dict()
-            for ana in l_ana:
-                e = ana['entities'][0]['id']
-                if e == e_id:
-                    st, ed = ana['loc']
-                    h_loc[field][st] = ed
-        return h_loc
-
-    @classmethod
     def _mention_aligned(cls, h_loc, mention_cluster):
         """
         check if the mention cluster (coreferences) is aligned with h_loc
@@ -245,12 +275,6 @@ class CoreferenceMatch(BoeFeature):
         # else:
         #     logging.debug('cluster [%s] no match', json.dumps(mention_cluster))
         return flag
-
-
-
-
-
-
 
 
 

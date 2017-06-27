@@ -27,12 +27,17 @@ from traitlets import (
 # from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from copy import deepcopy
-from scipy import stats
 from knowledge4ir.joint import (
     GROUND_FIELD,
     SPOT_FIELD,
 )
-import numpy as np
+from knowledge4ir.joint.utils import (
+    calc_surface_ambiguity,
+    surface_coverage_features,
+    surface_lp,
+    word_embedding_vote,
+    entity_embedding_vote,
+)
 
 
 class Grounder(Configurable):
@@ -96,9 +101,9 @@ class Grounder(Configurable):
         """
         h_feature = {}
 
-        h_feature.update(self._surface_cmns_features(h_sf_info))
-        h_feature.update(self._surface_coverage_features(h_sf_info, h_info))
-        h_feature.update(self._surface_lp(h_sf_info))
+        h_feature.update(calc_surface_ambiguity(h_sf_info))
+        h_feature.update(surface_coverage_features(h_sf_info, h_info))
+        h_feature.update(surface_lp(h_sf_info['surface'], self.resource))
 
         logging.debug('sf [%s] feature %s', h_sf_info['surface'], json.dumps(h_feature))
         return h_feature
@@ -122,109 +127,109 @@ class Grounder(Configurable):
         e_id = h_e_info['id']
         h_feature['e_cmns'] = h_e_info['cmns']
 
-        h_feature.update(self._entity_embedding_vote(e_id, h_info))
-        h_feature.update(self._q_word_embedding_vote(e_id, h_info))
+        h_feature.update(entity_embedding_vote(e_id, h_info, 'query', self.resource))
+        h_feature.update(word_embedding_vote(e_id, h_info, 'query', self.resource))
         logging.debug('e [%s] feature %s', e_id, json.dumps(h_feature))
         return h_feature
 
-    def _surface_cmns_features(self, h_sf_info):
-        h_feature = {}
+    # def _surface_cmns_features(self, h_sf_info):
+    #     h_feature = {}
+    #
+    #     l_e = h_sf_info.get('entities', {})
+    #     l_cmns = [e_info.get('cmns', 0) for e_info in l_e]
+    #
+    #     entropy = stats.entropy(l_cmns)
+    #
+    #     l_cmns.sort(reverse=True)
+    #     l_cmns.append(0)
+    #     diff = l_cmns[0] - l_cmns[1]
+    #
+    #     h_feature['sf_cmns_entropy'] = entropy
+    #     h_feature['sf_cmns_topdiff'] = diff
+    #
+    #     return h_feature
 
-        l_e = h_sf_info.get('entities', {})
-        l_cmns = [e_info.get('cmns', 0) for e_info in l_e]
+    # def _surface_coverage_features(self, h_sf_info, h_info):
+    #     h_feature = {}
+    #     loc = h_sf_info['loc']
+    #     field = h_sf_info['field']
+    #     h_feature['sf_coverage'] = float(loc[1] - loc[0]) / len(h_info.get(field, "").split())
+    #     h_feature['sf_len'] = len(h_sf_info.get('surface', ''))
+    #     return h_feature
 
-        entropy = stats.entropy(l_cmns)
+    # def _surface_lp(self, h_sf_info):
+    #     h_feature = {}
+    #     sf = h_sf_info['surface']
+    #
+    #     h_stat = self.resource.h_surface_stat.get(sf, {})
+    #     wiki_tf = h_stat.get('tf', 0)
+    #     lp = 0
+    #     if wiki_tf >= 10:
+    #         lp = h_stat.get('lp', 0)
+    #     # h_feature['sf_wiki_tf'] = wiki_tf
+    #     h_feature['sf_lp'] = lp
+    #     return h_feature
 
-        l_cmns.sort(reverse=True)
-        l_cmns.append(0)
-        diff = l_cmns[0] - l_cmns[1]
+    # def _entity_embedding_vote(self, e_id, h_info):
+    #     l_sim = []
+    #     if e_id in self.resource.embedding:
+    #
+    #         for field, l_sf in h_info['spot'].items():
+    #             for sf in l_sf:
+    #                 top_e_id = sf.get('entities', [{}])[0].get('id', '')
+    #                 if top_e_id == e_id:
+    #                     # no self vote
+    #                     continue
+    #                 if top_e_id not in self.resource.embedding:
+    #                     continue
+    #                 sim = self.resource.embedding.similarity(e_id, top_e_id)
+    #                 l_sim.append(sim)
+    #
+    #     max_sim, mean_sim, l_bin = pool_sim_score(l_sim)
+    #     h_feature = dict()
+    #     h_feature['e_vote_emb_max'] = max_sim
+    #     h_feature['e_vote_emb_mean'] = mean_sim
+    #     # for i in xrange(len(l_bin)):
+    #     #     h_feature['e_vote_bin_%d' % i] = l_bin[i]
+    #     return h_feature
 
-        h_feature['sf_cmns_entropy'] = entropy
-        h_feature['sf_cmns_topdiff'] = diff
+    # def _q_word_embedding_vote(self, e_id, h_info):
+    #     l_sim = []
+    #     if e_id in self.resource.embedding:
+    #         query = h_info['query']
+    #         for t in query.lower().split():
+    #             if t in self.resource.embedding:
+    #                 sim = self.resource.embedding.similarity(e_id, t)
+    #                 l_sim.append(sim)
+    #
+    #     max_sim, mean_sim, l_bin = pool_sim_score(l_sim)
+    #     h_feature = dict()
+    #     h_feature['w_vote_emb_max'] = max_sim
+    #     h_feature['w_vote_emb_mean'] = mean_sim
+    #     return h_feature
 
-        return h_feature
-
-    def _surface_coverage_features(self, h_sf_info, h_info):
-        h_feature = {}
-        loc = h_sf_info['loc']
-        field = h_sf_info['field']
-        h_feature['sf_coverage'] = float(loc[1] - loc[0]) / len(h_info.get(field, "").split())
-        h_feature['sf_len'] = len(h_sf_info.get('surface', ''))
-        return h_feature
-
-    def _surface_lp(self, h_sf_info):
-        h_feature = {}
-        sf = h_sf_info['surface']
-
-        h_stat = self.resource.h_surface_stat.get(sf, {})
-        wiki_tf = h_stat.get('tf', 0)
-        lp = 0
-        if wiki_tf >= 10:
-            lp = h_stat.get('lp', 0)
-        # h_feature['sf_wiki_tf'] = wiki_tf
-        h_feature['sf_lp'] = lp
-        return h_feature
-
-    def _entity_embedding_vote(self, e_id, h_info):
-        l_sim = []
-        if e_id in self.resource.embedding:
-
-            for field, l_sf in h_info['spot'].items():
-                for sf in l_sf:
-                    top_e_id = sf.get('entities', [{}])[0].get('id', '')
-                    if top_e_id == e_id:
-                        # no self vote
-                        continue
-                    if top_e_id not in self.resource.embedding:
-                        continue
-                    sim = self.resource.embedding.similarity(e_id, top_e_id)
-                    l_sim.append(sim)
-
-        max_sim, mean_sim, l_bin = self._pool_sim_score(l_sim)
-        h_feature = dict()
-        h_feature['e_vote_emb_max'] = max_sim
-        h_feature['e_vote_emb_mean'] = mean_sim
-        # for i in xrange(len(l_bin)):
-        #     h_feature['e_vote_bin_%d' % i] = l_bin[i]
-        return h_feature
-
-    def _q_word_embedding_vote(self, e_id, h_info):
-        l_sim = []
-        if e_id in self.resource.embedding:
-            query = h_info['query']
-            for t in query.lower().split():
-                if t in self.resource.embedding:
-                    sim = self.resource.embedding.similarity(e_id, t)
-                    l_sim.append(sim)
-
-        max_sim, mean_sim, l_bin = self._pool_sim_score(l_sim)
-        h_feature = dict()
-        h_feature['w_vote_emb_max'] = max_sim
-        h_feature['w_vote_emb_mean'] = mean_sim
-        return h_feature
-
-    @classmethod
-    def _pool_sim_score(cls, l_sim, l_weight=None):
-        max_sim = 0
-        mean_sim = 0
-        l_bin = [0, 0, 0, 0]
-        if not l_sim:
-            return max_sim, mean_sim, l_bin
-        max_sim = max(l_sim)
-        if l_weight is None:
-            l_weight = [1] * len(l_sim)
-        s = np.array(l_sim)
-        w = np.array(l_weight)
-        mean_sim = s.dot(w) / sum(l_weight)
-        for sim, weight in zip(l_sim, l_weight):
-            if sim == 1:
-                l_bin[0] += weight
-            if 0.75 <= sim < 1:
-                l_bin[1] += weight
-            if 0.5 <= sim < 0.75:
-                l_bin[2] += weight
-            if 0.25 <= sim < 0.5:
-                l_bin[3] += weight
-        return max_sim, mean_sim, l_bin
+    # @classmethod
+    # def _pool_sim_score(cls, l_sim, l_weight=None):
+    #     max_sim = 0
+    #     mean_sim = 0
+    #     l_bin = [0, 0, 0, 0]
+    #     if not l_sim:
+    #         return max_sim, mean_sim, l_bin
+    #     max_sim = max(l_sim)
+    #     if l_weight is None:
+    #         l_weight = [1] * len(l_sim)
+    #     s = np.array(l_sim)
+    #     w = np.array(l_weight)
+    #     mean_sim = s.dot(w) / sum(l_weight)
+    #     for sim, weight in zip(l_sim, l_weight):
+    #         if sim == 1:
+    #             l_bin[0] += weight
+    #         if 0.75 <= sim < 1:
+    #             l_bin[1] += weight
+    #         if 0.5 <= sim < 0.75:
+    #             l_bin[2] += weight
+    #         if 0.25 <= sim < 0.5:
+    #             l_bin[3] += weight
+    #     return max_sim, mean_sim, l_bin
 
 
