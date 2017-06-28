@@ -105,7 +105,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
             q_info = self.h_q_info[q]
             logging.info('start extracting q [%s]', q)
             for docno, base_score in ranking:
-                doc_info = self.h_doc_info.get(docno, {})
+                doc_info = self.h_doc_info.get(docno, {'docno': docno})
                 label = self.h_qrel.get(q, {}).get(docno, 0)
                 h_feature = dict()
                 h_feature['base'] = base_score
