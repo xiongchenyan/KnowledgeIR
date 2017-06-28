@@ -22,7 +22,7 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     QUERY_FIELD,
 )
-from knowledge4ir.joint.utils import (
+from knowledge4ir.utils.boe import (
     form_boe_per_field,
     surface_ambiguity_feature,
     surface_lp,

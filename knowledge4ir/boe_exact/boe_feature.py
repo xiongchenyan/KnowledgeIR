@@ -26,7 +26,7 @@ from knowledge4ir.utils import (
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,
 )
-from knowledge4ir.joint.utils import (
+from knowledge4ir.joint.boe import (
     form_boe_per_field,
     form_boe_tagme_field,
 )

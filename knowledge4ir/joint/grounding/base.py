@@ -27,11 +27,11 @@ from traitlets import (
 # from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS, GROUND_FIELD, SPOT_FIELD
 from copy import deepcopy
-from knowledge4ir.joint import (
+from knowledge4ir.utils import (
     GROUND_FIELD,
     SPOT_FIELD,
 )
-from knowledge4ir.joint.utils import (
+from knowledge4ir.utils.boe import (
     calc_surface_ambiguity,
     surface_coverage_features,
     surface_lp,
