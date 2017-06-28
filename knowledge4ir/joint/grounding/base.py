@@ -25,7 +25,7 @@ from traitlets import (
     Int,
 )
 # from knowledge4ir.joint.resource import JointSemanticResource
-from knowledge4ir.utils import TARGET_TEXT_FIELDS
+from knowledge4ir.utils import TARGET_TEXT_FIELDS, GROUND_FIELD, SPOT_FIELD
 from copy import deepcopy
 from knowledge4ir.joint import (
     GROUND_FIELD,

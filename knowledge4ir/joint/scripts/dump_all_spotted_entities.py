@@ -5,7 +5,7 @@ get all candidate entities from the spotter
 import sys
 import json
 
-from knowledge4ir.utils import term2lm
+from knowledge4ir.utils import term2lm, SPOT_FIELD
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
 from knowledge4ir.joint import (
     SPOT_FIELD

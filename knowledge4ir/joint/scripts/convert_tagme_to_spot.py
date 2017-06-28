@@ -4,7 +4,7 @@ so that the programs can run on both with no change
 """
 
 import json
-from knowledge4ir.joint.utils import SPOT_FIELD
+from knowledge4ir.utils import SPOT_FIELD
 
 
 def spot_to_tagme(h_info):

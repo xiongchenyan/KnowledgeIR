@@ -19,8 +19,8 @@ from traitlets import (
 import nltk
 from knowledge4ir.utils import (
     set_basic_log,
-    load_py_config
-)
+    load_py_config,
+    SPOT_FIELD)
 import logging
 from copy import deepcopy
 from knowledge4ir.utils import TARGET_TEXT_FIELDS

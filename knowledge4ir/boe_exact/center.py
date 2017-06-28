@@ -13,28 +13,25 @@ output:
 
 """
 
+import json
+import logging
 
+from traitlets import (
+    Unicode,
+    List,
+)
 from traitlets.config import Configurable
+
+from knowledge4ir.boe_exact import (
+    AnaMatch,
+    CoreferenceMatch,
+)
 from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
     load_trec_labels_dict,
     dump_svm_from_raw,
     set_basic_log,
-)
-import json
-from knowledge4ir.joint.boe_exact.boe_feature import (
-    AnaMatch,
-    CoreferenceMatch,
-)
-import json
-import logging
-
-from traitlets import (
-    Int,
-    Unicode,
-    Bool,
-    List,
 )
 
 

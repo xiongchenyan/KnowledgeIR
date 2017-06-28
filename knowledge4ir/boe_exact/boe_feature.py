@@ -10,15 +10,9 @@ output:
 import json
 from traitlets.config import Configurable
 from traitlets import (
-    Int,
     Unicode,
-    Bool
 )
 import logging
-from knowledge4ir.joint import (
-    SPOT_FIELD,
-    COREFERENCE_FIELD
-)
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     body_field,
@@ -26,7 +20,8 @@ from knowledge4ir.utils import (
     term2lm,
     mean_pool_feature,
     log_sum_feature,
-
+    SPOT_FIELD,
+    COREFERENCE_FIELD
 )
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,

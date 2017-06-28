@@ -4,10 +4,10 @@ include entity and sf form features
 """
 
 import json
-from knowledge4ir.joint import SPOT_FIELD
 from knowledge4ir.utils import (
     QUERY_FIELD,
     TARGET_TEXT_FIELDS,
+    SPOT_FIELD
 )
 import numpy as np
 from scipy import stats
