@@ -65,6 +65,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
     @classmethod
     def class_print_help(cls, inst=None):
         super(BoeLeToRFeatureExtractCenter, cls).class_print_help(inst)
+        print json.dumps(cls.h_feature_extractor.keys())
         JointSemanticResource.class_print_help(inst)
         AnaMatch.class_print_help(inst)
         CoreferenceMatch.class_print_help(inst)
