@@ -11,12 +11,13 @@ from traitlets import (
     Unicode,
     List,
 )
-from knowledge4ir.joint.resource import JointSemanticResource
+
+from knowledge4ir.model import ModelBase
 from knowledge4ir.model.hyper_para import HyperParameter
 from knowledge4ir.utils import (
     dump_trec_out_from_ranking_score,
 )
-from knowledge4ir.model import ModelBase
+from knowledge4ir.utils.resource import JointSemanticResource
 
 sf_ground_name = 'sf_ground'
 sf_ground_ref = 'sf_ref'

@@ -2,7 +2,6 @@
 resource to keep in memory to be shared across the pipeline
 """
 
-import numpy as np
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,

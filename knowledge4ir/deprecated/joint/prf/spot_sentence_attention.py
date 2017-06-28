@@ -8,23 +8,24 @@ output:
     or can return a feature dict
 """
 
-import sys
 import json
+import logging
+import sys
+
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from traitlets import (
+    Unicode,
+)
+from traitlets.config import Configurable
+
 from knowledge4ir.utils import (
     dump_trec_out_from_ranking_score,
     set_basic_log,
     load_py_config
 )
-from traitlets.config import Configurable
-from traitlets import (
-    Unicode,
-    Int,
-)
-import logging
-from knowledge4ir.joint.resource import JointSemanticResource
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 from knowledge4ir.utils.nlp import raw_clean, avg_embedding
+from knowledge4ir.utils.resource import JointSemanticResource
 
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
