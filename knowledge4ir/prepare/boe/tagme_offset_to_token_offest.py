@@ -23,6 +23,8 @@ def make_char_to_token_mapping(text):
 
 def convert_offset(h_info):
     for field in l_target_fields:
+        if field not in h_info:
+            continue
         text = h_info[field]
         h_char_to_token_loc = make_char_to_token_mapping(text)
         l_ana = h_info['tagme'][field]
