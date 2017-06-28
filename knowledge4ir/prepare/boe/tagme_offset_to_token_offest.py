@@ -14,10 +14,11 @@ l_target_fields = TARGET_TEXT_FIELDS + [QUERY_FIELD]
 def make_char_to_token_mapping(text):
     h_map = {}
     term_p = 0
-    for i in xrange(len(text) + 1):
+    for i in xrange(len(text)):
         if text[i] == ' ':
             term_p += 1
         h_map[i] = term_p
+    h_map[len(text)] = term_p + 1
     return h_map
 
 
