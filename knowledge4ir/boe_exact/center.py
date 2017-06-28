@@ -26,6 +26,7 @@ from knowledge4ir.boe_exact import (
     AnaMatch,
     CoreferenceMatch,
 )
+from knowledge4ir.boe_exact.salient_feature import SalientFeature
 from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
@@ -33,13 +34,16 @@ from knowledge4ir.utils import (
     dump_svm_from_raw,
     set_basic_log,
 )
+from knowledge4ir.utils.resource import JointSemanticResource
 
 
 class BoeLeToRFeatureExtractCenter(Configurable):
     l_feature_group = List(Unicode, default_value=['AnaExact'],
                            help="list of feature groups to use, current supporting: AnaExact,CoRef"
                            ).tag(config=True)
-    h_feature_extractor = {"AnaExact": AnaMatch, "CoRef": CoreferenceMatch}
+    h_feature_extractor = {"AnaExact": AnaMatch,
+                           "CoRef": CoreferenceMatch,
+                           "Salient": SalientFeature}
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
     q_info_in = Unicode(help='prepared query info in').tag(config=True)
@@ -49,6 +53,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
     
     def __init__(self, **kwargs):
         super(BoeLeToRFeatureExtractCenter, self).__init__(**kwargs)
+        self.resource = JointSemanticResource(**kwargs)
         self.l_extractor = []
         self.h_q_info = dict()
         self.h_doc_info = dict()
@@ -60,6 +65,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
     @classmethod
     def class_print_help(cls, inst=None):
         super(BoeLeToRFeatureExtractCenter, cls).class_print_help(inst)
+        JointSemanticResource.class_print_help(inst)
         AnaMatch.class_print_help(inst)
         CoreferenceMatch.class_print_help(inst)
 
@@ -70,7 +76,8 @@ class BoeLeToRFeatureExtractCenter(Configurable):
             assert name in self.h_feature_extractor
             self.l_extractor.append(self.h_feature_extractor[name](**kwargs))
             logging.info('init [%s] extractor', name)
-
+        for extractor in self.l_extractor:
+            extractor.set_resource(self.resource)
         logging.info('total [%d] group features', len(self.l_feature_group))
 
     def _load_data(self):

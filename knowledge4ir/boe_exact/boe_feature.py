@@ -26,7 +26,7 @@ from knowledge4ir.utils import (
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,
 )
-from knowledge4ir.joint.boe import (
+from knowledge4ir.utils.boe import (
     form_boe_per_field,
     form_boe_tagme_field,
 )
@@ -36,15 +36,32 @@ class BoeFeature(Configurable):
     feature_name_pre = Unicode()
     ana_format = Unicode('spot', help='annotation format, tagme or spot').tag(config=True)
 
+    def __init__(self, **kwargs):
+        super(BoeFeature, self).__init__(**kwargs)
+        self.resource = None
+
     def extract_pair(self, q_info, doc_info):
+        """
+        extract boe based features for q-d pair
+        :param q_info: annotated query info
+        :param doc_info: annotated doc info
+        :return: h_feature = {'feature name': value}
+        """
         raise NotImplementedError
 
-    def _get_field_entity(self, h_info, field):
+    def set_resource(self, resource):
+        self.resource = resource
+
+    def _get_field_ana(self, h_info, field):
         l_h_e = []
         if self.ana_format == 'spot':
             l_h_e = form_boe_per_field(h_info, field)
         else:
             l_h_e = form_boe_tagme_field(h_info, field)
+        return l_h_e
+
+    def _get_field_entity(self, h_info, field):
+        l_h_e = self._get_field_ana(h_info, field)
         return [h['id'] for h in l_h_e]
 
     # def _get_spot_field_entity(self, h_info, field):
