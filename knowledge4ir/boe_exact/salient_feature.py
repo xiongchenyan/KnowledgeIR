@@ -34,7 +34,14 @@ from knowledge4ir.utils import (
 class SalientFeature(BoeFeature):
     feature_name_pre = Unicode('Salient')
 
+    def set_resource(self, resource):
+        self.resource = resource
+        assert resource.embedding
+        logging.info('Salient feature resource set')
+
     def extract_pair(self, q_info, doc_info):
+        logging.debug('extracting salient features for [%s][%s]',
+                      q_info['qid'], doc_info['docno'])
         l_q_ana = self._get_field_ana(q_info, QUERY_FIELD)
 
         l_h_feature = [self.extract_per_entity(ana, doc_info) for ana in l_q_ana]
@@ -68,7 +75,7 @@ class SalientFeature(BoeFeature):
         h_feature.update(self._extract_e_votes(ana, h_loc, doc_info))
 
         h_feature.update(self._extract_pos(ana, h_loc, doc_info))
-
+        logging.debug('[%s] feature %s', ana['id'], json.dumps(h_feature))
         return h_feature
 
     def _extract_w_votes(self, ana, h_loc, doc_info):
