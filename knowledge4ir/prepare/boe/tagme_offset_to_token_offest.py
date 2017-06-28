@@ -15,7 +15,7 @@ def make_char_to_token_mapping(text):
     h_map = {}
     term_p = 0
     for i in xrange(len(text) + 1):
-        if i == ' ':
+        if text[i] == ' ':
             term_p += 1
         h_map[i] = term_p
     return h_map
