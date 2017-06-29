@@ -33,25 +33,37 @@ def convert_offset(h_info):
             l_ana = h_info['tagme'].get(field, [])
         else:
             l_ana = h_info['spot'].get(field, [])
+        min_st = 0
         for i in xrange(len(l_ana)):
             if 'loc' in l_ana[i]:
                 loc = l_ana[i]['loc']
-                st, ed = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1] - 1]
-                ed += 1
-                # if text[ed] != " ":
-                    # the non-English char ed offset?
-                    # ed += 1
-                l_ana[i]['loc'] = (st, ed)
             else:
                 loc = l_ana[i][1:3]
-                st, ed = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1] - 1]
-                ed += 1
+            if 'surface' in l_ana:
+                surface = l_ana['surface']
+                if surface != text[loc[0]: loc[1]]:
+                    logging.info('tagme sf [%s] != [%s]', text[loc[0]:loc[1]], surface)
+                    min_st = max(loc[0], min_st)
+                    p = text[min_st:].find(surface)
+                    if -1 == p:
+                        logging.warn('[%s] not in text [%s]', surface, text[min_st:])
+                        continue
+                    new_st = p + min_st
+                    new_ed = p + len(surface)
+                    loc = (new_st, new_ed)
+                    logging.info('moved to [%s]', text[loc[0]:loc[1]])
+            min_st = loc[0]
+
+            st, ed = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1] - 1]
+            ed += 1
+            if 'loc' in l_ana[i]:
+                l_ana[i]['loc'] = (st, ed)
+            else:
                 l_ana[i][1], l_ana[i][2] = st, ed
             before_name = text[loc[0]: loc[1]]
             after_name = ' '.join(text.split()[st:ed])
             if after_name not in before_name:
                 logging.warn('location match: [%s] -> [%s]', before_name, after_name)
-
     return h_info
 
 if __name__ == '__main__':
