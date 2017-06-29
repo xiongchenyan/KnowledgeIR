@@ -151,8 +151,12 @@ def word_embedding_vote(e_id, h_info, field, resource):
 
 def uw_word_embedding_vote(e_id, h_info, field, loc, resource):
     text = h_info.get(field, "")
-    text = text[loc[0]-20:loc[1]+20]
-    text = ' '.join(text.split()[1:-1])
+    # text = text[loc[0]-20:loc[1]+20]
+    # text = ' '.join(text.split()[loc[0]-10:loc[1] + 10])
+    l_t = text.split()
+    l_t = l_t[loc[0]-10: loc[0]] + l_t[loc[1]: loc[1] + 10]
+    text = ' '.join(l_t)
+    # text = ' '.join(text.split()[1:-1])
     h_raw = {'uw_text': text}
     h_mid = word_embedding_vote(e_id, h_raw, 'uw_text', resource)
     h_feature = dict([('uw_' + item[0], item[1]) for item in h_mid.items()])
