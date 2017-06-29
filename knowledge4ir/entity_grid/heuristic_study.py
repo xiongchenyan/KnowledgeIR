@@ -75,7 +75,7 @@ if __name__ == '__main__':
     h = {'title entity rank position count': l_dist,
          'title entity rank position probability': l_prob
          }
-    json.dump(open(sys.argv[2], 'w'), h, indent=1)
+    json.dump(h, open(sys.argv[2], 'w'),  indent=1)
     logging.info('finished')
 
 
