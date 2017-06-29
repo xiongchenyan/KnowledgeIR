@@ -134,7 +134,7 @@ def surface_lp(sf, resource):
 def word_embedding_vote(e_id, h_info, field, resource):
     l_sim = []
     if e_id in resource.embedding:
-        text = h_info[field]
+        text = h_info.get(field, "")
         logging.debug('[%s] voting for [%s]', text, e_id)
         for t in text.lower().split():
             if t in resource.embedding:
