@@ -23,11 +23,18 @@ def tokenize_json_doc(in_name, out_name, l_fields):
         if not p % 1000:
             print 'processed [%d] docs' % p
         h = json.loads(line)
+        l_text = []
         for field in l_fields:
-            h[field] = ' '.join(word_tokenize(' '.join(
+            text = ' '.join(word_tokenize(' '.join(
                 h.get(field, "").split()
                                                        )))
-        print >> out, json.dumps(h)
+            l_text.append(text)
+        docno = h.get('id', "")
+        if not docno:
+            docno = h.get('docno', "")
+        if docno:
+            print >> out, docno + '\t' + '\t'.join(l_text)
+    out.close()
     print "finished"
 
 if __name__ == '__main__':
