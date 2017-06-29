@@ -39,8 +39,8 @@ def convert_offset(h_info):
                 loc = l_ana[i]['loc']
             else:
                 loc = l_ana[i][1:3]
-            if 'surface' in l_ana:
-                surface = l_ana['surface']
+            if 'surface' in l_ana[i]:
+                surface = l_ana[i]['surface']
                 if surface != text[loc[0]: loc[1]]:
                     logging.info('tagme sf [%s] != [%s]', text[loc[0]:loc[1]], surface)
                     min_st = max(loc[0], min_st)
