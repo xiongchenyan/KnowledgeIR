@@ -15,7 +15,8 @@ first set of features:
     BOE EF * doc fields
     BOE Coordinate match * doc fields
 
-TODO:add co-reference features
+co-reference features
 """
+from .boe_feature import AnaMatch, CoreferenceMatch
 
 

@@ -22,3 +22,8 @@ e_desp_field = 'desp'
 e_name_field = 'name'
 e_alias_field = 'alias'
 ENTITY_TEXT_FIELDS = [e_name_field, e_alias_field, e_desp_field]
+GROUND_FIELD = 'ground'
+SPOT_FIELD = 'spot'
+MATCH_FIELD = 'match'
+COREFERENCE_FIELD = 'coreferences'
+

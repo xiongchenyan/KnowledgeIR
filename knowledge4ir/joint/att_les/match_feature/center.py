@@ -31,10 +31,10 @@ from knowledge4ir.joint import (
     MATCH_FIELD
 )
 from knowledge4ir.joint.att_les.match_feature import QeDTextMatchFeatureExtractor
-from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import (
-    load_trec_ranking_with_score
-)
+    load_trec_ranking_with_score,
+    MATCH_FIELD)
+from knowledge4ir.utils.resource import JointSemanticResource
 
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')

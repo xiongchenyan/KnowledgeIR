@@ -10,27 +10,28 @@ output:
     info with fields kept, and boe representation with attention
 """
 
-from knowledge4ir.joint.resource import JointSemanticResource
-from traitlets.config import Configurable
+import json
+import logging
+
 from traitlets import (
     Unicode,
     List
 )
-import logging
-import json
+from traitlets.config import Configurable
+
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     QUERY_FIELD,
 )
-from knowledge4ir.joint.utils import (
+from knowledge4ir.utils.boe import (
     form_boe_per_field,
     surface_ambiguity_feature,
-    surface_lp,
     word_embedding_vote,
     entity_embedding_vote,
     uw_word_embedding_vote,
     cmns_feature,
 )
+from knowledge4ir.utils.resource import JointSemanticResource
 
 
 class AttentionBoe(Configurable):

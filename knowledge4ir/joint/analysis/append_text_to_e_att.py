@@ -15,12 +15,15 @@ output:
 
 import json
 import sys
-from traitlets.config import Configurable
+
 from traitlets import (
     Unicode
 )
+from traitlets.config import Configurable
+
 from knowledge4ir.utils import load_qid_query
-from knowledge4ir.joint.resource import JointSemanticResource
+from knowledge4ir.utils.resource import JointSemanticResource
+
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 

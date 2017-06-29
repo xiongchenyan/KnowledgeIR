@@ -16,7 +16,7 @@ from knowledge4ir.utils import (
     ENTITY_TEXT_FIELDS,
     e_name_field,
     text2lm,
-)
+    GROUND_FIELD, SPOT_FIELD, MATCH_FIELD)
 from traitlets import (
     Unicode,
     Set,

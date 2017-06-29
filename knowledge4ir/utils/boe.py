@@ -4,10 +4,10 @@ include entity and sf form features
 """
 
 import json
-from knowledge4ir.joint import SPOT_FIELD
 from knowledge4ir.utils import (
     QUERY_FIELD,
     TARGET_TEXT_FIELDS,
+    SPOT_FIELD
 )
 import numpy as np
 from scipy import stats
@@ -134,12 +134,14 @@ def surface_lp(sf, resource):
 def word_embedding_vote(e_id, h_info, field, resource):
     l_sim = []
     if e_id in resource.embedding:
-        text = h_info[field]
+        text = h_info.get(field, "")
+        logging.debug('[%s] voting for [%s]', text, e_id)
         for t in text.lower().split():
             if t in resource.embedding:
                 sim = resource.embedding.similarity(e_id, t)
                 l_sim.append(sim)
-
+    else:
+        logging.debug('[%s] has no embedding', e_id)
     max_sim, mean_sim, l_bin = pool_sim_score(l_sim)
     h_feature = dict()
     h_feature['w_vote_emb_max'] = max_sim
@@ -153,7 +155,7 @@ def uw_word_embedding_vote(e_id, h_info, field, loc, resource):
     text = ' '.join(text.split()[1:-1])
     h_raw = {'uw_text': text}
     h_mid = word_embedding_vote(e_id, h_raw, 'uw_text', resource)
-    h_feature = [('uw_' + item[0], item[1]) for item in h_mid.items()]
+    h_feature = dict([('uw_' + item[0], item[1]) for item in h_mid.items()])
     return h_feature
 
 
@@ -164,6 +166,8 @@ def entity_embedding_vote(e_id, h_info, field, resource):
         embedding = resource.embedding
     if e_id in embedding:
         l_e_id = [ana["id"] for ana in form_boe_per_field(h_info, field)]
+        logging.debug('[%s] voting for [%s] with %s',
+                      h_info['docno'], e_id, json.dumps(l_e_id))
         for other_e_id in l_e_id:
             if other_e_id == e_id:
                 continue
@@ -171,7 +175,8 @@ def entity_embedding_vote(e_id, h_info, field, resource):
                 continue
             sim = embedding.similarity(e_id, other_e_id)
             l_sim.append(sim)
-
+    else:
+        logging.debug('[%s] has no embedding', e_id)
     max_sim, mean_sim, l_bin = pool_sim_score(l_sim)
     h_feature = dict()
     h_feature['e_vote_emb_max'] = max_sim

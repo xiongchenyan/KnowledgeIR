@@ -6,28 +6,29 @@ uses the sf dict in the resource class: JointSemanticResource()
 add APi to run q_info and d_info's json format
 """
 
-import sys
 import json
-from knowledge4ir.joint.resource import JointSemanticResource
-from traitlets.config import Configurable
+import logging
+import sys
+from copy import deepcopy
+
+import nltk
 from traitlets import (
     Int,
     Unicode,
-    List,
     Bool
 )
-import nltk
-from knowledge4ir.utils import (
-    set_basic_log,
-    load_py_config
-)
-import logging
-from copy import deepcopy
-from knowledge4ir.utils import TARGET_TEXT_FIELDS
+from traitlets.config import Configurable
+
 from knowledge4ir.joint import (
     SPOT_FIELD
 )
+from knowledge4ir.utils import TARGET_TEXT_FIELDS
+from knowledge4ir.utils import (
+    set_basic_log,
+    load_py_config,
+    SPOT_FIELD)
 from knowledge4ir.utils.nlp import rm_stopword
+from knowledge4ir.utils.resource import JointSemanticResource
 
 
 class Spotter(Configurable):

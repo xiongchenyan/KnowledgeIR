@@ -11,16 +11,14 @@ import json
 import logging
 from copy import deepcopy
 
-# from knowledge4ir.joint.grounding.mem_e import EMemGrounder
 from traitlets import (
     Unicode
 )
 from traitlets.config import Configurable
 
-# from knowledge4ir.deprecated.joint.grounding.prf import PrfGrounder
 from knowledge4ir.joint.grounding import Grounder
-from knowledge4ir.joint.resource import JointSemanticResource
 from knowledge4ir.utils import TARGET_TEXT_FIELDS
+from knowledge4ir.utils.resource import JointSemanticResource
 
 
 class GroundCenter(Configurable):

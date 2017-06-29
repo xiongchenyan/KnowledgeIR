@@ -35,7 +35,7 @@ import logging
 from knowledge4ir.utils import (
     load_trec_labels_dict,
     load_svm_feature,
-)
+    GROUND_FIELD, MATCH_FIELD)
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
