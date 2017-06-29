@@ -49,9 +49,11 @@ def convert_offset(h_info):
                         logging.warn('[%s] not in text [%s]', surface, text[min_st:])
                         continue
                     new_st = p + min_st
-                    new_ed = p + len(surface)
+                    new_ed = new_st + len(surface)
+                    old_loc = loc[0], loc[1]
                     loc = (new_st, new_ed)
-                    logging.info('moved to [%s]', text[loc[0]:loc[1]])
+                    logging.info('moved to [%s] %s -> %s', text[loc[0]:loc[1]],
+                                 json.dumps(old_loc), json.dumps(loc))
             min_st = loc[0]
 
             st, ed = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1] - 1]
