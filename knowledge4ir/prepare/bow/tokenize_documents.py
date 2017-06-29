@@ -27,9 +27,9 @@ def tokenize(in_name, out_name):
             cols = [cols[0]] + [' '.join(word_tokenize(col)) for col in cols[1:]]
             print >> out, '\t'.join(cols)
         except UnicodeDecodeError:
-            p += 1
             print "DECODE ERROR:"
             print line
+            err_cnt += 1
 
     out.close()
     logging.info('finished, [%d/%d] error', err_cnt, cnt)
