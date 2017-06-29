@@ -129,7 +129,7 @@ class SalientFeature(BoeFeature):
     def _extract_pos(self, ana, h_loc, doc_info):
         h_feature = {}
         for field in TARGET_TEXT_FIELDS:
-            l_st = h_loc[field].keys()
+            l_st = h_loc[field].keys() + [1000]
             p = min(l_st)
             h_feature[field + '_FirstPos'] = math.log(p + 1.0)
         return h_feature
