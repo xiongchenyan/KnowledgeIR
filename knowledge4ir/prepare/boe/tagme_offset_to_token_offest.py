@@ -28,7 +28,11 @@ def convert_offset(h_info):
             continue
         text = h_info[field]
         h_char_to_token_loc = make_char_to_token_mapping(text)
-        l_ana = h_info['tagme'][field]
+        l_ana = []
+        if 'tagme' in h_info:
+            l_ana = h_info['tagme'][field]
+        else:
+            l_ana = h_info['spot'][field]
         for i in xrange(len(l_ana)):
             if 'loc' in l_ana[i]:
                 loc = l_ana[i]['loc']
