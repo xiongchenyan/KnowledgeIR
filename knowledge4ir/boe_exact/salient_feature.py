@@ -45,7 +45,9 @@ class SalientFeature(BoeFeature):
         l_q_ana = self._get_field_ana(q_info, QUERY_FIELD)
         logging.debug('q info %s', json.dumps(q_info))
         logging.debug('q ana %s', json.dumps(l_q_ana))
-        logging.debug('doc t [%s], info [%s]', doc_info['title'], json.dumps(doc_info['spot']['title']))
+        logging.debug('doc t [%s], info [%s]', doc_info.get('title', ""),
+                      json.dumps(doc_info.get('spot', {}).get('title', []))
+                      )
         l_h_feature = [self.extract_per_entity(ana, doc_info) for ana in l_q_ana]
 
         h_final_feature = {}
