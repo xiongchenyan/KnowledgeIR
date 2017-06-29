@@ -34,6 +34,7 @@ def convert_offset(h_info):
         else:
             l_ana = h_info['spot'].get(field, [])
         min_st = 0
+        l_new_ana = []
         for i in xrange(len(l_ana)):
             if 'loc' in l_ana[i]:
                 loc = l_ana[i]['loc']
@@ -67,6 +68,16 @@ def convert_offset(h_info):
             if after_name != before_name:
                 logging.warn('[%s] location match: [%s] -> [%s]',
                              h_info['docno'], before_name, after_name)
+                if len(before_name) <= len(after_name) / 2.0:
+                    continue
+            l_new_ana.append(l_ana[i])
+        if l_ana:
+            if 'tagme' in h_info:
+                h_info['tagme'][field] = l_new_ana
+            else:
+                h_info['spot'][field] = l_new_ana
+            if len(l_ana) != len(l_new_ana):
+                logging.info('[%d] ana to [%d]', len(l_ana), len(l_new_ana))
     return h_info
 
 if __name__ == '__main__':
