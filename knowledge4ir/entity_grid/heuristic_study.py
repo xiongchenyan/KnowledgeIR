@@ -33,6 +33,8 @@ def check_title_e_rank(doc_info):
     l_e_tf = get_top_frequency(doc_info)
     h_e_rank = dict(zip([item[0] for item in l_e_tf], range(1, 1 + len(l_e_tf))))
     l_ana = form_boe_per_field(doc_info, title_field)
+    if not l_ana:
+        return None
     title_e = l_ana[0]['id']
     rank = h_e_rank.get(title_e, 0)
     return rank
@@ -46,13 +48,14 @@ def title_e_freq_rank_distribution(in_name):
     :param in_name: doc info with spot
     :return: l_dist[i] = # title e in rank i, 0 is missing, 101 is after 100
     """
-
     l_dist = [0] * 102
     for p, line in enumerate(open(in_name)):
         if not p % 100:
             logging.info("processed [%d] doc", p)
         h = json.loads(line)
         rank = check_title_e_rank(h)
+        if rank is None:
+            continue
         rank = min(101, rank)
         l_dist[rank] += 1
     return l_dist
