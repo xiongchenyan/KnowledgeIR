@@ -3,11 +3,15 @@ form doc  info
 input:
     parse doc's raw text: docno \t title \t body text
 output:
-    json format doc infor, each line a json
+    json format doc info, each line a json
 """
 
 import json
 import sys
+from knowledge4ir.utils import (
+    title_field,
+    body_field,
+)
 reload(sys)
 sys.setdefaultencoding('UTF8')
 
@@ -28,8 +32,8 @@ for line in open(sys.argv[1]):
     text = '\t'.join(cols[2:])
     h = dict()
     h['docno'] = docno
-    h['title'] = title
-    h['bodyText'] = text
+    h[title_field] = title
+    h[body_field] = text
 
     print >> out, json.dumps(h)
 
