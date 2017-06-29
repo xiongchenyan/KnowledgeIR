@@ -153,7 +153,7 @@ def uw_word_embedding_vote(e_id, h_info, field, loc, resource):
     text = ' '.join(text.split()[1:-1])
     h_raw = {'uw_text': text}
     h_mid = word_embedding_vote(e_id, h_raw, 'uw_text', resource)
-    h_feature = [('uw_' + item[0], item[1]) for item in h_mid.items()]
+    h_feature = dict([('uw_' + item[0], item[1]) for item in h_mid.items()])
     return h_feature
 
 
