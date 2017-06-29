@@ -8,6 +8,7 @@ from knowledge4ir.utils import (
     QUERY_FIELD,
     TARGET_TEXT_FIELDS
 )
+import logging
 l_target_fields = TARGET_TEXT_FIELDS + [QUERY_FIELD]
 
 
@@ -28,18 +29,29 @@ def convert_offset(h_info):
             continue
         text = h_info[field]
         h_char_to_token_loc = make_char_to_token_mapping(text)
-        l_ana = []
         if 'tagme' in h_info:
-            l_ana = h_info['tagme'][field]
+            l_ana = h_info['tagme'].get(field, [])
         else:
-            l_ana = h_info['spot'][field]
+            l_ana = h_info['spot'].get(field, [])
         for i in xrange(len(l_ana)):
             if 'loc' in l_ana[i]:
                 loc = l_ana[i]['loc']
-                l_ana[i]['loc'] = (h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1]])
+                st, ed = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1] - 1]
+                ed += 1
+                # if text[ed] != " ":
+                    # the non-English char ed offset?
+                    # ed += 1
+                l_ana[i]['loc'] = (st, ed)
             else:
                 loc = l_ana[i][1:3]
-                l_ana[i][1], l_ana[i][2] = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1]]
+                st, ed = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1] - 1]
+                ed += 1
+                l_ana[i][1], l_ana[i][2] = st, ed
+            before_name = text[loc[0]: loc[1]]
+            after_name = ' '.join(text.split()[st:ed])
+            if after_name not in before_name:
+                logging.warn('location match: [%s] -> [%s]', before_name, after_name)
+
     return h_info
 
 if __name__ == '__main__':

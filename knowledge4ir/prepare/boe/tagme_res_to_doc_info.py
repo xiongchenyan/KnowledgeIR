@@ -18,6 +18,8 @@ from knowledge4ir.utils import (
     body_field,
     title_field,
 )
+from knowledge4ir.utils.boe import SPOT_FIELD
+from knowledge4ir.prepare.boe.tagme_offset_to_token_offest import convert_offset
 
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
@@ -40,8 +42,13 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
             p += 6
             continue
         obj_id = h_wiki_fb[wiki_id]
+        ana = dict()
         try:
-            ana = [obj_id, int(st), int(ed), {'score': float(score)}, name]
+            # ana = [obj_id, int(st), int(ed), {'score': float(score)}, name]
+            ana['surface'] = surface
+            ana['wiki_name'] = name
+            ana['loc'] = [int(st), int(ed)]
+            ana['entities'] = [{'id': obj_id, 'score': score}]
         except ValueError:
             logging.warn('ana %s format error', json.dumps(l_tagged[p: p + 6]))
             p += 6
@@ -53,9 +60,10 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
     h[title_field] = title
     h[body_field] = body
     h['docno'] = docno
-    h['tagme'] = dict()
-    h['tagme'][tagged_field] = l_ana
-    return docno, h
+    h['spot'] = dict()
+    h[SPOT_FIELD][tagged_field] = l_ana
+    h = convert_offset(h)
+    return h
 
 
 def process(tagme_in, wiki_fb_dict_in, out_name, tagged_field):
@@ -66,13 +74,15 @@ def process(tagme_in, wiki_fb_dict_in, out_name, tagged_field):
     for cnt, line in enumerate(open(tagme_in)):
         if not cnt % 1000:
             logging.info('process [%d] lines', cnt)
-        docno, h = wrap_doc(line.strip(), h_wiki_fb, tagged_field)
+        h = wrap_doc(line.strip(), h_wiki_fb, tagged_field)
         print >> out, json.dumps(h)
 
     out.close()
     logging.info('finished')
 
 if __name__ == '__main__':
+    from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if 5 != len(sys.argv):
         print "4 para: tag me out + wiki fb matching dict + out  + tagged field (title|bodyText)"
         sys.exit(-1)
