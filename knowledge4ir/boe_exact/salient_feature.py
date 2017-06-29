@@ -20,7 +20,8 @@ from knowledge4ir.boe_exact.boe_feature import BoeFeature
 from traitlets import (
     Int,
     Unicode,
-    Bool
+    Bool,
+    List,
 )
 from knowledge4ir.utils import (
     log_sum_feature,
@@ -28,11 +29,12 @@ from knowledge4ir.utils import (
     max_pool_feature,
     QUERY_FIELD,
     TARGET_TEXT_FIELDS,
-)
+ )
 
 
 class SalientFeature(BoeFeature):
     feature_name_pre = Unicode('Salient')
+    l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
 
     def set_resource(self, resource):
         self.resource = resource
@@ -51,7 +53,7 @@ class SalientFeature(BoeFeature):
         l_h_feature = [self.extract_per_entity(ana, doc_info) for ana in l_q_ana]
 
         h_final_feature = {}
-        h_final_feature.update(log_sum_feature(l_h_feature))
+        # h_final_feature.update(log_sum_feature(l_h_feature))
         h_final_feature.update(mean_pool_feature(l_h_feature))
         h_final_feature = dict([(self.feature_name_pre + item[0], item[1])
                                 for item in h_final_feature.items()])
@@ -95,7 +97,7 @@ class SalientFeature(BoeFeature):
         """
         h_feature = dict()
         e_id = ana['id']
-        for field in TARGET_TEXT_FIELDS:
+        for field in self.l_target_fields:
             l_h_uw_votes = []
             for loc in h_loc[field].items():
                 h = uw_word_embedding_vote(e_id, doc_info, field, loc, self.resource)
@@ -121,7 +123,7 @@ class SalientFeature(BoeFeature):
         """
         h_feature = dict()
         e_id = ana['id']
-        for field in TARGET_TEXT_FIELDS:
+        for field in self.l_target_fields:
             h_full_vote = entity_embedding_vote(e_id, doc_info, field, self.resource)
             h_res = dict([(field + '_' + k, v)
                           for k, v in h_full_vote.items()])
@@ -130,7 +132,7 @@ class SalientFeature(BoeFeature):
 
     def _extract_pos(self, ana, h_loc, doc_info):
         h_feature = {}
-        for field in TARGET_TEXT_FIELDS:
+        for field in self.l_target_fields:
             l_st = h_loc[field].keys() + [1000]
             p = min(l_st)
             h_feature[field + '_FirstPos'] = math.log(p + 1.0)
