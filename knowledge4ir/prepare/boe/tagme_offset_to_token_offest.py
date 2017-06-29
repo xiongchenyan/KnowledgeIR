@@ -30,8 +30,12 @@ def convert_offset(h_info):
         h_char_to_token_loc = make_char_to_token_mapping(text)
         l_ana = h_info['tagme'][field]
         for i in xrange(len(l_ana)):
-            loc = l_ana[i][1:3]
-            l_ana[i][1], l_ana[i][2] = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1]]
+            if 'loc' in l_ana[i]:
+                loc = l_ana[i]['loc']
+                l_ana[i]['loc'] = (h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1]])
+            else:
+                loc = l_ana[i][1:3]
+                l_ana[i][1], l_ana[i][2] = h_char_to_token_loc[loc[0]], h_char_to_token_loc[loc[1]]
     return h_info
 
 if __name__ == '__main__':
