@@ -42,7 +42,7 @@ class RunMulKFold(Configurable):
                          os.path.join(self.out_dir, out_name)
                          ]
                 qsub_job(l_cmd)
-        logging.info('all submited')
+        logging.info('all submitted')
         return
 
 

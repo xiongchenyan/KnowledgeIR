@@ -9,21 +9,32 @@ output:
     follow the same convention with letor 3.0
 """
 
-from sklearn.cross_validation import KFold
+# from sklearn.cross_validation import KFold
 import os
 import json
 import logging
+# from knowledge4ir.utils.model import fix_kfold_partition
 default_K = 5
 
 
-def kfold_q_pool(q_st, q_ed, nb_folds=default_K):
-    l = range(q_st, q_ed + 1)
-    h_test_fold = {}
-    for p, (__, test_index) in enumerate(KFold(n=len(l), n_folds=nb_folds, shuffle=False)):
-        for idx in test_index:
-            h_test_fold['%d' % l[idx]] = p + 1
-    print json.dumps(h_test_fold)
-    return h_test_fold
+# def new_kfold_q_pool(q_st, q_ed, nb_folds=default_K):
+#     h_test_fold = {}
+#     l_train, l_test = fix_kfold_partition(with_dev=False, k=nb_folds, st=q_st, ed=q_ed)
+#     for p, test in enumerate(l_test):
+#         for qid in test:
+#             h_test_fold[qid] = p + 1
+#     print json.dumps(h_test_fold)
+#     return h_test_fold
+#
+#
+# def kfold_q_pool(q_st, q_ed, nb_folds=default_K):
+#     l = range(q_st, q_ed + 1)
+#     h_test_fold = {}
+#     for p, (__, test_index) in enumerate(KFold(n=len(l), n_folds=nb_folds, shuffle=False)):
+#         for idx in test_index:
+#             h_test_fold['%d' % l[idx]] = p + 1
+#     print json.dumps(h_test_fold)
+#     return h_test_fold
 
 
 def kfold_q_pool_uniform(q_st, q_ed, nb_folds=default_K):
@@ -51,8 +62,7 @@ def kfold_svm_data(svm_in, q_st, q_ed, out_dir, nb_folds=default_K, with_dev=Fal
         os.makedirs(out_dir)
     l_test_out = []
     l_train_out = []
-    if with_dev:
-        l_dev_out = []
+    l_dev_out = []
     else_out = open(os.path.join(out_dir, 'else.txt'), 'w')
     total_train_out = open(os.path.join(out_dir, 'total_train.txt'), 'w')
     for k in xrange(nb_folds):
@@ -115,11 +125,5 @@ if __name__ == '__main__':
     if len(sys.argv) > 6:
         with_dev = bool(int(sys.argv[6]))
     kfold_svm_data(sys.argv[1], q_st, q_ed, sys.argv[2], nb_folds, with_dev)
-
-
-
-
-
-
 
 
