@@ -64,7 +64,7 @@ def convert_offset(h_info):
                 l_ana[i][1], l_ana[i][2] = st, ed
             before_name = text[loc[0]: loc[1]]
             after_name = ' '.join(text.split()[st:ed])
-            if after_name not in before_name:
+            if after_name != before_name:
                 logging.warn('[%s] location match: [%s] -> [%s]',
                              h_info['docno'], before_name, after_name)
     return h_info
