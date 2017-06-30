@@ -11,7 +11,8 @@ def re_name(h):
         for i in xrange(len(l_ana)):
             new_ana = l_ana[i]
             new_ana['entities'] = new_ana.get('entity', [])
-            del new_ana['entity']
+            if 'entity' in new_ana:
+                del new_ana['entity']
             l_ana[i] = new_ana
         h['spot'][field] = l_ana
     return
