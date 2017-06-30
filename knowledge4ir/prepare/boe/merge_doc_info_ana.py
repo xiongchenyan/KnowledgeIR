@@ -20,7 +20,10 @@ sys.setdefaultencoding('UTF8')
 
 
 def merge_one(h_doc_info_title, h_doc_info_body):
-    h_doc_info_title['tagme'][body_field] = h_doc_info_body['tagme'][body_field]
+    if 'tagme' in h_doc_info_title:
+        h_doc_info_title['tagme'][body_field] = h_doc_info_body['tagme'][body_field]
+    else:
+        h_doc_info_title['spot'][body_field] = h_doc_info_body['spot'][body_field]
     return h_doc_info_title
 
 
