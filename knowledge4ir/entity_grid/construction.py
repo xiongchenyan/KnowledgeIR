@@ -20,8 +20,11 @@ from knowledge4ir.utils import (
     QUERY_FIELD,
 )
 import json
+import sys
 from nltk.tokenize import sent_tokenize
 import logging
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 def construct_per_text(text, l_ana):
@@ -94,7 +97,6 @@ def construct_per_doc(doc_info, l_target_field):
 
 
 if __name__ == '__main__':
-    import sys
     from knowledge4ir.utils import set_basic_log
     set_basic_log()
     if 3 < len(sys.argv):
