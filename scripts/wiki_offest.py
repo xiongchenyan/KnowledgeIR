@@ -43,6 +43,6 @@ if __name__ == '__main__':
             print 'processed [%d]' % p
         h = json.loads(line)
         fix_body_offset(h)
-        print >> out, h
+        print >> out, json.dumps(h)
     print "finished"
     out.close()
