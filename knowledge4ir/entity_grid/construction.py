@@ -62,7 +62,8 @@ def _align_ana_to_sent(l_sent, l_ana):
     for sent in l_sent:
         l_t = sent.split()
         sent_ed = sent_st + len(l_t)
-        logging.info('sent [%s] at [%d:%d)', sent, sent_st, sent_ed)
+        logging.info('sent [%s] at [%d:%d), ana_p at %s', sent, sent_st, sent_ed,
+                     json.dumps(l_ana[ana_p]['loc']))
         l_this_ana = []
         while ana_p < len(l_ana):
             ana = l_ana[ana_p]
@@ -77,6 +78,8 @@ def _align_ana_to_sent(l_sent, l_ana):
                     logging.warn('[%s] != [%s], in [%s] [%d:%d)',
                                  ana['surface'], ' '.join(l_t[st:ed]),
                                  sent, st, ed)
+            elif st < sent_st:
+                ana_p += 1
             else:
                 break
         sent_st = sent_ed
