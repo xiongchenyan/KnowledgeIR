@@ -99,7 +99,7 @@ def construct_per_doc(doc_info, l_target_field):
 if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
     set_basic_log()
-    if 3 < len(sys.argv):
+    if 3 > len(sys.argv):
         print "form entity grid"
         print "2+ para: tagged doc in + out_name + out format:full (default)|pretty"
         sys.exit(-1)
