@@ -15,13 +15,17 @@ from knowledge4ir.utils import (
 from knowledge4ir.utils.boe import form_boe_per_field
 import logging
 
+
 def get_top_frequency(doc_info):
     l_ana = form_boe_per_field(doc_info, body_field)
     l_e = [ana['id'] for ana in l_ana]
+    l_name = [ana['surface'] for ana in l_ana]
+    h_e_name = dict(zip(l_e, l_name))
     h_e_tf = term2lm(l_e)
     l_e_tf = h_e_tf.items()
     l_e_tf.sort(key=lambda item: item[1], reverse=True)
-    return l_e_tf
+    top_e_name = h_e_name[l_e_tf[0][0]]
+    return l_e_tf, top_e_name
 
 
 def check_title_e_rank(doc_info):
@@ -30,7 +34,7 @@ def check_title_e_rank(doc_info):
     :param doc_info:
     :return:
     """
-    l_e_tf = get_top_frequency(doc_info)
+    l_e_tf, top_e_name = get_top_frequency(doc_info)
     h_e_rank = dict(zip([item[0] for item in l_e_tf], range(1, 1 + len(l_e_tf))))
     l_ana = form_boe_per_field(doc_info, title_field)
     if not l_ana:
@@ -39,8 +43,9 @@ def check_title_e_rank(doc_info):
     rank = h_e_rank.get(title_e, 0)
     if rank != 1:
         top_e, top_tf = l_e_tf[0]
+
         title_e, title_tf = l_e_tf[rank - 1]
-        print doc_info[title_field] + '\t%s:%d\t%s:%d' % (title_e, title_tf, top_e, top_tf)
+        print doc_info[title_field] + '\t' + top_e_name + '\t%s\t%d\t%s\t%d' % (title_e, title_tf, top_e, top_tf)
     return rank
 
 
