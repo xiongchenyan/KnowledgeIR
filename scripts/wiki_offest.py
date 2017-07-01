@@ -3,15 +3,20 @@ fix wiki offset
 """
 
 import json
+from knowledge4ir.utils import (
+    TARGET_TEXT_FIELDS,
+    body_field,
+)
+from knowledge4ir.utils.boe import SPOT_FIELD
 
 def fix_body_offset(doc_info):
     title_len = len(doc_info.get('title', "").split())
-    if not 'spot' in doc_info:
+    if not SPOT_FIELD in doc_info:
         return
-    if not 'bodyText' in doc_info['spot']:
+    if not body_field in doc_info['spot']:
         return
-    l_ana = doc_info['spot']['bodyText']
-    text = doc_info['bodyText']
+    l_ana = doc_info[SPOT_FIELD][body_field]
+    text = doc_info[body_field]
     l_t = text.split()
     for i in xrange(1, len(l_ana)):
         loc = l_ana[i]['loc']
@@ -22,7 +27,7 @@ def fix_body_offset(doc_info):
         if new_sf != l_ana[i]['surface']:
             print 'title len [%d]' % title_len
             print '[%s] != [%s]' % (new_sf, l_ana[i]['surface'])
-    doc_info['spot']['bodyText'] = l_ana[1:]
+    doc_info[SPOT_FIELD][body_field] = l_ana[1:]
     return
 
 if __name__ == '__main__':
