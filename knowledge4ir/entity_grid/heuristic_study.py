@@ -44,10 +44,10 @@ def check_title_e_rank(doc_info):
     title_e = l_ana[0]['id']
     rank = h_e_rank.get(title_e, 0)
     if rank != 1:
-        top_e, top_tf = l_e_tf[0]
-
-        title_e, title_tf = l_e_tf[rank - 1]
-        print doc_info[title_field] + '\t' + top_e_name + '\t%s\t%d\t%s\t%d' % (title_e, title_tf, top_e, top_tf)
+        if l_e_tf:
+            top_e, top_tf = l_e_tf[0]
+            title_e, title_tf = l_e_tf[rank - 1]
+            print doc_info[title_field] + '\t' + top_e_name + '\t%s\t%d\t%s\t%d' % (title_e, title_tf, top_e, top_tf)
     return rank
 
 
