@@ -60,6 +60,9 @@ def _align_ana_to_sent(l_sent, l_ana):
     ana_p = 0
     l_ana.sort(key=lambda item: item['loc'][0])
     for sent in l_sent:
+        if ana_p >= len(l_ana):
+            ll_per_sent_ana.append([])
+            continue
         l_t = sent.split()
         sent_ed = sent_st + len(l_t)
         logging.info('sent [%s] at [%d:%d), ana_p at %s', sent, sent_st, sent_ed,
