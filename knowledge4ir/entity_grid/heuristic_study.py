@@ -24,7 +24,9 @@ def get_top_frequency(doc_info):
     h_e_tf = term2lm(l_e)
     l_e_tf = h_e_tf.items()
     l_e_tf.sort(key=lambda item: item[1], reverse=True)
-    top_e_name = h_e_name[l_e_tf[0][0]]
+    top_e_name = ""
+    if l_e_tf:
+        top_e_name = h_e_name[l_e_tf[0][0]]
     return l_e_tf, top_e_name
 
 
