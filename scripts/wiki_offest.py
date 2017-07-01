@@ -14,9 +14,13 @@ def fix_body_offset(doc_info):
     text = doc_info['bodyText']
     l_t = text.split()
     for i in xrange(len(l_ana)):
-        l_ana[i]['loc'] = l_ana[i]['loc'][0] - title_len, l_ana[i]['loc'][1] - title_len
-        new_sf = ' '.join(l_t[l_ana[i]['loc'][0]: l_ana[i]['loc'][1]])
+        loc = l_ana[i]['loc']
+        loc[0] -= title_len
+        loc[1] -= title_len
+        l_ana[i]['loc'] = loc
+        new_sf = ' '.join(l_t[loc[0]: loc[1]])
         if new_sf != l_ana[i]['surface']:
+            print 'title len [%d]' % title_len
             print '[%s] != [%s]' % (new_sf, l_ana[i]['surface'])
     return
 
