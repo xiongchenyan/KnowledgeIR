@@ -117,7 +117,9 @@ if __name__ == '__main__':
         if out_format == 'full':
             print >> out, json.dumps(doc_info)
         else:
-            docno = doc_info['docno']
+            docno = doc_info.get('docno', "")
+            if not docno:
+                docno = doc_info.get('title', 'NA')
             for field in TARGET_TEXT_FIELDS:
                 l_e_grid = doc_info['e_grid'][field]
                 for h_grid in l_e_grid:
