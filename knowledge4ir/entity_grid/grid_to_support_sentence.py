@@ -70,7 +70,6 @@ def dump_nlss(e_grid_in, out_name, restrict_to_title=False):
     :param restrict_to_title: whether to keep to title entities
     :return:
     """
-
     out = open(out_name, 'w')
     for p, line in enumerate(open(e_grid_in)):
         if not p % 1000:
@@ -79,8 +78,10 @@ def dump_nlss(e_grid_in, out_name, restrict_to_title=False):
         l_nlss = parse_doc_to_nlss(doc_info)
         if restrict_to_title:
             l_nlss = filter_to_title_entity(l_nlss, doc_info)
-        for key, sent_id, sent, l_e in l_nlss:
-            print >> out, '\t'.join([key, sent_id, sent, json.dumps(l_e)])
+        for e, sent_id, sent, l_e in l_nlss:
+            print e, sent_id, sent
+            print l_e
+            print >> out, '\t'.join([e, sent_id, sent, json.dumps(l_e)])
 
     out.close()
     logging.info('finished')
@@ -88,7 +89,7 @@ def dump_nlss(e_grid_in, out_name, restrict_to_title=False):
 
 if __name__ == '__main__':
     import sys
-    set_basic_log()
+    set_basic_log(logging.DEBUG)
     if 3 > len(sys.argv):
         print "2+ para: e grid in + nlss out + restrict to title e or not (0, default|1)"
         sys.exit(-1)
