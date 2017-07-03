@@ -84,9 +84,6 @@ def dump_nlss(e_grid_in, out_name, restrict_to_title=False):
         if restrict_to_title:
             l_nlss = filter_to_title_entity(l_nlss, doc_info)
         for e, sent_id, sent, l_e in l_nlss:
-            print e, sent_id
-            print json.dumps(sent)
-            print l_e
             print >> out, '\t'.join([e, sent_id, json.dumps(sent), json.dumps(l_e)])
 
     out.close()
