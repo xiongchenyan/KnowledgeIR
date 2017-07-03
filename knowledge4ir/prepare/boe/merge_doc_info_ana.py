@@ -51,7 +51,6 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
     :param update_info_in:
     :return:
     """
-    # h_doc_h_info_base = load_json_info(base_info_in)
     out = open(out_name, 'w')
     with open(base_info_in) as base_in, open(update_info_in) as update_in:
         for line_base, line_update in izip(base_in, update_in):
@@ -67,6 +66,7 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
             print >> out, json.dumps(h_total_info)
             logging.info('[%s] merged', docno)
 
+    # h_doc_h_info_base = load_json_info(base_info_in)
     # for line in open(update_info_in):
     #     h_update_info = json.loads(line)
     #     docno = h_update_info['docno']
