@@ -20,6 +20,14 @@ reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
 
+def get_docno(doc_info):
+    if 'docno' in doc_info:
+        docno = doc_info['docno']
+    else:
+        docno = doc_info['id']
+    return docno
+
+
 def merge_boe(h_doc_info_base, h_doc_info_update):
     if 'tagme' in h_doc_info_base:
         h_doc_info_base['tagme'].update(h_doc_info_update['tagme'])
@@ -56,8 +64,10 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
         for line_base, line_update in izip(base_in, update_in):
             h_base_info = json.loads(line_base)
             h_update_info = json.loads(line_update)
-            assert h_base_info['docno'] == h_update_info['docno']
-            docno = h_base_info['docno']
+            base_docno = get_docno(h_base_info)
+            update_docno = get_docno(h_update_info)
+            assert base_docno == update_docno
+            docno = base_docno
             if merge_format == 'spot':
                 h_total_info = merge_boe(h_base_info, h_update_info)
             else:

@@ -93,7 +93,7 @@ def dump_nlss(e_grid_in, out_name, restrict_to_title=False):
 if __name__ == '__main__':
     set_basic_log(logging.DEBUG)
     if 3 > len(sys.argv):
-        print "2+ para: e grid in + nlss out + restrict to title e or not (0, default|1)"
+        print "2+ para: e grid in + nlss out + restrict to title e or not (0, default |1)"
         sys.exit(-1)
 
     restrict_to_title = False
