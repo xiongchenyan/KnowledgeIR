@@ -15,7 +15,7 @@ from knowledge4ir.utils import (
     title_field,
     load_json_info,
 )
-
+from itertools import izip
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
@@ -51,18 +51,33 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
     :param update_info_in:
     :return:
     """
-    h_doc_h_info_base = load_json_info(base_info_in)
+    # h_doc_h_info_base = load_json_info(base_info_in)
     out = open(out_name, 'w')
-    for line in open(update_info_in):
-        h_update_info = json.loads(line)
-        docno = h_update_info['docno']
-        h_base_info = h_doc_h_info_base[docno]
-        if merge_format == 'spot':
-            h_total_info = merge_boe(h_base_info, h_update_info)
-        else:
-            h_total_info = merge_raw_field(h_base_info, h_update_info)
-        print >> out, json.dumps(h_total_info)
-        logging.info('[%s] merged', docno)
+    with open(base_info_in) as base_in, open(update_info_in) as update_in:
+        for line_base, line_update in izip(base_in, update_in):
+            h_base_info = json.loads(line_base)
+            h_update_info = json.loads(line_update)
+            assert h_base_info['docno'] == h_update_info['docno']
+            docno = h_base_info['docno']
+            if merge_format == 'spot':
+                h_total_info = merge_boe(h_base_info, h_update_info)
+            else:
+                h_total_info = merge_raw_field(h_base_info, h_update_info)
+
+            print >> out, json.dumps(h_total_info)
+            logging.info('[%s] merged', docno)
+
+    # for line in open(update_info_in):
+    #     h_update_info = json.loads(line)
+    #     docno = h_update_info['docno']
+    #     h_base_info = h_doc_h_info_base[docno]
+    #     if merge_format == 'spot':
+    #         h_total_info = merge_boe(h_base_info, h_update_info)
+    #     else:
+    #         h_total_info = merge_raw_field(h_base_info, h_update_info)
+    #     print >> out, json.dumps(h_total_info)
+    #     logging.info('[%s] merged', docno)
+
     logging.info('finished')
     out.close()
 
@@ -74,6 +89,7 @@ if __name__ == '__main__':
         print "3+ para: tagme info a + tagme info b + merged out name + update format: (spot|all)"
         print "update the a using b, if update using spot (default), then only spot field is updated"
         print "if to update all, all fields will be updated at the first level (no recurse)"
+        print "make sure both files are ordered the same with docno 1-1 correspondence in each line"
         sys.exit(-1)
     tag_in_a, tag_in_b = sys.argv[1:3]
     out_name = sys.argv[3]
