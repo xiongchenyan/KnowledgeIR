@@ -42,9 +42,11 @@ def count_grid_stats(doc_info_in, out_name):
         l_sent_cnt, h_entity_cnt = count_per_doc(h)
         this_nb_sent = len(l_sent_cnt)
         this_nb_e = len(h_entity_cnt)
-        this_nb_out_degree = sum(l_sent_cnt) / float(this_nb_sent)
-        this_nb_in_degree = sum([item[1] for item in h_entity_cnt.items()]) / float(this_nb_e)
-
+        this_nb_out_degree, this_nb_in_degree = 0, 0
+        if this_nb_sent:
+            this_nb_out_degree = sum(l_sent_cnt) / float(this_nb_sent)
+        if this_nb_e:
+            this_nb_in_degree = sum([item[1] for item in h_entity_cnt.items()]) / float(this_nb_e)
         h_res = {'docno': h['docno']}
         h_res['nb_sent'] = this_nb_sent
         h_res['nb_e'] = this_nb_e
@@ -55,12 +57,12 @@ def count_grid_stats(doc_info_in, out_name):
         nb_in_degree += this_nb_in_degree
         nb_out_degree += this_nb_out_degree
         nb_e += this_nb_e
-
+    cnt = float(cnt)
     h_res = {'docno': 'total'}
-    h_res['nb_sent'] = nb_sent
-    h_res['nb_e'] = nb_e
-    h_res['nb_out_degree'] = nb_out_degree
-    h_res['nb_in_degree'] = nb_in_degree
+    h_res['nb_sent'] = nb_sent / cnt
+    h_res['nb_e'] = nb_e / cnt
+    h_res['nb_out_degree'] = nb_out_degree / cnt
+    h_res['nb_in_degree'] = nb_in_degree / cnt
 
     json.dump(h_res, open(out_name + '.meta', 'w'), indent=1)
     logging.info('finished')
