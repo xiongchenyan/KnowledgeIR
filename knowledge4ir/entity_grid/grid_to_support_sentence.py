@@ -27,7 +27,9 @@ import logging
 
 def parse_doc_to_nlss(doc_info):
     l_nlss = []  # e_id, sent id, sent, l_e
-    docno = doc_info['docno']
+    docno = doc_info.get('docno', "")
+    if not docno:
+        doc_info = doc_info.get(title_field)
     for p, sent_grid in enumerate(doc_info.get(E_GRID_FIELD, {}).get(body_field, [])):
         sent_id = docno + '_s%d' % p
         sent = sent_grid['sent']
