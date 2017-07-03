@@ -14,6 +14,7 @@ TMP_DIR = ROOT_PATH + '/tmp/knowledge4ir/'
 DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 body_field = 'bodyText'
 title_field = 'title'
+E_GRID_FIELD = 'e_grid'
 TARGET_TEXT_FIELDS = [title_field, body_field, ]
 QUERY_FIELD = 'query'
 MS_ENTITY_KEY = '3c552f84af52430482da7285e4da8ad9'
