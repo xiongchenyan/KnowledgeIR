@@ -36,7 +36,7 @@ def count_grid_stats(doc_info_in, out_name):
     out = open(out_name, 'w')
     for line in open(doc_info_in):
         if not cnt % 1000:
-            logging.info('counting [%d] line', p)
+            logging.info('counting [%d] line', cnt)
             cnt += 1
         h = json.loads(line)
         l_sent_cnt, h_entity_cnt = count_per_doc(h)
@@ -69,9 +69,10 @@ def count_grid_stats(doc_info_in, out_name):
 if __name__ == '__main__':
     import sys
     from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if 3 != len(sys.argv):
         print "count grid simple stats"
-        print "2 para: doc infor with e_grid + out_name"
+        print "2 para: doc info with e_grid + out_name"
         sys.exit(-1)
     count_grid_stats(*sys.argv[1:])
 
