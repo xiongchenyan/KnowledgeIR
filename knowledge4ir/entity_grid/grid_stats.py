@@ -20,7 +20,7 @@ def count_per_doc(h_doc_info):
     h_entity_cnt = {}
     for sent_grid in l_sent_grid:
         l_ana = sent_grid.get('spot', [])
-        l_sent_cnt.append(l_ana)
+        l_sent_cnt.append(len(l_ana))
         for ana in l_ana:
             e_id = ana['id']
             h_entity_cnt[e_id] = h_entity_cnt.get(e_id, 0) + 1
