@@ -23,7 +23,7 @@ def count_per_doc(h_doc_info):
         l_sent_cnt.append(l_ana)
         for ana in l_ana:
             e_id = ana['id']
-            h_entity_cnt[e_id] += h_entity_cnt.get(e_id, 0)
+            h_entity_cnt[e_id] = h_entity_cnt.get(e_id, 0) + 1
     return l_sent_cnt, h_entity_cnt
 
 
