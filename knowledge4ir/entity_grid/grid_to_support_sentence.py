@@ -29,7 +29,7 @@ def parse_doc_to_nlss(doc_info):
     l_nlss = []  # e_id, sent id, sent, l_e
     docno = doc_info.get('docno', "")
     if not docno:
-        doc_info = doc_info.get(title_field)
+        docno = doc_info.get(title_field)
     e_grid = doc_info.get(E_GRID_FIELD, {})
     if type(e_grid) is not dict:
         logging.FATAL('%s is not dict from [%s]', json.dumps(e_grid), docno)
