@@ -37,7 +37,7 @@ def count_grid_stats(doc_info_in, out_name):
     for line in open(doc_info_in):
         if not cnt % 1000:
             logging.info('counting [%d] line', cnt)
-            cnt += 1
+        cnt += 1
         h = json.loads(line)
         l_sent_cnt, h_entity_cnt = count_per_doc(h)
         this_nb_sent = len(l_sent_cnt)
