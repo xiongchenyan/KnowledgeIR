@@ -23,6 +23,10 @@ from knowledge4ir.utils.boe import (
     form_boe_per_field,
 )
 import logging
+import sys
+
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 def parse_doc_to_nlss(doc_info):
@@ -88,7 +92,6 @@ def dump_nlss(e_grid_in, out_name, restrict_to_title=False):
     return
 
 if __name__ == '__main__':
-    import sys
     set_basic_log(logging.DEBUG)
     if 3 > len(sys.argv):
         print "2+ para: e grid in + nlss out + restrict to title e or not (0, default|1)"
