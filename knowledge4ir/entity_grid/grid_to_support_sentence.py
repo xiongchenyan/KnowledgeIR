@@ -43,6 +43,7 @@ def parse_doc_to_nlss(doc_info):
         sent = sent_grid['sent']
         l_ana = sent_grid[SPOT_FIELD]
         l_e = list(set([ana['id'] for ana in l_ana]))
+        l_e = [e for e in l_e if e]
         for e in l_e:
             l_nlss.append([e, sent_id, sent, l_e])
     logging.debug('[%s] [%d] nlss pair', docno, len(l_nlss))
@@ -86,7 +87,7 @@ def dump_nlss(e_grid_in, out_name, restrict_to_title=False):
             print e, sent_id
             print json.dumps(sent)
             print l_e
-            print >> out, '\t'.join([e, sent_id, sent, json.dumps(l_e)])
+            print >> out, '\t'.join([e, sent_id, json.dumps(sent), json.dumps(l_e)])
 
     out.close()
     logging.info('finished')
