@@ -84,7 +84,7 @@ if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
     set_basic_log()
     if 5 != len(sys.argv):
-        print "4 para: tag me out + wiki fb matching dict + out  + tagged field (title|bodyText)"
+        print "4 para: tag me out + wiki fb matching dict + out  + tagged field (title|bodyText|paperAbstract)"
         sys.exit(-1)
 
     process(*sys.argv[1:])

@@ -545,7 +545,7 @@ def load_doc_info(in_name):
     return h_doc_info
 
 
-def load_json_info(in_name, key_field):
+def load_json_info(in_name, key_field='docno'):
     """
     load json format info file
     :param in_name: input, each line is a json (dict)
