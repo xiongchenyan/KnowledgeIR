@@ -24,7 +24,7 @@ def merge_boe(h_doc_info_base, h_doc_info_update):
     if 'tagme' in h_doc_info_base:
         h_doc_info_base['tagme'].update(h_doc_info_update['tagme'])
     else:
-        h_doc_info_base['spot'].update(h_doc_info_update['spot'][body_field])
+        h_doc_info_base['spot'].update(h_doc_info_update['spot'])
     return h_doc_info_base
 
 
