@@ -16,9 +16,9 @@ def add_e_name(line, h_e_id, col_p):
 
 
 def process(in_name, name_dict_in, out_name, col_p):
-    h_e_id = dict([line.strip().split('\t')
-                   for line in open(name_dict_in)]
-                  )
+    l_cols = [line.strip().split('\t') for line in open(name_dict_in)]
+    l_cols = [col for col in l_cols if len(col) == 2]
+    h_e_id = dict(l_cols)
     out = open(out_name, 'w')
     for p, line in enumerate(open(in_name)):
         if not p % 1000:
