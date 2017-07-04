@@ -15,6 +15,7 @@ if 4 != len(sys.argv):
     sys.exit(-1)
 
 s_e = set([line.strip().split()[0] for line in open(sys.argv[2])])
+s_find = set()
 cnt = 0
 out = open(sys.argv[3], 'w')
 for line in open(sys.argv[1]):
@@ -23,7 +24,8 @@ for line in open(sys.argv[1]):
     if key in s_e:
         print >> out, line
         cnt += 1
+        s_find.add(key)
 
 out.close()
-print "finished [%d/%d] found" % (cnt, len(s_e))
+print "finished [%d] nlss total, [%d/%d] found" % (cnt, len(s_find), len(s_e))
 
