@@ -103,7 +103,7 @@ def text_cosine(text_a, text_b):
 
 
 def avg_embedding(word2vec, text):
-    l_t = raw_clean(text).split()
+    l_t = remove_punctuation(rm_stopword(text.lower()))
     l_v = [word2vec[t] for t in l_t if t in word2vec]
     if not l_v:
         return None

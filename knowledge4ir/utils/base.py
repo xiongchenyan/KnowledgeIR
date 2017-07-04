@@ -591,6 +591,7 @@ def max_pool_feature(l_h_feature):
     h_res = dict([(item[0] + '_Max', item[1]) for item in h_res.items()])
     return h_res
 
+
 def log_sum_feature(l_h_feature):
     h_res = dict()
     for h_feature in l_h_feature:
@@ -599,4 +600,9 @@ def log_sum_feature(l_h_feature):
     return h_res
 
 
+def add_feature_prefix(h_feature, prefix):
+    h_new = dict(
+        [(prefix + key, value) for key, value in h_feature.items()]
+    )
+    return h_new
 
