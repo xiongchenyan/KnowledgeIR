@@ -17,7 +17,7 @@ def add_e_name(line, h_e_id, col_p):
 
 def process(in_name, name_dict_in, out_name, col_p):
     h_e_id = dict([line.strip().split('\t')
-                   for line in open(name_dict_in).read().splitlines()]
+                   for line in open(name_dict_in)]
                   )
     out = open(out_name, 'w')
     for p, line in enumerate(open(in_name)):
