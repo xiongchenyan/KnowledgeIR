@@ -50,7 +50,7 @@ def s2_replace(h_info):
     if SPOT_FIELD in h_info:
         if body_field in h_info[SPOT_FIELD]:
             h_info[SPOT_FIELD][abstract_field] = h_info[SPOT_FIELD][body_field]
-        del h_info[SPOT_FIELD][body_field]
+            del h_info[SPOT_FIELD][body_field]
     return h_info
 
 
