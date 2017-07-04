@@ -112,3 +112,32 @@ def read_surface_form(kg_in):
     h_surface_name = dict(l_items)
     logging.info('loaded [%d] entity surface names', len(h_surface_name))
     return h_surface_name
+
+
+def load_nlss_dict(nlss_dump):
+    """
+    load nlss dump from entity_grid (from wiki)
+    :param nlss_dump: input nlss data
+    :return: h_nlss, e_id -> [(sent, l_e_id in sent)]
+    """
+    h_nlss = dict()
+
+    logging.info('loading nlss from [%s]', nlss_dump)
+    cnt = 0
+    for p, line in enumerate(open(nlss_dump)):
+        cnt = 1
+        if not p % 10000:
+            logging.info('loaded [%d] nlss line', p)
+        cols = line.strip().split('\t')
+        assert len(cols) > 4
+        e_id, s_id = cols[:2]
+        sent = json.loads(cols[2])
+        l_e = json.loads(cols[3])
+
+        if e_id not in h_nlss:
+            h_nlss[e_id] = []
+        h_nlss[e_id].append((sent, l_e))
+
+    logging.info('loaded [%d] nlss for [%d] entities', cnt, len(h_nlss))
+    return h_nlss
+
