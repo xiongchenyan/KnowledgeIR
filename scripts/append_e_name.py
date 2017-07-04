@@ -36,6 +36,6 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     col_p = int(sys.argv[4])
-    in_name, name_dict_in, out_name = sys.argv[1:]
+    in_name, name_dict_in, out_name = sys.argv[1:4]
     process(in_name, name_dict_in, out_name, col_p)
 
