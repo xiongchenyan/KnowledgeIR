@@ -74,7 +74,11 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
     """
     out = open(out_name, 'w')
     with open(base_info_in) as base_in, open(update_info_in) as update_in:
+        cnt = 0
         for line_base, line_update in izip(base_in, update_in):
+            if not cnt % 1000:
+                logging.info('processed [%d] lines', cnt)
+            cnt += 1
             h_base_info = json.loads(line_base)
             h_update_info = json.loads(line_update)
             base_docno = get_docno(h_base_info)
@@ -92,7 +96,7 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
             else:
                 raise NotImplementedError
             print >> out, json.dumps(h_total_info)
-            logging.info('[%s] merged', docno)
+            logging.debug('[%s] merged', docno)
 
     # h_doc_h_info_base = load_json_info(base_info_in)
     # for line in open(update_info_in):
