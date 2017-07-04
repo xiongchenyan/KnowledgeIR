@@ -26,7 +26,7 @@ def make_char_to_token_mapping(text):
 
 def convert_offset(h_info, conf_para=None):
     l_target_fields = TARGET_TEXT_FIELDS + [QUERY_FIELD, abstract_field]
-    if para:
+    if conf_para:
         l_target_fields = para.l_target_fields
 
     for field in l_target_fields:
