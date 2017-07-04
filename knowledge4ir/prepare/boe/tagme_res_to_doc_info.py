@@ -17,6 +17,8 @@ import json
 from knowledge4ir.utils import (
     body_field,
     title_field,
+    QUERY_FIELD,
+    abstract_field,
 )
 from knowledge4ir.utils.boe import SPOT_FIELD
 from knowledge4ir.prepare.boe.tagme_offset_to_token_offest import convert_offset
@@ -29,8 +31,9 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
     cols = line.split('#')
     doc_str = '#'.join(cols[:-1])
     tagged_str = cols[-1].strip()
-
-    docno, title, body = doc_str.split('\t')[:3]
+    doc_cols = doc_str.split('\t')
+    data_id = doc_cols[0]
+    # data_id, title, body = doc_str.split('\t')[:3]
 
     l_tagged = tagged_str.split('\t')
     p = 0
@@ -57,9 +60,16 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
         p += 6
 
     h = dict()
-    h[title_field] = title
-    h[body_field] = body
-    h['docno'] = docno
+    if tagged_field == 'query':
+        h['qid'] = data_id
+        h[QUERY_FIELD] = doc_cols[1]
+    else:
+        h[title_field] = doc_cols[1]
+        if tagged_field == abstract_field:
+            h[abstract_field] = doc_cols[2]
+        else:
+            h[body_field] = doc_cols[2]
+        h['docno'] = data_id
     h['spot'] = dict()
     h[SPOT_FIELD][tagged_field] = l_ana
     h = convert_offset(h)
