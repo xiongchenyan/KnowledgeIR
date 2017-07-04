@@ -18,6 +18,7 @@ from knowledge4ir.utils.boe import form_boe_per_field
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     QUERY_FIELD,
+    abstract_field,
 )
 import json
 import sys
@@ -95,6 +96,8 @@ def _align_ana_to_sent(l_sent, l_ana):
 def construct_per_doc(doc_info, l_target_field):
     doc_info['e_grid'] = {}
     for field in l_target_field:
+        if field not in doc_info:
+            continue
         l_ana = form_boe_per_field(doc_info, field)
         text = doc_info.get(field, "")
         l_e_grid = construct_per_text(text, l_ana)
@@ -109,7 +112,7 @@ if __name__ == '__main__':
         print "form entity grid"
         print "2+ para: tagged doc in + out_name + out format:full (default)|pretty"
         sys.exit(-1)
-
+    l_full_field = TARGET_TEXT_FIELDS + [abstract_field]
     out = open(sys.argv[2], 'w')
     out_format = 'full'
     if len(sys.argv) > 3:
@@ -119,14 +122,16 @@ if __name__ == '__main__':
         if not p % 100:
             logging.info('processed [%d] doc', p)
         doc_info = json.loads(line)
-        doc_info = construct_per_doc(doc_info, TARGET_TEXT_FIELDS)
+        doc_info = construct_per_doc(doc_info, l_full_field)
         if out_format == 'full':
             print >> out, json.dumps(doc_info)
         else:
             docno = doc_info.get('docno', "")
             if not docno:
                 docno = doc_info.get('title', 'NA')
-            for field in TARGET_TEXT_FIELDS:
+            for field in l_full_field:
+                if field not in doc_info:
+                    continue
                 l_e_grid = doc_info['e_grid'][field]
                 for h_grid in l_e_grid:
                     print >> out, docno + '\t' + field + '\t' + json.dumps(h_grid)
