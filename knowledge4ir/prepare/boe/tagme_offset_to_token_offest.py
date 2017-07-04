@@ -74,8 +74,13 @@ def convert_offset(h_info, conf_para=None):
             before_name = text[loc[0]: loc[1]]
             after_name = ' '.join(text.split()[st:ed])
             if after_name != before_name:
+                data_id = h_info.get('docno', None)
+                if not data_id:
+                    data_id = h_info.get('qid', None)
+                if not data_id:
+                    data_id = h_info.get('title', "")
                 logging.warn('[%s] location match: [%s] -> [%s]',
-                             h_info['docno'], before_name, after_name)
+                             data_id, before_name, after_name)
                 if len(before_name) <= len(after_name) / 2.0:
                     continue
             l_new_ana.append(l_ana[i])
