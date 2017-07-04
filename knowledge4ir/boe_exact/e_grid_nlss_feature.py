@@ -48,8 +48,10 @@ from knowledge4ir.utils import (
     text2lm,
     avg_embedding,
     SPOT_FIELD,
+    lm_cosine
 )
 import numpy as np
+from scipy.spatial.distance import cosine
 
 
 class EGridNLSSFeature(BoeFeature):
@@ -59,12 +61,23 @@ class EGridNLSSFeature(BoeFeature):
     feature_name_pre = Unicode('EGridNLSS')
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
     max_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
+    max_nlss_per_e = Int(100, help='maximum nlss per e to derive').tag(config=True)
+    intermediate_data_out_name = Unicode(help='intermediate output results').tag(config=True)
+
+    def __init__(self, **kwargs):
+        super(EGridNLSSFeature, self).__init__(**kwargs)
+        if self.intermediate_data_out_name:
+            self.intermediate_out = open(self.intermediate_data_out_name, 'w')
 
     def set_resource(self, resource):
         self.resource = resource
         assert resource.embedding
         assert resource.l_h_nlss
         logging.info('Salient feature resource set')
+
+    def close_resource(self):
+        if self.intermediate_data_out_name:
+            self.intermediate_out.close()
 
     def extract_pair(self, q_info, doc_info):
         """
@@ -102,7 +115,7 @@ class EGridNLSSFeature(BoeFeature):
 
         h_feature = dict()
         e_id = ana['id']
-        ll_qe_nlss = [h_nlss.get(e_id, []) for h_nlss in self.resource.l_h_nlss]
+        ll_qe_nlss = [h_nlss.get(e_id, [])[:self.max_nlss_per_e] for h_nlss in self.resource.l_h_nlss]
 
         for nlss_name, l_qe_nlss in zip(self.resource.l_nlss_name, ll_qe_nlss):
             h_this_nlss_feature = self._extract_per_entity_via_nlss(ana, doc_info, l_qe_nlss)
@@ -154,12 +167,15 @@ class EGridNLSSFeature(BoeFeature):
         m_bow_sim = self._calc_bow_trans(l_grid_bow, l_nlss_bow)
         m_emb_sim = self._calc_emb_trans(l_grid_emb, l_nlss_emb)
 
+        self._log_intermediate_res(ana, doc_info, l_this_e_grid, l_qe_nlss, m_bow_sim, m_emb_sim)
+
+
         h_bow_feature = self._pool_grid_nlss_sim(m_bow_sim)
         h_emb_feature = self._pool_grid_nlss_sim(m_emb_sim)
 
         h_feature = dict()
-        h_feature.update(add_feature_prefix(h_bow_feature, 'BOW'))
-        h_feature.update(add_feature_prefix(h_emb_feature, 'Emb'))
+        h_feature.update(add_feature_prefix(h_bow_feature, 'BOW_'))
+        h_feature.update(add_feature_prefix(h_emb_feature, 'Emb_'))
         return h_feature
 
 
@@ -213,14 +229,47 @@ class EGridNLSSFeature(BoeFeature):
     def _calc_bow_trans(self, l_bow_a, l_bow_b):
         # TODO
         m_trans = np.zeros((len(l_bow_a), l_bow_b))
+        for i in xrange(len(l_bow_a)):
+            for j in xrange(len(l_bow_b)):
+                m_trans[i, j] = lm_cosine(l_bow_a[i], l_bow_b[j])
         return m_trans
 
     def _calc_emb_trans(self, l_emb_a, l_emb_b):
         # TODO
         m_trans = np.zeros((len(l_emb_a), l_emb_b))
+        for i in xrange(len(l_emb_a)):
+            if l_emb_a[i] is None:
+                continue
+            for j in xrange(len(l_emb_b)):
+                if l_emb_b[j] is None:
+                    continue
+                m_trans[i, j] = 1 - cosine(l_emb_a[i], l_emb_b[j])
         return m_trans
 
     def _pool_grid_nlss_sim(self, trans_mtx):
         h_feature = {}
-        # TODO max * sum in row * col, to one score
+        l_func = [np.mean, np.amax]
+        l_name = ['Mean', 'Max']
+        for f1, name1 in zip(l_func, l_name):
+            for f2, name2 in zip(l_func, l_name):
+                score = f1(f2(trans_mtx, axis=1), axis=0)
+                pool_name = name1 + name2
+                h_feature[pool_name] = score
+
         return h_feature
+
+    def _log_intermediate_res(self, ana, doc_info, l_this_e_grid, l_qe_nlss, m_bow_sim, m_emb_sim):
+        """
+        log out the intermediate results
+        :param ana:
+        :param doc_info:
+        :param l_this_e_grid:
+        :param l_qe_nlss:
+        :param m_bow_sim:
+        :param m_emb_sim:
+        :return:
+        """
+        # TODO print pretty results to self.intermediate_out
+
+
+        return

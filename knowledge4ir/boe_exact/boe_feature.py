@@ -52,6 +52,9 @@ class BoeFeature(Configurable):
     def set_resource(self, resource):
         self.resource = resource
 
+    def close_resource(self):
+        pass
+
     def _get_field_ana(self, h_info, field):
         l_h_e = []
         if self.ana_format == 'spot':
