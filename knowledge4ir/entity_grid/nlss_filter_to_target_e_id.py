@@ -14,7 +14,7 @@ if 4 != len(sys.argv):
     print "3 para: nlss in + target e id in + out"
     sys.exit(-1)
 
-s_e = set([line.split()[0] for line in open(sys.argv[2])])
+s_e = set([line.strip().split()[0] for line in open(sys.argv[2])])
 cnt = 0
 out = open(sys.argv[3], 'w')
 for line in open(sys.argv[1]):
