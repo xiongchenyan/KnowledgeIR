@@ -6,10 +6,11 @@ import json
 import sys
 from knowledge4ir.utils import (
     QUERY_FIELD,
-    TARGET_TEXT_FIELDS
+    TARGET_TEXT_FIELDS,
+    abstract_field,
 )
 import logging
-l_target_fields = TARGET_TEXT_FIELDS + [QUERY_FIELD]
+l_target_fields = TARGET_TEXT_FIELDS + [QUERY_FIELD, abstract_field]
 
 
 def make_char_to_token_mapping(text):
