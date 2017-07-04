@@ -108,6 +108,7 @@ if __name__ == '__main__':
     if 2 != len(sys.argv):
         print "convert offset from char to token in tagme's ana"
         print "1 para: config"
+        OffsetConvertPara.class_print_help()
         sys.exit(-1)
     para = OffsetConvertPara(config=load_py_config(sys.argv[1]))
     out = open(para.out_name, 'w')
