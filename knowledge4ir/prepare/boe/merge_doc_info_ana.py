@@ -12,8 +12,10 @@ import sys
 import json
 from knowledge4ir.utils import (
     body_field,
+    abstract_field,
     title_field,
     load_json_info,
+    SPOT_FIELD,
 )
 from itertools import izip
 reload(sys)  # Reload does the trick!
@@ -38,7 +40,18 @@ def merge_boe(h_doc_info_base, h_doc_info_update):
 
 def merge_raw_field(h_doc_info_base, h_doc_info_update):
     h_doc_info_base.update(h_doc_info_update)
-    return h_doc_info_update
+    return h_doc_info_base
+
+
+def s2_replace(h_info):
+    if body_field in h_info:
+        h_info[abstract_field] = h_info[body_field]
+        del h_info[body_field]
+    if SPOT_FIELD in h_info:
+        if body_field in h_info[SPOT_FIELD]:
+            h_info[SPOT_FIELD][abstract_field] = h_info[SPOT_FIELD][body_field]
+        del h_info[SPOT_FIELD][body_field]
+    return h_info
 
 
 def load_all_doc_info(title_info_in):
@@ -70,9 +83,14 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
             docno = base_docno
             if merge_format == 'spot':
                 h_total_info = merge_boe(h_base_info, h_update_info)
-            else:
+            elif merge_format == 'all':
                 h_total_info = merge_raw_field(h_base_info, h_update_info)
-
+            elif merge_format == 's2':
+                h_base_info = s2_replace(h_base_info)
+                h_update_info = s2_replace(h_update_info)
+                h_total_info = merge_raw_field(h_base_info, h_update_info)
+            else:
+                raise NotImplementedError
             print >> out, json.dumps(h_total_info)
             logging.info('[%s] merged', docno)
 
@@ -96,7 +114,7 @@ if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
     set_basic_log()
     if 4 > len(sys.argv):
-        print "3+ para: tagme info a + tagme info b + merged out name + update format: (spot|all)"
+        print "3+ para: tagme info a + tagme info b + merged out name + update format: (spot|all|s2)"
         print "update the a using b, if update using spot (default), then only spot field is updated"
         print "if to update all, all fields will be updated at the first level (no recurse)"
         print "make sure both files are ordered the same with docno 1-1 correspondence in each line"

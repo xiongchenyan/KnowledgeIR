@@ -13,6 +13,7 @@ RANKLIB_PATH = ROOT_PATH + '/knowledge4ir/letor/RankLib.jar'
 TMP_DIR = ROOT_PATH + '/tmp/knowledge4ir/'
 DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 body_field = 'bodyText'
+abstract_field = 'paperAbstract'
 title_field = 'title'
 E_GRID_FIELD = 'e_grid'
 TARGET_TEXT_FIELDS = [title_field, body_field, ]
