@@ -8,9 +8,9 @@ from knowledge4ir.utils import (
     QUERY_FIELD,
     TARGET_TEXT_FIELDS,
     abstract_field,
+    SPOT_FIELD,
 )
 import logging
-l_target_fields = TARGET_TEXT_FIELDS + [QUERY_FIELD, abstract_field]
 
 
 def make_char_to_token_mapping(text):
@@ -24,16 +24,23 @@ def make_char_to_token_mapping(text):
     return h_map
 
 
-def convert_offset(h_info):
+def convert_offset(h_info, conf_para=None):
+    l_target_fields = TARGET_TEXT_FIELDS + [QUERY_FIELD, abstract_field]
+    if para:
+        l_target_fields = para.l_target_fields
+
     for field in l_target_fields:
         if field not in h_info:
             continue
         text = h_info[field]
         h_char_to_token_loc = make_char_to_token_mapping(text)
-        if 'tagme' in h_info:
-            l_ana = h_info['tagme'].get(field, [])
+        if not conf_para:
+            if 'tagme' in h_info:
+                l_ana = h_info['tagme'].get(field, [])
+            else:
+                l_ana = h_info['spot'].get(field, [])
         else:
-            l_ana = h_info['spot'].get(field, [])
+            l_ana = h_info[para.spot_field].get(field, [])
         min_st = 0
         l_new_ana = []
         for i in xrange(len(l_ana)):
@@ -82,16 +89,33 @@ def convert_offset(h_info):
     return h_info
 
 if __name__ == '__main__':
-    if 3 != len(sys.argv):
+    from traitlets.config import Configurable
+    from traitlets import (
+        Unicode,
+        List,
+    )
+    from knowledge4ir.utils import load_py_config, set_basic_log
+    set_basic_log()
+
+    class OffsetConvertPara(Configurable):
+        in_name = Unicode(help='tagme json results').tag(config=True)
+        out_name = Unicode(help='out name').tag(config=True)
+        spot_field = Unicode(SPOT_FIELD, help='boe fields: spot|tagme').tag(config=True)
+        l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS,
+                               help='target fields to convert').tag(config=True)
+
+
+    if 2 != len(sys.argv):
         print "convert offset from char to token in tagme's ana"
-        print "2 para: tagge info in + out"
+        print "1 para: config"
         sys.exit(-1)
-    out = open(sys.argv[2], 'w')
-    for p, line in enumerate(open(sys.argv[1])):
+    para = OffsetConvertPara(config=load_py_config(sys.argv[1]))
+    out = open(para.out_name, 'w')
+    for p, line in enumerate(open(para.in_name)):
         if not p % 100:
             print "converted [%d] lines" % p
         h = json.loads(line)
-        h = convert_offset(h)
+        h = convert_offset(h, para)
         print >> out, json.dumps(h)
     out.close()
     print "done"
