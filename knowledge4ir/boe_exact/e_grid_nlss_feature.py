@@ -61,7 +61,6 @@ class EGridNLSSFeature(BoeFeature):
     feature_name_pre = Unicode('EGridNLSS')
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
     max_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
-    max_nlss_per_e = Int(100, help='maximum nlss per e to derive').tag(config=True)
     intermediate_data_out_name = Unicode(help='intermediate output results').tag(config=True)
 
     def __init__(self, **kwargs):
@@ -115,7 +114,7 @@ class EGridNLSSFeature(BoeFeature):
 
         h_feature = dict()
         e_id = ana['id']
-        ll_qe_nlss = [h_nlss.get(e_id, [])[:self.max_nlss_per_e] for h_nlss in self.resource.l_h_nlss]
+        ll_qe_nlss = [h_nlss.get(e_id, []) for h_nlss in self.resource.l_h_nlss]
 
         for nlss_name, l_qe_nlss in zip(self.resource.l_nlss_name, ll_qe_nlss):
             h_this_nlss_feature = self._extract_per_entity_via_nlss(ana, doc_info, l_qe_nlss)
@@ -169,7 +168,6 @@ class EGridNLSSFeature(BoeFeature):
 
         self._log_intermediate_res(ana, doc_info, l_this_e_grid, l_qe_nlss, m_bow_sim, m_emb_sim)
 
-
         h_bow_feature = self._pool_grid_nlss_sim(m_bow_sim)
         h_emb_feature = self._pool_grid_nlss_sim(m_emb_sim)
 
@@ -177,7 +175,6 @@ class EGridNLSSFeature(BoeFeature):
         h_feature.update(add_feature_prefix(h_bow_feature, 'BOW_'))
         h_feature.update(add_feature_prefix(h_emb_feature, 'Emb_'))
         return h_feature
-
 
     def _filter_e_grid(self, e_id, l_e_grid):
         """
@@ -260,7 +257,11 @@ class EGridNLSSFeature(BoeFeature):
 
     def _log_intermediate_res(self, ana, doc_info, l_this_e_grid, l_qe_nlss, m_bow_sim, m_emb_sim):
         """
-        log out the intermediate results
+        dump out the intermediate results
+            e_id, name, doc no,
+            e_grid_sentences:
+            grid sentence for this e_id in doc, mean sim in bow and emb,
+                max sim in bow and emb, and corresponding nlss that generate the max
         :param ana:
         :param doc_info:
         :param l_this_e_grid:
@@ -269,7 +270,29 @@ class EGridNLSSFeature(BoeFeature):
         :param m_emb_sim:
         :return:
         """
-        # TODO print pretty results to self.intermediate_out
+        # use json
+        h_pair_res = dict()
+        h_pair_res['id'] = ana['id']
+        h_pair_res['surface'] = ana['surface']
+        h_pair_res['docno'] = doc_info['docno']
 
+        l_e_grid_info = []
+        for i in xrange(len(l_this_e_grid)):
+            h_this_sent = {}
+            h_this_sent['sent'] = l_this_e_grid[i]['sent']
+            h_this_sent['mean_bow_sim'] = np.mean(m_bow_sim[i])
+            h_this_sent['mean_emb_sim'] = np.mean(m_emb_sim[i])
 
+            max_p = np.argmax(m_bow_sim[i])
+            h_this_sent['max_bow_sim'] = m_bow_sim[i, max_p]
+            h_this_sent['max_bow_nlss'] = l_qe_nlss[max_p][0]
+            max_p = np.argmax(m_emb_sim[i])
+            h_this_sent['max_emb_sim'] = m_emb_sim[i, max_p]
+            h_this_sent['max_emb_nlss'] = l_qe_nlss[max_p][0]
+
+            l_e_grid_info.append(h_this_sent)
+
+        h_pair_res['e_grid_info'] = l_e_grid_info
+
+        print >> self.intermediate_out, json.dumps(h_pair_res)
         return
