@@ -19,7 +19,7 @@ if 4 != len(sys.argv):
 ll_qid_rank = load_trec_ranking_with_score(sys.argv[1])
 q_per_file = int(sys.argv[3])
 
-total_cnt = math.ceil(float(len(ll_qid_rank)) / q_per_file)
+total_cnt = int(math.ceil(float(len(ll_qid_rank)) / q_per_file))
 out_pre = sys.argv[2]
 
 l_name = ['%d' % i for i in xrange(1, total_cnt + 1)]
