@@ -130,7 +130,7 @@ def load_nlss_dict(nlss_dump, max_nlss_per_e=100):
         if not p % 10000:
             logging.info('loaded [%d] nlss line', p)
         cols = line.strip().split('\t')
-        assert len(cols) > 4
+        assert len(cols) >= 4
         e_id, s_id = cols[:2]
         sent = json.loads(cols[2])
         l_e = json.loads(cols[3])

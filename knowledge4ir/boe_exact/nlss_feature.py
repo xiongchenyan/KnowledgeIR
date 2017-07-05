@@ -20,28 +20,21 @@ features:
 
 """
 
-from knowledge4ir.utils.boe import (
-    form_boe_per_field,
-)
-
-from knowledge4ir.utils.retrieval_model import RetrievalModel
 import json
 import logging
-import math
-from knowledge4ir.boe_exact.boe_feature import BoeFeature
+
+import numpy as np
+from scipy.spatial.distance import cosine
 from traitlets import (
     Int,
     Unicode,
-    Bool,
     List,
 )
+
+from knowledge4ir.boe_exact.boe_feature import BoeFeature
 from knowledge4ir.utils import (
-    log_sum_feature,
     mean_pool_feature,
-    max_pool_feature,
     QUERY_FIELD,
-    TARGET_TEXT_FIELDS,
-    abstract_field,
     body_field,
     E_GRID_FIELD,
     add_feature_prefix,
@@ -50,21 +43,18 @@ from knowledge4ir.utils import (
     SPOT_FIELD,
     lm_cosine
 )
-import numpy as np
-from scipy.spatial.distance import cosine
 
 
-class EGridNLSSFeature(BoeFeature):
+class NLSSFeature(BoeFeature):
     """
-    extract boe exact features by comparing e_grid of qe with qe's nlss
-    """
-    feature_name_pre = Unicode('EGridNLSS')
-    l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
-    max_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
+   extract boe exact features by comparing e_grid of qe with qe's nlss
+   """
     intermediate_data_out_name = Unicode(help='intermediate output results').tag(config=True)
+    max_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
+    l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
 
     def __init__(self, **kwargs):
-        super(EGridNLSSFeature, self).__init__(**kwargs)
+        super(NLSSFeature, self).__init__(**kwargs)
         if self.intermediate_data_out_name:
             self.intermediate_out = open(self.intermediate_data_out_name, 'w')
 
@@ -87,7 +77,6 @@ class EGridNLSSFeature(BoeFeature):
         """
         logging.debug('extracting e_grid nlss features for [%s][%s]',
                       q_info['qid'], doc_info['docno'])
-        assert E_GRID_FIELD in doc_info
         l_q_ana = self._get_field_ana(q_info, QUERY_FIELD)
         logging.debug('q info %s', json.dumps(q_info))
         logging.debug('q ana %s', json.dumps(l_q_ana))
@@ -103,6 +92,60 @@ class EGridNLSSFeature(BoeFeature):
                                 for item in h_final_feature.items()])
 
         return h_final_feature
+
+    def extract_per_entity(self, ana, doc_info):
+        raise NotImplementedError
+
+    def _form_sents_emb(self, l_sent):
+        l_emb = [avg_embedding(self.resource.embedding, sent)
+                 for sent in l_sent]
+        return l_emb
+
+    def _form_sents_bow(self, l_sent):
+        l_h_lm = [text2lm(sent, clean=True) for sent in l_sent]
+        return l_h_lm
+
+    def _form_nlss_bow(self, l_qe_nlss):
+        l_sent = [nlss[0] for nlss in l_qe_nlss]
+        return self._form_sents_bow(l_sent)
+
+    def _form_nlss_emb(self, l_qe_nlss):
+        l_sent = [nlss[0] for nlss in l_qe_nlss]
+        return self._form_sents_emb(l_sent)
+
+
+class EGridNLSSFeature(NLSSFeature):
+    """
+    extract boe exact features by comparing e_grid of qe with qe's nlss
+    """
+    feature_name_pre = Unicode('EGridNLSS')
+
+    def extract_pair(self, q_info, doc_info):
+        """
+
+        :param q_info:
+        :param doc_info:
+        :return:
+        """
+        assert E_GRID_FIELD in doc_info
+        return super(EGridNLSSFeature, self).extract_pair(q_info, doc_info)
+        # logging.debug('extracting e_grid nlss features for [%s][%s]',
+        #               q_info['qid'], doc_info['docno'])
+        # l_q_ana = self._get_field_ana(q_info, QUERY_FIELD)
+        # logging.debug('q info %s', json.dumps(q_info))
+        # logging.debug('q ana %s', json.dumps(l_q_ana))
+        # logging.debug('doc t [%s], info [%s]', doc_info.get('title', ""),
+        #               json.dumps(doc_info.get('spot', {}).get('title', []))
+        #               )
+        # l_h_feature = [self.extract_per_entity(ana, doc_info) for ana in l_q_ana]
+        #
+        # h_final_feature = {}
+        # # h_final_feature.update(log_sum_feature(l_h_feature))
+        # h_final_feature.update(mean_pool_feature(l_h_feature))
+        # h_final_feature = dict([(self.feature_name_pre + item[0], item[1])
+        #                         for item in h_final_feature.items()])
+        #
+        # return h_final_feature
 
     def extract_per_entity(self, ana, doc_info):
         """
@@ -198,14 +241,6 @@ class EGridNLSSFeature(BoeFeature):
                 l_kept_grid.append(e_grid)
         return l_kept_grid
 
-    def _form_nlss_bow(self, l_qe_nlss):
-        l_sent = [nlss[0] for nlss in l_qe_nlss]
-        return self._form_sents_bow(l_sent)
-
-    def _form_nlss_emb(self, l_qe_nlss):
-        l_sent = [nlss[0] for nlss in l_qe_nlss]
-        return self._form_sents_emb(l_sent)
-
     def _form_grid_bow(self, l_e_grid):
         l_sent = [grid['sent'] for grid in l_e_grid]
         return self._form_sents_bow(l_sent)
@@ -213,15 +248,6 @@ class EGridNLSSFeature(BoeFeature):
     def _form_grid_emb(self, l_e_grid):
         l_sent = [grid['sent'] for grid in l_e_grid]
         return self._form_sents_emb(l_sent)
-
-    def _form_sents_emb(self, l_sent):
-        l_emb = [avg_embedding(self.resource.embedding, sent)
-                 for sent in l_sent]
-        return l_emb
-
-    def _form_sents_bow(self, l_sent):
-        l_h_lm = [text2lm(sent, clean=True) for sent in l_sent]
-        return l_h_lm
 
     def _calc_bow_trans(self, l_bow_a, l_bow_b):
         # TODO
