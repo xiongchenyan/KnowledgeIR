@@ -127,7 +127,7 @@ def load_nlss_dict(nlss_dump, max_nlss_per_e=100):
     cnt = 0
     skipped_cnt = 0
     for p, line in enumerate(open(nlss_dump)):
-        cnt = 1
+        cnt += 1
         if not p % 10000:
             logging.info('loaded [%d] nlss line', p)
         cols = line.strip().split('\t')
