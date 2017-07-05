@@ -411,5 +411,10 @@ class NLSSExpansionFeature(NLSSFeature):
         return l_top_nlss
 
     def _log_qe_top_nlss(self, q_info, ana, l_top_nlss):
-        return
-    
+        """
+        dump a packed intermediate information in it
+        """
+        h_info = dict(q_info)
+        h_info['current_e'] = ana
+        h_info['top_nlss'] = l_top_nlss
+        print >> self.intermediate_out, json.dumps(h_info)
