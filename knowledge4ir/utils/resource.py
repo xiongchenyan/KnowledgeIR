@@ -50,7 +50,6 @@ class JointSemanticResource(Configurable):
         self.h_q_boe_rm3 = None
         self.h_q_prf_sent = None
         self.l_h_nlss = None
-        self.l_nlss_name = None
         self._load()
         self.corpus_stat = CorpusStat(**kwargs)
 
