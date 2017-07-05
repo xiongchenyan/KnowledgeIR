@@ -22,7 +22,7 @@ from knowledge4ir.utils import (
 def mul_load_candidate_doc(in_dir):
     l_name, l_s_doc = [], []
     logging.info('load doc partitions')
-    for dir_name, sub_dir, f_names in os.path.walk(in_dir):
+    for dir_name, sub_dir, f_names in os.walk(in_dir):
         for f_name in f_names:
             l_name.append(f_name)
             l_q_rank = load_trec_ranking_with_score(os.path.join(dir_name, f_name))
