@@ -27,6 +27,7 @@ from knowledge4ir.boe_exact import (
     CoreferenceMatch,
 )
 from knowledge4ir.boe_exact.salient_feature import SalientFeature
+from knowledge4ir.boe_exact.e_grid_nlss_feature import EGridNLSSFeature
 from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
@@ -43,7 +44,9 @@ class BoeLeToRFeatureExtractCenter(Configurable):
                            ).tag(config=True)
     h_feature_extractor = {"AnaExact": AnaMatch,
                            "CoRef": CoreferenceMatch,
-                           "Salient": SalientFeature}
+                           "Salient": SalientFeature,
+                           "GridNLSS": EGridNLSSFeature,
+                           }
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
     q_info_in = Unicode(help='prepared query info in').tag(config=True)
@@ -65,10 +68,9 @@ class BoeLeToRFeatureExtractCenter(Configurable):
     @classmethod
     def class_print_help(cls, inst=None):
         super(BoeLeToRFeatureExtractCenter, cls).class_print_help(inst)
-        print json.dumps(cls.h_feature_extractor.keys())
-        JointSemanticResource.class_print_help(inst)
-        AnaMatch.class_print_help(inst)
-        CoreferenceMatch.class_print_help(inst)
+        for name, extractor in cls.h_feature_extractor.items():
+            print name
+            extractor.class_print_help(inst)
 
     def _set_extractor(self, **kwargs):
         for name in self.l_feature_group:
@@ -125,7 +127,12 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         logging.info('ranking features dumped to [%s]', self.out_name)
         json.dump(h_name, open(self.out_name + '_name.json', 'w'), indent=1)
         logging.info('ranking name dumped to [%s_name.json]', self.out_name)
+        self._close_extractor()
         return
+
+    def _close_extractor(self):
+        for extractor in self.l_extractor:
+            extractor.close_resource()
 
 
 if __name__ == '__main__':
