@@ -133,6 +133,24 @@ class NLSSFeature(BoeFeature):
     def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
         raise NotImplementedError
 
+    def _calc_bow_trans(self, l_bow_a, l_bow_b):
+        m_trans = np.zeros((len(l_bow_a), len(l_bow_b)))
+        for i in xrange(len(l_bow_a)):
+            for j in xrange(len(l_bow_b)):
+                m_trans[i, j] = lm_cosine(l_bow_a[i], l_bow_b[j])
+        return m_trans
+
+    def _calc_emb_trans(self, l_emb_a, l_emb_b):
+        m_trans = np.zeros((len(l_emb_a), len(l_emb_b)))
+        for i in xrange(len(l_emb_a)):
+            if l_emb_a[i] is None:
+                continue
+            for j in xrange(len(l_emb_b)):
+                if l_emb_b[j] is None:
+                    continue
+                m_trans[i, j] = 1 - cosine(l_emb_a[i], l_emb_b[j])
+        return m_trans
+
 
 class EGridNLSSFeature(NLSSFeature):
     """
@@ -252,26 +270,6 @@ class EGridNLSSFeature(NLSSFeature):
         l_sent = [grid['sent'] for grid in l_e_grid]
         return self._form_sents_emb(l_sent)
 
-    def _calc_bow_trans(self, l_bow_a, l_bow_b):
-        # TODO
-        m_trans = np.zeros((len(l_bow_a), l_bow_b))
-        for i in xrange(len(l_bow_a)):
-            for j in xrange(len(l_bow_b)):
-                m_trans[i, j] = lm_cosine(l_bow_a[i], l_bow_b[j])
-        return m_trans
-
-    def _calc_emb_trans(self, l_emb_a, l_emb_b):
-        # TODO
-        m_trans = np.zeros((len(l_emb_a), l_emb_b))
-        for i in xrange(len(l_emb_a)):
-            if l_emb_a[i] is None:
-                continue
-            for j in xrange(len(l_emb_b)):
-                if l_emb_b[j] is None:
-                    continue
-                m_trans[i, j] = 1 - cosine(l_emb_a[i], l_emb_b[j])
-        return m_trans
-
     def _pool_grid_nlss_sim(self, trans_mtx):
         h_feature = {}
         l_func = [np.mean, np.amax]
@@ -356,7 +354,7 @@ class NLSSExpansionFeature(NLSSFeature):
         :return: h_feature: entity features for this nlss set
         """
 
-        l_top_nlss = self._find_top_k_nlss_for_q(q_info, l_qe_nlss)
+        l_top_nlss = self._find_top_k_nlss_for_q(q_info, ana, l_qe_nlss)
 
         l_top_sent = [nlss[0] for nlss in l_top_nlss]
         l_top_sent.append(' '.join(l_top_sent))
@@ -389,12 +387,29 @@ class NLSSExpansionFeature(NLSSFeature):
         h_feature.update(h_mean_feature)
         return h_feature
 
-    def _find_top_k_nlss_for_q(self, q_info, l_qe_nlss):
+    def _find_top_k_nlss_for_q(self, q_info, ana, l_qe_nlss):
         """
         find top k similar sentences based on cosine(q emb, sent emb)
-        :param q_info:
-        :param l_qe_nlss:
+        :param q_info: query info
+        :param ana: current q e
+        :param l_qe_nlss: nlss of this e
         :return:
         """
-        l_top_nlss = []
+
+        query = q_info[QUERY_FIELD]
+        q_emb = avg_embedding(self.resource.embedding, query)
+        l_nlss_emb = self._form_nlss_emb(l_qe_nlss)
+
+        m_emb_sim = self._calc_emb_trans([q_emb], l_nlss_emb)
+        l_emb_sim_score = m_emb_sim[0].tolist()
+        l_nlss_with_score = zip(l_qe_nlss, l_emb_sim_score)
+        l_nlss_with_score.sort(key=lambda item: item[1], reverse=True)
+        l_top_nlss = [item[0] for item in l_nlss_with_score[:self.top_k_nlss]]
+
+        self._log_qe_top_nlss(q_info, ana, l_top_nlss)
+
         return l_top_nlss
+
+    def _log_qe_top_nlss(self, q_info, ana, l_top_nlss):
+        return
+    
