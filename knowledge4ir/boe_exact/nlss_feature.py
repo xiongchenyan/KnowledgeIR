@@ -361,7 +361,7 @@ class NLSSExpansionFeature(NLSSFeature):
             l_h_per_sent_feature.append(h_per_sent_feature)
 
         h_max_feature = max_pool_feature(l_h_per_sent_feature[:-1])
-        h_mean_feature = add_feature_prefix('Conc', l_h_per_sent_feature[-1])
+        h_mean_feature = add_feature_prefix(l_h_per_sent_feature[-1], 'Conca')
 
         h_feature = h_max_feature
         h_feature.update(h_mean_feature)
