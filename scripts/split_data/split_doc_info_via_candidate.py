@@ -55,6 +55,6 @@ if __name__ == '__main__':
         print "3 para: doc info in, splited trec dir, out dir"
         sys.exit(-1)
 
-    doc_info_in, trec_in_dir, out_dir = sys.argv[:3]
+    doc_info_in, trec_in_dir, out_dir = sys.argv[1:4]
     l_name, l_s_doc = mul_load_candidate_doc(trec_in_dir)
     partition_doc_info(doc_info_in, l_name, l_s_doc, out_dir)
