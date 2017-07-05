@@ -27,7 +27,7 @@ from knowledge4ir.boe_exact import (
     CoreferenceMatch,
 )
 from knowledge4ir.boe_exact.salient_feature import SalientFeature
-from knowledge4ir.boe_exact.nlss_feature import EGridNLSSFeature
+from knowledge4ir.boe_exact.nlss_feature import EGridNLSSFeature, NLSSExpansionFeature
 from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
@@ -46,6 +46,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
                            "CoRef": CoreferenceMatch,
                            "Salient": SalientFeature,
                            "GridNLSS": EGridNLSSFeature,
+                           "NLSSExp": NLSSExpansionFeature,
                            }
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
