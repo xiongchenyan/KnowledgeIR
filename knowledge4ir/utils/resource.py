@@ -59,6 +59,7 @@ class JointSemanticResource(Configurable):
         CorpusStat.class_print_help(inst)
 
     def _load(self):
+        self._load_nlss()
         self._load_entity_fields()
         self._load_sf()
         self._load_emb()
@@ -66,7 +67,6 @@ class JointSemanticResource(Configurable):
         self._load_sf_stat()
         self._load_boe_rm3()
         self._load_prf_sent()
-        self._load_nlss()
         return
 
     def _load_nlss(self):
@@ -74,7 +74,7 @@ class JointSemanticResource(Configurable):
             return
         assert len(self.l_nlss_path) == len(self.l_nlss_name)
         logging.info('nlss: %s',
-                     json.loads(zip(self.l_nlss_name), self.l_nlss_path) )
+                     json.dumps(zip(self.l_nlss_name, self.l_nlss_path)))
         self.l_h_nlss = [load_nlss_dict(nlss_path, self.max_nlss_per_e) for nlss_path in self.l_nlss_path]
         logging.info('nlss loaded')
 
