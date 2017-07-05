@@ -158,33 +158,6 @@ class EGridNLSSFeature(NLSSFeature):
     """
     feature_name_pre = Unicode('EGridNLSS')
 
-    def extract_pair(self, q_info, doc_info):
-        """
-
-        :param q_info:
-        :param doc_info:
-        :return:
-        """
-        assert E_GRID_FIELD in doc_info
-        return super(EGridNLSSFeature, self).extract_pair(q_info, doc_info)
-        # logging.debug('extracting e_grid nlss features for [%s][%s]',
-        #               q_info['qid'], doc_info['docno'])
-        # l_q_ana = self._get_field_ana(q_info, QUERY_FIELD)
-        # logging.debug('q info %s', json.dumps(q_info))
-        # logging.debug('q ana %s', json.dumps(l_q_ana))
-        # logging.debug('doc t [%s], info [%s]', doc_info.get('title', ""),
-        #               json.dumps(doc_info.get('spot', {}).get('title', []))
-        #               )
-        # l_h_feature = [self.extract_per_entity(ana, doc_info) for ana in l_q_ana]
-        #
-        # h_final_feature = {}
-        # # h_final_feature.update(log_sum_feature(l_h_feature))
-        # h_final_feature.update(mean_pool_feature(l_h_feature))
-        # h_final_feature = dict([(self.feature_name_pre + item[0], item[1])
-        #                         for item in h_final_feature.items()])
-        #
-        # return h_final_feature
-
     def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
         """
 
@@ -201,7 +174,7 @@ class EGridNLSSFeature(NLSSFeature):
         for field in self.l_target_fields:
             if field not in h_e_grid:
                 continue
-            l_e_grid = h_e_grid[field]
+            l_e_grid = h_e_grid.get(field, [])
             h_field_grid_feature = self._extract_per_entity_per_nlss_per_field(
                 ana, doc_info, l_qe_nlss, l_e_grid, l_nlss_bow, l_nlss_emb)
             h_this_feature.update(add_feature_prefix(h_field_grid_feature, field + '_'))
@@ -300,6 +273,8 @@ class EGridNLSSFeature(NLSSFeature):
         :return:
         """
         # use json
+        if not doc_info:
+            return
         h_pair_res = dict()
         h_pair_res['id'] = ana['id']
         h_pair_res['surface'] = ana['surface']
@@ -386,7 +361,7 @@ class NLSSExpansionFeature(NLSSFeature):
             l_h_per_sent_feature.append(h_per_sent_feature)
 
         h_max_feature = max_pool_feature(l_h_per_sent_feature[:-1])
-        h_mean_feature = add_feature_prefix('Concate', l_h_per_sent_feature[-1])
+        h_mean_feature = add_feature_prefix('Conc', l_h_per_sent_feature[-1])
 
         h_feature = h_max_feature
         h_feature.update(h_mean_feature)
