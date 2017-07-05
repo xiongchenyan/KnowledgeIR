@@ -87,11 +87,13 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         self.h_qrel = load_trec_labels_dict(self.qrel_in)
         logging.info('loaded qrel [%s]', self.qrel_in)
 
+        logging.info('loading q info')
         l_h_data = [json.loads(line) for line in open(self.q_info_in)]
         l_qid = [h['qid'] for h in l_h_data]
         self.h_q_info = dict(zip(l_qid, l_h_data))
         logging.info('loaded [%d] q info [%s]', len(self.h_q_info), self.q_info_in)
 
+        logging.info('loading doc info')
         l_h_data = [json.loads(line) for line in open(self.doc_info_in)]
         l_docno = [h['docno'] for h in l_h_data]
         self.h_doc_info = dict(zip(l_docno, l_h_data))

@@ -41,14 +41,17 @@ from knowledge4ir.utils import (
     text2lm,
     avg_embedding,
     SPOT_FIELD,
-    lm_cosine
+    lm_cosine,
+    TARGET_TEXT_FIELDS,
+    max_pool_feature,
 )
+from knowledge4ir.utils.retrieval_model import RetrievalModel
 
 
 class NLSSFeature(BoeFeature):
     """
-   extract boe exact features by comparing e_grid of qe with qe's nlss
-   """
+    root class for nlss features
+    """
     intermediate_data_out_name = Unicode(help='intermediate output results').tag(config=True)
     max_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
@@ -83,7 +86,7 @@ class NLSSFeature(BoeFeature):
         logging.debug('doc t [%s], info [%s]', doc_info.get('title', ""),
                       json.dumps(doc_info.get('spot', {}).get('title', []))
                       )
-        l_h_feature = [self.extract_per_entity(ana, doc_info) for ana in l_q_ana]
+        l_h_feature = [self.extract_per_entity(q_info, ana, doc_info) for ana in l_q_ana]
 
         h_final_feature = {}
         # h_final_feature.update(log_sum_feature(l_h_feature))
@@ -93,8 +96,22 @@ class NLSSFeature(BoeFeature):
 
         return h_final_feature
 
-    def extract_per_entity(self, ana, doc_info):
-        raise NotImplementedError
+    def extract_per_entity(self, q_info, ana, doc_info):
+        """
+        :param q_info: query info
+        :param ana: one q ana
+        :param doc_info:
+        :return:
+        """
+
+        h_feature = dict()
+        e_id = ana['id']
+        ll_qe_nlss = [h_nlss.get(e_id, []) for h_nlss in self.resource.l_h_nlss]
+
+        for nlss_name, l_qe_nlss in zip(self.resource.l_nlss_name, ll_qe_nlss):
+            h_this_nlss_feature = self._extract_per_entity_via_nlss(q_info, ana, doc_info, l_qe_nlss)
+            h_feature.update(add_feature_prefix(h_this_nlss_feature, nlss_name + '_'))
+        return h_feature
 
     def _form_sents_emb(self, l_sent):
         l_emb = [avg_embedding(self.resource.embedding, sent)
@@ -112,6 +129,9 @@ class NLSSFeature(BoeFeature):
     def _form_nlss_emb(self, l_qe_nlss):
         l_sent = [nlss[0] for nlss in l_qe_nlss]
         return self._form_sents_emb(l_sent)
+
+    def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
+        raise NotImplementedError
 
 
 class EGridNLSSFeature(NLSSFeature):
@@ -147,24 +167,7 @@ class EGridNLSSFeature(NLSSFeature):
         #
         # return h_final_feature
 
-    def extract_per_entity(self, ana, doc_info):
-        """
-
-        :param ana: one q ana
-        :param doc_info:
-        :return:
-        """
-
-        h_feature = dict()
-        e_id = ana['id']
-        ll_qe_nlss = [h_nlss.get(e_id, []) for h_nlss in self.resource.l_h_nlss]
-
-        for nlss_name, l_qe_nlss in zip(self.resource.l_nlss_name, ll_qe_nlss):
-            h_this_nlss_feature = self._extract_per_entity_via_nlss(ana, doc_info, l_qe_nlss)
-            h_feature.update(add_feature_prefix(h_this_nlss_feature, nlss_name + '_'))
-        return h_feature
-
-    def _extract_per_entity_via_nlss(self, ana, doc_info, l_qe_nlss):
+    def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
         """
 
         :param ana:
@@ -322,3 +325,76 @@ class EGridNLSSFeature(NLSSFeature):
 
         print >> self.intermediate_out, json.dumps(h_pair_res)
         return
+
+
+class NLSSExpansionFeature(NLSSFeature):
+    """
+    find best nlss for the query (using embedding cosine)
+        top 5 for now
+    and then use them to rank the document via qe-dw
+        top 5 nlss combined as e-desp-alike big query
+        each nlss individually, and then take a max
+    also dump the top k nlss used
+    """
+    top_k_nlss = Int(5, help='number of nlss to use per query entity').tag(config=True)
+    feature_name_pre = Unicode('NLSSExp')
+    l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
+
+    def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
+        """
+        extract e-d features
+
+        do:
+            get top k nlss
+            form doc lm
+            retrieval, as a whole of individually
+            sum up to features
+        :param q_info: query info
+        :param ana:
+        :param doc_info:
+        :param l_qe_nlss:
+        :return: h_feature: entity features for this nlss set
+        """
+
+        l_top_nlss = self._find_top_k_nlss_for_q(q_info, l_qe_nlss)
+
+        l_top_sent = [nlss[0] for nlss in l_top_nlss]
+        l_top_sent.append(' '.join(l_top_sent))
+        if not l_top_sent:
+            l_top_sent.append('')  # place holder for empty nlss e
+        l_h_per_sent_feature = []
+        l_field_doc_lm = [text2lm(doc_info.get(field, ""), clean=True)
+                          for field in self.l_target_fields]
+        for sent in l_top_sent:
+            h_per_sent_feature = {}
+            h_sent_lm = text2lm(sent, clean=True)
+            for field, lm in zip(self.l_target_fields, l_field_doc_lm):
+                r_model = RetrievalModel()
+                r_model.set_from_raw(
+                    h_sent_lm, lm,
+                    self.resource.corpus_stat.h_field_df.get(field, None),
+                    self.resource.corpus_stat.h_field_total_df.get(field, None),
+                    self.resource.corpus_stat.h_field_avg_len.get(field, None)
+                )
+                l_retrieval_score = r_model.scores()
+                h_per_sent_feature.update(dict(
+                    [(field + name, score) for name, score in l_retrieval_score]
+                ))
+            l_h_per_sent_feature.append(h_per_sent_feature)
+
+        h_max_feature = max_pool_feature(l_h_per_sent_feature[:-1])
+        h_mean_feature = add_feature_prefix('Concate', l_h_per_sent_feature[-1])
+
+        h_feature = h_max_feature
+        h_feature.update(h_mean_feature)
+        return h_feature
+
+    def _find_top_k_nlss_for_q(self, q_info, l_qe_nlss):
+        """
+        find top k similar sentences based on cosine(q emb, sent emb)
+        :param q_info:
+        :param l_qe_nlss:
+        :return:
+        """
+        l_top_nlss = []
+        return l_top_nlss

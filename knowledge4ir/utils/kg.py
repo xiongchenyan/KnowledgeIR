@@ -118,6 +118,7 @@ def load_nlss_dict(nlss_dump, max_nlss_per_e=100):
     """
     load nlss dump from entity_grid (from wiki)
     :param nlss_dump: input nlss data
+    :param max_nlss_per_e: maximum number of nlss loaded per entity
     :return: h_nlss, e_id -> [(sent, l_e_id in sent)]
     """
     h_nlss = dict()

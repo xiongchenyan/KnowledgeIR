@@ -150,7 +150,8 @@ class RetrievalModel(Configurable):
 
     def scores(self):
         l_name_score = self.all_scores()
-        l_score = [(name, score) for name, score in l_name_score if name in self.default_model_group]
+        l_score = [(name, score)
+                   for name, score in l_name_score if name in self.default_model_group]
         return l_score
 
     def all_scores(self, lm_para=LmPara(), bm25_para=BM25Para()):
