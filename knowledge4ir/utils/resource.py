@@ -6,6 +6,7 @@ from traitlets.config import Configurable
 from traitlets import (
     Unicode,
     List,
+    Int,
 )
 import logging
 import json
@@ -37,7 +38,8 @@ class JointSemanticResource(Configurable):
 
     l_nlss_path = List(Unicode, help='paths to different nlss dumps').tag(config=True)
     l_nlss_name = List(Unicode, help='names of nlss').tag(config=True)
-    
+    max_nlss_per_e = Int(100, help='maximum nlss per e to derive').tag(config=True)
+
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
         self.embedding = None
@@ -74,7 +76,7 @@ class JointSemanticResource(Configurable):
         assert len(self.l_nlss_path) == len(self.l_nlss_name)
         logging.info('nlss: %s',
                      json.loads(zip(self.l_nlss_name), self.l_nlss_path) )
-        self.l_h_nlss = [load_nlss_dict(nlss_path) for nlss_path in self.l_nlss_path]
+        self.l_h_nlss = [load_nlss_dict(nlss_path, self.max_nlss_per_e) for nlss_path in self.l_nlss_path]
         logging.info('nlss loaded')
 
     def _load_sf(self):

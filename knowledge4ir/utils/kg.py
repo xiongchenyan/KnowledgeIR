@@ -114,7 +114,7 @@ def read_surface_form(kg_in):
     return h_surface_name
 
 
-def load_nlss_dict(nlss_dump):
+def load_nlss_dict(nlss_dump, max_nlss_per_e=100):
     """
     load nlss dump from entity_grid (from wiki)
     :param nlss_dump: input nlss data
@@ -124,6 +124,7 @@ def load_nlss_dict(nlss_dump):
 
     logging.info('loading nlss from [%s]', nlss_dump)
     cnt = 0
+    skipped_cnt = 0
     for p, line in enumerate(open(nlss_dump)):
         cnt = 1
         if not p % 10000:
@@ -136,8 +137,12 @@ def load_nlss_dict(nlss_dump):
 
         if e_id not in h_nlss:
             h_nlss[e_id] = []
-        h_nlss[e_id].append((sent, l_e))
+        if len(h_nlss[e_id]) < max_nlss_per_e:
+            h_nlss[e_id].append((sent, l_e))
+        else:
+            skipped_cnt += 1
 
-    logging.info('loaded [%d] nlss for [%d] entities', cnt, len(h_nlss))
+    logging.info('loaded [%d] nlss for [%d] entities, max [%d] per e, skiped [%d] nlss',
+                 cnt, len(h_nlss), max_nlss_per_e, skipped_cnt)
     return h_nlss
 
