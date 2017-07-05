@@ -276,7 +276,9 @@ class EGridNLSSFeature(NLSSFeature):
         l_name = ['Mean', 'Max']
         for f1, name1 in zip(l_func, l_name):
             for f2, name2 in zip(l_func, l_name):
-                score = f1(f2(trans_mtx, axis=1), axis=0)
+                score = -1
+                if (trans_mtx.shape[0] > 0) & (trans_mtx.shape[1] > 0):
+                    score = f1(f2(trans_mtx, axis=1), axis=0)
                 pool_name = name1 + name2
                 h_feature[pool_name] = score
 
@@ -302,6 +304,9 @@ class EGridNLSSFeature(NLSSFeature):
         h_pair_res['id'] = ana['id']
         h_pair_res['surface'] = ana['surface']
         h_pair_res['docno'] = doc_info['docno']
+        if (not l_this_e_grid) | (not l_qe_nlss):
+            print >> self.intermediate_out, json.dumps(h_pair_res)
+            return
 
         l_e_grid_info = []
         for i in xrange(len(l_this_e_grid)):
