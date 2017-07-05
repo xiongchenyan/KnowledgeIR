@@ -34,7 +34,7 @@ def mul_load_candidate_doc(in_dir):
 
 def partition_doc_info(doc_info_in, l_name, l_s_doc, out_dir):
     logging.info('start partioning doc info')
-    h_doc_info = load_json_info(doc_info_in, 'docno')
+    h_doc_info = load_json_info(doc_info_in)
     for name, s_doc in zip(l_name, l_s_doc):
         out_name = os.path.join(out_dir, ntpath.basename(doc_info_in)) + '.' + name
         out = open(out_name, 'w')

@@ -552,9 +552,11 @@ def load_json_info(in_name, key_field='docno'):
     :param key_field: the field to index
     :return: h_info key->dict
     """
+    logging.info('loading [%s] with key [%s]', in_name, key_field)
     l_h = [json.loads(line) for line in open(in_name)]
     l_key = [h[key_field] for h in l_h]
     h_info = dict(zip(l_key, l_h))
+    logging.info('loaded [%d] info', len(h_info))
     return h_info
 
 
