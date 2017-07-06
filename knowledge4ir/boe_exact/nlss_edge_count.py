@@ -82,7 +82,7 @@ class NLSSEdgeCountFeature(NLSSFeature):
         """
 
         if qe not in self.resource.embedding:
-            return
+            return 0
 
         emb_cnt = 0
         for e in l_e:
