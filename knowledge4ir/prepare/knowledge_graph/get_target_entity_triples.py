@@ -23,7 +23,7 @@ sys.setdefaultencoding('UTF8')
 
 set_basic_log()
 if 4 != len(sys.argv):
-    print "2 para: fb rbf dump + target entity + out "
+    print "3 para: fb rbf dump + target entity + out "
     sys.exit(-1)
 
 
