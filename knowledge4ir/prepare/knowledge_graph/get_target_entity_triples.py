@@ -45,7 +45,16 @@ for o_cnt, l_v_col in enumerate(reader.read(sys.argv[1])):
     # h_res[oid] = l_v_col
     h = dict()
     h['id'] = oid
-    h['triples'] = l_v_col
+
+    l_edges = []
+    for v_col in l_v_col:
+        edge = parser.discard_prefix(v_col[1])
+        tail = v_col[2]
+        possible_id = parser.get_id_for_col(tail)
+        if possible_id:
+            tail = possible_id
+        l_edges.append([edge, tail])
+    h['edges'] = l_edges
     print >> out, json.dumps(h)
     cnt += 1
 
