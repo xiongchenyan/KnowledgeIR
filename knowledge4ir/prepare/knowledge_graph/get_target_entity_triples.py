@@ -53,6 +53,8 @@ for o_cnt, l_v_col in enumerate(reader.read(sys.argv[1])):
         possible_id = parser.get_id_for_col(tail)
         if possible_id:
             tail = possible_id
+        else:
+            tail = parser.discard_prefix(tail)
         l_edges.append([edge, tail])
     h['edges'] = l_edges
     print >> out, json.dumps(h)
