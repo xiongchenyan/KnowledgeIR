@@ -34,6 +34,7 @@ from knowledge4ir.utils import (
     load_trec_labels_dict,
     dump_svm_from_raw,
     set_basic_log,
+    load_json_info,
 )
 from knowledge4ir.utils.resource import JointSemanticResource
 
@@ -57,13 +58,12 @@ class BoeLeToRFeatureExtractCenter(Configurable):
     
     def __init__(self, **kwargs):
         super(BoeLeToRFeatureExtractCenter, self).__init__(**kwargs)
-        self._load_data()
-        self.resource = JointSemanticResource(**kwargs)
         self.l_extractor = []
         self.h_q_info = dict()
         self.h_doc_info = dict()
         self.h_qrel = dict()
-
+        self._load_data()
+        self.resource = JointSemanticResource(**kwargs)
         self._set_extractor(**kwargs)
 
     @classmethod
@@ -89,19 +89,17 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         logging.info('loaded qrel [%s]', self.qrel_in)
 
         logging.info('loading q info')
-        l_h_data = [json.loads(line) for line in open(self.q_info_in)]
-        l_qid = [h['qid'] for h in l_h_data]
-        self.h_q_info = dict(zip(l_qid, l_h_data))
+        # l_h_data = [json.loads(line) for line in open(self.q_info_in)]
+        # l_qid = [h['qid'] for h in l_h_data]
+        # self.h_q_info = dict(zip(l_qid, l_h_data))
+        self.h_q_info = load_json_info(self.q_info_in, 'qid', unpack=True)
         logging.info('loaded [%d] q info [%s]', len(self.h_q_info), self.q_info_in)
 
         logging.info('loading doc info')
-        # l_h_data = [json.loads(line) for line in open(self.doc_info_in)]
-        # l_docno = [h['docno'] for h in l_h_data]
-        self.h_doc_info = {}
-        for line in open(self.doc_info_in):
-            docno = json.loads(line)['docno']
-            self.h_doc_info[docno] = line.strip()
-        # self.h_doc_info = dict(zip(l_docno, l_h_data))
+        self.h_doc_info = load_json_info(self.doc_info_in, 'docno', unpack=False)
+        # for line in open(self.doc_info_in):
+        #     docno = json.loads(line)['docno']
+        #     self.h_doc_info[docno] = line.strip()
         logging.info('loaded [%d] doc info [%s]', len(self.h_doc_info), self.doc_info_in)
 
     def extract(self):

@@ -545,17 +545,24 @@ def load_doc_info(in_name):
     return h_doc_info
 
 
-def load_json_info(in_name, key_field='docno'):
+def load_json_info(in_name, key_field='docno', unpack=True):
     """
     load json format info file
     :param in_name: input, each line is a json (dict)
     :param key_field: the field to index
+    :param unpack: whether to unpack json lines
     :return: h_info key->dict
     """
     logging.info('loading [%s] with key [%s]', in_name, key_field)
-    l_h = [json.loads(line) for line in open(in_name)]
-    l_key = [h[key_field] for h in l_h]
-    h_info = dict(zip(l_key, l_h))
+    if unpack:
+        l_h = [json.loads(line) for line in open(in_name)]
+        l_key = [h[key_field] for h in l_h]
+        h_info = dict(zip(l_key, l_h))
+    else:
+        logging.info('delay unpack json string at run time, return key->line mapping')
+        h_info = {}
+        for line in open(in_name):
+            h_info[json.loads(line)[key_field]] = line.strip()
     logging.info('loaded [%d] info', len(h_info))
     return h_info
 
