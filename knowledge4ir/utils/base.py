@@ -587,8 +587,8 @@ def mean_pool_feature(l_h_feature):
     z = float(len(l_h_feature))
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
-            h_res[key + "_Mean"] = v / z + h_res.get(key, 0)
-    return h_res
+            h_res[key] = v / z + h_res.get(key, 0)
+    return add_feature_suffix(h_res, '_Mean')
 
 
 def max_pool_feature(l_h_feature):
@@ -597,8 +597,16 @@ def max_pool_feature(l_h_feature):
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
             h_res[key] = max(v, h_res.get(key, -10000000))
-    h_res = dict([(item[0] + '_Max', item[1]) for item in h_res.items()])
-    return h_res
+    # h_res = dict([(item[0] + '_Max', item[1]) for item in h_res.items()])
+    return add_feature_suffix(h_res, '_Max')
+
+
+def sum_pool_feature(l_h_feature):
+    h_res = dict()
+    for h_feature in l_h_feature:
+        for key, v in h_feature.items():
+            h_res[key] = v + h_res.get(key, 0)
+    return add_feature_suffix(h_res, '_Sum')
 
 
 def log_sum_feature(l_h_feature):
@@ -615,3 +623,9 @@ def add_feature_prefix(h_feature, prefix):
     )
     return h_new
 
+
+def add_feature_suffix(h_feature, suffix):
+    h_new = dict(
+        [(key + suffix, value) for key, value in h_feature.items()]
+    )
+    return h_new

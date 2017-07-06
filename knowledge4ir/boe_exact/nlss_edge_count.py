@@ -39,6 +39,7 @@ class NLSSEdgeCountFeature(NLSSFeature):
         qe = ana['id']
         h_feature = {}
         for field in self.l_target_fields:
+            logging.info('start extracting [%s] in [%s]', qe, field)
             l_e = form_boe_per_field(doc_info, field)
             l_e = [e['id'] for e in l_e if e['id'] != qe]
 
@@ -46,11 +47,10 @@ class NLSSEdgeCountFeature(NLSSFeature):
             emb_sim_cnt = self._count_meaningful_emb_sim(qe, l_e)
             kg_edge_cnt = self._count_kg_edge(qe, l_e)
 
-            h_feature['nlss_cnt'] = nlss_cnt
-            h_feature['emb_sim_cnt'] = emb_sim_cnt
-            h_feature['kg_edge_cnt'] = kg_edge_cnt
-            h_feature['nb_e'] = len(l_e)
-            add_feature_prefix(h_feature, field)
+            h_feature[field + 'nlss_cnt'] = nlss_cnt
+            h_feature[field + 'emb_sim_cnt'] = emb_sim_cnt
+            h_feature[field + 'kg_edge_cnt'] = kg_edge_cnt
+            h_feature[field + 'nb_e'] = len(l_e)
         return h_feature
 
     def _count_co_nlss(self, qe, l_e, l_qe_nlss):
