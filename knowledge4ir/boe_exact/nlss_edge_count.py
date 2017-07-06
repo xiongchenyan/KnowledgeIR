@@ -93,12 +93,14 @@ class NLSSEdgeCountFeature(NLSSFeature):
         return emb_cnt
 
     def _count_kg_edge(self, qe, l_e):
-        l_edge = self.resource.h_e_edge.get(qe, [])
+        l_edge = self.resource.h_e_edge.get(qe, {}).get('edges', [])
         s_qe_neighbor = [item[1] for item in l_edge if item[1].startswith("/m/")]
+        logging.info('[%s] has [%d] neighbor', qe, len(s_qe_neighbor))
         kg_cnt = 0
         for e in l_e:
             if e in s_qe_neighbor:
                 kg_cnt += 1
+        logging.info('[%d] in doc', kg_cnt)
         return kg_cnt
 
 
