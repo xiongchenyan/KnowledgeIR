@@ -40,7 +40,7 @@ class NLSSEdgeCountFeature(NLSSFeature):
         h_feature = {}
         for field in self.l_target_fields:
             l_e = form_boe_per_field(doc_info, field)
-            l_e = [e for e in l_e if e != qe]
+            l_e = [e['id'] for e in l_e if e['id'] != qe]
 
             nlss_cnt = self._count_co_nlss(qe, l_e, l_qe_nlss)
             emb_sim_cnt = self._count_meaningful_emb_sim(qe, l_e)
