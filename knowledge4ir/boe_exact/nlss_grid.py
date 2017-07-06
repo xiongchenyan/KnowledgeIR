@@ -4,7 +4,7 @@ nlss grid feature
 import json
 
 import numpy as np
-from traitlets import Unicode
+from traitlets import Unicode, List
 
 from knowledge4ir.boe_exact.nlss_feature import NLSSFeature
 from knowledge4ir.utils import E_GRID_FIELD, add_feature_prefix, SPOT_FIELD
@@ -15,10 +15,20 @@ class EGridNLSSFeature(NLSSFeature):
     extract boe exact features by comparing e_grid of qe with qe's nlss
     """
     feature_name_pre = Unicode('EGridNLSS')
+    l_grid_lvl_pool = List(Unicode, default_value=['Sum', 'Max', 'Mean']).tag(config=True)
+    h_pool_name_func = {
+        'Sum': np.sum,
+        'Max': np.amax,
+        'Mean': np.mean,
+    }
+
+    def __init__(self, **kwargs):
+        super(EGridNLSSFeature, self).__init__(**kwargs)
+        for pool_name in self.l_grid_lvl_pool:
+            assert pool_name in self.h_pool_name_func
 
     def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
         """
-
         :param ana:
         :param doc_info:
         :param l_qe_nlss:
@@ -103,7 +113,8 @@ class EGridNLSSFeature(NLSSFeature):
 
     def _pool_grid_nlss_sim(self, trans_mtx):
         h_feature = {}
-        for f1, name1 in zip([np.amax, np.sum, np.mean], ['Max', 'Sum', 'Mean']):
+        for name1 in self.l_grid_lvl_pool:
+            f1 = self.h_pool_name_func[name1]
             for f2, name2 in zip([np.mean, np.amax], ['Mean', 'Max']):
                 score = -1
                 if (trans_mtx.shape[0] > 0) & (trans_mtx.shape[1] > 0):
