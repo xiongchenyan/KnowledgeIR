@@ -54,7 +54,7 @@ class NLSSFeature(BoeFeature):
     """
     intermediate_data_out_name = Unicode(help='intermediate output results').tag(config=True)
     max_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
-    l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
+    l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
 
     def __init__(self, **kwargs):
         super(NLSSFeature, self).__init__(**kwargs)
@@ -247,13 +247,14 @@ class EGridNLSSFeature(NLSSFeature):
         h_feature = {}
         l_func = [np.mean, np.amax]
         l_name = ['Mean', 'Max']
-        for f1, name1 in zip(l_func, l_name):
+        for f1, name1 in zip(l_func + [np.sum], l_name + ['Sum']):
             for f2, name2 in zip(l_func, l_name):
                 score = -1
                 if (trans_mtx.shape[0] > 0) & (trans_mtx.shape[1] > 0):
                     score = f1(f2(trans_mtx, axis=1), axis=0)
-                pool_name = name1 + name2
+                pool_name = 'R' + name1 + 'C' + name2
                 h_feature[pool_name] = score
+
 
         return h_feature
 
@@ -316,7 +317,6 @@ class NLSSExpansionFeature(NLSSFeature):
     """
     top_k_nlss = Int(5, help='number of nlss to use per query entity').tag(config=True)
     feature_name_pre = Unicode('NLSSExp')
-    l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
 
     def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
         """
