@@ -63,7 +63,8 @@ def align_edge_nlss(l_edge, l_nlss):
 
 def process(resource, out_name):
     out = open(out_name, 'w')
-    for e, l_edge in resource.h_e_edge.items():
+    for e, h_edge_info in resource.h_e_edge.items():
+        l_edge = h_edge_info.get('edges', [])
         logging.info('aligning for [%s]', e)
         l_nlss = resource.l_h_nlss[0].get(e, [])
         h_aligned_info = align_per_entity(e, l_nlss, l_edge)
