@@ -57,6 +57,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
     
     def __init__(self, **kwargs):
         super(BoeLeToRFeatureExtractCenter, self).__init__(**kwargs)
+        self._load_data()
         self.resource = JointSemanticResource(**kwargs)
         self.l_extractor = []
         self.h_q_info = dict()
@@ -64,7 +65,6 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         self.h_qrel = dict()
 
         self._set_extractor(**kwargs)
-        self._load_data()
 
     @classmethod
     def class_print_help(cls, inst=None):
