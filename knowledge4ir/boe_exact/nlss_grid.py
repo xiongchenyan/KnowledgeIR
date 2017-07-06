@@ -103,7 +103,7 @@ class EGridNLSSFeature(NLSSFeature):
 
     def _pool_grid_nlss_sim(self, trans_mtx):
         h_feature = {}
-        for f1, name1 in zip([np.amax, np.sum], ['Max', 'Sum']):
+        for f1, name1 in zip([np.amax, np.sum, np.mean], ['Max', 'Sum', 'Mean']):
             for f2, name2 in zip([np.mean, np.amax], ['Mean', 'Max']):
                 score = -1
                 if (trans_mtx.shape[0] > 0) & (trans_mtx.shape[1] > 0):
