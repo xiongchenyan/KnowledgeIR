@@ -74,7 +74,7 @@ class JointSemanticResource(Configurable):
         return
 
     def _load_edge(self):
-        if not self.entity_field_path:
+        if not self.entity_edge_path:
             return
         logging.info('loading entity edges from [%s]', self.entity_field_path)
         self.h_e_edge = load_json_info(self.entity_field_path, 'id')
