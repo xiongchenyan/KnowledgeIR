@@ -23,7 +23,9 @@ def align_per_entity(e_id, l_nlss, l_edge):
     :return:
     """
     l_nlss = [nlss for nlss in l_nlss if nlss[1]]
-    l_edge = [edge for edge in l_edge if edge[1].startswith('/m/')]
+    l_edge = [edge for edge in l_edge if
+              edge[1].startswith('/m/') & (not edge[0].startswith('/common/')) & (not edge[0].startswith('/user/'))
+              ]
 
     h_aligned_info = dict()
     h_aligned_info['id'] = e_id
