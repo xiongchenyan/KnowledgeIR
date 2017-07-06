@@ -65,7 +65,7 @@ class NLSSFeature(BoeFeature):
         self.resource = resource
         assert resource.embedding
         assert resource.l_h_nlss
-        logging.info('Salient feature resource set')
+        logging.info('%s feature resource set', self.feature_name_pre)
 
     def close_resource(self):
         if self.intermediate_data_out_name:

@@ -95,9 +95,13 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         logging.info('loaded [%d] q info [%s]', len(self.h_q_info), self.q_info_in)
 
         logging.info('loading doc info')
-        l_h_data = [json.loads(line) for line in open(self.doc_info_in)]
-        l_docno = [h['docno'] for h in l_h_data]
-        self.h_doc_info = dict(zip(l_docno, l_h_data))
+        # l_h_data = [json.loads(line) for line in open(self.doc_info_in)]
+        # l_docno = [h['docno'] for h in l_h_data]
+        self.h_doc_info = {}
+        for line in open(self.doc_info_in):
+            docno = json.loads(line)['docno']
+            self.h_doc_info[docno] = line.strip()
+        # self.h_doc_info = dict(zip(l_docno, l_h_data))
         logging.info('loaded [%d] doc info [%s]', len(self.h_doc_info), self.doc_info_in)
 
     def extract(self):
@@ -111,6 +115,8 @@ class BoeLeToRFeatureExtractCenter(Configurable):
             logging.info('start extracting q [%s]', q)
             for docno, base_score in ranking:
                 doc_info = self.h_doc_info.get(docno, {'docno': docno})
+                if type(doc_info) is str:
+                    doc_info = json.loads(doc_info)
                 label = self.h_qrel.get(q, {}).get(docno, 0)
                 h_feature = dict()
                 h_feature['base'] = base_score
