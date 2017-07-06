@@ -51,6 +51,17 @@ class NLSSEdgeCountFeature(NLSSFeature):
             h_feature[field + 'emb_sim_cnt'] = emb_sim_cnt
             h_feature[field + 'kg_edge_cnt'] = kg_edge_cnt
             h_feature[field + 'nb_e'] = len(l_e)
+
+        if self.intermediate_data_out_name:
+            h_mid = {'qid': q_info['qid'], 'docno': doc_info['docno'], 'id': ana['id']}
+            h_mid['nb_nlss'] = len(l_qe_nlss)
+            l_nlss_e = sum(
+                [ nlss[1] for nlss in l_qe_nlss],
+                [])
+            s_nlss_e = set(l_nlss_e)
+            h_mid['nb_nlss_e'] = len(s_nlss_e)
+            h_mid.update(h_feature)
+            print >> self.intermediate_out, json.dumps(h_mid)
         return h_feature
 
     def _count_co_nlss(self, qe, l_e, l_qe_nlss):
