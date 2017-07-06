@@ -245,17 +245,13 @@ class EGridNLSSFeature(NLSSFeature):
 
     def _pool_grid_nlss_sim(self, trans_mtx):
         h_feature = {}
-        l_func = [np.mean, np.amax]
-        l_name = ['Mean', 'Max']
-        for f1, name1 in zip(l_func + [np.sum], l_name + ['Sum']):
-            for f2, name2 in zip(l_func, l_name):
+        for f1, name1 in zip([np.amax, np.sum], ['Max', 'Sum']):
+            for f2, name2 in zip([np.mean, np.amax], ['Mean', 'Max']):
                 score = -1
                 if (trans_mtx.shape[0] > 0) & (trans_mtx.shape[1] > 0):
                     score = f1(f2(trans_mtx, axis=1), axis=0)
                 pool_name = 'R' + name1 + 'C' + name2
                 h_feature[pool_name] = score
-
-
         return h_feature
 
     def _log_intermediate_res(self, ana, doc_info, l_this_e_grid, l_qe_nlss, m_bow_sim, m_emb_sim):
