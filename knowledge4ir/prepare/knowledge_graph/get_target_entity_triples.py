@@ -27,7 +27,7 @@ if 4 != len(sys.argv):
     sys.exit(-1)
 
 
-s_entity = set(open(sys.argv[2]).read().splitlines())
+s_entity = set([line.strip().split()[0] for line in open(sys.argv[2]).read()])
 
 reader = FbDumpReader()
 cnt = 0
