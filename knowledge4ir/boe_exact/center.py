@@ -27,7 +27,8 @@ from knowledge4ir.boe_exact import (
     CoreferenceMatch,
 )
 from knowledge4ir.boe_exact.salient_feature import SalientFeature
-from knowledge4ir.boe_exact.nlss_feature import EGridNLSSFeature, NLSSExpansionFeature
+from knowledge4ir.boe_exact.nlss_exp import NLSSExpansionFeature
+from knowledge4ir.boe_exact.nlss_grid import EGridNLSSFeature
 from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
