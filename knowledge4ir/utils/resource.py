@@ -13,10 +13,11 @@ import json
 from gensim.models import Word2Vec
 from knowledge4ir.utils.retrieval_model import CorpusStat
 from knowledge4ir.utils import (
-    load_trec_ranking_with_score
+    load_trec_ranking_with_score,
+    load_json_info,
 )
 from knowledge4ir.utils.kg import (
-    load_nlss_dict
+    load_nlss_dict,
 )
 
 
@@ -35,6 +36,7 @@ class JointSemanticResource(Configurable):
                            ).tag(config=True)
     prf_sent_path = Unicode(help="prf sentence json dict path"
                             ).tag(config=True)
+    entity_edge_path = Unicode(help='entity edge json path').tag(config=True)
 
     l_nlss_path = List(Unicode, help='paths to different nlss dumps').tag(config=True)
     l_nlss_name = List(Unicode, help='names of nlss').tag(config=True)
@@ -50,6 +52,7 @@ class JointSemanticResource(Configurable):
         self.h_q_boe_rm3 = None
         self.h_q_prf_sent = None
         self.l_h_nlss = None
+        self.h_e_edge = None
         self._load()
         self.corpus_stat = CorpusStat(**kwargs)
 
@@ -59,6 +62,7 @@ class JointSemanticResource(Configurable):
         CorpusStat.class_print_help(inst)
 
     def _load(self):
+        self._load_edge()
         self._load_nlss()
         self._load_entity_fields()
         self._load_sf()
@@ -68,6 +72,13 @@ class JointSemanticResource(Configurable):
         self._load_boe_rm3()
         self._load_prf_sent()
         return
+
+    def _load_edge(self):
+        if not self.entity_field_path:
+            return
+        logging.info('loading entity edges from [%s]', self.entity_field_path)
+        self.h_e_edge = load_json_info(self.entity_field_path, 'id')
+        logging.info('[%d] entities\'s edge loaded', len(self.h_e_edge))
 
     def _load_nlss(self):
         if not self.l_nlss_path:
