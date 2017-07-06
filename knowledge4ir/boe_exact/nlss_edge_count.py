@@ -49,6 +49,7 @@ class NLSSEdgeCountFeature(NLSSFeature):
             h_feature['nlss_cnt'] = nlss_cnt
             h_feature['emb_sim_cnt'] = emb_sim_cnt
             h_feature['kg_edge_cnt'] = kg_edge_cnt
+            h_feature['nb_e'] = len(l_e)
             add_feature_prefix(h_feature, field)
         return h_feature
 
