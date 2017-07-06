@@ -62,6 +62,7 @@ class JointSemanticResource(Configurable):
         CorpusStat.class_print_help(inst)
 
     def _load(self):
+        logging.info('start loading resources')
         self._load_edge()
         self._load_nlss()
         self._load_entity_fields()
@@ -71,13 +72,14 @@ class JointSemanticResource(Configurable):
         self._load_sf_stat()
         self._load_boe_rm3()
         self._load_prf_sent()
+        logging.info('resource loaded')
         return
 
     def _load_edge(self):
         if not self.entity_edge_path:
             return
-        logging.info('loading entity edges from [%s]', self.entity_field_path)
-        self.h_e_edge = load_json_info(self.entity_field_path, 'id')
+        logging.info('loading entity edges from [%s]', self.entity_edge_path)
+        self.h_e_edge = load_json_info(self.entity_edge_path, 'id')
         logging.info('[%d] entities\'s edge loaded', len(self.h_e_edge))
 
     def _load_nlss(self):
