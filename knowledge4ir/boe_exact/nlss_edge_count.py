@@ -91,6 +91,8 @@ class NLSSEdgeCountFeature(NLSSFeature):
             sim = self.resource.embedding.similarity(qe, e)
             if sim >= 0.2:
                 emb_cnt += 1
+        logging.info('[%d] doc e, [%d] connected in embedding to [%s]',
+                     len(l_e), emb_cnt, qe)
         return emb_cnt
 
     def _count_kg_edge(self, qe, l_e):
@@ -101,7 +103,8 @@ class NLSSEdgeCountFeature(NLSSFeature):
         for e in l_e:
             if e in s_qe_neighbor:
                 kg_cnt += 1
-        logging.info('[%d] in doc', kg_cnt)
+        logging.info('[%d] doc e, [%d] connected in kg to [%s]',
+                     len(l_e), kg_cnt, qe)
         return kg_cnt
 
 
