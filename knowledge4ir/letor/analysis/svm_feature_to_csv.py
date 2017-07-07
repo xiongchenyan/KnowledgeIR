@@ -28,7 +28,7 @@ print >> out, head_str
 
 l_svm_data = load_svm_feature(sys.argv[1])
 for svm_data in l_svm_data:
-    line = svm_data['qid'] + ',' + svm_data['comment'] + ',%d,' + svm_data['score']
+    line = svm_data['qid'] + ',' + svm_data['comment'] + ',%d,' % svm_data['score']
     h_feature = svm_data['feature']
     l_feature = h_feature.items()
     l_feature.sort(key=lambda item: item[0])
