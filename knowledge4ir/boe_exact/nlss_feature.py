@@ -40,13 +40,23 @@ from knowledge4ir.utils import (
     avg_embedding,
     lm_cosine,
     TARGET_TEXT_FIELDS,
+    body_field,
 )
+from knowledge4ir.utils.boe import (
+    form_boe_per_field,
+)
+from knowledge4ir.utils.retrieval_model import RetrievalModel
+from knowledge4ir.utils.nlp import text2lm
 
 
 class NLSSFeature(BoeFeature):
     """
     root class for nlss features
     """
+    nb_nlss_per_e = Int(100, help='number of nlss per e').tag(config=True)
+    l_nlss_selection = List(Unicode, default_value=[''],
+                            help='way to select nlss for the q: ""(nothing), lm (rank via lm), BOE (has e overlap)'
+                            ).tag(config=True)
     intermediate_data_out_name = Unicode(help='intermediate output results').tag(config=True)
     max_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
     l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
@@ -104,9 +114,54 @@ class NLSSFeature(BoeFeature):
         ll_qe_nlss = [h_nlss.get(e_id, []) for h_nlss in self.resource.l_h_nlss]
 
         for nlss_name, l_qe_nlss in zip(self.resource.l_nlss_name, ll_qe_nlss):
-            h_this_nlss_feature = self._extract_per_entity_via_nlss(q_info, ana, doc_info, l_qe_nlss)
-            h_feature.update(add_feature_prefix(h_this_nlss_feature, nlss_name + '_'))
+            for nlss_select in self.l_nlss_selection:
+                l_this_nlss = self._select_nlss(q_info, ana, doc_info, nlss_select, l_qe_nlss)
+                h_this_nlss_feature = self._extract_per_entity_via_nlss(q_info, ana, doc_info, l_this_nlss)
+                h_feature.update(add_feature_prefix(h_this_nlss_feature, nlss_select + nlss_name + '_'))
         return h_feature
+
+    def _select_nlss(self, q_info, ana, doc_info, nlss_select, l_nlss):
+        if nlss_select:
+            logging.info('selection for q [%s] [%s] via [%s]',q_info['qid'], ana['id'], nlss_select)
+        l_this_nlss = []
+        if nlss_select == "":
+            l_this_nlss = l_nlss
+        elif nlss_select == "BOE":
+            l_this_nlss = self._boe_nlss_filter(ana['id'], l_nlss, doc_info)
+        elif nlss_select == 'lm':
+            l_this_nlss = self._lm_nlss_filter(l_nlss, doc_info)
+        return l_this_nlss[:self.nb_nlss_per_e]
+
+    def _boe_nlss_filter(self, e_id, l_nlss, doc_info):
+        l_ana = sum([form_boe_per_field(doc_info, field) for field in self.l_target_fields],
+                    [])
+        s_e = set([ana['id'] for ana in l_ana if ana['id'] != e_id])
+        l_keep_nlss = []
+        for nlss in l_nlss:
+            keep_flag = False
+            for e in nlss[1]:
+                if e in s_e:
+                    keep_flag = True
+                    break
+            if keep_flag:
+                l_keep_nlss.append(nlss)
+        logging.info('[%s] boe filtered [%d]->[%d]', len(l_nlss), len(l_keep_nlss))
+        return l_keep_nlss
+
+    def _lm_nlss_filter(self, l_nlss, doc_info):
+        l_nlss_lmscore = []
+        h_d_lm = text2lm(doc_info.get(body_field, ""))
+
+        for nlss in l_nlss:
+            h_s_lm = text2lm(nlss[0])
+            r_model = RetrievalModel()
+            r_model.set_from_raw(h_s_lm, h_d_lm)
+            lm = r_model.lm()
+            l_nlss_lmscore.append((nlss, lm))
+        l_nlss.sort(key=lambda item: item[1], reverse=True)
+
+        return l_nlss
+
 
     def _form_sents_emb(self, l_sent):
         l_emb = [avg_embedding(self.resource.embedding, sent)
