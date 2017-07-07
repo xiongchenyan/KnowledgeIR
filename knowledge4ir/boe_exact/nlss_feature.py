@@ -162,7 +162,8 @@ class NLSSFeature(BoeFeature):
             l_nlss_lmscore.append((nlss, lm))
         l_nlss_lmscore.sort(key=lambda item: item[1], reverse=True)
         l_this_nlss = [item[0] for item in l_nlss_lmscore]
-        logging.info('best lm [%f]', l_nlss_lmscore[0][1])
+        if l_nlss_lmscore:
+            logging.info('best lm [%f]', l_nlss_lmscore[0][1])
         return l_this_nlss
 
 
