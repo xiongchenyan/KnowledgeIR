@@ -63,6 +63,7 @@ class NLSSFeature(BoeFeature):
 
     def __init__(self, **kwargs):
         super(NLSSFeature, self).__init__(**kwargs)
+        self.intermediate_out = None
         if self.intermediate_data_out_name:
             self.intermediate_out = open(self.intermediate_data_out_name, 'w')
 

@@ -72,7 +72,8 @@ class EGridNLSSFeature(NLSSFeature):
         m_bow_sim = self._calc_bow_trans(l_grid_bow, l_nlss_bow)
         m_emb_sim = self._calc_emb_trans(l_grid_emb, l_nlss_emb)
 
-        self._log_intermediate_res(ana, doc_info, l_this_e_grid, l_qe_nlss, m_bow_sim, m_emb_sim)
+        if self.intermediate_data_out_name:
+            self._log_intermediate_res(ana, doc_info, l_this_e_grid, l_qe_nlss, m_bow_sim, m_emb_sim)
 
         h_bow_feature = self._pool_grid_nlss_sim(m_bow_sim)
         h_emb_feature = self._pool_grid_nlss_sim(m_emb_sim)
