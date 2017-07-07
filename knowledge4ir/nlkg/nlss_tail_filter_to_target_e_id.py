@@ -22,8 +22,11 @@ cnt = 0
 out = open(sys.argv[3], 'w')
 for line in open(sys.argv[1]):
     line = line.strip()
+    e_id = line.split('\t')[0]
     tail = json.loads(line.split('\t')[-1])
     for tail_e in tail:
+        if tail_e == e_id:
+            continue
         if tail_e in s_e:
             print >> out, line
             cnt += 1
