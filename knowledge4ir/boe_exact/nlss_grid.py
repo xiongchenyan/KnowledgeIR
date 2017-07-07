@@ -21,6 +21,7 @@ class EGridNLSSFeature(NLSSFeature):
         'Max': np.amax,
         'Mean': np.mean,
     }
+    l_nlss_lvl_pool = List(Unicode, default_value=['Max', 'Mean']).tag(config=True)
 
     def __init__(self, **kwargs):
         super(EGridNLSSFeature, self).__init__(**kwargs)
@@ -115,7 +116,8 @@ class EGridNLSSFeature(NLSSFeature):
         h_feature = {}
         for name1 in self.l_grid_lvl_pool:
             f1 = self.h_pool_name_func[name1]
-            for f2, name2 in zip([np.mean, np.amax], ['Mean', 'Max']):
+            for name2 in self.l_nlss_lvl_pool:
+                f2 = self.h_pool_name_func[name2]
                 score = -1
                 if (trans_mtx.shape[0] > 0) & (trans_mtx.shape[1] > 0):
                     score = f1(f2(trans_mtx, axis=1), axis=0)
