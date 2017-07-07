@@ -133,6 +133,7 @@ class NLSSFeature(BoeFeature):
         return l_this_nlss[:self.nb_nlss_per_e]
 
     def _boe_nlss_filter(self, e_id, l_nlss, doc_info):
+        logging.info('filter [%d] nlss via boe', len(l_nlss))
         l_ana = sum([form_boe_per_field(doc_info, field) for field in self.l_target_fields],
                     [])
         s_e = set([ana['id'] for ana in l_ana if ana['id'] != e_id])
@@ -145,10 +146,11 @@ class NLSSFeature(BoeFeature):
                     break
             if keep_flag:
                 l_keep_nlss.append(nlss)
-        logging.info('[%s] boe filtered [%d]->[%d]', len(l_nlss), len(l_keep_nlss))
+        logging.info('[%s] boe filtered [%d]->[%d]', e_id, len(l_nlss), len(l_keep_nlss))
         return l_keep_nlss
 
     def _lm_nlss_filter(self, l_nlss, doc_info):
+        logging.info('filter [%d] nlss via boe', len(l_nlss))
         l_nlss_lmscore = []
         h_d_lm = text2lm(doc_info.get(body_field, ""))
 
@@ -158,8 +160,8 @@ class NLSSFeature(BoeFeature):
             r_model.set_from_raw(h_s_lm, h_d_lm)
             lm = r_model.lm()
             l_nlss_lmscore.append((nlss, lm))
-        l_nlss.sort(key=lambda item: item[1], reverse=True)
-
+        l_nlss_lmscore.sort(key=lambda item: item[1], reverse=True)
+        l_this_nlss = [item[0] for item in l_nlss_lmscore]
         return l_nlss
 
 
