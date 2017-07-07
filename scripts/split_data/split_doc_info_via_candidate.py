@@ -36,7 +36,7 @@ def partition_doc_info(doc_info_in, l_name, l_s_doc, out_dir):
     logging.info('start partioning doc info')
     h_doc_info = load_json_info(doc_info_in)
     for name, s_doc in zip(l_name, l_s_doc):
-        out_name = os.path.join(out_dir, ntpath.basename(doc_info_in)) + '.' + name
+        out_name = os.path.join(out_dir, ntpath.basename(doc_info_in)) + '.' + name.split('.')[-1]
         out = open(out_name, 'w')
         logging.info('[%s] has [%d] target doc', name, len(s_doc))
         cnt = 0
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     set_basic_log()
     if 4 != len(sys.argv):
         print "split doc info for given data"
-        print "3 para: doc info in, splited trec dir, out dir"
+        print "3 para: info in, splited trec dir, out dir"
         sys.exit(-1)
 
     doc_info_in, trec_in_dir, out_dir = sys.argv[1:4]
