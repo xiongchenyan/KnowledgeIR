@@ -70,6 +70,8 @@ class NLSSFeature(BoeFeature):
         self.resource = resource
         assert resource.embedding
         assert resource.l_h_nlss
+        while len(self.l_nlss_selection) < len(resource.l_h_nlss):
+            self.l_nlss_selection.append('""')
         logging.info('%s feature resource set', self.feature_name_pre)
 
     def close_resource(self):
@@ -113,11 +115,11 @@ class NLSSFeature(BoeFeature):
         e_id = ana['id']
         ll_qe_nlss = [h_nlss.get(e_id, []) for h_nlss in self.resource.l_h_nlss]
 
-        for nlss_name, l_qe_nlss in zip(self.resource.l_nlss_name, ll_qe_nlss):
-            for nlss_select in self.l_nlss_selection:
-                l_this_nlss = self._select_nlss(q_info, ana, doc_info, nlss_select, l_qe_nlss)
-                h_this_nlss_feature = self._extract_per_entity_via_nlss(q_info, ana, doc_info, l_this_nlss)
-                h_feature.update(add_feature_prefix(h_this_nlss_feature, nlss_select + nlss_name + '_'))
+        for p in xrange(len(ll_qe_nlss)):
+            nlss_name, l_qe_nlss, nlss_select = self.resource.l_nlss_name[p], ll_qe_nlss[p], self.l_nlss_selection[p]
+            l_this_nlss = self._select_nlss(q_info, ana, doc_info, nlss_select, l_qe_nlss)
+            h_this_nlss_feature = self._extract_per_entity_via_nlss(q_info, ana, doc_info, l_this_nlss)
+            h_feature.update(add_feature_prefix(h_this_nlss_feature, nlss_select + nlss_name + '_'))
         return h_feature
 
     def _select_nlss(self, q_info, ana, doc_info, nlss_select, l_nlss):
