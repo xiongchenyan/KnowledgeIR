@@ -22,7 +22,7 @@ cnt = 0
 out = open(sys.argv[3], 'w')
 for line in open(sys.argv[1]):
     line = line.strip()
-    tail = json.loads(line.split()[-1])
+    tail = json.loads(line.split('\t')[-1])
     for tail_e in tail:
         if tail_e in s_e:
             print >> out, line
