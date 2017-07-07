@@ -39,7 +39,7 @@ def load_both_info(json_info_in):
     h_info = {}
     for line in open(json_info_in):
         h = json.loads(line)
-        d_id = ''.join([h[key] for key in l_id])
+        d_id = ''.join([h.get(key, '') for key in l_id])
         h_info[d_id] = h
     return h_info
 
