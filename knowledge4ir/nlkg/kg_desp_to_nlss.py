@@ -7,7 +7,7 @@ import json
 import sys
 
 if 3 != len(sys.argv):
-    print "2 para: entity text json in + nlss format output"
+    print "2 para: entity text field json in + nlss format output"
     sys.exit(-1)
 
 out = open(sys.argv[2], 'w')
