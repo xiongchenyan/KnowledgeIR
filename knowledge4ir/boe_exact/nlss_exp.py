@@ -59,8 +59,10 @@ class NLSSExpansionFeature(NLSSFeature):
                     self.resource.corpus_stat.h_field_avg_len.get(field, None)
                 )
                 l_retrieval_score = r_model.scores()
+                q_len = float(max(sum([item[1] for item in h_sent_lm.items()]), 1))
+
                 h_per_sent_feature.update(dict(
-                    [(field + name, score) for name, score in l_retrieval_score]
+                    [(field + name, score / q_len) for name, score in l_retrieval_score]
                 ))
             l_h_per_sent_feature.append(h_per_sent_feature)
 
