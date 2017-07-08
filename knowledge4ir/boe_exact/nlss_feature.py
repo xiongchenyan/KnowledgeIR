@@ -135,27 +135,32 @@ class NLSSFeature(BoeFeature):
             l_this_nlss = self._lm_nlss_filter(l_nlss, doc_info)
         return l_this_nlss[:self.nb_nlss_per_e]
 
-    def _boe_nlss_filter(self, q_info, ana, l_nlss, doc_info):
-        e_id = ana['id']
+    def _boe_nlss_filter(self, q_info, q_ana, l_nlss, doc_info):
+        e_id = q_ana['id']
         logging.info('filter [%d] nlss via boe', len(l_nlss))
         l_ana = sum([form_boe_per_field(doc_info, field) for field in self.l_target_fields],
                     [])
         s_e = set([ana['id'] for ana in l_ana if ana['id'] != e_id])
+        h_e_sf = dict([(ana['id'], ana['surface']) for ana in l_ana])
         l_keep_nlss = []
+        l_keep_nlss_e = []
         for nlss in l_nlss:
             keep_flag = False
+            meet_e = None
             for e in nlss[1]:
                 if e in s_e:
                     keep_flag = True
+                    meet_e = e
                     break
             if keep_flag:
                 l_keep_nlss.append(nlss)
+                l_keep_nlss_e.append({'matched_e': [meet_e, h_e_sf[meet_e]]})
         if self.intermediate_out:
             h = {}
             h['qid'] = q_info['qid']
-            h['ana'] = ana
+            h['ana'] = q_ana
             h['docno'] = doc_info['docno']
-            h['boe_nlss'] = l_keep_nlss
+            h['boe_nlss'] = zip(l_keep_nlss_e, l_keep_nlss)
             print >> self.intermediate_out, json.dumps(h)
         logging.info('[%s] boe filtered [%d]->[%d]', e_id, len(l_nlss), len(l_keep_nlss))
         return l_keep_nlss
