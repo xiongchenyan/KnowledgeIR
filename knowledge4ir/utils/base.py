@@ -582,31 +582,40 @@ def load_corpus_stat(in_pre, l_field=TARGET_TEXT_FIELDS):
     return l_field_h_df, h_corpus_stat
 
 
-def mean_pool_feature(l_h_feature):
+def mean_pool_feature(l_h_feature, add_suffix=True):
     h_res = dict()
     z = float(len(l_h_feature))
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
             h_res[key] = v / z + h_res.get(key, 0)
-    return add_feature_suffix(h_res, '_Mean')
+    if add_suffix:
+        return add_feature_suffix(h_res, '_Mean')
+    else:
+        return h_res
 
 
-def max_pool_feature(l_h_feature):
+def max_pool_feature(l_h_feature, add_suffix=True):
     h_res = dict()
     z = float(len(l_h_feature))
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
             h_res[key] = max(v, h_res.get(key, -10000000))
     # h_res = dict([(item[0] + '_Max', item[1]) for item in h_res.items()])
-    return add_feature_suffix(h_res, '_Max')
+    if add_suffix:
+        return add_feature_suffix(h_res, '_Max')
+    else:
+        return h_res
 
 
-def sum_pool_feature(l_h_feature):
+def sum_pool_feature(l_h_feature, add_suffix=True):
     h_res = dict()
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
             h_res[key] = v + h_res.get(key, 0)
-    return add_feature_suffix(h_res, '_Sum')
+    if add_suffix:
+        return add_feature_suffix(h_res, '_Sum')
+    else:
+        return h_res
 
 
 def log_sum_feature(l_h_feature):
