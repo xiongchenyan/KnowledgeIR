@@ -99,8 +99,9 @@ class NLSSFeature(BoeFeature):
         h_final_feature = {}
         # h_final_feature.update(log_sum_feature(l_h_feature))
         h_final_feature.update(mean_pool_feature(l_h_feature))
-        h_final_feature = dict([(self.feature_name_pre + item[0], item[1])
-                                for item in h_final_feature.items()])
+        # h_final_feature = dict([(self.feature_name_pre + item[0], item[1])
+        #                         for item in h_final_feature.items()])
+        h_final_feature = add_feature_prefix(h_final_feature, self.feature_name_pre + '_')
 
         return h_final_feature
 

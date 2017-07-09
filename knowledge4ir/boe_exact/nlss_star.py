@@ -94,19 +94,19 @@ class NLSSStar(NLSSFeature):
             if 'emb_vote' in self.l_features:
                 h_feature.update(add_feature_prefix(
                     self._connected_emb_vote(qe, l_field_ana),
-                    field))
+                    field + '_'))
             if 'edge_cnt' in self.l_features:
                 h_feature.update(add_feature_prefix(
                     self._edge_cnt(qe, l_field_ana),
-                    field))
+                    field + '_'))
             if 'edge_retrieval' in self.l_features:
                 h_feature.update(add_feature_prefix(
                     self._edge_retrieval(qe, l_field_ana, h_field_lm, field),
-                    field))
+                    field + '_'))
             if 'local_grid' in self.l_features:
                 h_feature.update(add_feature_prefix(
                     self._local_grid(q_info, qe, l_field_ana, doc_info, field),
-                    field))
+                    field + '_'))
 
         return h_feature
 
