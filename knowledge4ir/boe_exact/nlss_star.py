@@ -189,7 +189,7 @@ class NLSSStar(NLSSFeature):
         """
         p = self.h_qe_idx[qe]
         h_e_nlss_idx = self.l_h_e_nlss_idx[p]
-        l_e = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
+        l_tail_e = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
 
         l_qe_grid = []
         l_nlss_e_grid = []
@@ -200,8 +200,8 @@ class NLSSStar(NLSSFeature):
             s_grid_e = set(l_grid_e)
             if qe in s_grid_e:
                 l_qe_grid.append(grid['sent'])
-            for de in l_e:
-                if de in s_grid_e:
+            for tail_e in l_tail_e:
+                if tail_e in s_grid_e:
                     l_nlss_e_grid.append(grid['sent'])
                     break
         logging.info('q [%s] e [%s] doc [%s] has [%d] qe grid, [%d] nlss grid',
