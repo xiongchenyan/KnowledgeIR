@@ -83,10 +83,11 @@ class NLSSStar(NLSSFeature):
         h_feature = dict()
         qe = ana['id']
         qid = q_info['qid']
+        logging.info('start extracting [%s]-[%s]-[%s]',
+                     qid, qe, doc_info['docno'])
         if qid != self.current_qid:
             self.current_qid = qid
             self._construct_e_nlss_cash_info(q_info, self.resource.l_h_nlss[0])
-
         for field in self.l_target_fields:
             l_field_ana = form_boe_per_field(doc_info, field)
             h_field_lm = text2lm(doc_info.get(field, ""), clean=True)
