@@ -21,6 +21,7 @@ from knowledge4ir.utils import (
     term2lm,
     mean_pool_feature,
     sum_pool_feature,
+    QUERY_FIELD,
 )
 from knowledge4ir.utils.boe import form_boe_per_field
 from knowledge4ir.utils.retrieval_model import RetrievalModel
@@ -32,101 +33,123 @@ class NLSSStar(NLSSFeature):
 
     def __init__(self, **kwargs):
         super(NLSSStar, self).__init__(**kwargs)
-        self.current_e = None  # updates whenever extracting for a new query entity
-        self.l_this_nlss = []  # nlss of current e
-        self.l_this_nlss_lm = []  # nlss lm of l_this_nlss
-        self.h_e_nlss_idx = dict()  # tail e -> nlss p index, p is location in l_this_nlss
+        self.current_qid = None  # updates whenever extracting for a new query entity
+        self.ll_this_nlss = []  # nlss of current ;l_qe
+        self.h_qe_idx = dict()   # p of qe in ll_this_nlss, ll_this_nlss_lm, l_h_e_nlss_idx
+        self.ll_this_nlss_lm = []  # nlss lm of l_this_nlss
+        self.l_h_e_nlss_idx = dict()  # tail e -> nlss p index, p is location in l_this_nlss
 
     def set_resource(self, resource):
         super(NLSSStar, self).set_resource(resource)
         if len(self.resource.l_h_nlss) > 1:
             logging.warn('NLSSStar only using first nlss set for now')
 
-    def _construct_e_nlss_cash_info(self, l_this_nlss):
+    def _construct_e_nlss_cash_info(self, q_info, h_nlss):
         """
         e -> [pos in l_this_nlss]
-        :param l_this_nlss:
         :return:
         """
-        self.l_this_nlss = l_this_nlss
-        self.l_this_nlss_lm = [text2lm(sent, clean=True) for sent, __ in l_this_nlss]
-        h_e = dict()
-        for p in xrange(len(l_this_nlss)):
-            l_e = l_this_nlss[p][1]
-            for e in l_e:
-                if e == self.current_e:
-                    continue
-                if e not in h_e:
-                    h_e[e] = []
-                h_e[e].append(p)
-        self.h_e_nlss_idx = h_e
+        logging.info('constructing nlss cash for q [%s]', q_info['qid'])
+        l_q_ana = form_boe_per_field(q_info, QUERY_FIELD)
+        l_qe = list(set([ana['id'] for ana in l_q_ana]))
+        self.h_qe_idx = dict(zip(l_qe, range(len(l_qe))))
+        self.ll_this_nlss = []
+        self.ll_this_nlss_lm = []
+        self.l_h_e_nlss_idx = []
+        for qe in l_qe:
+            logging.info('forming nlss cash for qe [%s]', qe)
+            l_this_nlss = h_nlss.get(qe, [])
+            l_this_nlss_lm = [text2lm(sent, clean=True) for sent, __ in h_nlss]
+            h_e = dict()
+            for p in xrange(len(l_this_nlss)):
+                l_e = l_this_nlss[p][1]
+                for e in l_e:
+                    if e in qe:
+                        continue
+                    if e not in h_e:
+                        h_e[e] = []
+                    h_e[e].append(p)
+            logging.info('qe [%s] [%d] nlss, [%d] tail e', len(l_this_nlss), len(h_e))
+            self.ll_this_nlss.append(l_this_nlss)
+            self.ll_this_nlss_lm.append(l_this_nlss_lm)
+            self.l_h_e_nlss_idx.append(h_e)
+        logging.info('q [%s] nlss cash constructed', q_info['qid'])
 
     def extract_per_entity(self, q_info, ana, doc_info):
         h_feature = dict()
-        e_id = ana['id']
-        if e_id != self.current_e:
-            self.current_e = e_id
-            self._construct_e_nlss_cash_info(self.resource.l_h_nlss[0])
+        qe = ana['id']
+        qid = q_info['qid']
+        if qid != self.current_qid:
+            self.current_qid = qid
+            self._construct_e_nlss_cash_info(q_info, self.resource.l_h_nlss[0])
 
         for field in self.l_target_fields:
             l_field_ana = form_boe_per_field(doc_info, field)
             h_field_lm = text2lm(doc_info.get(field, ""), clean=True)
 
             h_feature.update(add_feature_prefix(
-                self._connected_emb_vote(l_field_ana),
+                self._connected_emb_vote(qe, l_field_ana),
                 field))
 
             h_feature.update(add_feature_prefix(
-                self._edge_cnt(l_field_ana),
+                self._edge_cnt(qe, l_field_ana),
                 field))
 
             h_feature.update(add_feature_prefix(
-                self._edge_retrieval(l_field_ana, h_field_lm, field),
+                self._edge_retrieval(qe, l_field_ana, h_field_lm, field),
                 field))
 
         return h_feature
 
-    def _connected_emb_vote(self, l_field_ana):
+    def _connected_emb_vote(self, qe, l_field_ana):
         h_feature = {}
+        p = self.h_qe_idx[qe]
+        h_e_nlss_idx = self.l_h_e_nlss_idx[p]
 
-        if self.current_e not in self.resource.embedding:
+        if qe not in self.resource.embedding:
             h_feature['emb_vote'] = 0
             return h_feature
 
-        l_e = [ana['id'] for ana in l_field_ana if ana['id'] in self.h_e_nlss_idx]
+        l_de = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
+        logging.info('qe [%s] has [%d] connected de', qe, len(l_de))
         vote_sum = 0
-        for e in l_e:
-            vote_score = self.resource.embedding.similarity(self.current_e, e)
+        for de in l_de:
+            vote_score = self.resource.embedding.similarity(qe, de)
             vote_sum += max(vote_score, 0)
         h_feature['emb_vote'] = vote_sum
         return h_feature
 
-    def _edge_cnt(self, l_field_ana):
+    def _edge_cnt(self, qe, l_field_ana):
         h_feature = {}
-        l_e = [ana['id'] for ana in l_field_ana if ana['id'] in self.h_e_nlss_idx]
+        h_e_nlss_idx = self.l_h_e_nlss_idx[self.h_qe_idx[qe]]
+        l_e = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
         h_feature['edge_cnt'] = len(l_e)
         h_feature['uniq_tail'] = len(set(l_e))
+        logging.info('qe [%s] edge cnt %s', qe, json.dumps(h_feature))
         return h_feature
 
-    def _edge_retrieval(self, l_field_ana, h_field_lm, field):
+    def _edge_retrieval(self, qe, l_field_ana, h_field_lm, field):
         """
         for each edge in this doc field
             get edge sent's lm
             calc retrieval scores
         sum up retrieval score to final feature
+        :param qe:
         :param l_field_ana:
         :param h_field_lm:
         :return:
         """
         h_feature = {}
-
-        l_e = [ana['id'] for ana in l_field_ana if ana['id'] in self.h_e_nlss_idx]
+        p = self.h_qe_idx[qe]
+        h_e_nlss_idx = self.l_h_e_nlss_idx[p]
+        l_this_nlss_lm = self.ll_this_nlss_lm[p]
+        l_e = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
 
         l_h_retrieval_scores = []
         l_h_avg_retrieval_scores = []
         h_e_tf = term2lm(l_e)
         for e, tf in h_e_tf.items():
-            l_sent_lm = [self.l_this_nlss_lm[pos] for pos in self.h_e_nlss_idx[e]]
+            l_sent_lm = [l_this_nlss_lm[pos] for pos in h_e_nlss_idx[e]]
             l_this_e_h_scores = []
             for sent_lm in l_sent_lm:
                 r_model = RetrievalModel()
