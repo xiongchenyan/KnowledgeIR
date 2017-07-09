@@ -60,6 +60,11 @@ class CorpusStat(Configurable):
             self.h_field_df, self.h_field_total_df, self.h_field_avg_len = l_data
             logging.info('corpus stat in [%s] loaded', self.corpus_stat_in)
 
+    def dump(self, out_name):
+        l_data = [self.h_field_df, self.h_field_total_df, self.h_field_avg_len]
+        pickle.dump(l_data, open(out_name, 'wb'))
+        logging.info('dumped corpus stat to [%s]', out_name)
+
 
 class RetrievalModel(Configurable):
     """
