@@ -52,7 +52,7 @@ class CombineSVMFeature(Configurable):
             assert h_name == h_feature
 
     def _combine(self, l_svm_in, out_name):
-        lines = sum([open(svm_in).read().splitlines for svm_in in l_svm_in],
+        lines = sum([open(svm_in).read().splitlines() for svm_in in l_svm_in],
                     [])
         out = open(out_name, 'w')
         print >> out, '\n'.join(lines)
