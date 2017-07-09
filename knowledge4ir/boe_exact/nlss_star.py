@@ -73,7 +73,7 @@ class NLSSStar(NLSSFeature):
                     if e not in h_e:
                         h_e[e] = []
                     h_e[e].append(p)
-            logging.info('qe [%s] [%d] nlss, [%d] tail e', len(l_this_nlss), len(h_e))
+            logging.info('qe [%s] [%d] nlss, [%d] tail e', qe, len(l_this_nlss), len(h_e))
             self.ll_this_nlss.append(l_this_nlss)
             self.ll_this_nlss_lm.append(l_this_nlss_lm)
             self.l_h_e_nlss_idx.append(h_e)
@@ -123,6 +123,8 @@ class NLSSStar(NLSSFeature):
         logging.info('qe [%s] has [%d] connected de', qe, len(l_de))
         vote_sum = 0
         for de in l_de:
+            if de not in self.resource.embedding:
+                continue
             vote_score = self.resource.embedding.similarity(qe, de)
             vote_sum += max(vote_score, 0)
         h_feature['emb_vote'] = vote_sum
