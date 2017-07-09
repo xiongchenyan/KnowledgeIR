@@ -31,7 +31,7 @@ class SplitConf(Configurable):
 
 if __name__ == '__main__':
     from knowledge4ir.utils import load_py_config
-    if 2 != len(sys.argv[1]):
+    if 2 != len(sys.argv):
         print "split conf, 1 para: config"
         SplitConf.class_print_help()
         sys.exit(-1)
