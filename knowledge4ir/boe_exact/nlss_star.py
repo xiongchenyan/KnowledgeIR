@@ -6,22 +6,23 @@ star -> only edges from qe are considered
 """
 
 import json
+import logging
+
 from traitlets import (
     Unicode,
-    Int,
     List,
 )
+
 from knowledge4ir.boe_exact.nlss_feature import NLSSFeature
-import logging
 from knowledge4ir.utils import (
     body_field,
-    title_field,
     add_feature_prefix,
     text2lm,
     term2lm,
     mean_pool_feature,
     sum_pool_feature,
     QUERY_FIELD,
+    E_GRID_FIELD,
 )
 from knowledge4ir.utils.boe import form_boe_per_field
 from knowledge4ir.utils.retrieval_model import RetrievalModel
@@ -30,6 +31,9 @@ from knowledge4ir.utils.retrieval_model import RetrievalModel
 class NLSSStar(NLSSFeature):
     feature_name_pre = Unicode('NLSS_Star')
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
+    l_features = List(Unicode, default_value=['emb_vote', 'edge_cnt', 'edge_retrieval'],
+                      help='nlss star features: emb_vote, edge_cnt, edge_retrieval, local_grid'
+                      ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(NLSSStar, self).__init__(**kwargs)
@@ -86,18 +90,22 @@ class NLSSStar(NLSSFeature):
         for field in self.l_target_fields:
             l_field_ana = form_boe_per_field(doc_info, field)
             h_field_lm = text2lm(doc_info.get(field, ""), clean=True)
-
-            h_feature.update(add_feature_prefix(
-                self._connected_emb_vote(qe, l_field_ana),
-                field))
-
-            h_feature.update(add_feature_prefix(
-                self._edge_cnt(qe, l_field_ana),
-                field))
-
-            h_feature.update(add_feature_prefix(
-                self._edge_retrieval(qe, l_field_ana, h_field_lm, field),
-                field))
+            if 'emb_vote' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._connected_emb_vote(qe, l_field_ana),
+                    field))
+            if 'edge_cnt' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._edge_cnt(qe, l_field_ana),
+                    field))
+            if 'edge_retrieval' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._edge_retrieval(qe, l_field_ana, h_field_lm, field),
+                    field))
+            if 'local_grid' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._local_grid(q_info, qe, l_field_ana, doc_info, field),
+                    field))
 
         return h_feature
 
@@ -152,14 +160,7 @@ class NLSSStar(NLSSFeature):
             l_sent_lm = [l_this_nlss_lm[pos] for pos in h_e_nlss_idx[e]]
             l_this_e_h_scores = []
             for sent_lm in l_sent_lm:
-                r_model = RetrievalModel()
-                r_model.set_from_raw(
-                    sent_lm, h_field_lm,
-                    self.resource.corpus_stat.h_field_df.get(field, None),
-                    self.resource.corpus_stat.h_field_total_df.get(field, None),
-                    self.resource.corpus_stat.h_field_avg_len.get(field, None)
-                )
-                l_scores = r_model.scores()
+                l_scores = self._extract_retrieval_scores(sent_lm, h_field_lm, field)
                 l_scores = [(name, v * tf) for name, v in l_scores]
                 h_retrieval_score = dict(l_scores)
                 l_h_retrieval_scores.append(h_retrieval_score)
@@ -171,6 +172,50 @@ class NLSSStar(NLSSFeature):
         h_feature.update(sum_pool_feature(l_h_avg_retrieval_scores))
 
         return h_feature
+
+    def _local_grid(self, q_info, qe, l_field_ana, doc_info, field):
+        """
+        only keep grids that
+            1) include qe
+            2) include qe->nlss->tail e
+        :param q_info: query info
+        :param qe:
+        :param doc_info:
+        :param field:
+        :return:
+        """
+        p = self.h_qe_idx[qe]
+        h_e_nlss_idx = self.l_h_e_nlss_idx[p]
+        l_e = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
+
+        l_qe_grid = []
+        l_nlss_e_grid = []
+
+        l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
+        for grid in l_grid:
+            l_grid_e = [ana['id'] for ana in grid['spot']]
+            s_grid_e = set(l_grid_e)
+            if qe in s_grid_e:
+                l_qe_grid.append(grid['sent'])
+            for de in l_e:
+                if de in s_grid_e:
+                    l_nlss_e_grid.append(grid['sent'])
+                    break
+        logging.info('q [%s] e [%s] doc [%s] has [%d] qe grid, [%d] nlss grid',
+                     q_info['qid'], qe, doc_info['docno'], len(l_qe_grid), len(l_nlss_e_grid)
+                     )
+        qe_grid_lm = text2lm(' '.join(l_qe_grid), clean=True)
+        nlss_e_grid_lm = text2lm(' '.join(l_nlss_e_grid), clean=True)
+        q_lm = text2lm(q_info[QUERY_FIELD])
+        h_feature = {}
+
+        h_qe_grid_scores = dict(self._extract_retrieval_scores(q_lm, qe_grid_lm, field))
+        h_nlss_grid_scores = dict(self._extract_retrieval_scores(q_lm, nlss_e_grid_lm, field))
+
+        h_feature.update(add_feature_prefix(h_qe_grid_scores, 'QEGrid_'))
+        h_feature.update(add_feature_prefix(h_nlss_grid_scores, 'NlssGrid_'))
+        return h_feature
+
 
 
 

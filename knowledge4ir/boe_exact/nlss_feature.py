@@ -224,4 +224,14 @@ class NLSSFeature(BoeFeature):
                 m_trans[i, j] = 1 - cosine(l_emb_a[i], l_emb_b[j])
         return m_trans
 
+    def _extract_retrieval_scores(self, formed_q_lm, formed_doc_lm, field):
+        r_model = RetrievalModel()
+        r_model.set_from_raw(
+            formed_q_lm, formed_doc_lm,
+            self.resource.corpus_stat.h_field_df.get(field, None),
+            self.resource.corpus_stat.h_field_total_df.get(field, None),
+            self.resource.corpus_stat.h_field_avg_len.get(field, None)
+        )
+        return r_model.scores()
+
 
