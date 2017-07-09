@@ -147,3 +147,12 @@ def load_nlss_dict(nlss_dump, max_nlss_per_e=100):
                  cnt, len(h_nlss), max_nlss_per_e, skipped_cnt)
     return h_nlss
 
+
+def dump_nlss_dict_to_json(out_name, h_nlss):
+    out = open(out_name, 'w')
+    for key, l_nlss in h_nlss.items():
+        h = dict()
+        h['id'] = key
+        h['nlss'] = l_nlss
+        print >> out, json.dumps(h)
+    out.close()

@@ -88,7 +88,8 @@ class JointSemanticResource(Configurable):
         assert len(self.l_nlss_path) == len(self.l_nlss_name)
         logging.info('nlss: %s',
                      json.dumps(zip(self.l_nlss_name, self.l_nlss_path)))
-        self.l_h_nlss = [load_nlss_dict(nlss_path, self.max_nlss_per_e) for nlss_path in self.l_nlss_path]
+        self.l_h_nlss = [load_nlss_dict(nlss_path, self.max_nlss_per_e)
+                         for nlss_path in self.l_nlss_path]
         logging.info('nlss loaded')
 
     def _load_sf(self):

@@ -117,7 +117,10 @@ class NLSSFeature(BoeFeature):
         ll_qe_nlss = [h_nlss.get(e_id, []) for h_nlss in self.resource.l_h_nlss]
 
         for p in xrange(len(ll_qe_nlss)):
-            nlss_name, l_qe_nlss, nlss_select = self.resource.l_nlss_name[p], ll_qe_nlss[p], self.l_nlss_selection[p]
+            data = ll_qe_nlss[p]
+            if type(data) is str:
+                data = json.loads(data)
+            nlss_name, l_qe_nlss, nlss_select = self.resource.l_nlss_name[p], data, self.l_nlss_selection[p]
             l_this_nlss = self._select_nlss(q_info, ana, doc_info, nlss_select, l_qe_nlss)
             h_this_nlss_feature = self._extract_per_entity_via_nlss(q_info, ana, doc_info, l_this_nlss)
             h_feature.update(add_feature_prefix(h_this_nlss_feature, nlss_select + nlss_name + '_'))
