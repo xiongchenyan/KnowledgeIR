@@ -62,7 +62,7 @@ class JointSemanticResource(Configurable):
         CorpusStat.class_print_help(inst)
 
     def _load(self):
-        logging.info('start loading resources')
+        logging.info('start loading joint semantic resources')
         self._load_edge()
         self._load_nlss()
         self._load_entity_fields()
@@ -72,7 +72,7 @@ class JointSemanticResource(Configurable):
         self._load_sf_stat()
         self._load_boe_rm3()
         self._load_prf_sent()
-        logging.info('resource loaded')
+        logging.info('joint semantic resource loaded')
         return
 
     def _load_edge(self):
