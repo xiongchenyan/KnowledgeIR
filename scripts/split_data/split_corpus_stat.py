@@ -35,7 +35,7 @@ h_new_field_df = dict()
 for field, h_df in corpus_stat.h_field_df.items():
     h_new_df = dict([(v, df) for v, df in h_df.items() if v in vocab])
     h_new_field_df[field] = h_new_df
-    print '[%s] [%d]->[%d]' % (field, len(h_df), len(h_new_field_df))
+    print '[%s] [%d]->[%d]' % (field, len(h_df), len(h_new_df))
 
 corpus_stat.h_field_df = h_new_field_df
 corpus_stat.dump(sys.argv[3] + '.' + suf)
