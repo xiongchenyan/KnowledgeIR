@@ -56,6 +56,8 @@ class CombineSVMFeature(Configurable):
                     [])
         out = open(out_name, 'w')
         print >> out, '\n'.join(lines)
+        h = json.load(open(l_svm_in[0] + self.feature_name_suffix))
+        json.dump(h, open(out_name + self.feature_name_suffix, 'w'), indent=1)
         return
 
 
