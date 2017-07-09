@@ -353,10 +353,16 @@ def feature_hash(l_h_feature):
     """
     l_h_hashed_feature = []
     h_name = {}
+    l_name = []
     for h_feature in l_h_feature:
-        for name in h_feature.keys():
-            if name not in h_name:
-                h_name[name] = len(h_name) + 1
+        l_name.extend(h_feature.keys())
+    l_name = list(set(l_name))
+    l_name.sort()
+    if 'base' in l_name:
+        l_name = ['base'] + [name for name in l_name if name != 'base']
+    for name in l_name:
+        if name not in h_name:
+            h_name[name] = len(h_name) + 1
     for h_feature in l_h_feature:
         h_new_feature = {}
         for name, score in h_feature.items():
