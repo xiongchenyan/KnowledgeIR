@@ -63,7 +63,7 @@ class NLSSStar(NLSSFeature):
         for qe in l_qe:
             logging.info('forming nlss cash for qe [%s]', qe)
             l_this_nlss = h_nlss.get(qe, [])
-            l_this_nlss_lm = [text2lm(sent, clean=True) for sent, __ in h_nlss]
+            l_this_nlss_lm = [text2lm(sent, clean=True) for sent, __ in l_this_nlss]
             h_e = dict()
             for p in xrange(len(l_this_nlss)):
                 l_e = l_this_nlss[p][1]
