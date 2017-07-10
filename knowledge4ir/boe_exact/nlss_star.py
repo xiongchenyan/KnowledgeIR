@@ -32,7 +32,7 @@ class NLSSStar(NLSSFeature):
     feature_name_pre = Unicode('NLSS_Star')
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
     l_features = List(Unicode, default_value=['emb_vote', 'edge_cnt', 'edge_retrieval'],
-                      help='nlss star features: emb_vote, edge_cnt, edge_retrieval, local_grid'
+                      help='nlss star features: emb_vote, edge_cnt, edge_retrieval, local_grid, ltr_base'
                       ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -106,6 +106,10 @@ class NLSSStar(NLSSFeature):
             if 'local_grid' in self.l_features:
                 h_feature.update(add_feature_prefix(
                     self._local_grid(q_info, qe, l_field_ana, doc_info, field),
+                    field + '_'))
+            if 'ltr_base' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._ltr_baseline(q_info, h_field_lm, field),
                     field + '_'))
 
         return h_feature
@@ -219,7 +223,11 @@ class NLSSStar(NLSSFeature):
         h_feature.update(add_feature_prefix(h_nlss_grid_scores, 'NlssGrid_'))
         return h_feature
 
-
+    def _ltr_baseline(self, q_info, h_field_lm, field):
+        q_lm = text2lm(q_info[QUERY_FIELD])
+        l_scores = self._extract_retrieval_scores(q_lm, h_field_lm, field)
+        h_feature = dict(l_scores)
+        return h_feature
 
 
 
