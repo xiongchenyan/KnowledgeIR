@@ -32,7 +32,9 @@ class NLSSStar(NLSSFeature):
     feature_name_pre = Unicode('NLSS_Star')
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
     l_features = List(Unicode, default_value=['emb_vote', 'edge_cnt', 'edge_retrieval'],
-                      help='nlss star features: emb_vote, edge_cnt, edge_retrieval, local_grid, ltr_base'
+                      help='nlss star features: emb_vote, qe_grid, nlss_grid'
+                           'edge_cnt, edge_retrieval, local_grid, '
+                           'ltr_base'
                       ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -106,6 +108,14 @@ class NLSSStar(NLSSFeature):
             if 'local_grid' in self.l_features:
                 h_feature.update(add_feature_prefix(
                     self._local_grid(q_info, qe, l_field_ana, doc_info, field),
+                    field + '_'))
+            if 'qe_grid' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._qe_grid(q_info, qe, doc_info, field),
+                    field + '_'))
+            if 'nlss_grid' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._nlss_grid(q_info, qe, l_field_ana, doc_info, field),
                     field + '_'))
             if 'ltr_base' in self.l_features:
                 h_feature.update(add_feature_prefix(
@@ -231,6 +241,66 @@ class NLSSStar(NLSSFeature):
         h_feature.update(add_feature_prefix(h_qe_grid_scores, 'QEGrid_'))
         h_feature.update(add_feature_prefix(h_nlss_grid_scores, 'NlssGrid_'))
         return h_feature
+
+    def _qe_grid(self, q_info, qe, doc_info, field):
+        p = self.h_qe_idx[qe]
+        h_e_nlss_idx = self.l_h_e_nlss_idx[p]
+
+        l_qe_grid = []
+
+        l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
+        for grid in l_grid:
+            l_grid_e = [ana['id'] for ana in grid['spot']]
+            s_grid_e = set(l_grid_e)
+            if qe in s_grid_e:
+                l_qe_grid.append(grid['sent'])
+        logging.info('q [%s] e [%s] doc [%s] has [%d] qe grid',
+                     q_info['qid'], qe, doc_info['docno'], len(l_qe_grid)
+                     )
+        qe_grid_lm = text2lm(' '.join(l_qe_grid), clean=True)
+        q_lm = text2lm(q_info[QUERY_FIELD])
+        h_feature = {}
+        h_qe_grid_scores = dict(self._extract_retrieval_scores(q_lm, qe_grid_lm, field))
+        h_feature.update(add_feature_prefix(h_qe_grid_scores, 'QEGrid_'))
+        return h_feature
+
+    def _nlss_grid(self, q_info, qe, l_field_ana, doc_info, field):
+        """
+        only keep grids that
+            1) include qe
+            2) include qe->nlss->tail e
+        :param q_info: query info
+        :param qe:
+        :param doc_info:
+        :param field:
+        :return:
+        """
+        p = self.h_qe_idx[qe]
+        h_e_nlss_idx = self.l_h_e_nlss_idx[p]
+        l_tail_e = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
+
+        l_nlss_e_grid = []
+
+        l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
+        for grid in l_grid:
+            l_grid_e = [ana['id'] for ana in grid['spot']]
+            s_grid_e = set(l_grid_e)
+            for tail_e in l_tail_e:
+                if tail_e in s_grid_e:
+                    l_nlss_e_grid.append(grid['sent'])
+                    break
+        logging.info('q [%s] e [%s] doc [%s] has [%d] nlss grid',
+                     q_info['qid'], qe, doc_info['docno'],  len(l_nlss_e_grid)
+                     )
+        nlss_e_grid_lm = text2lm(' '.join(l_nlss_e_grid), clean=True)
+        q_lm = text2lm(q_info[QUERY_FIELD])
+        h_feature = {}
+
+        h_nlss_grid_scores = dict(self._extract_retrieval_scores(q_lm, nlss_e_grid_lm, field))
+
+        h_feature.update(add_feature_prefix(h_nlss_grid_scores, 'NlssGrid_'))
+        return h_feature
+
 
     def _ltr_baseline(self, q_info, h_field_lm, field):
         q_lm = text2lm(q_info[QUERY_FIELD])
