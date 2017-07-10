@@ -182,7 +182,7 @@ class NLSSStar(NLSSFeature):
             l_this_e_h_scores = []
             for sent_lm in l_sent_lm:
                 l_scores = self._extract_retrieval_scores(sent_lm, h_field_lm, field)
-                l_scores = [(name, v * tf / z) for name, v in l_scores]
+                l_scores = [(name, v * tf / z) for name, v in l_scores if 'lm_twoway' not in name]
                 h_retrieval_score = dict(l_scores)
                 l_h_retrieval_scores.append(h_retrieval_score)
                 l_this_e_h_scores.append(h_retrieval_score)
@@ -197,6 +197,10 @@ class NLSSStar(NLSSFeature):
         h_feature.update(h_sum_retrieval_score)
         h_feature.update(sum_pool_feature(l_h_avg_retrieval_scores))
 
+        """
+        make sure not too small values
+        """
+        h_feature = dict([(k, max(v, -100)) for k, v in h_feature.items()])
         return h_feature
 
     def _local_grid(self, q_info, qe, l_field_ana, doc_info, field):
