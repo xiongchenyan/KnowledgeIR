@@ -321,7 +321,7 @@ class NLSSStar(NLSSFeature):
         h_feature = dict(l_scores)
         return h_feature
 
-    def _local_vote(self, q_info, qe, doc_info, field):
+    def _local_vote(self, q_info, qe, l_field_ana, doc_info, field):
         h_feature = {}
         if qe not in self.resource.embedding:
             h_feature['grid_emb_vote'] = 0
@@ -329,6 +329,7 @@ class NLSSStar(NLSSFeature):
         l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
         emb_vote = 0
         l_uw_e = []
+        z = max(float(len(l_field_ana)), 1.0)
         for grid in l_grid:
             l_grid_e = [ana['id'] for ana in grid['spot']]
             s_grid_e = set(l_grid_e)
@@ -342,9 +343,9 @@ class NLSSStar(NLSSFeature):
                     continue
                 emb_vote += self.resource.embedding.similarity(qe, e)
 
-        h_feature['grid_emb_vote'] = emb_vote
-        h_feature['grid_edge_cnt'] = len(l_uw_e)
-        h_feature['grid_uniq_tail'] = len(set(l_uw_e))
+        h_feature['grid_emb_vote'] = emb_vote / z
+        h_feature['grid_edge_cnt'] = len(l_uw_e) / z
+        h_feature['grid_uniq_tail'] = len(set(l_uw_e)) / z
         return h_feature
 
     def _grid_retrieval(self, qe, h_field_lm, doc_info, field):
