@@ -126,6 +126,11 @@ class NLSSStar(NLSSFeature):
                     self._local_vote(q_info, qe, doc_info, field),
                     field + '_'
                 ))
+            if 'grid_retrieval' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._grid_retrieval(qe, h_field_lm, doc_info, field),
+                    field + '_'
+                ))
 
         return h_feature
 
@@ -340,6 +345,23 @@ class NLSSStar(NLSSFeature):
         h_feature['grid_emb_vote'] = emb_vote
         h_feature['grid_edge_cnt'] = len(l_uw_e)
         h_feature['grid_uniq_tail'] = len(set(l_uw_e))
+        return h_feature
+
+    def _grid_retrieval(self, qe, h_field_lm, doc_info, field):
+        l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
+        z = float(len(l_grid))
+        l_h_scores = []
+        for grid in l_grid:
+            l_grid_e = [ana['id'] for ana in grid['spot']]
+            s_grid_e = set(l_grid_e)
+            if qe not in s_grid_e:
+                continue
+            sent_lm = text2lm(grid['sent'], clean=True)
+            l_scores = self._extract_retrieval_scores(sent_lm, h_field_lm, field)
+            h_scores = dict([(k, v / z) for k, v in l_scores])
+            l_h_scores.append(h_scores)
+        h_feature = sum_pool_feature(l_h_scores)
+        h_feature = add_feature_prefix(h_feature, 'grid_retrieval')
         return h_feature
 
 
