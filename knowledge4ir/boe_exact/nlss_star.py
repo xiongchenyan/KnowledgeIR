@@ -118,7 +118,7 @@ class NLSSStar(NLSSFeature):
         h_feature = {}
         p = self.h_qe_idx[qe]
         h_e_nlss_idx = self.l_h_e_nlss_idx[p]
-
+        z = max(float(len(l_field_ana)), 1.0)
         if qe not in self.resource.embedding:
             h_feature['emb_vote'] = 0
             return h_feature
@@ -131,15 +131,16 @@ class NLSSStar(NLSSFeature):
                 continue
             vote_score = self.resource.embedding.similarity(qe, de)
             vote_sum += max(vote_score, 0)
-        h_feature['emb_vote'] = vote_sum
+        h_feature['emb_vote'] = vote_sum / z
         return h_feature
 
     def _edge_cnt(self, qe, l_field_ana):
         h_feature = {}
+        z = max(float(len(l_field_ana)), 1.0)
         h_e_nlss_idx = self.l_h_e_nlss_idx[self.h_qe_idx[qe]]
         l_e = [ana['id'] for ana in l_field_ana if ana['id'] in h_e_nlss_idx]
-        h_feature['edge_cnt'] = len(l_e)
-        h_feature['uniq_tail'] = len(set(l_e))
+        h_feature['edge_cnt'] = len(l_e) / z
+        h_feature['uniq_tail'] = len(set(l_e)) / z
         logging.info('qe [%s] edge cnt %s', qe, json.dumps(h_feature))
         return h_feature
 
@@ -154,6 +155,7 @@ class NLSSStar(NLSSFeature):
         :param h_field_lm:
         :return:
         """
+        z = max(float(len(l_field_ana)), 1.0)
         h_feature = {}
         p = self.h_qe_idx[qe]
         h_e_nlss_idx = self.l_h_e_nlss_idx[p]
@@ -168,7 +170,7 @@ class NLSSStar(NLSSFeature):
             l_this_e_h_scores = []
             for sent_lm in l_sent_lm:
                 l_scores = self._extract_retrieval_scores(sent_lm, h_field_lm, field)
-                l_scores = [(name, v * tf) for name, v in l_scores]
+                l_scores = [(name, v * tf / z) for name, v in l_scores]
                 h_retrieval_score = dict(l_scores)
                 l_h_retrieval_scores.append(h_retrieval_score)
                 l_this_e_h_scores.append(h_retrieval_score)
