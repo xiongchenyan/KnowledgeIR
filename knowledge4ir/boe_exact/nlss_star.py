@@ -121,6 +121,11 @@ class NLSSStar(NLSSFeature):
                 h_feature.update(add_feature_prefix(
                     self._ltr_baseline(q_info, h_field_lm, field),
                     field + '_'))
+            if 'local_vote' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._local_vote(q_info, qe, doc_info, field),
+                    field + '_'
+                ))
 
         return h_feature
 
