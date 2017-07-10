@@ -165,8 +165,10 @@ class NLSSStar(NLSSFeature):
         l_h_retrieval_scores = []
         l_h_avg_retrieval_scores = []
         h_e_tf = term2lm(l_e)
+        avg_sent_per_e = 0
         for e, tf in h_e_tf.items():
             l_sent_lm = [l_this_nlss_lm[pos] for pos in h_e_nlss_idx[e]]
+            avg_sent_per_e += len(l_sent_lm)
             l_this_e_h_scores = []
             for sent_lm in l_sent_lm:
                 l_scores = self._extract_retrieval_scores(sent_lm, h_field_lm, field)
@@ -177,7 +179,12 @@ class NLSSStar(NLSSFeature):
 
             h_this_e_avg_score = mean_pool_feature(l_this_e_h_scores)
             l_h_avg_retrieval_scores.append(h_this_e_avg_score)
-        h_feature.update(sum_pool_feature(l_h_retrieval_scores))
+        avg_sent_per_e /= float(len(h_e_tf))
+        avg_sent_per_e = max(avg_sent_per_e, 1.0)
+        h_sum_retrieval_score = sum_pool_feature(l_h_retrieval_scores)
+        h_sum_retrieval_score = dict([(k, v / avg_sent_per_e)
+                                      for k, v in h_sum_retrieval_score.items()])
+        h_feature.update(h_sum_retrieval_score)
         h_feature.update(sum_pool_feature(l_h_avg_retrieval_scores))
 
         return h_feature
