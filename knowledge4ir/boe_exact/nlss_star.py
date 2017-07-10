@@ -123,7 +123,7 @@ class NLSSStar(NLSSFeature):
                     field + '_'))
             if 'local_vote' in self.l_features:
                 h_feature.update(add_feature_prefix(
-                    self._local_vote(q_info, qe, doc_info, field),
+                    self._local_vote(q_info, qe, l_field_ana, doc_info, field),
                     field + '_'
                 ))
             if 'grid_retrieval' in self.l_features:
