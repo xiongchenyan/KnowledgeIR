@@ -189,7 +189,7 @@ class NLSSStar(NLSSFeature):
 
             h_this_e_avg_score = mean_pool_feature(l_this_e_h_scores)
             l_h_avg_retrieval_scores.append(h_this_e_avg_score)
-        avg_sent_per_e /= float(len(h_e_tf))
+        avg_sent_per_e /= float(max(len(h_e_tf), 1.0))
         avg_sent_per_e = max(avg_sent_per_e, 1.0)
         h_sum_retrieval_score = sum_pool_feature(l_h_retrieval_scores)
         h_sum_retrieval_score = dict([(k, v / avg_sent_per_e)
