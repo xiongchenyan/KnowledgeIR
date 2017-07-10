@@ -33,7 +33,7 @@ class NLSSStar(NLSSFeature):
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
     l_features = List(Unicode, default_value=['emb_vote', 'edge_cnt', 'edge_retrieval'],
                       help='nlss star features: emb_vote, qe_grid, nlss_grid'
-                           'edge_cnt, edge_retrieval, local_grid, '
+                           'edge_cnt, edge_retrieval, local_grid, local_vote,'
                            'ltr_base'
                       ).tag(config=True)
 
@@ -305,13 +305,37 @@ class NLSSStar(NLSSFeature):
         h_feature.update(add_feature_prefix(h_nlss_grid_scores, 'NlssGrid_'))
         return h_feature
 
-
     def _ltr_baseline(self, q_info, h_field_lm, field):
         q_lm = text2lm(q_info[QUERY_FIELD])
         l_scores = self._extract_retrieval_scores(q_lm, h_field_lm, field)
         h_feature = dict(l_scores)
         return h_feature
 
+    def _local_vote(self, q_info, qe, doc_info, field):
+        h_feature = {}
+        if qe not in self.resource.embedding:
+            h_feature['grid_emb_vote'] = 0
+            return h_feature
+        l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
+        emb_vote = 0
+        l_uw_e = []
+        for grid in l_grid:
+            l_grid_e = [ana['id'] for ana in grid['spot']]
+            s_grid_e = set(l_grid_e)
+            if qe not in s_grid_e:
+                continue
+            for e in l_grid_e:
+                if e == qe:
+                    continue
+                l_uw_e.append(e)
+                if e not in self.resource.embedding:
+                    continue
+                emb_vote += self.resource.embedding.similarity(qe, e)
+
+        h_feature['grid_emb_vote'] = emb_vote
+        h_feature['grid_edge_cnt'] = len(l_uw_e)
+        h_feature['grid_uniq_tail'] = len(set(l_uw_e))
+        return h_feature
 
 
 
