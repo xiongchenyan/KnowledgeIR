@@ -233,6 +233,6 @@ class NLSSFeature(BoeFeature):
             self.resource.corpus_stat.h_field_total_df.get(field, None),
             self.resource.corpus_stat.h_field_avg_len.get(field, None)
         )
-        return r_model.scores()
+        return [(k, v) for k, v in r_model.scores() if 'lm_twoway' != k]
 
 
