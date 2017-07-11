@@ -42,6 +42,7 @@ class JointSemanticResource(Configurable):
     l_nlss_name = List(Unicode, help='names of nlss').tag(config=True)
     max_nlss_per_e = Int(100, help='maximum nlss per e to derive').tag(config=True)
 
+    entity_desp_path = Unicode(help='e id desp file').tag(config=True)
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
         self.embedding = None
@@ -53,6 +54,7 @@ class JointSemanticResource(Configurable):
         self.h_q_prf_sent = None
         self.l_h_nlss = None
         self.h_e_edge = None
+        self.h_e_desp = None
         self._load()
         self.corpus_stat = CorpusStat(**kwargs)
 
@@ -72,8 +74,18 @@ class JointSemanticResource(Configurable):
         self._load_sf_stat()
         self._load_boe_rm3()
         self._load_prf_sent()
+        self._load_desp()
         logging.info('joint semantic resource loaded')
         return
+
+    def _load_desp(self):
+        if not self.entity_desp_path:
+            return
+        logging.info('loading entity desp [%s]', self.entity_desp_path)
+        h_nlss = load_nlss_dict(self.entity_desp_path, 1)
+        for e, l_sent in h_nlss.items():
+            self.h_e_desp[e] = l_sent[0][0]
+        logging.info('loaded [%d] entity descriptions', len(self.h_e_desp))
 
     def _load_edge(self):
         if not self.entity_edge_path:
