@@ -34,7 +34,7 @@ class NLSSStar(NLSSFeature):
     l_features = List(Unicode, default_value=['emb_vote', 'edge_cnt', 'edge_retrieval'],
                       help='nlss star features: emb_vote, qe_grid, nlss_grid'
                            'edge_cnt, edge_retrieval, local_grid, local_vote,'
-                           'ltr_base'
+                           'ltr_base, edge_grid'
                       ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -131,6 +131,11 @@ class NLSSStar(NLSSFeature):
                     self._grid_retrieval(qe, h_field_lm, doc_info, field),
                     field + '_'
                 ))
+            if 'edge_grid' in self.l_features:
+                h_feature.update(add_feature_prefix(
+                    self._edge_grid(qe, doc_info, field),
+                    field + '_'
+                ))
 
         return h_feature
 
@@ -211,6 +216,31 @@ class NLSSStar(NLSSFeature):
         make sure not too small values
         """
         h_feature = dict([(k, max(v, -100)) for k, v in h_feature.items()])
+        return h_feature
+
+    def _edge_grid(self, qe, doc_info, field):
+        h_feature = {}
+        p = self.h_qe_idx[qe]
+        h_e_nlss_idx = self.l_h_e_nlss_idx[p]
+        l_this_nlss_lm = self.ll_this_nlss_lm[p]
+
+        l_grids = doc_info.get(E_GRID_FIELD, {}).get(field, [])
+        l_h_retrieval_scores = []
+        for grid in l_grids:
+            l_grid_ana = grid['spot']
+            l_grid_e = [ana['id'] for ana in l_grid_ana]
+            lh_this_sim = []
+            grid_sent_lm = text2lm(grid['sent'], clean=True)
+            for e in l_grid_e:
+                if e not in h_e_nlss_idx:
+                    continue
+                l_lm = [l_this_nlss_lm[pos] for pos in h_e_nlss_idx[e]]
+                for lm in l_lm:
+                    h_sim = self._extract_retrieval_scores(lm, grid_sent_lm, field)
+                    lh_this_sim.append(h_sim)
+            h_this_grid_sim = mean_pool_feature(lh_this_sim, add_suffix=False)
+            l_h_retrieval_scores.append(h_this_grid_sim)
+        h_feature = sum_pool_feature(l_h_retrieval_scores)
         return h_feature
 
     def _local_grid(self, q_info, qe, l_field_ana, doc_info, field):
