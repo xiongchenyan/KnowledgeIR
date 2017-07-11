@@ -22,7 +22,7 @@ from knowledge4ir.utils import (
     log_sum_feature,
     SPOT_FIELD,
     COREFERENCE_FIELD,
-    add_feature_prefix)
+    add_feature_prefix, avg_embedding, text2lm)
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,
 )
@@ -155,6 +155,15 @@ class BoeFeature(Configurable):
     def extract_per_entity(self, q_info, ana, doc_info):
         logging.warn('need implement this function in inherited class')
         pass
+
+    def _form_sents_emb(self, l_sent):
+        l_emb = [avg_embedding(self.resource.embedding, sent)
+                 for sent in l_sent]
+        return l_emb
+
+    def _form_sents_bow(self, l_sent):
+        l_h_lm = [text2lm(sent, clean=True) for sent in l_sent]
+        return l_h_lm
 
 
 class AnaMatch(BoeFeature):

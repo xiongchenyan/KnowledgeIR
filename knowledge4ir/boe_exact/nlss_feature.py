@@ -34,7 +34,6 @@ from traitlets import (
 from knowledge4ir.boe_exact.boe_feature import BoeFeature
 from knowledge4ir.utils import (
     add_feature_prefix,
-    avg_embedding,
     lm_cosine,
     TARGET_TEXT_FIELDS,
     body_field,
@@ -156,16 +155,6 @@ class NLSSFeature(BoeFeature):
         if l_nlss_lmscore:
             logging.info('best lm [%f]', l_nlss_lmscore[0][1])
         return l_this_nlss
-
-
-    def _form_sents_emb(self, l_sent):
-        l_emb = [avg_embedding(self.resource.embedding, sent)
-                 for sent in l_sent]
-        return l_emb
-
-    def _form_sents_bow(self, l_sent):
-        l_h_lm = [text2lm(sent, clean=True) for sent in l_sent]
-        return l_h_lm
 
     def _form_nlss_bow(self, l_qe_nlss):
         l_sent = [nlss[0] for nlss in l_qe_nlss]
