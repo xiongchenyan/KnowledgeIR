@@ -219,7 +219,6 @@ class NLSSStar(NLSSFeature):
         return h_feature
 
     def _edge_grid(self, qe, doc_info, field):
-        h_feature = {}
         p = self.h_qe_idx[qe]
         h_e_nlss_idx = self.l_h_e_nlss_idx[p]
         l_this_nlss_lm = self.ll_this_nlss_lm[p]
@@ -236,7 +235,7 @@ class NLSSStar(NLSSFeature):
                     continue
                 l_lm = [l_this_nlss_lm[pos] for pos in h_e_nlss_idx[e]]
                 for lm in l_lm:
-                    h_sim = self._extract_retrieval_scores(lm, grid_sent_lm, field)
+                    h_sim = dict(self._extract_retrieval_scores(lm, grid_sent_lm, field))
                     lh_this_sim.append(h_sim)
             h_this_grid_sim = mean_pool_feature(lh_this_sim, add_suffix=False)
             l_h_retrieval_scores.append(h_this_grid_sim)
