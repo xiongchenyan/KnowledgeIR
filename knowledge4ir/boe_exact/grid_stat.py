@@ -43,6 +43,7 @@ class GridStat(NLSSFeature):
     feature_name_pre = Unicode('grid_stat')
 
     def set_resource(self, resource):
+        self.resource = resource
         assert self.resource.l_h_nlss
 
     def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_this_nlss):
