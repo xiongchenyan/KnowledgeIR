@@ -236,10 +236,7 @@ class NLSSStar(NLSSFeature):
                     continue
                 l_lm = [l_this_nlss_lm[pos] for pos in h_e_nlss_idx[e]]
                 for lm in l_lm:
-                    h_sim = dict(self._extract_retrieval_scores(lm, grid_sent_lm, field))
-                    cos = lm_cosine(lm, grid_sent_lm)
-                    coor = h_sim['coordinate']
-                    h_sim = {'coordinate': coor, 'cosine': cos}
+                    h_sim = dict(self._extract_simple_scores(lm, grid_sent_lm))
                     lh_this_sim.append(h_sim)
             h_this_grid_sim = mean_pool_feature(lh_this_sim, add_suffix=False)
             l_h_retrieval_scores.append(h_this_grid_sim)

@@ -235,4 +235,11 @@ class NLSSFeature(BoeFeature):
         )
         return [(k, v) for k, v in r_model.scores() if 'lm_twoway' != k]
 
-
+    def _extract_simple_scores(self, formed_q_lm, formed_doc_lm):
+        r_model = RetrievalModel()
+        r_model.set_from_raw(
+            formed_q_lm, formed_doc_lm,
+        )
+        l_score = [['cosine', lm_cosine(formed_q_lm, formed_doc_lm)],
+                   ['coordinate', r_model.coordinate()]]
+        return l_score
