@@ -23,6 +23,7 @@ from knowledge4ir.utils import (
     sum_pool_feature,
     QUERY_FIELD,
     E_GRID_FIELD,
+    lm_cosine,
 )
 from knowledge4ir.utils.boe import form_boe_per_field
 from knowledge4ir.utils.retrieval_model import RetrievalModel
@@ -236,6 +237,9 @@ class NLSSStar(NLSSFeature):
                 l_lm = [l_this_nlss_lm[pos] for pos in h_e_nlss_idx[e]]
                 for lm in l_lm:
                     h_sim = dict(self._extract_retrieval_scores(lm, grid_sent_lm, field))
+                    cos = lm_cosine(lm, grid_sent_lm)
+                    coor = h_sim['coordinate']
+                    h_sim = {'coordinate': coor, 'cosine': cos}
                     lh_this_sim.append(h_sim)
             h_this_grid_sim = mean_pool_feature(lh_this_sim, add_suffix=False)
             l_h_retrieval_scores.append(h_this_grid_sim)
