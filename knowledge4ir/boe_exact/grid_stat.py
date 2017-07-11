@@ -40,7 +40,7 @@ from knowledge4ir.boe_exact.nlss_feature import NLSSFeature
 
 
 class GridStat(NLSSFeature):
-    feature_name_pre = Unicode('grid_stat')
+    feature_name_pre = Unicode('')
 
     def set_resource(self, resource):
         self.resource = resource
