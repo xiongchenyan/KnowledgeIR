@@ -57,6 +57,7 @@ class GridStat(NLSSFeature):
         :param l_this_nlss:
         :return:
         """
+        qe = ana['id']
 
         nb_grid_edge = 0
         avg_e_per_grid = 0
@@ -66,8 +67,7 @@ class GridStat(NLSSFeature):
             sum([nlss[1] for nlss in l_this_nlss],
                 [])
         )
-        logging.info('[%s] has [%d] connected nlkg e', len(s_connected_e))
-        qe = ana['id']
+        logging.info('[%s] has [%d] connected nlkg e', qe, len(s_connected_e))
         l_grids = doc_info.get(E_GRID_FIELD, {}).get(body_field, [])
         for grid in l_grids:
             l_grid_ana = grid['spot']
