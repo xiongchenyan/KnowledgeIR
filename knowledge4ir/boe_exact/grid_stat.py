@@ -42,6 +42,9 @@ from knowledge4ir.boe_exact.nlss_feature import NLSSFeature
 class GridStat(NLSSFeature):
     feature_name_pre = Unicode('grid_stat')
 
+    def set_resource(self, resource):
+        assert self.resource.l_h_nlss
+
     def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_this_nlss):
         """
         # of grid edge
