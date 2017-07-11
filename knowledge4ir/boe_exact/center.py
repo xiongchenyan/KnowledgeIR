@@ -31,6 +31,7 @@ from knowledge4ir.boe_exact.nlss_exp import NLSSExpansionFeature
 from knowledge4ir.boe_exact.nlss_grid import EGridNLSSFeature
 from knowledge4ir.boe_exact.nlss_edge_count import NLSSEdgeCountFeature
 from knowledge4ir.boe_exact.nlss_star import NLSSStar
+from knowledge4ir.boe_exact.grid_stat import GridStat
 from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
@@ -53,6 +54,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
                            "NLSSExp": NLSSExpansionFeature,
                            "NLSSEdgeCnt": NLSSEdgeCountFeature,
                            "NLSSStar": NLSSStar,
+                           'GridStat': GridStat,
                            }
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
