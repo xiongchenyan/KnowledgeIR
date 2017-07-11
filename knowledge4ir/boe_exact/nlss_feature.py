@@ -33,10 +33,7 @@ from traitlets import (
 
 from knowledge4ir.boe_exact.boe_feature import BoeFeature
 from knowledge4ir.utils import (
-    mean_pool_feature,
-    QUERY_FIELD,
     add_feature_prefix,
-    text2lm,
     avg_embedding,
     lm_cosine,
     TARGET_TEXT_FIELDS,
@@ -45,8 +42,8 @@ from knowledge4ir.utils import (
 from knowledge4ir.utils.boe import (
     form_boe_per_field,
 )
-from knowledge4ir.utils.retrieval_model import RetrievalModel
 from knowledge4ir.utils.nlp import text2lm
+from knowledge4ir.utils.retrieval_model import RetrievalModel
 
 
 class NLSSFeature(BoeFeature):
@@ -78,32 +75,6 @@ class NLSSFeature(BoeFeature):
     def close_resource(self):
         if self.intermediate_data_out_name:
             self.intermediate_out.close()
-
-    def extract_pair(self, q_info, doc_info):
-        """
-
-        :param q_info:
-        :param doc_info:
-        :return:
-        """
-        logging.debug('extracting e_grid nlss features for [%s][%s]',
-                      q_info['qid'], doc_info['docno'])
-        l_q_ana = self._get_field_ana(q_info, QUERY_FIELD)
-        logging.debug('q info %s', json.dumps(q_info))
-        logging.debug('q ana %s', json.dumps(l_q_ana))
-        logging.debug('doc t [%s], info [%s]', doc_info.get('title', ""),
-                      json.dumps(doc_info.get('spot', {}).get('title', []))
-                      )
-        l_h_feature = [self.extract_per_entity(q_info, ana, doc_info) for ana in l_q_ana]
-
-        h_final_feature = {}
-        # h_final_feature.update(log_sum_feature(l_h_feature))
-        h_final_feature.update(mean_pool_feature(l_h_feature))
-        # h_final_feature = dict([(self.feature_name_pre + item[0], item[1])
-        #                         for item in h_final_feature.items()])
-        h_final_feature = add_feature_prefix(h_final_feature, self.feature_name_pre + '_')
-
-        return h_final_feature
 
     def extract_per_entity(self, q_info, ana, doc_info):
         """
@@ -205,7 +176,8 @@ class NLSSFeature(BoeFeature):
         return self._form_sents_emb(l_sent)
 
     def _extract_per_entity_via_nlss(self, q_info, ana, doc_info, l_qe_nlss):
-        raise NotImplementedError
+        logging.WARN('needs implement this function in inherited class')
+        # raise NotImplementedError
 
     def _calc_bow_trans(self, l_bow_a, l_bow_b):
         m_trans = np.zeros((len(l_bow_a), len(l_bow_b)))
