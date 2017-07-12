@@ -121,7 +121,7 @@ class EntityAnchorFeature(BoeFeature):
     def _avg_in_out_degree(self, l_grid):
         h_e_pos = self._form_grid_reverse_index(l_grid)
         z = max(float(len(l_grid)), 1.0)
-        avg_out_degree = sum([item[1] for item in h_e_pos.items()]) / z
+        avg_out_degree = sum([len(item[1]) for item in h_e_pos.items()]) / z
         avg_in_degree = sum([len(grid['spot']) for grid in l_grid]) / z
         return {'in_degree': avg_in_degree, 'out_degree': avg_out_degree}
 
