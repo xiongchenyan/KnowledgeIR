@@ -53,6 +53,7 @@ class EntityAnchorFeature(BoeFeature):
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
     l_grid_scores = ['freq', 'uw_emb', 'gloss_emb', 'gloss_bow', 'desp_emb', 'desp_bow']
+    l_feature = List(Unicode, default_value=['passage', 'grid']).tag(config=True)
 
     def set_resource(self, resource):
         self.resource = resource
@@ -73,11 +74,12 @@ class EntityAnchorFeature(BoeFeature):
             l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
             l_grid = self._filter_e_grid(qe, l_grid)
             l_grid = self._calc_grid_scores(l_grid)
-
-            h_proximity_f = self._entity_proximity_features(q_info, l_grid, field)
-            h_grid_score_f = self._grid_score_features(qe, l_grid)
-            h_feature.update(add_feature_prefix(h_proximity_f, field + '_'))
-            h_feature.update(add_feature_prefix(h_grid_score_f, field + '_'))
+            if 'passage' in self.l_feature:
+                h_proximity_f = self._entity_proximity_features(q_info, l_grid, field)
+                h_feature.update(add_feature_prefix(h_proximity_f, field + '_'))
+            if 'grid' in self.l_feature
+                h_grid_score_f = self._grid_score_features(qe, l_grid)
+                h_feature.update(add_feature_prefix(h_grid_score_f, field + '_'))
         return h_feature
 
     def _calc_grid_scores(self, l_grid):
