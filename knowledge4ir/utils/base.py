@@ -483,7 +483,7 @@ def form_bins(nb_bin, bin_range=1):
     for i in xrange(nb_bin - 1):
         bound = l_bins[i] - bin_size
         l_bins.append(bound)
-    logging.info('using bin [%s]', json.dumps(l_bins))
+    logging.debug('using bin [%s]', json.dumps(l_bins))
     return l_bins
 
 
