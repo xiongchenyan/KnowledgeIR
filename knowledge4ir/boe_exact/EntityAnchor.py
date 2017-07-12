@@ -57,8 +57,8 @@ class EntityAnchorFeature(BoeFeature):
 
     def set_resource(self, resource):
         self.resource = resource
-        assert self.resource.h_e_desp
-        assert self.resource.embedding
+        # assert self.resource.h_e_desp
+        # assert self.resource.embedding
 
     def extract_pair(self, q_info, doc_info):
         h_feature = super(EntityAnchorFeature, self).extract_pair(q_info, doc_info)
