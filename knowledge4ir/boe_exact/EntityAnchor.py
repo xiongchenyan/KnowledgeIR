@@ -54,7 +54,7 @@ class EntityAnchorFeature(BoeFeature):
     l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
-    l_grid_scores = ['freq', 'uw_emb', 'desp_emb', 'desp_bow']
+    l_grid_scores = ['freq', 'uw_emb', 'desp_emb', 'desp_bow', 'desp_coor']
     l_feature = List(Unicode, default_value=['passage', 'grid', 'coherence', 'desp', 'esr']).tag(config=True)
 
     def set_resource(self, resource):
@@ -206,6 +206,7 @@ class EntityAnchorFeature(BoeFeature):
                 # h_e_score['gloss_bow'] = self._e_gloss_bow(e, grid_lm)
                 h_e_score['desp_emb'] = self._e_desp_emb(e, grid_emb)
                 h_e_score['desp_bow'] = self._e_desp_bow(e, grid_lm)
+                h_e_score['desp_coor'] = self._e_desp_coor(e, grid_lm)
                 l_e_score.append(h_e_score)
             grid['e_score'] = l_e_score
 
@@ -244,6 +245,14 @@ class EntityAnchorFeature(BoeFeature):
         desp = self.resource.h_e_desp.get(e, "")
         e_lm = text2lm(desp)
         return lm_cosine(e_lm, grid_lm)
+
+    def _e_desp_coor(self, e, grid_lm):
+        desp = self.resource.h_e_desp.get(e, "")
+        e_lm = text2lm(desp)
+        r_m = RetrievalModel()
+        r_m.set_from_raw(grid_lm, e_lm)
+        coor = r_m.coordinate() / float(max(sum([item[1] for item in grid_lm.items()]), 1.0))
+        return coor
 
     def _entity_passage_features(self, q_info, l_grid, field):
         l_grid_sent = [grid['sent'] for grid in l_grid]
