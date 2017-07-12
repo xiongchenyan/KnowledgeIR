@@ -111,9 +111,19 @@ class EntityAnchorFeature(BoeFeature):
         return h_feature
 
     def _global_grid_coherence(self, doc_info):
+        h_feature = {}
         if body_field in self.l_target_fields:
             l_grid = doc_info.get(E_GRID_FIELD, {}).get(body_field, [])
-            return self._pair_e_coherence(l_grid)
+            h_feature.update(self._pair_e_coherence(l_grid))
+            h_feature.update(self._avg_in_out_degree(l_grid))
+            return h_feature
+
+    def _avg_in_out_degree(self, l_grid):
+        h_e_pos = self._form_grid_reverse_index(l_grid)
+        z = max(float(len(l_grid)), 1.0)
+        avg_out_degree = sum([item[1] for item in h_e_pos]) / z
+        avg_in_degree = sum([len(grid['spot']) for grid in l_grid]) / z
+        return {'in_degree': avg_in_degree, 'out_degree': avg_out_degree}
 
     def _single_e_coherence(self, e_id, l_grid):
         h_feature = dict()
