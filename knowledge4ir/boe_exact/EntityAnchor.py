@@ -53,12 +53,19 @@ class EntityAnchorFeature(BoeFeature):
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
     l_grid_scores = ['freq', 'uw_emb', 'desp_emb', 'desp_bow']
-    l_feature = List(Unicode, default_value=['passage', 'grid']).tag(config=True)
+    l_feature = List(Unicode, default_value=['passage', 'grid', 'coherence']).tag(config=True)
 
     def set_resource(self, resource):
         self.resource = resource
         assert self.resource.h_e_desp
         assert self.resource.embedding
+
+    def extract_pair(self, q_info, doc_info):
+        h_feature = super(EntityAnchorFeature, self).extract_pair(q_info, doc_info)
+        if 'coherence' in self.l_feature:
+            h_global_coherence = self._global_grid_coherence(doc_info)
+            h_feature.update(add_feature_prefix(h_global_coherence, self.feature_name_pre))
+        return h_feature
 
     def extract_per_entity(self, q_info, ana, doc_info):
         """
@@ -72,15 +79,93 @@ class EntityAnchorFeature(BoeFeature):
         qe = ana['id']
         for field in self.l_target_fields:
             l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
-            l_grid = self._filter_e_grid(qe, l_grid)
-            l_grid = self._calc_grid_scores(l_grid)
+            l_qe_grid = self._filter_e_grid(qe, l_grid)
+            l_qe_grid = self._calc_grid_scores(l_qe_grid)
             if 'passage' in self.l_feature:
-                h_proximity_f = self._entity_proximity_features(q_info, l_grid, field)
+                h_proximity_f = self._entity_proximity_features(q_info, l_qe_grid, field)
                 h_feature.update(add_feature_prefix(h_proximity_f, field + '_'))
             if 'grid' in self.l_feature:
-                h_grid_score_f = self._grid_score_features(qe, l_grid)
+                h_grid_score_f = self._grid_score_features(qe, l_qe_grid)
                 h_feature.update(add_feature_prefix(h_grid_score_f, field + '_'))
+            if 'coherence' in self.l_feature:
+                if field == body_field:
+                    h_coherence_f = self._qe_grid_coherence(qe, l_grid)
+                    h_feature.update(add_feature_prefix(h_coherence_f, field + '_'))
         return h_feature
+
+    def _qe_grid_coherence(self, qe, l_grid):
+        h_feature = {}
+        h_feature.update(self._single_e_coherence(qe, l_grid))
+        h_feature.update(self._pair_e_coherence(l_grid, qe))
+        h_feature = add_feature_prefix(h_feature, 'Qe')
+        return h_feature
+
+    def _global_grid_coherence(self, doc_info):
+        if body_field in self.l_target_fields:
+            l_grid = doc_info.get(E_GRID_FIELD, {}).get(body_field, [])
+            return self._pair_e_coherence(l_grid)
+
+    def _single_e_coherence(self, e_id, l_grid):
+        h_feature = dict()
+
+        h_e_pos = self._form_grid_reverse_index(l_grid)
+        if len(h_e_pos.get(e_id, [])) < 2:
+            h_feature['uniLC'] = 0
+            return h_feature
+
+        l_uni_lc = []
+        l_pos = [0] + h_e_pos[e_id] + [len(l_grid)]
+
+        for i in xrange(1, len(l_pos) - 1):
+            lc = min(l_pos[i] - l_pos[i - 1], l_pos[i + 1] - l_pos[i - 1])
+            lc = 1.0 / max(lc, 1.0)
+            l_uni_lc.append(lc)
+        uniLC = sum(l_uni_lc) / float(len(l_uni_lc) - 2)
+        h_feature['uniLC'] = uniLC
+        return h_feature
+
+    def _pair_e_coherence(self, l_grid, target_e=None):
+        h_feature = dict()
+        h_e_pos = self._form_grid_reverse_index(l_grid)
+        l_p = range(l_grid)
+        if target_e is not None:
+            l_p = h_e_pos.get(target_e)
+        l_total_bipLC = []
+        for grid_p in l_p:
+            grid = l_grid[grid_p]
+            l_e = list(set([ana['id'] for ana in grid['spot']]))
+            bipLC = 0
+            cnt = 0
+            for i in xrange(len(l_e)):
+                set_i = set(h_e_pos.get(l_e[i], []))
+                for j in xrange(i + 1, len(l_e)):
+                    if target_e is not None:
+                        if (l_e[i] != target_e) & (l_e[j] != target_e):
+                            continue
+                    cnt += 1
+                    set_j = set(h_e_pos.get(l_e[j], []))
+                    l_both_p = list(set_i.intersection(set_j))
+                    if len(l_both_p) < 2:
+                        continue
+                    dist = min([abs(p - grid_p) for p in l_both_p if p != grid_p])
+                    bipLC += 1.0 / dist
+            bipLC /= max(cnt, 1.0)
+            l_total_bipLC.append(bipLC)
+        avg_bipLC = 0
+        if len(l_total_bipLC):
+            avg_bipLC = sum(l_total_bipLC) / float(len(l_total_bipLC))
+        h_feature['bipLC'] = avg_bipLC
+        return h_feature
+
+    def _form_grid_reverse_index(self, l_grid):
+        h_e_pos = dict()
+        for pos, grid in l_grid:
+            for ana in grid.get('spot'):
+                e_id = ana['id']
+                if e_id not in h_e_pos:
+                    h_e_pos[e_id] = []
+                h_e_pos[e_id].append(pos)
+        return h_e_pos
 
     def _calc_grid_scores(self, l_grid):
         """
