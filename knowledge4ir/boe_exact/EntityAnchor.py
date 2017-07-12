@@ -319,8 +319,12 @@ class EntityAnchorFeature(BoeFeature):
             if e == e_id:
                 l_sim.append(1.0)
             else:
-                if (e not in self.resource.embedding) | (e_id not in self.resource.embedding):
+                if e_id not in self.resource.embedding:
                     l_sim.append(0)
+                    logging.warn('qe [%s] not in embedding', e_id)
+                elif e not in self.resource.embedding:
+                    l_sim.append(0)
+                    logging.warn('[%s] not in embedding', e)
                 else:
                     l_sim.append(max(self.resource.embedding.similarity(e_id, e), 0))
         l_binned_score = bin_similarity(l_sim, form_bins(6))
