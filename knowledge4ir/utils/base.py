@@ -479,7 +479,7 @@ def form_bins(nb_bin, bin_range=1):
     l_bins = [1]
     if nb_bin == 1:
         return l_bins
-    bin_size = bin_range / (nb_bin - 1)
+    bin_size = bin_range / float(nb_bin - 1)
     for i in xrange(nb_bin - 1):
         bound = l_bins[i] - bin_size
         l_bins.append(bound)
