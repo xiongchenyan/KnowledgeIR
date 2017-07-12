@@ -53,7 +53,7 @@ class EntityAnchorFeature(BoeFeature):
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
     l_grid_scores = ['freq', 'uw_emb', 'desp_emb', 'desp_bow']
-    l_feature = List(Unicode, default_value=['passage', 'grid', 'coherence']).tag(config=True)
+    l_feature = List(Unicode, default_value=['passage', 'grid', 'coherence', 'desp']).tag(config=True)
 
     def set_resource(self, resource):
         self.resource = resource
@@ -82,8 +82,11 @@ class EntityAnchorFeature(BoeFeature):
             l_qe_grid = self._filter_e_grid(qe, l_grid)
             l_qe_grid = self._calc_grid_scores(l_qe_grid)
             if 'passage' in self.l_feature:
-                h_proximity_f = self._entity_proximity_features(q_info, l_qe_grid, field)
+                h_proximity_f = self._entity_passage_features(q_info, l_qe_grid, field)
                 h_feature.update(add_feature_prefix(h_proximity_f, field + '_'))
+            if 'desp' in self.l_feature:
+                h_desp_f = self._desp_passage_features(qe, l_qe_grid, field)
+                h_feature.update(add_feature_prefix(h_desp_f, field + '_'))
             if 'grid' in self.l_feature:
                 h_grid_score_f = self._grid_score_features(qe, l_qe_grid)
                 h_feature.update(add_feature_prefix(h_grid_score_f, field + '_'))
@@ -235,7 +238,7 @@ class EntityAnchorFeature(BoeFeature):
         e_lm = text2lm(desp)
         return lm_cosine(e_lm, grid_lm)
 
-    def _entity_proximity_features(self, q_info, l_grid, field):
+    def _entity_passage_features(self, q_info, l_grid, field):
         l_grid_sent = [grid['sent'] for grid in l_grid]
         q_lm = text2lm(q_info['query'])
         h_feature = dict()
@@ -265,6 +268,21 @@ class EntityAnchorFeature(BoeFeature):
         # h_feature.update(max_pool_feature(l_scores))
 
         h_feature = add_feature_prefix(h_feature, 'EntityPassage')
+        return h_feature
+
+    def _desp_passage_features(self, e_id, l_grid, field):
+        l_grid_sent = [grid['sent'] for grid in l_grid]
+        q_lm = text2lm(self.resource.h_e_desp.get(e_id, ""))
+        grid_lm = text2lm(' '.join(l_grid_sent))
+        r_model = RetrievalModel()
+        r_model.set_from_raw(
+            q_lm, grid_lm,
+            self.resource.corpus_stat.h_field_df.get(field, None),
+            self.resource.corpus_stat.h_field_total_df.get(field, None),
+            self.resource.corpus_stat.h_field_avg_len.get(field, None)
+        )
+        h_score = dict(r_model.scores())
+        h_feature = add_feature_prefix(h_score, 'DespPassage')
         return h_feature
 
     def _grid_score_features(self, qe, l_grid):
