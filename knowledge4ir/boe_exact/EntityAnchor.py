@@ -41,6 +41,8 @@ from knowledge4ir.utils import (
     text2lm,
     mean_pool_feature,
     max_pool_feature,
+    bin_similarity,
+    form_bins,
 )
 from knowledge4ir.utils.retrieval_model import RetrievalModel
 import logging
@@ -53,7 +55,7 @@ class EntityAnchorFeature(BoeFeature):
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
     l_grid_scores = ['freq', 'uw_emb', 'desp_emb', 'desp_bow']
-    l_feature = List(Unicode, default_value=['passage', 'grid', 'coherence', 'desp']).tag(config=True)
+    l_feature = List(Unicode, default_value=['passage', 'grid', 'coherence', 'desp', 'esr']).tag(config=True)
 
     def set_resource(self, resource):
         self.resource = resource
@@ -96,6 +98,9 @@ class EntityAnchorFeature(BoeFeature):
                 if field == body_field:
                     h_coherence_f = self._qe_grid_coherence(qe, l_grid)
                     h_feature.update(add_feature_prefix(h_coherence_f, field + '_'))
+            if 'esr' in self.l_feature:
+                h_esr = self._local_esr(qe, l_qe_grid)
+                h_feature.update(add_feature_prefix(h_esr, field + '_'))
         return h_feature
 
     def _qe_grid_coherence(self, qe, l_grid):
@@ -287,6 +292,32 @@ class EntityAnchorFeature(BoeFeature):
         del h_score['lm_twoway']
         h_feature = add_feature_prefix(h_score, 'DespPassage')
         return h_feature
+
+    def _local_esr(self, e_id, l_grid):
+        """
+        local esr vote
+        :param e_id:
+        :param l_grid:
+        :return:
+        """
+
+        l_e = sum(
+            [[ana['id'] for ana in grid['spot']] for grid in l_grid],
+            []
+        )
+        l_sim = []
+        for e in l_e:
+            if e == e_id:
+                l_sim.append(1.0)
+            else:
+                if e not in self.resource.embedding:
+                    l_sim.append(0)
+                else:
+                    l_sim.append(max(self.resource.embedding.similarity(e_id, e), 0))
+        l_binned_score = bin_similarity(l_sim, form_bins(6))
+        h_feature = dict(l_binned_score)
+        return h_feature
+
 
     def _grid_score_features(self, qe, l_grid):
         """
