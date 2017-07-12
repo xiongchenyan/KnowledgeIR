@@ -162,7 +162,7 @@ class EntityAnchorFeature(BoeFeature):
 
     def _form_grid_reverse_index(self, l_grid):
         h_e_pos = dict()
-        for pos, grid in l_grid:
+        for pos, grid in enumerate(l_grid):
             for ana in grid.get('spot'):
                 e_id = ana['id']
                 if e_id not in h_e_pos:
