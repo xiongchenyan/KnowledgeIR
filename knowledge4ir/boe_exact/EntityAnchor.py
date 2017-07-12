@@ -198,13 +198,16 @@ class EntityAnchorFeature(BoeFeature):
                                   for l_grid_e_score in ll_grid_e_score
                                   ]
             h_this_score = dict()
-            h_this_score['Sum'] = sum([l_score[0] for l_score in ll_this_grid_score])
-            h_this_score['Max'] = max([l_score[0] for l_score in ll_this_grid_score] + [0])
+            l_qe_score = [l_score[0] for l_score in ll_this_grid_score]
+            if not l_qe_score:
+                l_qe_score.append([0])
+            h_this_score['Sum'] = sum(l_qe_score)
+            h_this_score['Max'] = max(l_qe_score)
             h_this_score['FullCombine'] = sum(
                 sum(ll_this_grid_score, []),
                 [sum(l_score) / max(float(len(l_score)), 1.0) for l_score in ll_this_grid_score]
             )
-            h_this_score['NormSum'] = sum([l_score[0] / float(max(sum(l_score), 1))
+            h_this_score['NormSum'] = sum([l_score[0] / float(max(sum(l_score), 1.0))
                                            for l_score in ll_this_grid_score])
             h_this_score = add_feature_prefix(h_this_score, name)
             h_feature.update(h_this_score)
