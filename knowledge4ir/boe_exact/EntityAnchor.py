@@ -152,22 +152,8 @@ class EntityAnchorFeature(BoeFeature):
 
     def _entity_proximity_features(self, q_info, l_grid, field):
         l_grid_sent = [grid['sent'] for grid in l_grid]
-        l_grid_lm = [text2lm(sent) for sent in l_grid_sent]
         q_lm = text2lm(q_info['query'])
-        l_scores = []
-        for grid_lm in l_grid_lm:
-            r_model = RetrievalModel()
-            r_model.set_from_raw(
-                q_lm, grid_lm,
-                self.resource.corpus_stat.h_field_df.get(field, None),
-                self.resource.corpus_stat.h_field_total_df.get(field, None),
-                self.resource.corpus_stat.h_field_avg_len.get(field, None)
-            )
-            l_scores.append(dict(r_model.scores()))
         h_feature = dict()
-        # h_feature.update(mean_pool_feature(l_scores))
-        h_feature.update(max_pool_feature(l_scores))
-
         grid_lm = text2lm(' '.join(l_grid_sent))
         r_model = RetrievalModel()
         r_model.set_from_raw(
@@ -179,7 +165,21 @@ class EntityAnchorFeature(BoeFeature):
         h_score = dict(r_model.scores())
         h_feature.update(h_score)
 
-        h_feature = add_feature_prefix(h_feature, 'EntityProximity')
+        # l_grid_lm = [text2lm(sent) for sent in l_grid_sent]
+        # l_scores = []
+        # for grid_lm in l_grid_lm:
+        #     r_model = RetrievalModel()
+        #     r_model.set_from_raw(
+        #         q_lm, grid_lm,
+        #         self.resource.corpus_stat.h_field_df.get(field, None),
+        #         self.resource.corpus_stat.h_field_total_df.get(field, None),
+        #         self.resource.corpus_stat.h_field_avg_len.get(field, None)
+        #     )
+        #     l_scores.append(dict(r_model.scores()))
+        # # h_feature.update(mean_pool_feature(l_scores))
+        # h_feature.update(max_pool_feature(l_scores))
+
+        h_feature = add_feature_prefix(h_feature, 'EntityPassage')
         return h_feature
 
     def _grid_score_features(self, qe, l_grid):
