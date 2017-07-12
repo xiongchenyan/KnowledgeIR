@@ -125,7 +125,7 @@ class EntityAnchorFeature(BoeFeature):
             lc = min(l_pos[i] - l_pos[i - 1], l_pos[i + 1] - l_pos[i - 1])
             lc = 1.0 / max(lc, 1.0)
             l_uni_lc.append(lc)
-        uniLC = sum(l_uni_lc) / float(len(l_uni_lc) - 2)
+        uniLC = sum(l_uni_lc) / float(len(l_uni_lc))
         h_feature['uniLC'] = uniLC
         return h_feature
 
