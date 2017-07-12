@@ -30,6 +30,7 @@ from knowledge4ir.boe_exact.salient_feature import SalientFeature
 from knowledge4ir.boe_exact.nlss_exp import NLSSExpansionFeature
 from knowledge4ir.boe_exact.nlss_grid import EGridNLSSFeature
 from knowledge4ir.boe_exact.nlss_edge_count import NLSSEdgeCountFeature
+from knowledge4ir.boe_exact.EntityAnchor import EntityAnchorFeature
 from knowledge4ir.boe_exact.nlss_star import NLSSStar
 from knowledge4ir.boe_exact.grid_stat import GridStat
 from knowledge4ir.utils import (
@@ -55,6 +56,7 @@ class BoeLeToRFeatureExtractCenter(Configurable):
                            "NLSSEdgeCnt": NLSSEdgeCountFeature,
                            "NLSSStar": NLSSStar,
                            'GridStat': GridStat,
+                           'EntityAnchor': EntityAnchorFeature,
                            }
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)

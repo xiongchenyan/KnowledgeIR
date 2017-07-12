@@ -39,6 +39,8 @@ from knowledge4ir.utils import (
     SPOT_FIELD,
     term2lm,
     text2lm,
+    mean_pool_feature,
+    max_pool_feature,
 )
 from knowledge4ir.utils.retrieval_model import RetrievalModel
 import logging
@@ -50,7 +52,7 @@ class EntityAnchorFeature(BoeFeature):
     l_target_fields = List(Unicode, default_value=[body_field]).tag(config=True)
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
-    l_grid_scores = ['freq', 'emb', 'gloss_emb', 'gloss_bow', 'desp_emb', 'desp_bow']
+    l_grid_scores = ['freq', 'uw_emb', 'gloss_emb', 'gloss_bow', 'desp_emb', 'desp_bow']
 
     def set_resource(self, resource):
         self.resource = resource
@@ -102,7 +104,7 @@ class EntityAnchorFeature(BoeFeature):
             l_e_score = []
             for e, tf in h_e_tf.items():
                 h_e_score = {'id': e, 'freq': tf}
-                h_e_score['emb'] = self._e_grid_emb(e, grid_emb)
+                h_e_score['uw_emb'] = self._e_grid_emb(e, grid_emb)
                 h_e_score['gloss_emb'] = self._e_gloss_emb(e, grid_emb)
                 h_e_score['gloss_bow'] = self._e_gloss_bow(e, grid_lm)
                 h_e_score['desp_emb'] = self._e_desp_emb(e, grid_emb)
@@ -141,11 +143,24 @@ class EntityAnchorFeature(BoeFeature):
         return lm_cosine(e_lm, grid_lm)
 
     def _entity_proximity_features(self, q_info, l_grid, field):
-        grid_text = ' '.join([grid['sent'] for grid in l_grid])
-        grid_lm = text2lm(grid_text, clean=True)
+        l_grid_sent = [grid['sent'] for grid in l_grid]
+        l_grid_lm = [text2lm(sent) for sent in l_grid_sent]
         q_lm = text2lm(q_info['query'])
+        l_scores = []
+        for grid_lm in l_grid_lm:
+            r_model = RetrievalModel()
+            r_model.set_from_raw(
+                q_lm, grid_lm,
+                self.resource.corpus_stat.h_field_df.get(field, None),
+                self.resource.corpus_stat.h_field_total_df.get(field, None),
+                self.resource.corpus_stat.h_field_avg_len.get(field, None)
+            )
+            l_scores.append(dict(r_model.all_scores()))
         h_feature = dict()
+        h_feature.update(mean_pool_feature(l_scores))
+        h_feature.update(max_pool_feature(l_scores))
 
+        grid_lm = text2lm([' '.join(l_grid_sent)])
         r_model = RetrievalModel()
         r_model.set_from_raw(
             q_lm, grid_lm,
@@ -153,7 +168,9 @@ class EntityAnchorFeature(BoeFeature):
             self.resource.corpus_stat.h_field_total_df.get(field, None),
             self.resource.corpus_stat.h_field_avg_len.get(field, None)
         )
-        h_feature = r_model.all_scores()
+        h_score = dict(r_model.all_scores())
+        h_feature.update(h_score)
+
         h_feature = add_feature_prefix(h_feature, 'EntityProximity')
         return h_feature
 
