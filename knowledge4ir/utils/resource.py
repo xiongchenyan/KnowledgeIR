@@ -82,7 +82,8 @@ class JointSemanticResource(Configurable):
         if not self.entity_desp_path:
             return
         logging.info('loading entity desp [%s]', self.entity_desp_path)
-        h_nlss = load_nlss_dict(self.entity_desp_path, 1)
+        h_nlss = load_nlss_dict(self.entity_desp_path)
+        self.h_e_desp = dict()
         for e, l_sent in h_nlss.items():
             self.h_e_desp[e] = l_sent[0][0]
         logging.info('loaded [%d] entity descriptions', len(self.h_e_desp))
