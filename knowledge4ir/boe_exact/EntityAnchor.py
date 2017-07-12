@@ -114,15 +114,19 @@ class EntityAnchorFeature(BoeFeature):
         h_feature = {}
         if body_field in self.l_target_fields:
             l_grid = doc_info.get(E_GRID_FIELD, {}).get(body_field, [])
-            h_feature.update(self._pair_e_coherence(l_grid))
-            h_feature.update(self._avg_in_out_degree(l_grid))
+            l_keep_grid = []
+            for grid in l_grid:
+                if len(grid['sent']) > self.max_grid_sent_len:
+                    continue
+                l_keep_grid.append(grid)
+            h_feature.update(self._pair_e_coherence(l_keep_grid))
+            h_feature.update(self._avg_in_out_degree(l_keep_grid))
             return h_feature
 
     def _avg_in_out_degree(self, l_grid):
         h_e_pos = self._form_grid_reverse_index(l_grid)
-        z = max(float(len(l_grid)), 1.0)
-        avg_out_degree = sum([len(item[1]) for item in h_e_pos.items()]) / z
-        avg_in_degree = sum([len(grid['spot']) for grid in l_grid]) / z
+        avg_out_degree = sum([len(item[1]) for item in h_e_pos.items()]) / max(float(len(h_e_pos)), 1.0)
+        avg_in_degree = sum([len(grid['spot']) for grid in l_grid]) / max(float(len(l_grid)), 1.0)
         return {'in_degree': avg_in_degree, 'out_degree': avg_out_degree}
 
     def _single_e_coherence(self, e_id, l_grid):
