@@ -107,8 +107,8 @@ class EntityAnchorFeature(BoeFeature):
             for e, tf in h_e_tf.items():
                 h_e_score = {'id': e, 'freq': tf}
                 h_e_score['uw_emb'] = self._e_grid_emb(e, grid_emb)
-                h_e_score['gloss_emb'] = self._e_gloss_emb(e, grid_emb)
-                h_e_score['gloss_bow'] = self._e_gloss_bow(e, grid_lm)
+                # h_e_score['gloss_emb'] = self._e_gloss_emb(e, grid_emb)
+                # h_e_score['gloss_bow'] = self._e_gloss_bow(e, grid_lm)
                 h_e_score['desp_emb'] = self._e_desp_emb(e, grid_emb)
                 h_e_score['desp_bow'] = self._e_desp_bow(e, grid_lm)
                 l_e_score.append(h_e_score)
@@ -203,9 +203,9 @@ class EntityAnchorFeature(BoeFeature):
                 l_qe_score.append(0)
             h_this_score['Sum'] = sum(l_qe_score)
             h_this_score['Max'] = max(l_qe_score)
-            h_this_score['FullCombine'] = sum(
-                [sum(l_score) / max(float(len(l_score)), 1.0) for l_score in ll_this_grid_score]
-            )
+            # h_this_score['FullCombine'] = sum(
+            #     [sum(l_score) / max(float(len(l_score)), 1.0) for l_score in ll_this_grid_score]
+            # )
             h_this_score['NormSum'] = sum([l_score[0] / float(max(sum(l_score), 1.0))
                                            for l_score in ll_this_grid_score])
             h_this_score = add_feature_prefix(h_this_score, name)
