@@ -200,7 +200,7 @@ class EntityAnchorFeature(BoeFeature):
             h_this_score = dict()
             l_qe_score = [l_score[0] for l_score in ll_this_grid_score]
             if not l_qe_score:
-                l_qe_score.append([0])
+                l_qe_score.append(0)
             h_this_score['Sum'] = sum(l_qe_score)
             h_this_score['Max'] = max(l_qe_score)
             h_this_score['FullCombine'] = sum(
