@@ -86,7 +86,7 @@ class EntityAnchorFeature(BoeFeature):
                 l_qe_grid = self._calc_grid_scores(l_qe_grid)
 
             if 'passage' in self.l_feature:
-                h_proximity_f = self._entity_passage_features(q_info, l_qe_grid, field)
+                h_proximity_f = self._entity_passage_features(q_info, l_qe_grid, field, doc_info)
                 h_feature.update(add_feature_prefix(h_proximity_f, field + '_'))
             if 'desp' in self.l_feature:
                 h_desp_f = self._desp_passage_features(qe, l_qe_grid, field)
@@ -272,12 +272,14 @@ class EntityAnchorFeature(BoeFeature):
         l_score = [['coor', coor], ['lm', lm]]
         return l_score
 
-
-    def _entity_passage_features(self, q_info, l_grid, field):
+    def _entity_passage_features(self, q_info, l_grid, field, doc_info):
         l_grid_sent = [grid['sent'] for grid in l_grid]
         q_lm = text2lm(q_info['query'])
         h_feature = dict()
-        grid_lm = text2lm(' '.join(l_grid_sent))
+        if field == body_field:
+            grid_lm = text2lm(' '.join(l_grid_sent))
+        else:
+            grid_lm = text2lm(doc_info.get(field, ""))
         r_model = RetrievalModel()
         r_model.set_from_raw(
             q_lm, grid_lm,
