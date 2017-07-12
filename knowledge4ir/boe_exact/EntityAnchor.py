@@ -80,7 +80,9 @@ class EntityAnchorFeature(BoeFeature):
         for field in self.l_target_fields:
             l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
             l_qe_grid = self._filter_e_grid(qe, l_grid)
-            l_qe_grid = self._calc_grid_scores(l_qe_grid)
+            if 'grid' in self.l_feature:
+                l_qe_grid = self._calc_grid_scores(l_qe_grid)
+
             if 'passage' in self.l_feature:
                 h_proximity_f = self._entity_passage_features(q_info, l_qe_grid, field)
                 h_feature.update(add_feature_prefix(h_proximity_f, field + '_'))
