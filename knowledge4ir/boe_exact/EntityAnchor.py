@@ -77,7 +77,7 @@ class EntityAnchorFeature(BoeFeature):
             if 'passage' in self.l_feature:
                 h_proximity_f = self._entity_proximity_features(q_info, l_grid, field)
                 h_feature.update(add_feature_prefix(h_proximity_f, field + '_'))
-            if 'grid' in self.l_feature
+            if 'grid' in self.l_feature:
                 h_grid_score_f = self._grid_score_features(qe, l_grid)
                 h_feature.update(add_feature_prefix(h_grid_score_f, field + '_'))
         return h_feature
