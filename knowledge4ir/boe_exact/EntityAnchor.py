@@ -284,6 +284,7 @@ class EntityAnchorFeature(BoeFeature):
             self.resource.corpus_stat.h_field_avg_len.get(field, None)
         )
         h_score = dict(r_model.scores())
+        del h_score['lm_twoway']
         h_feature = add_feature_prefix(h_score, 'DespPassage')
         return h_feature
 
