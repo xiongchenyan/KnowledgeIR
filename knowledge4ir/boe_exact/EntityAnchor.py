@@ -204,7 +204,6 @@ class EntityAnchorFeature(BoeFeature):
             h_this_score['Sum'] = sum(l_qe_score)
             h_this_score['Max'] = max(l_qe_score)
             h_this_score['FullCombine'] = sum(
-                sum(ll_this_grid_score, []),
                 [sum(l_score) / max(float(len(l_score)), 1.0) for l_score in ll_this_grid_score]
             )
             h_this_score['NormSum'] = sum([l_score[0] / float(max(sum(l_score), 1.0))
