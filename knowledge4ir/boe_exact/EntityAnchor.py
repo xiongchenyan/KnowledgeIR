@@ -266,7 +266,7 @@ class EntityAnchorFeature(BoeFeature):
         coor = r_m.coordinate() / z
         lm = r_m.lm() / z
         l_score = [['coor', coor], ['lm', lm]]
-        return coor
+        return l_score
 
 
     def _entity_passage_features(self, q_info, l_grid, field):
