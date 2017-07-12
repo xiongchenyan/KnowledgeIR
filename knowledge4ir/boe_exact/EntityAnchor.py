@@ -130,7 +130,7 @@ class EntityAnchorFeature(BoeFeature):
     def _pair_e_coherence(self, l_grid, target_e=None):
         h_feature = dict()
         h_e_pos = self._form_grid_reverse_index(l_grid)
-        l_p = range(l_grid)
+        l_p = range(len(l_grid))
         if target_e is not None:
             l_p = h_e_pos.get(target_e)
         l_total_bipLC = []
