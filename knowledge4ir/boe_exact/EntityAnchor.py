@@ -52,7 +52,7 @@ class EntityAnchorFeature(BoeFeature):
     l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
-    l_grid_scores = ['freq', 'uw_emb', 'gloss_emb', 'gloss_bow', 'desp_emb', 'desp_bow']
+    l_grid_scores = ['freq', 'uw_emb', 'desp_emb', 'desp_bow']
     l_feature = List(Unicode, default_value=['passage', 'grid']).tag(config=True)
 
     def set_resource(self, resource):
