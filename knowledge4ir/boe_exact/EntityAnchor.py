@@ -161,9 +161,9 @@ class EntityAnchorFeature(BoeFeature):
                 self.resource.corpus_stat.h_field_total_df.get(field, None),
                 self.resource.corpus_stat.h_field_avg_len.get(field, None)
             )
-            l_scores.append(dict(r_model.all_scores()))
+            l_scores.append(dict(r_model.scores()))
         h_feature = dict()
-        h_feature.update(mean_pool_feature(l_scores))
+        # h_feature.update(mean_pool_feature(l_scores))
         h_feature.update(max_pool_feature(l_scores))
 
         grid_lm = text2lm(' '.join(l_grid_sent))
@@ -174,7 +174,7 @@ class EntityAnchorFeature(BoeFeature):
             self.resource.corpus_stat.h_field_total_df.get(field, None),
             self.resource.corpus_stat.h_field_avg_len.get(field, None)
         )
-        h_score = dict(r_model.all_scores())
+        h_score = dict(r_model.scores())
         h_feature.update(h_score)
 
         h_feature = add_feature_prefix(h_feature, 'EntityProximity')
