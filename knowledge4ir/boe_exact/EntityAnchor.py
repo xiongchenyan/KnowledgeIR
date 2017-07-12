@@ -166,7 +166,7 @@ class EntityAnchorFeature(BoeFeature):
         h_feature.update(mean_pool_feature(l_scores))
         h_feature.update(max_pool_feature(l_scores))
 
-        grid_lm = text2lm([' '.join(l_grid_sent)])
+        grid_lm = text2lm(' '.join(l_grid_sent))
         r_model = RetrievalModel()
         r_model.set_from_raw(
             q_lm, grid_lm,
