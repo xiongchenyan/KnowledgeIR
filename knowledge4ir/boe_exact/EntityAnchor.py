@@ -118,18 +118,24 @@ class EntityAnchorFeature(BoeFeature):
         if e not in self.resource.embedding:
             return 0
         e_emb = self.resource.embedding[e]
+        if grid_emb is None:
+            return 0
         return 1 - cosine(e_emb, grid_emb)
 
     def _e_gloss_emb(self, e, grid_emb):
         desp = self.resource.h_e_desp.get(e, "")
         gloss = ' '.join(desp.split()[:self.gloss_len])
         e_emb = avg_embedding(self.resource.embedding, gloss)
-        return 1 - cosine(e_emb, grid_emb)
+        if (e_emb is None) | (grid_emb is None):
+            return 0
+        return max(1 - cosine(e_emb, grid_emb), 0)
 
     def _e_desp_emb(self, e, grid_emb):
         desp = self.resource.h_e_desp.get(e, "")
         e_emb = avg_embedding(self.resource.embedding, desp)
-        return 1 - cosine(e_emb, grid_emb)
+        if (e_emb is None) | (grid_emb is None):
+            return 0
+        return max(1 - cosine(e_emb, grid_emb), 0)
 
     def _e_gloss_bow(self, e, grid_lm):
         desp = self.resource.h_e_desp.get(e, "")
