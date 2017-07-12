@@ -291,8 +291,8 @@ class EntityAnchorFeature(BoeFeature):
             # h_this_score['FullCombine'] = sum(
             #     [sum(l_score) / max(float(len(l_score)), 1.0) for l_score in ll_this_grid_score]
             # )
-            # h_this_score['NormSum'] = sum([l_score[0] / float(max(sum(l_score), 1.0))
-            #                                for l_score in ll_this_grid_score])
+            h_this_score['NormSum'] = sum([l_score[0] / float(max(sum(l_score), 1.0))
+                                           for l_score in ll_this_grid_score])
             h_this_score = add_feature_prefix(h_this_score, name)
             h_feature.update(h_this_score)
         return h_feature
