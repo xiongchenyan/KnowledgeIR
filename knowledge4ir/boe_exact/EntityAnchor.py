@@ -134,7 +134,7 @@ class EntityAnchorFeature(BoeFeature):
         h_e_pos = self._form_grid_reverse_index(l_grid)
         l_p = range(len(l_grid))
         if target_e is not None:
-            l_p = h_e_pos.get(target_e)
+            l_p = h_e_pos.get(target_e, [])
         l_total_bipLC = []
         for grid_p in l_p:
             grid = l_grid[grid_p]
