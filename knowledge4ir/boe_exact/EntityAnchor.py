@@ -54,7 +54,8 @@ class EntityAnchorFeature(BoeFeature):
     l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
     gloss_len = Int(15, help='gloss length').tag(config=True)
     max_grid_sent_len = Int(100, help='max grid sentence len to consider').tag(config=True)
-    l_grid_scores = ['freq', 'uw_emb', 'desp_emb', 'desp_bow', 'desp_coor']
+    l_grid_scores = List(Unicode, default_value=['freq', 'uw_emb', 'desp_emb', 'desp_bow', 'desp_coor']
+                         ).tag(config=True)
     l_feature = List(Unicode, default_value=['passage', 'grid', 'coherence', 'desp', 'esr']).tag(config=True)
 
     def set_resource(self, resource):
@@ -82,8 +83,9 @@ class EntityAnchorFeature(BoeFeature):
         for field in self.l_target_fields:
             l_grid = doc_info.get(E_GRID_FIELD, {}).get(field, [])
             l_qe_grid = self._filter_e_grid(qe, l_grid)
+            doc_lm = text2lm(doc_info.get(field, ""))
             if 'grid' in self.l_feature:
-                l_qe_grid = self._calc_grid_scores(l_qe_grid)
+                l_qe_grid = self._calc_grid_scores(l_qe_grid, doc_lm)
 
             if 'passage' in self.l_feature:
                 h_proximity_f = self._entity_passage_features(q_info, l_qe_grid, field)
@@ -197,7 +199,7 @@ class EntityAnchorFeature(BoeFeature):
                 h_e_pos[e_id].append(pos)
         return h_e_pos
 
-    def _calc_grid_scores(self, l_grid):
+    def _calc_grid_scores(self, l_grid, doc_lm):
         """
         sent -> e scores
         include:
@@ -226,6 +228,7 @@ class EntityAnchorFeature(BoeFeature):
                 # h_e_score['gloss_bow'] = self._e_gloss_bow(e, grid_lm)
                 h_e_score['desp_emb'] = self._e_desp_emb(e, grid_emb)
                 h_e_score['desp_bow'] = self._e_desp_bow(e, grid_lm)
+                h_e_score['ESA'] = self._e_desp_bow(e, doc_lm)
                 l_score = self._e_desp_retrieval(e, grid_lm)
                 h_e_score.update(add_feature_prefix(dict(l_score), 'desp_'))
                 l_e_score.append(h_e_score)
