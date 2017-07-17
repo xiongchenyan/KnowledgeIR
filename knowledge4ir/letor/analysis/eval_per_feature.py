@@ -44,22 +44,22 @@ def form_rank(svm_in, feature_d):
     return l_q_ranking
 
 
-def eva_feature(svm_in, feature_d, out_pre):
+def eva_feature(svm_in, feature_d, out_pre, depth):
     l_q_ranking = form_rank(svm_in, feature_d)
     out_name = out_pre + '.tmp_trec'
     dump_trec_ranking_with_score(l_q_ranking, out_name)
-    eva_str = subprocess.check_output(['perl', GDEVAL_PATH, qrel_path, out_name])
+    eva_str = subprocess.check_output(['perl', GDEVAL_PATH, '-k', '%d' % depth, qrel_path, out_name])
     l_qid_eva, ndcg, err = seg_gdeval_out(eva_str, True)
     return l_qid_eva, ndcg, err
 
 
-def main(svm_in, feature_name_in, out_name):
+def main(svm_in, feature_name_in, out_name, depth):
     h_feature = json.load(open(feature_name_in))
     out = open(out_name, 'w')
     l_feature_d = h_feature.items()
     l_feature_d.sort(key=lambda item: item[0])
     for feature, d in l_feature_d:
-        __, ndcg, err = eva_feature(svm_in, d, out_name)
+        __, ndcg, err = eva_feature(svm_in, d, out_name, depth)
         print >> out, '%s:%f,%f' % (feature, ndcg, err)
     out.close()
     logging.info('finished')
@@ -68,9 +68,12 @@ def main(svm_in, feature_name_in, out_name):
 if __name__ == '__main__':
     import sys
 
-    if 3 != len(sys.argv):
-        print "svm in + qrel in"
+    if 3 > len(sys.argv):
+        print "svm in + qrel in + depth (opt default 20)"
         sys.exit(-1)
     global qrel_path
     qrel_path = sys.argv[2]
-    main(sys.argv[1], sys.argv[1] + '_name.json', sys.argv[1] + '.feature_eval')
+    d = 20
+    if len(sys.argv) > 3:
+        d = int(sys.argv[3])
+    main(sys.argv[1], sys.argv[1] + '_name.json', sys.argv[1] + '.feature_eval', d)
