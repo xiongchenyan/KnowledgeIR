@@ -55,9 +55,23 @@ class CorpusStat(Configurable):
     def __init__(self, **kwargs):
         super(CorpusStat, self).__init__(**kwargs)
         if self.corpus_stat_in:
-            l_data = pickle.load(open(self.corpus_stat_in, 'rb'))
-            self.h_field_df, self.h_field_total_df, self.h_field_avg_len = l_data
-            logging.info('corpus stat in [%s] loaded', self.corpus_stat_in)
+            self.load(self.corpus_stat_in)
+            # logging.info('loading corpus stat in [%s]...', self.corpus_stat_in)
+            # l_data = pickle.load(open(self.corpus_stat_in, 'rb'))
+            # self.h_field_df, self.h_field_total_df, self.h_field_avg_len = l_data
+            # logging.info('corpus stat in [%s] loaded', self.corpus_stat_in)
+
+    def load(self, in_name):
+        self.corpus_stat_in = in_name
+        logging.info('loading corpus stat in [%s]...', in_name)
+        l_data = pickle.load(open(self.corpus_stat_in, 'rb'))
+        self.h_field_df, self.h_field_total_df, self.h_field_avg_len = l_data
+        logging.info('corpus stat in [%s] loaded', self.corpus_stat_in)
+
+    def dump(self, out_name):
+        l_data = [self.h_field_df, self.h_field_total_df, self.h_field_avg_len]
+        pickle.dump(l_data, open(out_name, 'wb'))
+        logging.info('dumped corpus stat to [%s]', out_name)
 
 
 class RetrievalModel(Configurable):
@@ -150,7 +164,8 @@ class RetrievalModel(Configurable):
 
     def scores(self):
         l_name_score = self.all_scores()
-        l_score = [(name, score) for name, score in l_name_score if name in self.default_model_group]
+        l_score = [(name, score)
+                   for name, score in l_name_score if name in self.default_model_group]
         return l_score
 
     def all_scores(self, lm_para=LmPara(), bm25_para=BM25Para()):

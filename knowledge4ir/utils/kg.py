@@ -112,3 +112,47 @@ def read_surface_form(kg_in):
     h_surface_name = dict(l_items)
     logging.info('loaded [%d] entity surface names', len(h_surface_name))
     return h_surface_name
+
+
+def load_nlss_dict(nlss_dump, max_nlss_per_e=100):
+    """
+    load nlss dump from entity_grid (from wiki)
+    :param nlss_dump: input nlss data
+    :param max_nlss_per_e: maximum number of nlss loaded per entity
+    :return: h_nlss, e_id -> [(sent, l_e_id in sent)]
+    """
+    h_nlss = dict()
+
+    logging.info('loading nlss from [%s]', nlss_dump)
+    cnt = 0
+    skipped_cnt = 0
+    for p, line in enumerate(open(nlss_dump)):
+        cnt += 1
+        if not p % 100000:
+            logging.info('loaded [%d] nlss line', p)
+        cols = line.strip().split('\t')
+        assert len(cols) >= 4
+        e_id, s_id = cols[:2]
+        sent = json.loads(cols[2])
+        l_e = json.loads(cols[3])
+
+        if e_id not in h_nlss:
+            h_nlss[e_id] = []
+        if len(h_nlss[e_id]) < max_nlss_per_e:
+            h_nlss[e_id].append((sent, l_e))
+        else:
+            skipped_cnt += 1
+
+    logging.info('loaded [%d] nlss for [%d] entities, max [%d] per e, skiped [%d] nlss',
+                 cnt, len(h_nlss), max_nlss_per_e, skipped_cnt)
+    return h_nlss
+
+
+def dump_nlss_dict_to_json(out_name, h_nlss):
+    out = open(out_name, 'w')
+    for key, l_nlss in h_nlss.items():
+        h = dict()
+        h['id'] = key
+        h['nlss'] = l_nlss
+        print >> out, json.dumps(h)
+    out.close()

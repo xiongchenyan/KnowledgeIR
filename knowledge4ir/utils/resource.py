@@ -5,13 +5,19 @@ resource to keep in memory to be shared across the pipeline
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
+    List,
+    Int,
 )
 import logging
 import json
 from gensim.models import Word2Vec
 from knowledge4ir.utils.retrieval_model import CorpusStat
 from knowledge4ir.utils import (
-    load_trec_ranking_with_score
+    load_trec_ranking_with_score,
+    load_json_info,
+)
+from knowledge4ir.utils.kg import (
+    load_nlss_dict,
 )
 
 
@@ -30,7 +36,13 @@ class JointSemanticResource(Configurable):
                            ).tag(config=True)
     prf_sent_path = Unicode(help="prf sentence json dict path"
                             ).tag(config=True)
-    
+    entity_edge_path = Unicode(help='entity edge json path').tag(config=True)
+
+    l_nlss_path = List(Unicode, help='paths to different nlss dumps').tag(config=True)
+    l_nlss_name = List(Unicode, help='names of nlss').tag(config=True)
+    max_nlss_per_e = Int(100, help='maximum nlss per e to derive').tag(config=True)
+
+    entity_desp_path = Unicode(help='e id desp file').tag(config=True)
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
         self.embedding = None
@@ -40,6 +52,9 @@ class JointSemanticResource(Configurable):
         self.h_entity_fields = None
         self.h_q_boe_rm3 = None
         self.h_q_prf_sent = None
+        self.l_h_nlss = None
+        self.h_e_edge = None
+        self.h_e_desp = None
         self._load()
         self.corpus_stat = CorpusStat(**kwargs)
 
@@ -49,6 +64,9 @@ class JointSemanticResource(Configurable):
         CorpusStat.class_print_help(inst)
 
     def _load(self):
+        logging.info('start loading joint semantic resources')
+        self._load_edge()
+        self._load_nlss()
         self._load_entity_fields()
         self._load_sf()
         self._load_emb()
@@ -56,7 +74,36 @@ class JointSemanticResource(Configurable):
         self._load_sf_stat()
         self._load_boe_rm3()
         self._load_prf_sent()
+        self._load_desp()
+        logging.info('joint semantic resource loaded')
         return
+
+    def _load_desp(self):
+        if not self.entity_desp_path:
+            return
+        logging.info('loading entity desp [%s]', self.entity_desp_path)
+        h_nlss = load_nlss_dict(self.entity_desp_path)
+        self.h_e_desp = dict()
+        for e, l_sent in h_nlss.items():
+            self.h_e_desp[e] = l_sent[0][0]
+        logging.info('loaded [%d] entity descriptions', len(self.h_e_desp))
+
+    def _load_edge(self):
+        if not self.entity_edge_path:
+            return
+        logging.info('loading entity edges from [%s]', self.entity_edge_path)
+        self.h_e_edge = load_json_info(self.entity_edge_path, 'id')
+        logging.info('[%d] entities\'s edge loaded', len(self.h_e_edge))
+
+    def _load_nlss(self):
+        if not self.l_nlss_path:
+            return
+        assert len(self.l_nlss_path) == len(self.l_nlss_name)
+        logging.info('nlss: %s',
+                     json.dumps(zip(self.l_nlss_name, self.l_nlss_path)))
+        self.l_h_nlss = [load_nlss_dict(nlss_path, self.max_nlss_per_e)
+                         for nlss_path in self.l_nlss_path]
+        logging.info('nlss loaded')
 
     def _load_sf(self):
         if not self.surface_form_path:

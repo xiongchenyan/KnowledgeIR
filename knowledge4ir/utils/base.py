@@ -353,10 +353,16 @@ def feature_hash(l_h_feature):
     """
     l_h_hashed_feature = []
     h_name = {}
+    l_name = []
     for h_feature in l_h_feature:
-        for name in h_feature.keys():
-            if name not in h_name:
-                h_name[name] = len(h_name) + 1
+        l_name.extend(h_feature.keys())
+    l_name = list(set(l_name))
+    l_name.sort()
+    if 'base' in l_name:
+        l_name = ['base'] + [name for name in l_name if name != 'base']
+    for name in l_name:
+        if name not in h_name:
+            h_name[name] = len(h_name) + 1
     for h_feature in l_h_feature:
         h_new_feature = {}
         for name, score in h_feature.items():
@@ -364,8 +370,6 @@ def feature_hash(l_h_feature):
             h_new_feature[name] = score
         l_h_hashed_feature.append(h_new_feature)
     return l_h_hashed_feature, h_name
-
-
 
 
 def load_gdeval_res(in_name, with_mean=True):
@@ -475,11 +479,11 @@ def form_bins(nb_bin, bin_range=1):
     l_bins = [1]
     if nb_bin == 1:
         return l_bins
-    bin_size = bin_range / (nb_bin - 1)
+    bin_size = bin_range / float(nb_bin - 1)
     for i in xrange(nb_bin - 1):
         bound = l_bins[i] - bin_size
         l_bins.append(bound)
-    # logging.info('using bin [%s]', json.dumps(l_bins))
+    logging.debug('using bin [%s]', json.dumps(l_bins))
     return l_bins
 
 
@@ -545,16 +549,25 @@ def load_doc_info(in_name):
     return h_doc_info
 
 
-def load_json_info(in_name, key_field='docno'):
+def load_json_info(in_name, key_field='docno', unpack=True):
     """
     load json format info file
     :param in_name: input, each line is a json (dict)
     :param key_field: the field to index
+    :param unpack: whether to unpack json lines
     :return: h_info key->dict
     """
-    l_h = [json.loads(line) for line in open(in_name)]
-    l_key = [h[key_field] for h in l_h]
-    h_info = dict(zip(l_key, l_h))
+    logging.info('loading [%s] with key [%s]', in_name, key_field)
+    if unpack:
+        l_h = [json.loads(line) for line in open(in_name)]
+        l_key = [h[key_field] for h in l_h]
+        h_info = dict(zip(l_key, l_h))
+    else:
+        logging.info('delay unpack json string at run time, return key->line mapping')
+        h_info = {}
+        for line in open(in_name):
+            h_info[json.loads(line)[key_field]] = line.strip()
+    logging.info('loaded [%d] info', len(h_info))
     return h_info
 
 
@@ -573,23 +586,41 @@ def load_corpus_stat(in_pre, l_field=TARGET_TEXT_FIELDS):
     return l_field_h_df, h_corpus_stat
 
 
-def mean_pool_feature(l_h_feature):
+def mean_pool_feature(l_h_feature, add_suffix=True):
     h_res = dict()
     z = float(len(l_h_feature))
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
-            h_res[key + "_Mean"] = v / z + h_res.get(key, 0)
-    return h_res
+            h_res[key] = v / z + h_res.get(key, 0)
+    if add_suffix:
+        return add_feature_suffix(h_res, '_Mean')
+    else:
+        return h_res
 
 
-def max_pool_feature(l_h_feature):
+def max_pool_feature(l_h_feature, add_suffix=True):
     h_res = dict()
     z = float(len(l_h_feature))
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
             h_res[key] = max(v, h_res.get(key, -10000000))
-    h_res = dict([(item[0] + '_Max', item[1]) for item in h_res.items()])
-    return h_res
+    # h_res = dict([(item[0] + '_Max', item[1]) for item in h_res.items()])
+    if add_suffix:
+        return add_feature_suffix(h_res, '_Max')
+    else:
+        return h_res
+
+
+def sum_pool_feature(l_h_feature, add_suffix=True):
+    h_res = dict()
+    for h_feature in l_h_feature:
+        for key, v in h_feature.items():
+            h_res[key] = v + h_res.get(key, 0)
+    if add_suffix:
+        return add_feature_suffix(h_res, '_Sum')
+    else:
+        return h_res
+
 
 def log_sum_feature(l_h_feature):
     h_res = dict()
@@ -599,4 +630,15 @@ def log_sum_feature(l_h_feature):
     return h_res
 
 
+def add_feature_prefix(h_feature, prefix):
+    h_new = dict(
+        [(prefix + key, value) for key, value in h_feature.items()]
+    )
+    return h_new
 
+
+def add_feature_suffix(h_feature, suffix):
+    h_new = dict(
+        [(key + suffix, value) for key, value in h_feature.items()]
+    )
+    return h_new

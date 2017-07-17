@@ -21,8 +21,8 @@ from knowledge4ir.utils import (
     mean_pool_feature,
     log_sum_feature,
     SPOT_FIELD,
-    COREFERENCE_FIELD
-)
+    COREFERENCE_FIELD,
+    add_feature_prefix, avg_embedding, text2lm)
 from knowledge4ir.utils.retrieval_model import (
     RetrievalModel,
 )
@@ -40,17 +40,12 @@ class BoeFeature(Configurable):
         super(BoeFeature, self).__init__(**kwargs)
         self.resource = None
 
-    def extract_pair(self, q_info, doc_info):
-        """
-        extract boe based features for q-d pair
-        :param q_info: annotated query info
-        :param doc_info: annotated doc info
-        :return: h_feature = {'feature name': value}
-        """
-        raise NotImplementedError
 
     def set_resource(self, resource):
         self.resource = resource
+
+    def close_resource(self):
+        pass
 
     def _get_field_ana(self, h_info, field):
         l_h_e = []
@@ -130,6 +125,45 @@ class BoeFeature(Configurable):
     #             st, ed = ana[1:3]
     #             h_loc[field][st] = ed
     #     return h_loc
+
+    def extract_pair(self, q_info, doc_info):
+        """
+
+        :param q_info:
+        :param doc_info:
+        :return:
+        """
+        logging.debug('extracting e_grid nlss features for [%s][%s]',
+                      q_info['qid'], doc_info['docno'])
+        l_q_ana = self._get_field_ana(q_info, QUERY_FIELD)
+        logging.debug('q info %s', json.dumps(q_info))
+        logging.debug('q ana %s', json.dumps(l_q_ana))
+        logging.debug('doc t [%s], info [%s]', doc_info.get('title', ""),
+                      json.dumps(doc_info.get('spot', {}).get('title', []))
+                      )
+        l_h_feature = [self.extract_per_entity(q_info, ana, doc_info) for ana in l_q_ana]
+
+        h_final_feature = {}
+        # h_final_feature.update(log_sum_feature(l_h_feature))
+        h_final_feature.update(mean_pool_feature(l_h_feature))
+        # h_final_feature = dict([(self.feature_name_pre + item[0], item[1])
+        #                         for item in h_final_feature.items()])
+        h_final_feature = add_feature_prefix(h_final_feature, self.feature_name_pre + '_')
+
+        return h_final_feature
+
+    def extract_per_entity(self, q_info, ana, doc_info):
+        logging.warn('need implement this function in inherited class')
+        pass
+
+    def _form_sents_emb(self, l_sent):
+        l_emb = [avg_embedding(self.resource.embedding, sent)
+                 for sent in l_sent]
+        return l_emb
+
+    def _form_sents_bow(self, l_sent):
+        l_h_lm = [text2lm(sent, clean=True) for sent in l_sent]
+        return l_h_lm
 
 
 class AnaMatch(BoeFeature):

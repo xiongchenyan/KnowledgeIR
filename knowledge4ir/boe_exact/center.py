@@ -27,12 +27,19 @@ from knowledge4ir.boe_exact import (
     CoreferenceMatch,
 )
 from knowledge4ir.boe_exact.salient_feature import SalientFeature
+from knowledge4ir.boe_exact.nlss_exp import NLSSExpansionFeature
+from knowledge4ir.boe_exact.nlss_grid import EGridNLSSFeature
+from knowledge4ir.boe_exact.nlss_edge_count import NLSSEdgeCountFeature
+from knowledge4ir.boe_exact.EntityAnchor import EntityAnchorFeature
+from knowledge4ir.boe_exact.nlss_star import NLSSStar
+from knowledge4ir.boe_exact.grid_stat import GridStat
 from knowledge4ir.utils import (
     load_py_config,
     load_trec_ranking_with_score,
     load_trec_labels_dict,
     dump_svm_from_raw,
     set_basic_log,
+    load_json_info,
 )
 from knowledge4ir.utils.resource import JointSemanticResource
 
@@ -43,7 +50,14 @@ class BoeLeToRFeatureExtractCenter(Configurable):
                            ).tag(config=True)
     h_feature_extractor = {"AnaExact": AnaMatch,
                            "CoRef": CoreferenceMatch,
-                           "Salient": SalientFeature}
+                           "Salient": SalientFeature,
+                           "GridNLSS": EGridNLSSFeature,
+                           "NLSSExp": NLSSExpansionFeature,
+                           "NLSSEdgeCnt": NLSSEdgeCountFeature,
+                           "NLSSStar": NLSSStar,
+                           'GridStat': GridStat,
+                           'EntityAnchor': EntityAnchorFeature,
+                           }
 
     trec_rank_in = Unicode(help='trec rank candidate doc in').tag(config=True)
     q_info_in = Unicode(help='prepared query info in').tag(config=True)
@@ -58,17 +72,15 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         self.h_q_info = dict()
         self.h_doc_info = dict()
         self.h_qrel = dict()
-
-        self._set_extractor(**kwargs)
         self._load_data()
+        self._set_extractor(**kwargs)
 
     @classmethod
     def class_print_help(cls, inst=None):
         super(BoeLeToRFeatureExtractCenter, cls).class_print_help(inst)
-        print json.dumps(cls.h_feature_extractor.keys())
-        JointSemanticResource.class_print_help(inst)
-        AnaMatch.class_print_help(inst)
-        CoreferenceMatch.class_print_help(inst)
+        for name, extractor in cls.h_feature_extractor.items():
+            print name
+            extractor.class_print_help(inst)
 
     def _set_extractor(self, **kwargs):
         for name in self.l_feature_group:
@@ -85,14 +97,18 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         self.h_qrel = load_trec_labels_dict(self.qrel_in)
         logging.info('loaded qrel [%s]', self.qrel_in)
 
-        l_h_data = [json.loads(line) for line in open(self.q_info_in)]
-        l_qid = [h['qid'] for h in l_h_data]
-        self.h_q_info = dict(zip(l_qid, l_h_data))
+        logging.info('loading q info')
+        # l_h_data = [json.loads(line) for line in open(self.q_info_in)]
+        # l_qid = [h['qid'] for h in l_h_data]
+        # self.h_q_info = dict(zip(l_qid, l_h_data))
+        self.h_q_info = load_json_info(self.q_info_in, 'qid', unpack=True)
         logging.info('loaded [%d] q info [%s]', len(self.h_q_info), self.q_info_in)
 
-        l_h_data = [json.loads(line) for line in open(self.doc_info_in)]
-        l_docno = [h['docno'] for h in l_h_data]
-        self.h_doc_info = dict(zip(l_docno, l_h_data))
+        logging.info('loading doc info')
+        self.h_doc_info = load_json_info(self.doc_info_in, 'docno', unpack=False)
+        # for line in open(self.doc_info_in):
+        #     docno = json.loads(line)['docno']
+        #     self.h_doc_info[docno] = line.strip()
         logging.info('loaded [%d] doc info [%s]', len(self.h_doc_info), self.doc_info_in)
 
     def extract(self):
@@ -106,6 +122,8 @@ class BoeLeToRFeatureExtractCenter(Configurable):
             logging.info('start extracting q [%s]', q)
             for docno, base_score in ranking:
                 doc_info = self.h_doc_info.get(docno, {'docno': docno})
+                if type(doc_info) is str:
+                    doc_info = json.loads(doc_info)
                 label = self.h_qrel.get(q, {}).get(docno, 0)
                 h_feature = dict()
                 h_feature['base'] = base_score
@@ -125,7 +143,12 @@ class BoeLeToRFeatureExtractCenter(Configurable):
         logging.info('ranking features dumped to [%s]', self.out_name)
         json.dump(h_name, open(self.out_name + '_name.json', 'w'), indent=1)
         logging.info('ranking name dumped to [%s_name.json]', self.out_name)
+        self._close_extractor()
         return
+
+    def _close_extractor(self):
+        for extractor in self.l_extractor:
+            extractor.close_resource()
 
 
 if __name__ == '__main__':

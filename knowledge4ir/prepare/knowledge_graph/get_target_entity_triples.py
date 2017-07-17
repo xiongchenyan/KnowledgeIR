@@ -23,11 +23,11 @@ sys.setdefaultencoding('UTF8')
 
 set_basic_log()
 if 4 != len(sys.argv):
-    print "2 para: fb rbf dump + target entity + out "
+    print "3 para: fb rbf dump + target entity + out "
     sys.exit(-1)
 
 
-s_entity = set(open(sys.argv[2]).read().splitlines())
+s_entity = set([line.strip().split()[0] for line in open(sys.argv[2])])
 
 reader = FbDumpReader()
 cnt = 0
@@ -45,7 +45,18 @@ for o_cnt, l_v_col in enumerate(reader.read(sys.argv[1])):
     # h_res[oid] = l_v_col
     h = dict()
     h['id'] = oid
-    h['triples'] = l_v_col
+
+    l_edges = []
+    for v_col in l_v_col:
+        edge = parser.discard_prefix(v_col[1])
+        tail = v_col[2]
+        possible_id = parser.get_id_for_col(tail)
+        if possible_id:
+            tail = possible_id
+        else:
+            tail = parser.discard_prefix(tail)
+        l_edges.append([edge, tail])
+    h['edges'] = l_edges
     print >> out, json.dumps(h)
     cnt += 1
 
