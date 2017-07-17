@@ -22,7 +22,7 @@ import json
 import logging
 
 
-def form_rank(svm_in, feature_d):
+def form_rank(svm_in, feature_d, w):
     h_q_ranking = {}
 
     for line in open(svm_in):
@@ -32,7 +32,7 @@ def form_rank(svm_in, feature_d):
         score = 0
         for col in cols:
             if col.startswith('%s:' % feature_d):
-                score = float(col.split(':')[-1])
+                score = float(col.split(':')[-1]) * w
                 break
         if qid not in h_q_ranking:
             h_q_ranking[qid] = []
@@ -44,8 +44,8 @@ def form_rank(svm_in, feature_d):
     return l_q_ranking
 
 
-def eva_feature(svm_in, feature_d, out_pre, depth):
-    l_q_ranking = form_rank(svm_in, feature_d)
+def eva_feature(svm_in, feature_d, out_pre, depth, w):
+    l_q_ranking = form_rank(svm_in, feature_d, w)
     out_name = out_pre + '.tmp_trec'
     dump_trec_ranking_with_score(l_q_ranking, out_name)
     eva_str = subprocess.check_output(['perl', GDEVAL_PATH, '-k', '%d' % depth, qrel_path, out_name])
@@ -59,8 +59,9 @@ def main(svm_in, feature_name_in, out_name, depth):
     l_feature_d = h_feature.items()
     l_feature_d.sort(key=lambda item: item[0])
     for feature, d in l_feature_d:
-        __, ndcg, err = eva_feature(svm_in, d, out_name, depth)
-        print >> out, '%s:%f,%f' % (feature, ndcg, err)
+        for name, w in zip(['', 'reverse_'], [1.0, -1.0]):
+            __, ndcg, err = eva_feature(svm_in, d, out_name, depth, w)
+            print >> out, '%s:%f,%f' % (name + feature, ndcg, err)
     out.close()
     logging.info('finished')
 
