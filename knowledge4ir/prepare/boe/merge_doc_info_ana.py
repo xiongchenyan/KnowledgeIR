@@ -39,7 +39,11 @@ def merge_boe(h_doc_info_base, h_doc_info_update):
 
 
 def merge_raw_field(h_doc_info_base, h_doc_info_update):
-    h_doc_info_base.update(h_doc_info_update)
+    # h_doc_info_base.update(h_doc_info_update)
+    for field in h_doc_info_update.keys():
+        if (field != 'tagme') & (field != 'spot'):
+            h_doc_info_base[field] = h_doc_info_update[field]
+    h_doc_info_base = merge_boe(h_doc_info_base, h_doc_info_update)
     return h_doc_info_base
 
 
@@ -89,6 +93,7 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
                 h_total_info = merge_boe(h_base_info, h_update_info)
             elif merge_format == 'all':
                 h_total_info = merge_raw_field(h_base_info, h_update_info)
+                # h_total_info = merge_boe(h_total_info, h_base_info)
             elif merge_format == 's2':
                 h_base_info = s2_replace(h_base_info)
                 h_update_info = s2_replace(h_update_info)
