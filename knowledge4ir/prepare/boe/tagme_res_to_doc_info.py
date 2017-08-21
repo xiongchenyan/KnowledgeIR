@@ -62,14 +62,15 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
     h = dict()
     if tagged_field == 'query':
         h['qid'] = data_id
-        h[QUERY_FIELD] = doc_cols[1]
+        # h[QUERY_FIELD] = doc_cols[1]
     else:
-        h[title_field] = doc_cols[1]
-        if tagged_field == abstract_field:
-            h[abstract_field] = doc_cols[2]
-        else:
-            h[body_field] = doc_cols[2]
         h['docno'] = data_id
+        # h[title_field] = doc_cols[1]
+        # if tagged_field == abstract_field:
+        #     h[abstract_field] = doc_cols[2]
+        # else:
+        #     h[body_field] = doc_cols[2]
+    h[tagged_field] = doc_cols[1]
     h['spot'] = dict()
     h[SPOT_FIELD][tagged_field] = l_ana
     h = convert_offset(h)
@@ -77,7 +78,8 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
 
 
 def process(tagme_in, wiki_fb_dict_in, out_name, tagged_field):
-    h_wiki_fb = dict([line.strip().split('\t')[:2] for line in open(wiki_fb_dict_in)])
+    h_wiki_fb = dict([line.strip().split('\t')[:2]
+                      for line in open(wiki_fb_dict_in)])
     logging.info('wiki fb dict loaded')
     out = open(out_name, 'w')
 
@@ -94,7 +96,7 @@ if __name__ == '__main__':
     from knowledge4ir.utils import set_basic_log
     set_basic_log()
     if 5 != len(sys.argv):
-        print "4 para: tag me out + wiki fb matching dict + out  + tagged field (title|bodyText|paperAbstract|query)"
+        print "4 para: tag me out (docno+text) + wiki fb matching dict + out  + field name (title|bodyText|paperAbstract|query)"
         sys.exit(-1)
 
     process(*sys.argv[1:])
