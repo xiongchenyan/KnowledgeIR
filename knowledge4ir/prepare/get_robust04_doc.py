@@ -29,17 +29,33 @@ BODY_FIELD = "TEXT"
 SUFFIX = '.dat'
 
 
+def split_doc(lines):
+    l_doc_line = []
+    l_current_line = []
+    for line in lines:
+        l_current_line.append(line)
+        if line.startswith("</DOC>"):
+            l_doc_line.append(l_current_line)
+            l_current_line = []
+    return l_doc_line
+
+
 def parse_one_trec_xml_file(in_name, s_target_docno):
     print "start processing [%s]" % in_name
     l = open(in_name).read()
     l = l.replace("&", "&#038;")
-    l = "<root>" + l + "</root>"
-    xml_tree = ET.fromstring(l)
+    l_doc_lines = split_doc(l.splitlines())
+    print "total [%d] doc" % len(l_doc_lines)
     cnt = 0
     l_doc_title = []
     l_doc_body = []
-    for doc in xml_tree:
+    parse_err = 0
+    for doc_lines in l_doc_lines:
         cnt += 1
+        try:
+            doc = ET.fromstring('\n'.join(doc_lines))
+        except ET.ParseError:
+            parse_err += 1
         docno = doc.find(ID_FIELD).text.strip()
         if docno not in s_target_docno:
             continue
@@ -49,7 +65,7 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         body_text = ' '.join(word_tokenize(body_text))
         l_doc_title.append((docno, title))
         l_doc_body.append((docno, body_text))
-    print "[%s] file, [%d/%d] are target docs" % (in_name, len(l_doc_title), cnt)
+    print "[%s] file, [%d/%d] are target docs [%d] parse err" % (in_name, len(l_doc_title), cnt, parse_err)
     return l_doc_title, l_doc_body
 
 
