@@ -18,6 +18,7 @@ import os
 from nltk.tokenize import word_tokenize
 from knowledge4ir.utils import load_trec_ranking
 import sys
+import re
 
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
@@ -40,6 +41,61 @@ def split_doc(lines):
     return l_doc_line
 
 
+def manual_get_docno(lines):
+    docno = ""
+    for line in lines:
+        if line.startswith("<DOCNO>"):
+            text = line.replace("</DOCNO>", "").replace("<DOCNO>", "")
+            docno = text.strip()
+    print "manual get [%s]" % docno
+    return docno
+
+
+def manual_get_title(lines):
+    l_line = []
+    flag = False
+    for line in lines:
+        if "<HEADLINE>" in line:
+            flag = True
+        if flag:
+            l_line.append(line)
+        if "</HEADLINE>" in line:
+            break
+
+    title = re.sub('<[^>]*>', '', '\n'.join(l_line))
+    print "get title [%s]" % title
+    return title
+
+
+def manual_get_body(lines):
+    l_line = []
+    flag = False
+    for line in lines:
+        if "<TEXT>" in line:
+            flag = True
+        if flag:
+            l_line.append(line)
+        if "</TEXT>" in line:
+            break
+
+    body = re.sub('<[^>]*>', '', '\n'.join(l_line))
+    print "get body [%s]" % body
+    return body
+
+
+def manual_parse(lines):
+    """
+    manual parse out docno, title, and bodyText
+    :param lines:
+    :return:
+    """
+    docno = manual_get_docno(lines)
+    title = manual_get_title(lines)
+    body = manual_get_body(lines)
+
+    return docno, title, body
+
+
 def parse_one_trec_xml_file(in_name, s_target_docno):
     print "start processing [%s]" % in_name
     l = open(in_name).read()
@@ -56,22 +112,25 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
             doc = ET.fromstring('\n'.join(doc_lines))
         except ET.ParseError:
             parse_err += 1
-            continue
-        if doc is None:
-            parse_err += 1
+            docno, title, body_text = manual_parse(doc_lines)
+            if docno not in s_target_docno:
+                continue
+            l_doc_title.append((docno, title))
+            l_doc_body.append((docno, body_text))
             continue
 
+        if doc is None:
+            continue
         docno = doc.find(ID_FIELD).text.strip()
-        print "get doc [%s]" % docno
         if docno not in s_target_docno:
             continue
         title = ""
         mid = doc.find(TITLE_FIELD)
-        if mid:
+        if mid is not None:
             title = mid.text.strip()
         body_text = ""
         mid = doc.find(BODY_FIELD)
-        if mid:
+        if mid is not None:
             body_text = mid.text.strip()
         title = ' '.join(word_tokenize(title))
         body_text = ' '.join(word_tokenize(body_text))
