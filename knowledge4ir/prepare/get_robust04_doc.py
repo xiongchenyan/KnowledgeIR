@@ -27,7 +27,8 @@ SUFFIX = '.dat'
 def parse_one_trec_xml_file(in_name, s_target_docno):
     print "start processing [%s]" % in_name
     l = open(in_name).read()
-    l = "<root>" + l + "</root>"
+
+    l = "<root>" + l.replace("& ", "&#038;") + "</root>"
     xml_tree = ET.fromstring(l)
     cnt = 0
     l_doc_title = []
