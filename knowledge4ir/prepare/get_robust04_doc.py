@@ -17,6 +17,11 @@ import xml.etree.ElementTree as ET
 import os
 from nltk.tokenize import word_tokenize
 from knowledge4ir.utils import load_trec_ranking
+import sys
+
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
+
 
 TITLE_FIELD = "HEADLINE"
 ID_FIELD = "DOCNO"
@@ -76,7 +81,6 @@ def get_target_doc(in_dir, out_pre, trec_rank_in):
 
 
 if __name__ == '__main__':
-    import sys
     if 4 != len(sys.argv):
         print "3 para: trec cds directory, output prefix, trec rank file"
         sys.exit(-1)
