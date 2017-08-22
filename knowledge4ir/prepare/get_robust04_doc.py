@@ -57,7 +57,12 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         except ET.ParseError:
             parse_err += 1
             continue
+        if doc is None:
+            parse_err += 1
+            continue
+
         docno = doc.find(ID_FIELD).text.strip()
+        print "get doc [%s]" % docno
         if docno not in s_target_docno:
             continue
         title = doc.find(TITLE_FIELD).text.strip()
