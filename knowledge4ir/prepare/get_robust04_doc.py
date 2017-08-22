@@ -65,8 +65,14 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         print "get doc [%s]" % docno
         if docno not in s_target_docno:
             continue
-        title = doc.find(TITLE_FIELD).text.strip()
-        body_text = doc.find(BODY_FIELD).text.strip()
+        title = ""
+        mid = doc.find(TITLE_FIELD)
+        if mid:
+            title = mid.text.strip()
+        body_text = ""
+        mid = doc.find(BODY_FIELD)
+        if mid:
+            body_text = mid.text.strip()
         title = ' '.join(word_tokenize(title))
         body_text = ' '.join(word_tokenize(body_text))
         l_doc_title.append((docno, title))
