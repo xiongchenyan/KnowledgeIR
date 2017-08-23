@@ -36,7 +36,7 @@ class GetCandidateEntity(Configurable):
                     continue
                 for field in self.l_target_fields:
                     if field in h[linker]:
-                        l_e.extend(list(set([ana[0] for ana in h[linker][field]])))
+                        l_e.extend(list(set([ana['entities']['id'] for ana in h[linker][field]])))
         logging.info('[%d] candidate get from [%s]', len(l_e), fname)
         return l_e
 
