@@ -38,7 +38,7 @@ def convert_per_doc(h_d_info):
 
 def process(in_name, out_name):
     out = open(out_name, 'w')
-    for p, line in open(in_name):
+    for p, line in enumerate(open(in_name)):
         if not p % 10000:
             print "processed [%d] lines" % p
         h = json.loads(line)
