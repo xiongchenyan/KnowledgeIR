@@ -34,6 +34,7 @@ def convert_per_doc(h_d_info):
             continue
         text = h_d_info[field]
         l_ana = h_d_info['spot'][field]
+        l_converted_line.append(text)
         l_converted_line.append(replace_surface(text, l_ana))
     return l_converted_line
 
