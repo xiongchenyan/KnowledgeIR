@@ -15,7 +15,7 @@ sys.setdefaultencoding('UTF8')
 
 
 def replace_surface(text, l_ana):
-    l_t = text.lower().split()
+    l_t = text.split()
     l_res = []
     current_p = 0
     for ana in l_ana:
@@ -32,7 +32,7 @@ def convert_per_doc(h_d_info):
     for field in l_field:
         if field not in h_d_info:
             continue
-        text = h_d_info[field]
+        text = h_d_info[field].lower()
         l_ana = h_d_info['spot'][field]
         l_converted_line.append(text)
         l_converted_line.append(replace_surface(text, l_ana))
