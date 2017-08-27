@@ -10,6 +10,8 @@ output:
 import json
 import sys
 l_field = ['title', 'bodyText']
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 
 def replace_surface(text, l_ana):
