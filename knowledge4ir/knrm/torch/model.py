@@ -7,11 +7,12 @@ KNRM: base class of KNRM, can choose to:
 """
 
 import knowledge4ir.knrm.torch
-from knowledge4ir.knrm.torch.autogram import Variable
-import knowledge4ir.knrm.torch.nn.functional as F
+import torch.nn.functional as F
+from torch.autograd import Variable
+import torch
 
 
-class KernelPooling(knowledge4ir.knrm.torch.nn.Module):
+class KernelPooling(torch.nn.Module):
     """
     kernel pooling layer
     """

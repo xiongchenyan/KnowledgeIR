@@ -10,7 +10,8 @@ output:
 from traitlets.config import Configurable
 from traitlets import (
     List,
-    Unicode
+    Unicode,
+    Bool,
 )
 import json
 import sys
@@ -23,6 +24,8 @@ class GetCandidateEntity(Configurable):
     l_target_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS + ['query']).tag(config=True)
     l_linker = List(Unicode, default_value=['tagme', 'cmns']).tag(config=True)
     out_name = Unicode().tag(config=True)
+    with_tf = Bool(False).tag(config=True)
+    merge_cnt = Bool(True).tag(config=True)
 
     def _get_per_f(self, fname):
         l_e = []
@@ -34,19 +37,35 @@ class GetCandidateEntity(Configurable):
                     continue
                 for field in self.l_target_fields:
                     if field in h[linker]:
-                        l_e.extend(list(set([ana[0] for ana in h[linker][field]])))
+                        l_e.extend(list(set([ana['entities'][0]['id'] for ana in h[linker][field]])))
         logging.info('[%d] candidate get from [%s]', len(l_e), fname)
         return l_e
 
     def get_candidate_e(self):
+        h_tf = dict()
         l_total = []
+        out = open(self.out_name, 'w')
         for fname in self.l_target_fname:
             l_e = self._get_per_f(fname)
-            l_total.extend(list(set(l_e)))
-        l_total = list(set(l_total))
-        out = open(self.out_name, 'w')
-        for e in l_total:
-            print >> out, e
+            if not self.merge_cnt:
+                print >> out, '\n'.join(l_e)
+                continue
+            if self.with_tf:
+                for e in l_e:
+                    h_tf[e] = h_tf.get(e, 0) + 1
+            else:
+                l_total.extend(list(set(l_e)))
+        if self.merge_cnt:
+            if self.with_tf:
+                l_e_tf = h_tf.items()
+                l_e_tf.sort(key=lambda item: item[1], reverse=True)
+                for e, tf in l_e_tf:
+                    print >> out, e + '\t%d' % tf
+            else:
+                l_total = list(set(l_total))
+                for e in l_total:
+                    print >> out, e
+        out.close()
         logging.info('total [%d] candidate entities', len(l_total))
         return
 
