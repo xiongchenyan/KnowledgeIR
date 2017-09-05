@@ -18,7 +18,7 @@ emp_cnt = 0
 for line in open(sys.argv[1]):
     col = line.strip().split('\t')
     cnt += 1
-    if (len(col) < 2):
+    if len(col) < 2:
         emp_cnt += 1
 
 
