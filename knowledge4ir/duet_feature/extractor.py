@@ -13,14 +13,12 @@ import json
 import logging
 import random
 
-from knowledge4ir.duet_feature.depreciated.q_de_histogram import LeToRQDocEHistFeatureExtractor
 from traitlets import (
     Int, List, Dict, Unicode, Bool
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.deprecated.duet_feature.matching import LeToRQDocERefRankFeatureExtractorC
-from knowledge4ir.duet_feature.matching.ESR import LeToRESRFeatureExtractor
+from knowledge4ir.duet_feature.matching.BoeEmb import LeToRBoeEmbFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
 )
@@ -46,7 +44,7 @@ class LeToRFeatureExtractCenter(Configurable):
     rank_top_k = Int(100, help="top k candidate docs to extract features").tag(config=True)
     l_feature_group = List(Unicode, default_value=['IRFusion'],
                            help='feature groups to extract: IRFusion,\
-                            BoeEmb, Word2VecHist, Les, DocE, QDocEHist, QDocEText'
+                            BoeEmb, Word2VecHist, Les, QDocEText'
                            ).tag(config=True)
     out_name = Unicode(help='feature out file name').tag(config=True)
     normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
@@ -71,15 +69,11 @@ class LeToRFeatureExtractCenter(Configurable):
         print "Feature group: IRFusion"
         LeToRIRFusionFeatureExtractor.class_print_help(inst)
         print "Feature group: BoeEmb"
-        LeToRESRFeatureExtractor.class_print_help(inst)
+        LeToRBoeEmbFeatureExtractor.class_print_help(inst)
         print "Feature group: Word2vecHist"
         LeToRWord2vecHistFeatureExtractor.class_print_help(inst)
         print "Feature group: Les"
         LeToRLesFeatureExtractor.class_print_help(inst)
-        print "Feature group: DocE"
-        LeToRQDocERefRankFeatureExtractorC.class_print_help(inst)
-        print "Feature group: QDocEHist"
-        LeToRQDocEHistFeatureExtractor.class_print_help(inst)
         print "Feature group: QDocEText"
         LeToRQDocETextFeatureExtractorC.class_print_help(inst)
         # to add those needed the config
@@ -119,15 +113,11 @@ class LeToRFeatureExtractCenter(Configurable):
         if 'IRFusion' in self.l_feature_group:
             self._l_feature_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
         if "BoeEmb" in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRESRFeatureExtractor(**kwargs))
+            self._l_feature_extractor.append(LeToRBoeEmbFeatureExtractor(**kwargs))
         if "Word2vecHist" in self.l_feature_group:
             self._l_feature_extractor.append(LeToRWord2vecHistFeatureExtractor(**kwargs))
         if "Les" in self.l_feature_group:
             self._l_feature_extractor.append(LeToRLesFeatureExtractor(**kwargs))
-        if "DocE" in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRQDocERefRankFeatureExtractorC(**kwargs))
-        if "QDocEHist" in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRQDocEHistFeatureExtractor(**kwargs))
         if "QDocEText" in self.l_feature_group:
             self._l_feature_extractor.append(LeToRQDocETextFeatureExtractorC(**kwargs))
         # if 'BoeLes' in self.l_feature_group:
@@ -180,15 +170,6 @@ class LeToRFeatureExtractCenter(Configurable):
         self._dump_svm_res_lines(l_qid, l_docno, l_h_feature, out_name)
         logging.info('feature extraction finished, results at [%s]', self.out_name)
         return
-
-    # def _normalize(self, l_qid, l_docno, l_h_feature):
-    #     l_svm_data = [{'qid': l_qid[i], 'feature': l_h_feature[i], 'comment': l_docno[i]}
-    #                   for i in xrange(len(l_qid))]
-    #     l_svm_data = per_q_normalize(l_svm_data)
-    #     l_qid = [data['qid'] for data in l_svm_data]
-    #     l_h_feature = [data['feature'] for data in l_svm_data]
-    #     l_docno = [data['comment'] for data in l_svm_data]
-    #     return l_qid, l_docno, l_h_feature
 
     def _extract(self, qid, docno, h_doc_info):
         """
