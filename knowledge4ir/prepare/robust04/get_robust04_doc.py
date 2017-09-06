@@ -52,7 +52,7 @@ def manual_get_docno(lines):
         if line.startswith("<DOCNO>"):
             text = line.replace("</DOCNO>", "").replace("<DOCNO>", "")
             docno = text.strip()
-    logging.info("manual get [%s]", docno)
+    logging.info("manual get docno [%s]", docno)
     return docno
 
 
@@ -68,7 +68,7 @@ def manual_get_title(lines):
             break
 
     title = re.sub('<[^>]*>', '', '\n'.join(l_line))
-    logging.info("get title [%s]", title)
+    logging.info("manual get title [%s]", title)
     return title
 
 
@@ -109,7 +109,7 @@ def get_all_sub_texts(xml_node):
         if node is None:
             continue
         if node.text is None:
-            continue
+
         text += node.text.strip()
     return text.strip()
 
@@ -126,7 +126,7 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
     parse_err = 0
     for p, doc_lines in enumerate(l_doc_lines):
         cnt += 1
-        logging.info('file [%d] [%s]', p, '\t'.join(doc_lines[:2]))
+        logging.debug('file [%d] [%s]', p, '\t'.join(doc_lines[:2]))
         try:
             doc = ET.fromstring('\n'.join(doc_lines))
         except ET.ParseError:
@@ -134,8 +134,8 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
             parse_err += 1
             docno, title, body_text = manual_parse(doc_lines)
             logging.info('docno [%s]', docno)
-            logging.info('title [%s]', title)
-            logging.info('body [%s]', body_text)
+            logging.debug('title [%s]', title)
+            logging.debug('body [%s]', body_text)
             if docno not in s_target_docno:
                 continue
             l_doc_title.append((docno, title))
@@ -143,7 +143,7 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
             continue
 
         if doc is None:
-            logging.info('empty xml')
+            logging.warn('empty xml')
             continue
         docno = doc.find(ID_FIELD).text.strip()
         if docno not in s_target_docno:
@@ -153,8 +153,8 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         title = ' '.join(word_tokenize(title))
         body_text = ' '.join(word_tokenize(body_text))
         logging.info('docno [%s]', docno)
-        logging.info('title [%s]', title)
-        logging.info('body [%s]', body_text)
+        logging.debug('title [%s]', title)
+        logging.debug('body [%s]', body_text)
         l_doc_title.append((docno, title))
         l_doc_body.append((docno, body_text))
     logging.info("[%s] file, [%d/%d] are target docs [%d] parse err",
