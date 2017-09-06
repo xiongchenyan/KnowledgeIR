@@ -28,12 +28,14 @@ def process_one_doc(h_doc):
     nb_abs_e = len(set(l_abs_e))
     nb_abs_e_in_body = len([e for e in set(l_abs_e) if e in s_b_e])
     nb_abs_e_in_title = len([e for e in set(l_abs_e) if e in s_t_e])
-
-    first_e_salient = int(l_body_e[0] in s_a_e)
-    h_b_e = term2lm(l_body_e)
-    l_b_e_tf = h_b_e.items()
-    l_b_e_tf.sort(key=lambda item: -item[1])
-    freq_e_salience = int(l_b_e_tf[0][0] in s_a_e)
+    first_e_salient = 0
+    freq_e_salience = 0
+    if l_body_e:
+        first_e_salient = int(l_body_e[0] in s_a_e)
+        h_b_e = term2lm(l_body_e)
+        l_b_e_tf = h_b_e.items()
+        l_b_e_tf.sort(key=lambda item: -item[1])
+        freq_e_salience = int(l_b_e_tf[0][0] in s_a_e)
 
     return docno, nb_abs_e, nb_abs_e_in_title, nb_abs_e_in_body, freq_e_salience, first_e_salient
 
