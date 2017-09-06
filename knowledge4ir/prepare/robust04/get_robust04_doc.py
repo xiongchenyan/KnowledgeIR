@@ -49,7 +49,7 @@ def manual_get_docno(lines):
         if line.startswith("<DOCNO>"):
             text = line.replace("</DOCNO>", "").replace("<DOCNO>", "")
             docno = text.strip()
-    print "manual get [%s]" % docno
+    logging.info("manual get [%s]", docno)
     return docno
 
 
@@ -65,7 +65,7 @@ def manual_get_title(lines):
             break
 
     title = re.sub('<[^>]*>', '', '\n'.join(l_line))
-    print "get title [%s]" % title
+    logging.info("get title [%s]", title)
     return title
 
 
@@ -81,7 +81,7 @@ def manual_get_body(lines):
             break
 
     body = re.sub('<[^>]*>', '', '\n'.join(l_line))
-    print "get body [%s]" % body
+    logging.info("manual body [%s]", body)
     return body
 
 
@@ -108,11 +108,11 @@ def get_all_sub_texts(xml_node):
 
 
 def parse_one_trec_xml_file(in_name, s_target_docno):
-    print "start processing [%s]" % in_name
+    logging.info("start processing [%s]", in_name)
     l = open(in_name).read()
     l = l.replace("&", "&#038;")
     l_doc_lines = split_doc(l.splitlines())
-    print "total [%d] doc" % len(l_doc_lines)
+    logging.info("total [%d] doc", len(l_doc_lines))
     cnt = 0
     l_doc_title = []
     l_doc_body = []
@@ -150,7 +150,8 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         logging.info('body [%s]', body_text)
         l_doc_title.append((docno, title))
         l_doc_body.append((docno, body_text))
-    print "[%s] file, [%d/%d] are target docs [%d] parse err" % (in_name, len(l_doc_title), cnt, parse_err)
+    logging.info("[%s] file, [%d/%d] are target docs [%d] parse err",
+                  in_name, len(l_doc_title), cnt, parse_err)
     return l_doc_title, l_doc_body
 
 
@@ -158,6 +159,7 @@ def process_directory(in_dir, out_pre, s_target_docno):
     title_out = open(out_pre + '.title', 'w')
     body_out = open(out_pre + '.bodyText', 'w')
     find_cnt = 0
+    body_text_cnt = 0
     for dir_name, sub_dirs, file_names in os.walk(in_dir):
         for f_name in file_names:
             if f_name.endswith(SUFFIX):
@@ -165,20 +167,22 @@ def process_directory(in_dir, out_pre, s_target_docno):
                 logging.info('starting [%s] file', in_name)
                 l_doc_title, l_doc_body = parse_one_trec_xml_file(in_name, s_target_docno)
                 find_cnt += len(l_doc_title)
+                body_text_cnt += len([body for body in l_doc_body if body])
                 for docno, title in l_doc_title:
                     print >> title_out, docno + '\t' + title
                 for docno, body in l_doc_body:
                     print >> body_out, docno + '\t' + body
     title_out.close()
     body_out.close()
-    print "[%s] directory finished [%d/%d] target docs found" % (in_dir, find_cnt, len(s_target_docno))
+    logging.info("[%s] directory finished [%d/%d] target docs found, [%d] has content",
+        in_dir, find_cnt, len(s_target_docno), body_text_cnt)
     return
 
 
 def get_target_doc(in_dir, out_pre, trec_rank_in):
     l_rank = load_trec_ranking(trec_rank_in)
     s_target_docno = set(sum([item[1] for item in l_rank], []))
-    print "total [%d] target docno" % len(s_target_docno)
+    logging.info("total [%d] target docno", len(s_target_docno))
     process_directory(in_dir, out_pre, s_target_docno)
 
 
