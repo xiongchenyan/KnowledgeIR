@@ -19,6 +19,8 @@ from nltk.tokenize import word_tokenize
 from knowledge4ir.utils import load_trec_ranking
 import sys
 import re
+import logging
+
 
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
@@ -106,13 +108,18 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
     l_doc_title = []
     l_doc_body = []
     parse_err = 0
-    for doc_lines in l_doc_lines:
+    for p, doc_lines in enumerate(l_doc_lines):
         cnt += 1
+        logging.info('file [%d] [%s]', p, '\t'.join(doc_lines[:2]))
         try:
             doc = ET.fromstring('\n'.join(doc_lines))
         except ET.ParseError:
+            logging.info('cannot par via xml')
             parse_err += 1
             docno, title, body_text = manual_parse(doc_lines)
+            logging.info('docno [%s]', docno)
+            logging.info('title [%s]', title)
+            logging.info('body [%s]', body_text)
             if docno not in s_target_docno:
                 continue
             l_doc_title.append((docno, title))
@@ -120,6 +127,7 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
             continue
 
         if doc is None:
+            logging.info('empty xml')
             continue
         docno = doc.find(ID_FIELD).text.strip()
         if docno not in s_target_docno:
@@ -134,6 +142,9 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
             body_text = mid.text.strip()
         title = ' '.join(word_tokenize(title))
         body_text = ' '.join(word_tokenize(body_text))
+        logging.info('docno [%s]', docno)
+        logging.info('title [%s]', title)
+        logging.info('body [%s]', body_text)
         l_doc_title.append((docno, title))
         l_doc_body.append((docno, body_text))
     print "[%s] file, [%d/%d] are target docs [%d] parse err" % (in_name, len(l_doc_title), cnt, parse_err)
@@ -148,6 +159,7 @@ def process_directory(in_dir, out_pre, s_target_docno):
         for f_name in file_names:
             if f_name.endswith(SUFFIX):
                 in_name = os.path.join(dir_name, f_name)
+                logging.info('starting [%s] file', in_name)
                 l_doc_title, l_doc_body = parse_one_trec_xml_file(in_name, s_target_docno)
                 find_cnt += len(l_doc_title)
                 for docno, title in l_doc_title:
@@ -168,6 +180,8 @@ def get_target_doc(in_dir, out_pre, trec_rank_in):
 
 
 if __name__ == '__main__':
+    from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if 4 != len(sys.argv):
         print "3 para: trec cds directory, output prefix, trec rank file"
         sys.exit(-1)
