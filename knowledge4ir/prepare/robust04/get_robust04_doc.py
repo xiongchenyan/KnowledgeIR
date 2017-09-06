@@ -36,6 +36,9 @@ def split_doc(lines):
     l_doc_line = []
     l_current_line = []
     for line in lines:
+        line = line.strip()
+        if not line:
+            continue
         l_current_line.append(line)
         if line.startswith("</DOC>"):
             l_doc_line.append(l_current_line)
@@ -103,6 +106,10 @@ def get_all_sub_texts(xml_node):
         return ""
     text = ""
     for node in xml_node.iter():
+        if node is None:
+            continue
+        if node.text is None:
+            continue
         text += node.text.strip()
     return text.strip()
 
