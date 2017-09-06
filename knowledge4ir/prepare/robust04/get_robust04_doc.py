@@ -158,7 +158,7 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         l_doc_title.append((docno, title))
         l_doc_body.append((docno, body_text))
     logging.info("[%s] file, [%d/%d] are target docs [%d] parse err",
-                  in_name, len(l_doc_title), cnt, parse_err)
+                 in_name, len(l_doc_title), cnt, parse_err)
     return l_doc_title, l_doc_body
 
 
