@@ -44,7 +44,7 @@ from knowledge4ir.duet_feature.attention.e_memory import EntityMemoryAttentionFe
 from knowledge4ir.duet_feature.matching.BoeEmb import LeToRBoeEmbFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
-from knowledge4ir.duet_feature.matching.q_de_text import LeToRQDocETextFeatureExtractorC
+from knowledge4ir.duet_feature.matching.q_de_text import LeToRQDocETextFeatureExtractor
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
@@ -114,7 +114,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         print "Feature group: Les"
         LeToRLesFeatureExtractor.class_print_help(inst)
         print "Feature group: QDocEText"
-        LeToRQDocETextFeatureExtractorC.class_print_help(inst)
+        LeToRQDocETextFeatureExtractor.class_print_help(inst)
 
         print "term attention feature group: Emb"
         TermEmbeddingAttentionFeature.class_print_help(inst)
@@ -181,7 +181,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qe_dw_extractor[-1].set_external_info(self.external_info)
             logging.info('add Les features to qe-dw')
         if "QDocEText" in self.l_qw_de_feature:
-            self.l_qw_de_extractor.append(LeToRQDocETextFeatureExtractorC(**kwargs))
+            self.l_qw_de_extractor.append(LeToRQDocETextFeatureExtractor(**kwargs))
             self.l_qw_de_extractor[-1].set_external_info(self.external_info)
             logging.info('add QDocE features to qw-de')
 

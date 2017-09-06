@@ -33,7 +33,7 @@ from knowledge4ir.utils import (
 # import json
 
 
-class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
+class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
     feature_name_pre = Unicode('QDocEText')
     l_text_fields = List(Unicode, default_value=['bodyText']).tag(config=True)
     l_model = List(Unicode,
@@ -55,7 +55,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
                       ).tag(config=True)
 
     def __init__(self, **kwargs):
-        super(LeToRQDocETextFeatureExtractorC, self).__init__(**kwargs)
+        super(LeToRQDocETextFeatureExtractor, self).__init__(**kwargs)
         self.h_corpus_stat = {}
         self.h_field_h_df = {}
         self._load_corpus_stat()
@@ -65,7 +65,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
         self.s_model = set(self.l_model)
 
     def set_external_info(self, external_info):
-        super(LeToRQDocETextFeatureExtractorC, self).set_external_info(external_info)
+        super(LeToRQDocETextFeatureExtractor, self).set_external_info(external_info)
         self.h_field_h_df = external_info.h_field_h_df
         self.h_corpus_stat = external_info.h_corpus_stat
         self.h_entity_texts = external_info.h_entity_texts

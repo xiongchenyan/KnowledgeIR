@@ -25,6 +25,10 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
 )
 import math
+from knowledge4ir.utils import (
+    bin_similarity,
+    form_bins,
+)
 
 
 class ESRFeatureExtractor(LeToRFeatureExtractor):
@@ -63,7 +67,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             self.embedding = Word2Vec.load_word2vec_format(self.embedding_in)
             logging.info('embedding loaded')
         if not self.l_bins:
-            self._form_bins()
+            self.l_bins = form_bins(self.nb_bin, self.bin_range)
         logging.info('use bins %s', json.dumps(self.l_bins))
 
         self.h_pool_func = {
@@ -212,19 +216,19 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
         l_names = ['bin_%d' % i for i in xrange(len(l_bins))]
         return zip(l_names, l_bin_nb)
 
-    def _form_bins(self):
-        if self.l_bins:
-            return
-        l_bins = [1]
-        if self.nb_bin == 1:
-            return l_bins
-        bin_size = self.bin_range / (self.nb_bin - 1)
-        for i in xrange(self.nb_bin - 1):
-            bound = l_bins[i] - bin_size
-            if bound == 0:
-                bound = 0.00000001
-            l_bins.append(bound)
-        self.l_bins = l_bins
+    # def _form_bins(self):
+    #     if self.l_bins:
+    #         return
+    #     l_bins = [1]
+    #     if self.nb_bin == 1:
+    #         return l_bins
+    #     bin_size = self.bin_range / (self.nb_bin - 1)
+    #     for i in xrange(self.nb_bin - 1):
+    #         bound = l_bins[i] - bin_size
+    #         if bound == 0:
+    #             bound = 0.00000001
+    #         l_bins.append(bound)
+    #     self.l_bins = l_bins
 
 
     # def _mean_all(self, m_sim_mtx):
