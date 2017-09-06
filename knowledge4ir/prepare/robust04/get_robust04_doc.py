@@ -69,6 +69,7 @@ def manual_get_title(lines):
 
     title = re.sub('<[^>]*>', '', '\n'.join(l_line))
     logging.info("manual get title [%s]", title)
+    title = ' '.join(title.split())
     return title
 
 
@@ -84,6 +85,7 @@ def manual_get_body(lines):
             break
 
     body = re.sub('<[^>]*>', '', '\n'.join(l_line))
+    body = ' '.join(body.split())
     logging.info("manual body [%s]", body)
     return body
 
@@ -111,7 +113,8 @@ def get_all_sub_texts(xml_node):
         if node.text is None:
             continue
         text += node.text.strip()
-    return text.strip()
+    text = ' '.join(text.split())
+    return text
 
 
 def parse_one_trec_xml_file(in_name, s_target_docno):
@@ -133,7 +136,7 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
             logging.warn('cannot parse xml')
             parse_err += 1
             docno, title, body_text = manual_parse(doc_lines)
-            logging.info('docno [%s]', docno)
+            logging.info('get docno [%s]', docno)
             logging.debug('title [%s]', title)
             logging.debug('body [%s]', body_text)
             if docno not in s_target_docno:
