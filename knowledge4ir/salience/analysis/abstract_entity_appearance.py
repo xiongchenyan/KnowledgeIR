@@ -51,7 +51,7 @@ def process(hashed_doc_in, out_name):
             print "counted [%d] doc" % p
         l_data = process_one_doc(json.loads(line))
         print >> out, l_data[0] + ',' + ','.join(['%d' % n for n in l_data[1:]])
-        l_total = [l_total[p] + l_data[p + 1] for p in range(len(l_data))]
+        l_total = [l_total[p] + l_data[p + 1] for p in range(len(l_data) - 1)]
 
     print >> out, "TOTAL," + ','.join(['%d' % n for n in l_total])
     print "done"
