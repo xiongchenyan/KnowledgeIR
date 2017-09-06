@@ -102,7 +102,7 @@ def get_all_sub_texts(xml_node):
     if xml_node is None:
         return ""
     text = ""
-    for node in xml_node.getiterator():
+    for node in xml_node.iter():
         text += node.text.strip()
     return text.strip()
 
