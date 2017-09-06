@@ -20,7 +20,7 @@ from traitlets import (
 from traitlets.config import Configurable
 
 from knowledge4ir.deprecated.duet_feature.matching import LeToRQDocERefRankFeatureExtractorC
-from knowledge4ir.duet_feature.matching.boe_embedding import LeToRBOEEmbFeatureExtractor
+from knowledge4ir.duet_feature.matching.ESR import LeToRESRFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
 )
@@ -71,7 +71,7 @@ class LeToRFeatureExtractCenter(Configurable):
         print "Feature group: IRFusion"
         LeToRIRFusionFeatureExtractor.class_print_help(inst)
         print "Feature group: BoeEmb"
-        LeToRBOEEmbFeatureExtractor.class_print_help(inst)
+        LeToRESRFeatureExtractor.class_print_help(inst)
         print "Feature group: Word2vecHist"
         LeToRWord2vecHistFeatureExtractor.class_print_help(inst)
         print "Feature group: Les"
@@ -119,7 +119,7 @@ class LeToRFeatureExtractCenter(Configurable):
         if 'IRFusion' in self.l_feature_group:
             self._l_feature_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
         if "BoeEmb" in self.l_feature_group:
-            self._l_feature_extractor.append(LeToRBOEEmbFeatureExtractor(**kwargs))
+            self._l_feature_extractor.append(LeToRESRFeatureExtractor(**kwargs))
         if "Word2vecHist" in self.l_feature_group:
             self._l_feature_extractor.append(LeToRWord2vecHistFeatureExtractor(**kwargs))
         if "Les" in self.l_feature_group:

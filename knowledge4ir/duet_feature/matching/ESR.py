@@ -26,7 +26,7 @@ from knowledge4ir.utils import (
 import math
 
 
-class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
+class LeToRESRFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('tagme', help='tagger used, as in q info and d info'
                      ).tag(config=True)
     l_target_fields = List(Unicode,
@@ -52,7 +52,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
                 help="number of soft match feature per paper field"
                 ).tag(config=True)
     feature_name_pre = Unicode('BOEEmb')
-    nb_bin = Int(5, help='number of similarity bins').tag(config=True)
+    nb_bin = Int(6, help='number of similarity bins').tag(config=True)
     bin_func = Unicode('log',
                        help="the func to apply on bin count: log|tf|norm_tf"
                        ).tag(config=True)
@@ -66,7 +66,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     log_min = Float(1e-10, help='log of zero bin').tag(config=True)
 
     def __init__(self, **kwargs):
-        super(LeToRBOEEmbFeatureExtractor, self).__init__(**kwargs)
+        super(LeToRESRFeatureExtractor, self).__init__(**kwargs)
         if self.embedding_in:
             self.l_embedding_in.append(self.embedding_in)
             self.l_embedding_name.append('')
@@ -80,7 +80,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
         logging.info('use bins %s', json.dumps(self.l_bins))
 
     def set_external_info(self, external_info):
-        super(LeToRBOEEmbFeatureExtractor, self).set_external_info(external_info)
+        super(LeToRESRFeatureExtractor, self).set_external_info(external_info)
         self.l_embedding = external_info.l_embedding
         self.l_embedding_name = external_info.l_embedding_name
 
