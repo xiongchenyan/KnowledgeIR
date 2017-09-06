@@ -98,6 +98,15 @@ def manual_parse(lines):
     return docno, title, body
 
 
+def get_all_sub_texts(xml_node):
+    if xml_node is None:
+        return ""
+    text = ""
+    for node in xml_node.getiterator():
+        text += node.text.strip()
+    return text.strip()
+
+
 def parse_one_trec_xml_file(in_name, s_target_docno):
     print "start processing [%s]" % in_name
     l = open(in_name).read()
@@ -114,7 +123,7 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         try:
             doc = ET.fromstring('\n'.join(doc_lines))
         except ET.ParseError:
-            logging.info('cannot par via xml')
+            logging.warn('cannot parse xml')
             parse_err += 1
             docno, title, body_text = manual_parse(doc_lines)
             logging.info('docno [%s]', docno)
@@ -132,14 +141,8 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
         docno = doc.find(ID_FIELD).text.strip()
         if docno not in s_target_docno:
             continue
-        title = ""
-        mid = doc.find(TITLE_FIELD)
-        if mid is not None:
-            title = mid.text.strip()
-        body_text = ""
-        mid = doc.find(BODY_FIELD)
-        if mid is not None:
-            body_text = mid.text.strip()
+        title = get_all_sub_texts(doc.find(TITLE_FIELD))
+        body_text = get_all_sub_texts(doc.find(BODY_FIELD))
         title = ' '.join(word_tokenize(title))
         body_text = ' '.join(word_tokenize(body_text))
         logging.info('docno [%s]', docno)
