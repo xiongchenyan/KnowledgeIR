@@ -46,7 +46,7 @@ def form_rank(svm_in, feature_d, w):
 
 def eva_feature(svm_in, feature_d, out_pre, depth, w):
     l_q_ranking = form_rank(svm_in, feature_d, w)
-    out_name = out_pre + '.tmp_trec'
+    out_name = out_pre + '.tmp_trec_%d' % feature_d
     dump_trec_ranking_with_score(l_q_ranking, out_name)
     eva_str = subprocess.check_output(['perl', GDEVAL_PATH, '-k', '%d' % depth, qrel_path, out_name])
     l_qid_eva, ndcg, err = seg_gdeval_out(eva_str, True)
