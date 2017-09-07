@@ -167,7 +167,7 @@ class RanklibRunner(Configurable):
 
     def _train_test_ranksvm(self, train_in, test_in, score_out, log_out):
         l_train_cmd = list(self.l_ranksvm_learn)
-        l_train_cmd.extend(['-c', '%.100f' % self.ranksvm_c, train_in,
+        l_train_cmd.extend(['-c', '%.10f' % self.ranksvm_c, train_in,
                             score_out + '.model'
                             ])
         logging.info('running %s', json.dumps(l_train_cmd))
