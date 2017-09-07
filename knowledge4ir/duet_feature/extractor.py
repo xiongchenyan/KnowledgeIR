@@ -26,7 +26,7 @@ from knowledge4ir.duet_feature.matching.ir_fusion import (
 from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
 from knowledge4ir.duet_feature.matching.q_de_text import LeToRQDocETextFeatureExtractor
 from knowledge4ir.duet_feature.matching.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
-from knowledge4ir.utils import load_query_info
+from knowledge4ir.utils import load_json_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
     load_trec_labels_dict,
@@ -94,7 +94,7 @@ class LeToRFeatureExtractCenter(Configurable):
         :return:
         """
         self._h_qrel = load_trec_labels_dict(self.qrel_in)
-        self._h_qid_q_info = load_query_info(self.q_info_in)
+        self._h_qid_q_info = load_json_info(self.q_info_in, key_field='qid')
 
         l_q_ranking_score = load_trec_ranking_with_score(self.q_doc_candidate_in)
         if self.ext_base_rank:
