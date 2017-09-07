@@ -164,8 +164,9 @@ class LeToRFeatureExtractCenter(Configurable):
         logging.info('total [%d] pair extracted, dumping...', len(l_h_feature))
         l_h_feature = add_empty_zero_to_features(l_h_feature)
         l_qid, l_docno, l_h_feature = reduce_data_to_qid(l_qid, l_docno, l_h_feature)
-        dump_svm_from_raw(out_name, l_qid, l_docno, l_qrel, l_h_feature)
+        h_feature_name = dump_svm_from_raw(out_name, l_qid, l_docno, l_qrel, l_h_feature)
         logging.info('feature extraction finished, results at [%s]', self.out_name)
+        json.dump(h_feature_name, open(self.out_name + "_name.json", 'w'), indent=1)
         return
 
     def _extract(self, qid, docno, h_doc_info):
