@@ -140,13 +140,13 @@ class LeToRFeatureExtractCenter(Configurable):
         l_qrel = []
         cnt = 0
         for line in open(doc_info_in):
-            cols = line.strip().split('\t')
-            docno = cols[0]
+            h_doc_info = json.loads(line)
+            docno = h_doc_info.get('docno', "")
             if docno not in h_doc_q_score:
                 # not a candidate
                 continue
-            h_doc_info = json.loads(cols[1])
             for qid in h_doc_q_score[docno].keys():
+                logging.info('extracting [%s-%s]', qid, docno)
                 h_feature = self._extract(qid, docno, h_doc_info)
                 l_qid.append(qid)
                 l_docno.append(docno)
