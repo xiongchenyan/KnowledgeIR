@@ -22,7 +22,7 @@ if len(sys.argv) > 4:
     k = int(sys.argv[4])
 
 l_q_rank = load_trec_ranking(sys.argv[2])
-s_docno = set(sum([q_rank[1] for q_rank in l_q_rank], []))
+s_docno = set(sum([q_rank[1][:k] for q_rank in l_q_rank], []))
 print "total [%d] target docno" % len(s_docno)
 
 out = open(sys.argv[3], 'w')
