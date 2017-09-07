@@ -86,15 +86,17 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
         h_feature = {}
         emb_model = self.embedding
         emb_name = ""
-        l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query'] if ana[0] in emb_model]
+        l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']
+                 if ana['entities'][0]['id'] in emb_model]
         for field, l_ana in h_doc_info[self.tagger].items():
             if field not in self.l_target_fields:
                 continue
-            l_doc_e = [ana['entities'][0]['id'] for ana in l_ana if ana[0] in emb_model]
+            l_doc_e = [ana['entities'][0]['id'] for ana in l_ana
+                       if ana['entities'][0]['id'] in emb_model]
             l_doc_e_weight = []
             if self.use_entity_weight:
                 l_doc_e_weight = [ana['entities'][0]['score']
-                                  for ana in l_ana if ana[0] in emb_model]
+                                  for ana in l_ana if ana['entities'][0]['id'] in emb_model]
 
             l_sim_mtx = []
             m_sim_mtx = self.h_distance_func[self.distance](l_q_e, l_doc_e, emb_model)
