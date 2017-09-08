@@ -42,9 +42,14 @@ for p, line in enumerate(open(sys.argv[1])):
 for field in TARGET_TEXT_FIELDS:
     h_field_len[field] /= float(max(h_field_cnt[field], 1))
 
-l_data = [h_field_df, h_field_cnt, h_field_len]
-print "start dumping new format..."
-pickle.dump(l_data, open(sys.argv[2], 'wb'))
+h_stat = {}
+print "start dumping old format..."
+for field in TARGET_TEXT_FIELDS:
+    h_stat[field]['total_df'] = h_field_cnt[field]
+    h_stat[field]['average_len'] = h_field_len[field]
+    pickle.dump(h_field_df[field], open(sys.argv[2] + '.' + field, 'wb'))
+
+pickle.dump(h_stat, open(sys.argv[2] + '.stat', 'wb'))
 print "finished"
 
 
