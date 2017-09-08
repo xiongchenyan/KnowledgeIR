@@ -12,7 +12,7 @@ if 4 != len(sys.argv):
 
 l_q_rank = load_trec_ranking(sys.argv[1])
 l_q_d_pair = sum(
-    [zip([q] * len(rank), rank) for q, rank in l_q_rank],
+    [zip([q] * len(rank[:100]), rank[:100]) for q, rank in l_q_rank],
     []
 )
 s_target = set(l_q_d_pair)
