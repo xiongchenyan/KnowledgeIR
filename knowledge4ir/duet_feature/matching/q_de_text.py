@@ -41,17 +41,17 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
                    ).tag(config=True)
     l_pooling = List(Unicode,
                      default_value=['topk']).tag(config=True)
-    l_top_k = List(Int, default_value=[2, 5], help='top k most similar entities to count in each of doc field'
+    l_top_k = List(Int, default_value=[3, 5], help='top k most similar entities to count in each of doc field'
                   ).tag(config=True)
     top_k = Int(1).tag(config=True)
 
     l_entity_fields = List(Unicode, default_value=['desp']).tag(config=True)
     entity_text_in = Unicode(help="entity texts in").tag(config=True)
-    tagger = Unicode('tagme', help='tagger used, as in q info and d info'
+    tagger = Unicode('spot', help='tagger used, currently only spot is supported'
                      ).tag(config=True)
     corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
     l_features = List(Unicode, default_value=['IndiScores'],
-                      help='feature groups: IndiScores, TopExpTextSim, TopTf'
+                      help='feature groups: IndriScores, TopExpTextSim, TopTf'
                       ).tag(config=True)
 
     def __init__(self, **kwargs):
@@ -107,7 +107,7 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
         for field in self.l_text_fields:
             l_e = []
             if field in h_doc_info[self.tagger]:
-                l_e = [ana[0] for ana in h_doc_info[self.tagger][field]]
+                l_e = [ana['entities'][0]['id'] for ana in h_doc_info[self.tagger][field]]
             h_lm = term2lm(l_e)
             l_h_doc_e_lm.append(h_lm)
         return l_h_doc_e_lm
