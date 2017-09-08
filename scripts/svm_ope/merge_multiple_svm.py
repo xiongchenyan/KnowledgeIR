@@ -20,7 +20,7 @@ def load_multiple_svm_and_feature(svm_files_in):
     l_names = [line.split('\t')[0] for line in l_name_fields]
     # l_fields = [line.split('\t')[1] for line in l_name_fields]
     ll_svm_data = [load_svm_feature(name) for name in l_names]
-    l_h_feature_name = [json.load(open(name + '_feature_name')) for name in l_names]
+    l_h_feature_name = [json.load(open(name + '_name.json')) for name in l_names]
     l_new_h_feature_name = []
     for h_feature_name in l_h_feature_name:
         l_new_h_feature_name.append(h_feature_name)
