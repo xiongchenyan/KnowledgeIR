@@ -55,6 +55,7 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
 
     def __init__(self, **kwargs):
         super(LeToRQDocETextFeatureExtractor, self).__init__(**kwargs)
+        logging.info('init QDE extractor')
         self.h_corpus_stat = {}
         self.h_field_h_df = {}
         self._load_corpus_stat()

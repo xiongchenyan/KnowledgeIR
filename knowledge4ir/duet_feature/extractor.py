@@ -119,6 +119,7 @@ class LeToRFeatureExtractCenter(Configurable):
                 logging.error('extractor [%s] not recognized', name)
                 raise NotImplementedError
             self._l_feature_extractor.append(self.h_feature_extractor_map[name](**kwargs))
+            logging.info('add feature extractor [%s]', name)
 
     def pipe_extract(self, doc_info_in=None, out_name=None):
         """
