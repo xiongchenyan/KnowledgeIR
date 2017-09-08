@@ -45,6 +45,7 @@ for field in TARGET_TEXT_FIELDS:
 h_stat = {}
 print "start dumping old format..."
 for field in TARGET_TEXT_FIELDS:
+    h_stat[field] = {}
     h_stat[field]['total_df'] = h_field_cnt[field]
     h_stat[field]['average_len'] = h_field_len[field]
     pickle.dump(h_field_df[field], open(sys.argv[2] + '.' + field, 'wb'))
