@@ -28,9 +28,7 @@ from knowledge4ir.utils import (
     term2lm,
     body_field,
 )
-# from knowledge4ir.utils import TARGET_TEXT_FIELDS
-# import logging
-# import json
+import logging
 
 
 class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
@@ -50,7 +48,7 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('spot', help='tagger used, currently only spot is supported'
                      ).tag(config=True)
     corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
-    l_features = List(Unicode, default_value=['IndiScores'],
+    l_features = List(Unicode, default_value=['IndriScores'],
                       help='feature groups: IndriScores, TopExpTextSim, TopTf'
                       ).tag(config=True)
 
@@ -88,7 +86,7 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
         l_e = sum([h.keys() for h in l_h_doc_e_lm], [])
         h_doc_e_texts = self._prepare_doc_e_texts(l_e)
         h_field_top_k_entities = self._find_top_k_similar_entities(query, h_doc_e_texts)
-        if 'IndiScores' in self.l_features:
+        if 'IndriScores' in self.l_features:
             h_feature.update(
                 self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts)
             )
@@ -248,7 +246,7 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
 
             for name, score in h_pooled_scores.items():
                 h_feature[self.feature_name_pre + field.title() + name] = score
-        # logging.debug(json.dumps(h_feature))
+        logging.debug(json.dumps(h_feature))
         return h_feature
 
     def _merge_entity_sim(self, l_h_scores, l_e_tf):
