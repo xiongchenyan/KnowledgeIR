@@ -82,7 +82,7 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
             assert field in self.h_field_h_df
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
-        logging.info('qde feature extracting for [%s-%s]', qid, docno)
+        logging.debug('qde feature extracting for [%s-%s]', qid, docno)
         h_feature = {}
         query = h_q_info['query']
         l_h_doc_e_lm = self._form_doc_e_lm(h_doc_info)
@@ -90,7 +90,6 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
         h_doc_e_texts = self._prepare_doc_e_texts(l_e)
         h_field_top_k_entities = self._find_top_k_similar_entities(query, h_doc_e_texts)
         if 'IndriScores' in self.l_features:
-            logging.info('entity search scores')
             h_feature.update(
                 self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts)
             )
@@ -250,7 +249,7 @@ class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
 
             for name, score in h_pooled_scores.items():
                 h_feature[self.feature_name_pre + field.title() + name] = score
-        logging.info(json.dumps(h_feature))
+        logging.debug(json.dumps(h_feature))
         return h_feature
 
     def _merge_entity_sim(self, l_h_scores, l_e_tf):
