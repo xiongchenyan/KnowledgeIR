@@ -62,6 +62,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         for step in self.l_steps:
             # can be optimized.. but let use this for now
             q_mean, q_max = 0, 0
+            logging.info('start pr with step [%d]', step)
             if len(l_doc_e):
                 v_pr = self._random_walk(sim_mtx, v_init, step)
                 q_mean, q_max = self._pr_score_to_feature(l_q_e, l_doc_e, v_pr)
