@@ -9,12 +9,14 @@ output:
 
 """
 
-from knowledge4ir.duet_feature.svm_ope.filter_feature import filter_feature
 import json
+
 from knowledge4ir.utils import (
     load_svm_feature,
     dump_svm_feature,
 )
+from scripts.svm_ope.filter_feature import filter_feature
+
 
 def get_bin_id(name):
     bid = None

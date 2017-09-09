@@ -65,7 +65,7 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
     def extract(self, qid, docno, h_q_info, h_doc_info):
         h_feature = {}
 
-        l_q_e = [ana[0] for ana in h_q_info[self.tagger]['query']]
+        l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
 
         for field in self.l_text_fields:
             total_df = self.h_corpus_stat[field]['total_df']

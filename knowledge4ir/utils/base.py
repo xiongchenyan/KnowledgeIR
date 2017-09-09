@@ -11,7 +11,7 @@ import json
 import math
 from knowledge4ir.utils.base_conf import TARGET_TEXT_FIELDS
 import pickle
-
+import random
 
 def load_qid_query(in_name):
     l_qid_query = [line.split('#')[0].strip().split('\t') for line in open(in_name)]
@@ -343,6 +343,29 @@ def dump_svm_from_raw(out_name, l_qid, l_docno, l_score, l_h_feature):
             continue
     out.close()
     return h_feature_name
+
+
+def reduce_data_to_qid(l_qid, l_docno, l_h_feature):
+    l_data = zip(l_qid, zip(l_docno, l_h_feature))
+    random.shuffle(l_data)
+    l_data.sort(key=lambda item: int(item[0]))
+    l_qid = [item[0] for item in l_data]
+    l_docno = [item[1][0] for item in l_data]
+    l_h_feature = [item[1][1] for item in l_data]
+    return l_qid, l_docno, l_h_feature
+
+
+def add_empty_zero_to_features(l_h_feature):
+    s_feature_name = set()
+    for h_feature in l_h_feature:
+        l_names = h_feature.keys()
+        s_feature_name.update(l_names)
+    for i in xrange(len(l_h_feature)):
+        for feature in s_feature_name:
+            if feature in s_feature_name:
+                if feature not in l_h_feature[i]:
+                    l_h_feature[i][feature] = 0
+    return l_h_feature
 
 
 def feature_hash(l_h_feature):
