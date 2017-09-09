@@ -232,8 +232,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
     #         l_bins.append(bound)
     #     self.l_bins = l_bins
 
-
-    def _translation(self, m_sim_mtx):
+    def _translation(self, m_sim_mtx, l_weights=None):
         """
         total mean pool
         :param m_sim_mtx:
