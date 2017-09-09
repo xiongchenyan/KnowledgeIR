@@ -60,10 +60,12 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         v_init = np.ones(len(l_doc_e))
         for step in self.l_steps:
             # can be optimized.. but let use this for now
-            v_pr = self._random_walk(sim_mtx, v_init, step)
-            q_mean, q_max = self._pr_score_to_feature(l_q_e, l_doc_e, v_pr)
-            h_feature["S%d_mean"] = q_mean
-            h_feature['S%d_max'] = q_max
+            q_mean, q_max = 0, 0
+            if l_doc_e:
+                v_pr = self._random_walk(sim_mtx, v_init, step)
+                q_mean, q_max = self._pr_score_to_feature(l_q_e, l_doc_e, v_pr)
+            h_feature["S%d_mean" % step] = q_mean
+            h_feature['S%d_max' % step] = q_max
         return h_feature
 
     def _pr_score_to_feature(self, l_q_e, l_doc_e, v_pr_score):
