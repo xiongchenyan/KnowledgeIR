@@ -20,6 +20,7 @@ from traitlets.config import Configurable
 
 from knowledge4ir.duet_feature.matching.BoeEmb import LeToRBoeEmbFeatureExtractor
 from knowledge4ir.duet_feature.matching.ESR import ESRFeatureExtractor
+from knowledge4ir.duet_feature.matching.page_rank import PageRankFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import (
     LeToRIRFusionFeatureExtractor,
 )
@@ -63,6 +64,7 @@ class LeToRFeatureExtractCenter(Configurable):
         "Les": LeToRLesFeatureExtractor,
         "QDocEText": LeToRQDocETextFeatureExtractor,
         "ESR": ESRFeatureExtractor,
+        "PageRank": PageRankFeatureExtractor,
     }
 
     def __init__(self, **kwargs):
