@@ -51,7 +51,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
                        help="the func to apply on the bin counts: log|tf|norm_tf"
                        ).tag(config=True)
     pool_func = List(Unicode, default_value=['max'],
-                     help="pooling at query entities 'max', 'mean', 'mean-all', 'topk'"
+                     help="pooling at query entities 'max', 'mean', 'translation', 'topk'"
                      ).tag(config=True)
     bin_range = Float(1.0, help="the bin range to keep in bin").tag(config=True)
     l_bins = List(Float, default_value=[],
@@ -73,7 +73,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
         self.h_pool_func = {
             'max': self._max_bin,
             'mean': self._mean_bin,
-            # 'mean-all': self._mean_all,
+            'translation': self._translation,
             # 'topk': self._top_k_all
         }
         self.h_distance_func = {
@@ -233,18 +233,18 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
     #     self.l_bins = l_bins
 
 
-    # def _mean_all(self, m_sim_mtx):
-    #     """
-    #     total mean pool
-    #     :param m_sim_mtx:
-    #     :return:
-    #     """
-    #     score = 0
-    #     l_sim = m_sim_mtx.reshape((-1,)).tolist()
-    #     if l_sim:
-    #         score = np.mean(m_sim_mtx)
-    #     l_bin_score = [('MeanAll', score)]
-    #     return l_bin_score
+    def _translation(self, m_sim_mtx):
+        """
+        total mean pool
+        :param m_sim_mtx:
+        :return:
+        """
+        score = 0
+        l_sim = m_sim_mtx.reshape((-1,)).tolist()
+        if l_sim:
+            score = np.mean(m_sim_mtx)
+        l_score = [('trans', score)]
+        return l_score
     #
     # def _top_k_all(self, m_sim_mtx):
     #     """
