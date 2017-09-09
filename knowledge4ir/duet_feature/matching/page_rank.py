@@ -112,9 +112,11 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         return sim_mtx
 
     @classmethod
-    def _random_walk(self, sim_mtx, v_prob, step=1):
+    def _random_walk(cls, sim_mtx, v_prob, step=1):
         res = np.ones(v_prob.shape)
+        logging.info('start random walk with step [%d]', step)
         for i in xrange(step):
+            logging.info('step [%d', i)
             res = sim_mtx * v_prob
         return res
 
