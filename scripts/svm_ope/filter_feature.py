@@ -16,8 +16,8 @@ import json
 import sys
 from copy import deepcopy
 
-def filter_feature(l_svm_data, h_feature_id):
 
+def filter_feature(l_svm_data, h_feature_id):
     h_id_re_index = {}
     l_fid = h_feature_id.values()
     l_fid.sort()
@@ -38,6 +38,7 @@ def filter_feature(l_svm_data, h_feature_id):
         new_svm_data['feature'] = h_feature
         l_new_svm.append(new_svm_data)
     return l_new_svm, h_new_feature_id
+
 
 if __name__ == '__main__':
 

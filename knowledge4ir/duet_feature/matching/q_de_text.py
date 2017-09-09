@@ -28,12 +28,11 @@ from knowledge4ir.utils import (
     term2lm,
     body_field,
 )
-# from knowledge4ir.utils import TARGET_TEXT_FIELDS
-# import logging
-# import json
+import logging
+import json
 
 
-class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
+class LeToRQDocETextFeatureExtractor(LeToRFeatureExtractor):
     feature_name_pre = Unicode('QDocEText')
     l_text_fields = List(Unicode, default_value=['bodyText']).tag(config=True)
     l_model = List(Unicode,
@@ -41,21 +40,22 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
                    ).tag(config=True)
     l_pooling = List(Unicode,
                      default_value=['topk']).tag(config=True)
-    l_top_k = List(Int, default_value=[2, 5], help='top k most similar entities to count in each of doc field'
+    l_top_k = List(Int, default_value=[3, 5], help='top k most similar entities to count in each of doc field'
                   ).tag(config=True)
     top_k = Int(1).tag(config=True)
 
     l_entity_fields = List(Unicode, default_value=['desp']).tag(config=True)
     entity_text_in = Unicode(help="entity texts in").tag(config=True)
-    tagger = Unicode('tagme', help='tagger used, as in q info and d info'
+    tagger = Unicode('spot', help='tagger used, currently only spot is supported'
                      ).tag(config=True)
     corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
-    l_features = List(Unicode, default_value=['IndiScores'],
-                      help='feature groups: IndiScores, TopExpTextSim, TopTf'
+    l_features = List(Unicode, default_value=['IndriScores'],
+                      help='feature groups: IndriScores, TopExpTextSim, TopTf'
                       ).tag(config=True)
 
     def __init__(self, **kwargs):
-        super(LeToRQDocETextFeatureExtractorC, self).__init__(**kwargs)
+        super(LeToRQDocETextFeatureExtractor, self).__init__(**kwargs)
+        logging.info('init QDE extractor')
         self.h_corpus_stat = {}
         self.h_field_h_df = {}
         self._load_corpus_stat()
@@ -65,7 +65,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
         self.s_model = set(self.l_model)
 
     def set_external_info(self, external_info):
-        super(LeToRQDocETextFeatureExtractorC, self).set_external_info(external_info)
+        super(LeToRQDocETextFeatureExtractor, self).set_external_info(external_info)
         self.h_field_h_df = external_info.h_field_h_df
         self.h_corpus_stat = external_info.h_corpus_stat
         self.h_entity_texts = external_info.h_entity_texts
@@ -82,13 +82,14 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
             assert field in self.h_field_h_df
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
+        logging.debug('qde feature extracting for [%s-%s]', qid, docno)
         h_feature = {}
         query = h_q_info['query']
         l_h_doc_e_lm = self._form_doc_e_lm(h_doc_info)
         l_e = sum([h.keys() for h in l_h_doc_e_lm], [])
         h_doc_e_texts = self._prepare_doc_e_texts(l_e)
         h_field_top_k_entities = self._find_top_k_similar_entities(query, h_doc_e_texts)
-        if 'IndiScores' in self.l_features:
+        if 'IndriScores' in self.l_features:
             h_feature.update(
                 self._extract_q_doc_e_textual_features(query, l_h_doc_e_lm, h_doc_e_texts)
             )
@@ -107,7 +108,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
         for field in self.l_text_fields:
             l_e = []
             if field in h_doc_info[self.tagger]:
-                l_e = [ana[0] for ana in h_doc_info[self.tagger][field]]
+                l_e = [ana['entities'][0]['id'] for ana in h_doc_info[self.tagger][field]]
             h_lm = term2lm(l_e)
             l_h_doc_e_lm.append(h_lm)
         return l_h_doc_e_lm
@@ -248,7 +249,7 @@ class LeToRQDocETextFeatureExtractorC(LeToRFeatureExtractor):
 
             for name, score in h_pooled_scores.items():
                 h_feature[self.feature_name_pre + field.title() + name] = score
-        # logging.debug(json.dumps(h_feature))
+        logging.debug(json.dumps(h_feature))
         return h_feature
 
     def _merge_entity_sim(self, l_h_scores, l_e_tf):

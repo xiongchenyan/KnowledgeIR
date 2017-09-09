@@ -19,6 +19,8 @@ from nltk.tokenize import word_tokenize
 from knowledge4ir.utils import load_trec_ranking
 import sys
 import re
+import logging
+
 
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
@@ -34,6 +36,9 @@ def split_doc(lines):
     l_doc_line = []
     l_current_line = []
     for line in lines:
+        line = line.strip()
+        if not line:
+            continue
         l_current_line.append(line)
         if line.startswith("</DOC>"):
             l_doc_line.append(l_current_line)
@@ -47,7 +52,7 @@ def manual_get_docno(lines):
         if line.startswith("<DOCNO>"):
             text = line.replace("</DOCNO>", "").replace("<DOCNO>", "")
             docno = text.strip()
-    print "manual get [%s]" % docno
+    logging.info("manual get docno [%s]", docno)
     return docno
 
 
@@ -63,7 +68,8 @@ def manual_get_title(lines):
             break
 
     title = re.sub('<[^>]*>', '', '\n'.join(l_line))
-    print "get title [%s]" % title
+    logging.info("manual get title [%s]", title)
+    title = ' '.join(title.split())
     return title
 
 
@@ -79,7 +85,8 @@ def manual_get_body(lines):
             break
 
     body = re.sub('<[^>]*>', '', '\n'.join(l_line))
-    print "get body [%s]" % body
+    body = ' '.join(body.split())
+    logging.info("manual body [%s]", body)
     return body
 
 
@@ -96,23 +103,42 @@ def manual_parse(lines):
     return docno, title, body
 
 
+def get_all_sub_texts(xml_node):
+    if xml_node is None:
+        return ""
+    text = ""
+    for node in xml_node.iter():
+        if node is None:
+            continue
+        if node.text is None:
+            continue
+        text += node.text.strip()
+    text = ' '.join(text.split())
+    return text
+
+
 def parse_one_trec_xml_file(in_name, s_target_docno):
-    print "start processing [%s]" % in_name
+    logging.info("start processing [%s]", in_name)
     l = open(in_name).read()
     l = l.replace("&", "&#038;")
     l_doc_lines = split_doc(l.splitlines())
-    print "total [%d] doc" % len(l_doc_lines)
+    logging.info("total [%d] doc", len(l_doc_lines))
     cnt = 0
     l_doc_title = []
     l_doc_body = []
     parse_err = 0
-    for doc_lines in l_doc_lines:
+    for p, doc_lines in enumerate(l_doc_lines):
         cnt += 1
+        logging.debug('file [%d] [%s]', p, '\t'.join(doc_lines[:2]))
         try:
             doc = ET.fromstring('\n'.join(doc_lines))
         except ET.ParseError:
+            logging.warn('cannot parse xml')
             parse_err += 1
             docno, title, body_text = manual_parse(doc_lines)
+            logging.info('get docno [%s]', docno)
+            logging.debug('title [%s]', title)
+            logging.debug('body [%s]', body_text)
             if docno not in s_target_docno:
                 continue
             l_doc_title.append((docno, title))
@@ -120,23 +146,22 @@ def parse_one_trec_xml_file(in_name, s_target_docno):
             continue
 
         if doc is None:
+            logging.warn('empty xml')
             continue
         docno = doc.find(ID_FIELD).text.strip()
         if docno not in s_target_docno:
             continue
-        title = ""
-        mid = doc.find(TITLE_FIELD)
-        if mid is not None:
-            title = mid.text.strip()
-        body_text = ""
-        mid = doc.find(BODY_FIELD)
-        if mid is not None:
-            body_text = mid.text.strip()
+        title = get_all_sub_texts(doc.find(TITLE_FIELD))
+        body_text = get_all_sub_texts(doc.find(BODY_FIELD))
         title = ' '.join(word_tokenize(title))
         body_text = ' '.join(word_tokenize(body_text))
+        logging.info('docno [%s]', docno)
+        logging.debug('title [%s]', title)
+        logging.debug('body [%s]', body_text)
         l_doc_title.append((docno, title))
         l_doc_body.append((docno, body_text))
-    print "[%s] file, [%d/%d] are target docs [%d] parse err" % (in_name, len(l_doc_title), cnt, parse_err)
+    logging.info("[%s] file, [%d/%d] are target docs [%d] parse err",
+                 in_name, len(l_doc_title), cnt, parse_err)
     return l_doc_title, l_doc_body
 
 
@@ -144,30 +169,36 @@ def process_directory(in_dir, out_pre, s_target_docno):
     title_out = open(out_pre + '.title', 'w')
     body_out = open(out_pre + '.bodyText', 'w')
     find_cnt = 0
+    body_text_cnt = 0
     for dir_name, sub_dirs, file_names in os.walk(in_dir):
         for f_name in file_names:
             if f_name.endswith(SUFFIX):
                 in_name = os.path.join(dir_name, f_name)
+                logging.info('starting [%s] file', in_name)
                 l_doc_title, l_doc_body = parse_one_trec_xml_file(in_name, s_target_docno)
                 find_cnt += len(l_doc_title)
+                body_text_cnt += len([body for body in l_doc_body if body])
                 for docno, title in l_doc_title:
                     print >> title_out, docno + '\t' + title
                 for docno, body in l_doc_body:
                     print >> body_out, docno + '\t' + body
     title_out.close()
     body_out.close()
-    print "[%s] directory finished [%d/%d] target docs found" % (in_dir, find_cnt, len(s_target_docno))
+    logging.info("[%s] directory finished [%d/%d] target docs found, [%d] has content",
+        in_dir, find_cnt, len(s_target_docno), body_text_cnt)
     return
 
 
 def get_target_doc(in_dir, out_pre, trec_rank_in):
     l_rank = load_trec_ranking(trec_rank_in)
     s_target_docno = set(sum([item[1] for item in l_rank], []))
-    print "total [%d] target docno" % len(s_target_docno)
+    logging.info("total [%d] target docno", len(s_target_docno))
     process_directory(in_dir, out_pre, s_target_docno)
 
 
 if __name__ == '__main__':
+    from knowledge4ir.utils import set_basic_log
+    set_basic_log()
     if 4 != len(sys.argv):
         print "3 para: trec cds directory, output prefix, trec rank file"
         sys.exit(-1)

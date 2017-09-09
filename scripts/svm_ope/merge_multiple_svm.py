@@ -20,7 +20,7 @@ def load_multiple_svm_and_feature(svm_files_in):
     l_names = [line.split('\t')[0] for line in l_name_fields]
     # l_fields = [line.split('\t')[1] for line in l_name_fields]
     ll_svm_data = [load_svm_feature(name) for name in l_names]
-    l_h_feature_name = [json.load(open(name + '_feature_name')) for name in l_names]
+    l_h_feature_name = [json.load(open(name + '_name.json')) for name in l_names]
     l_new_h_feature_name = []
     for h_feature_name in l_h_feature_name:
         l_new_h_feature_name.append(h_feature_name)
@@ -77,7 +77,7 @@ def main(svm_files_in, out_name):
     l_new_svm_data = align_multiple_svm(ll_svm_data, l_h_feature_id_name, h_universal_feature_name)
     print "merged"
     dump_svm_feature(l_new_svm_data, out_name)
-    json.dump(h_universal_feature_name, open(out_name + '_feature_name', 'w'), indent=1)
+    json.dump(h_universal_feature_name, open(out_name + '_name.json', 'w'), indent=1)
     print "done"
 
 

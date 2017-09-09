@@ -20,6 +20,7 @@ from knowledge4ir.utils import (
 import subprocess
 import json
 import logging
+import os
 
 
 def form_rank(svm_in, feature_d, w):
@@ -49,6 +50,7 @@ def eva_feature(svm_in, feature_d, out_pre, depth, w):
     out_name = out_pre + '.tmp_trec'
     dump_trec_ranking_with_score(l_q_ranking, out_name)
     eva_str = subprocess.check_output(['perl', GDEVAL_PATH, '-k', '%d' % depth, qrel_path, out_name])
+    os.remove(out_name)
     l_qid_eva, ndcg, err = seg_gdeval_out(eva_str, True)
     return l_qid_eva, ndcg, err
 
