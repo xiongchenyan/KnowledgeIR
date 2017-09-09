@@ -109,6 +109,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
                     sim_mtx[i, j] = max(emb_model.similarity(e_i, e_j), 0)
         col_z = np.sum(sim_mtx, axis=1)
         sim_mtx /= col_z
+        logging.info('sim mtx build, %s', sim_mtx.tostring())
         return sim_mtx
 
     @classmethod
