@@ -57,12 +57,8 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
 
         l_doc_e = [ana['entities'][0]['id'] for ana in h_doc_info[self.tagger][field]
                    if ana['entities'][0]['id'] in self.embedding]
-        h_doc_e_tf = term2lm(l_doc_e)
-        l_doc_e_tf = sorted(h_doc_e_tf.items(), key=lambda item: -item[1])[:100]
-        l_doc_e = [item[0] for item in l_doc_e_tf]
-        z = float(sum([item[1] for item in l_doc_e_tf]))
-        v_doc_e_w = np.array([item[1] / z for item in l_doc_e_tf])
 
+        l_doc_e, v_doc_e_w = self._filter_doc_e(l_doc_e)
         sim_mtx = self._build_translation_mtx(l_doc_e, v_doc_e_w, self.embedding)
         logging.info('random walk matrix with size [%d]', len(l_doc_e))
         v_init = np.ones(len(l_doc_e))
@@ -73,10 +69,19 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
             if len(l_doc_e):
                 v_pr = self._random_walk(sim_mtx, v_init, step)
                 q_mean, q_max = self._pr_score_to_feature(l_q_e, l_doc_e, v_pr)
-                logging.info('step [%d], mean max q entity pr score: [%f][%f]', step, q_mean, q_max)
+                logging.info('step [%d], mean max q entity pr score: [%f][%f]',
+                             step, q_mean, q_max)
             h_feature["S%d_mean" % step] = q_mean
             h_feature['S%d_max' % step] = q_max
         return h_feature
+
+    def _filter_doc_e(self, l_doc_e):
+        h_doc_e_tf = term2lm(l_doc_e)
+        l_doc_e_tf = sorted(h_doc_e_tf.items(), key=lambda item: -item[1])[:100]
+        l_doc_e = [item[0] for item in l_doc_e_tf]
+        z = float(sum([item[1] for item in l_doc_e_tf]))
+        v_doc_e_w = np.array([item[1] / z for item in l_doc_e_tf])
+        return l_doc_e, v_doc_e_w
 
     def _pr_score_to_feature(self, l_q_e, l_doc_e, v_pr_score):
         """
@@ -87,14 +92,21 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         :return:
         """
         l_q_pr = []
-        for q_e in l_q_e:
+        l_q_p = [-1] * len(l_q_e)
+        for p, q_e in enumerate(l_q_e):
             v_idx = np.zeros(v_pr_score.shape)
             for i in xrange(len(l_doc_e)):
                 if l_doc_e[i] == q_e:
                     v_idx[i] = 1
+                    l_q_p[p] = i
             l_q_pr.append(v_pr_score.dot(v_idx))
-        v_q_pr = np.array(l_q_pr)
-        return np.mean(v_q_pr), np.max(v_q_pr)
+        if l_q_pr:
+            v_q_pr = np.array(l_q_pr)
+            logging.info('q e pos: %s', json.dumps(zip(l_q_e, l_q_p)))
+            logging.info('q e pr score %s', json.dumps(v_q_pr.tolist()))
+            return np.mean(v_q_pr), np.max(v_q_pr)
+        else:
+            return 0, 0
 
     @classmethod
     def _build_translation_mtx(cls, l_doc_e, v_doc_e_w, emb_model):
@@ -118,8 +130,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         col_z = np.sum(sim_mtx, axis=1)
         sim_mtx /= col_z
         sim_mtx = cls._add_random_start_prob(sim_mtx, v_doc_e_w)
-        logging.info('translation mtx: %s', np.array2string(sim_mtx, precision=3,
-                                                          separator=','))
+        logging.info('part of translation mtx: %s', json.dumps(sim_mtx[:10, :10].tolist()))
         return sim_mtx
 
     @classmethod
