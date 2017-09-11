@@ -24,6 +24,7 @@ from traitlets import (
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     add_feature_prefix,
+    term2lm,
 )
 
 
@@ -53,10 +54,16 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
 
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']
                  if ana['entities'][0]['id'] in self.embedding]
+
         l_doc_e = [ana['entities'][0]['id'] for ana in h_doc_info[self.tagger][field]
                    if ana['entities'][0]['id'] in self.embedding]
+        h_doc_e_tf = term2lm(l_doc_e)
+        l_doc_e_tf = sorted(h_doc_e_tf.items(), key=lambda item: -item[1])[:100]
+        l_doc_e = [item[0] for item in l_doc_e_tf]
+        z = float(sum([item[1] for item in l_doc_e_tf]))
+        v_doc_e_w = np.array([item[1] / z for item in l_doc_e_tf])
 
-        sim_mtx = self._build_translation_mtx(l_doc_e, self.embedding)
+        sim_mtx = self._build_translation_mtx(l_doc_e, v_doc_e_w, self.embedding)
         logging.info('random walk matrix with size [%d]', len(l_doc_e))
         v_init = np.ones(len(l_doc_e))
         for step in self.l_steps:
@@ -90,7 +97,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         return np.mean(v_q_pr), np.max(v_q_pr)
 
     @classmethod
-    def _build_translation_mtx(cls, l_doc_e, emb_model):
+    def _build_translation_mtx(cls, l_doc_e, v_doc_e_w, emb_model):
         """
         build a q-d entity cosine similarity matrix
         :param l_q_e: query entities
@@ -110,7 +117,9 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
                     sim_mtx[i, j] = max(emb_model.similarity(e_i, e_j), 0)
         col_z = np.sum(sim_mtx, axis=1)
         sim_mtx /= col_z
-        logging.info('sim mtx build, %s', sim_mtx.tostring())
+        sim_mtx = cls._add_random_start_prob(sim_mtx, v_doc_e_w)
+        logging.info('translation mtx: %s', np.array2string(sim_mtx, precision=3,
+                                                          separator=','))
         return sim_mtx
 
     @classmethod
@@ -118,7 +127,15 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         res = np.ones(v_prob.shape)
         logging.info('start random walk with step [%d]', step)
         for i in xrange(step):
-            logging.info('step [%d', i)
             res = sim_mtx * v_prob
+        logging.info('random walk done')
         return res
+
+    @classmethod
+    def _add_random_start_prob(cls, sim_mtx, v_restart_prod):
+        sim_mtx /= 0.9
+        restart_mtx = v_restart_prod.reshape(v_restart_prod.shape[0], 1).dot(
+            np.ones((1, v_restart_prod.shape[0])))
+        sim_mtx += 0.1 * restart_mtx
+        return sim_mtx
 
