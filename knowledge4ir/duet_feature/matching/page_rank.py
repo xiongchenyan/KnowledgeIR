@@ -145,9 +145,12 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
 
     @classmethod
     def _add_random_start_prob(cls, sim_mtx, v_restart_prod):
-        sim_mtx /= 0.9
+        sim_mtx *= 0.9
         restart_mtx = v_restart_prod.reshape(v_restart_prod.shape[0], 1).dot(
             np.ones((1, v_restart_prod.shape[0])))
         sim_mtx += 0.1 * restart_mtx
+        z = np.sum(sim_mtx, axis=0)
+        for p in z.tolist():
+            assert int(p) == 1
         return sim_mtx
 
