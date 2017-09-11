@@ -139,7 +139,8 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         logging.info('start random walk with step [%d]', step)
         for i in xrange(step):
             res = sim_mtx * v_prob
-        logging.info('random walk done')
+        res = np.sum(res, axis=1)
+        logging.info('random walk done, pr scores: %s', json.dumps(res.tolist()))
         return res
 
     @classmethod
