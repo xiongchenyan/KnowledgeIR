@@ -119,18 +119,18 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         :return: a matrix with cosine(q_e, doc_e)
         """
         sim_mtx = np.zeros((len(l_doc_e), len(l_doc_e)))
-        for i in xrange(len(l_doc_e)):
-            e_i = l_doc_e[i]
-            for j in xrange(len(l_doc_e)):
-                e_j = l_doc_e[j]
-                if e_i == e_j:
-                    sim_mtx[i, j] = 1.0
-                    continue
-                if (e_i in emb_model) & (e_j in emb_model):
-                    sim_mtx[i, j] = max(emb_model.similarity(e_i, e_j), 0)
-        col_z = np.sum(sim_mtx, axis=1)
-        sim_mtx /= col_z
-        sim_mtx = cls._add_random_start_prob(sim_mtx, v_doc_e_w)
+        if l_doc_e:
+            for i in xrange(len(l_doc_e)):
+                e_i = l_doc_e[i]
+                for j in xrange(len(l_doc_e)):
+                    e_j = l_doc_e[j]
+                    if e_i == e_j:
+                        sim_mtx[i, j] = 1.0
+                        continue
+                    if (e_i in emb_model) & (e_j in emb_model):
+                        sim_mtx[i, j] = max(emb_model.similarity(e_i, e_j), 0)
+            sim_mtx /= np.sum(sim_mtx, axis=0)
+            sim_mtx = cls._add_random_start_prob(sim_mtx, v_doc_e_w)
         logging.info('part of translation mtx: %s', json.dumps(sim_mtx[:10, :10].tolist()))
         return sim_mtx
 
@@ -146,6 +146,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
     @classmethod
     def _add_random_start_prob(cls, sim_mtx, v_restart_prod):
         sim_mtx *= 0.9
+        v_restart_prod /= float(np.sum(v_restart_prod))
         restart_mtx = v_restart_prod.reshape(v_restart_prod.shape[0], 1).dot(
             np.ones((1, v_restart_prod.shape[0])))
         sim_mtx += 0.1 * restart_mtx
