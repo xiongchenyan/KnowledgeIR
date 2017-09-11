@@ -20,6 +20,7 @@ from traitlets import (
     Unicode,
     Int,
     List,
+    Bool,
 )
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
@@ -35,6 +36,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
     embedding_in = Unicode(help='word2vec formatted embedding in').tag(config=True)
     tagger = Unicode('spot')
     max_e_per_d = Int(1000, help='maximum e allowed per d').tag(config=True)
+    restart = Bool(False, help='whether to restart randomly').tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExtractor, self).__init__(**kwargs)
