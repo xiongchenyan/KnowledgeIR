@@ -34,6 +34,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
     l_steps = List(Int, default_value=[1, 5, 100]).tag(config=True)
     embedding_in = Unicode(help='word2vec formatted embedding in').tag(config=True)
     tagger = Unicode('spot')
+    max_e_per_d = Int(1000, help='maximum e allowed per d').tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExtractor, self).__init__(**kwargs)
@@ -77,7 +78,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
 
     def _filter_doc_e(self, l_doc_e):
         h_doc_e_tf = term2lm(l_doc_e)
-        l_doc_e_tf = sorted(h_doc_e_tf.items(), key=lambda item: -item[1])[:100]
+        l_doc_e_tf = sorted(h_doc_e_tf.items(), key=lambda item: -item[1])[:self.max_e_per_d]
         l_doc_e = [item[0] for item in l_doc_e_tf]
         z = float(sum([item[1] for item in l_doc_e_tf]))
         v_doc_e_w = np.array([item[1] / z for item in l_doc_e_tf])
@@ -135,11 +136,10 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
 
     @classmethod
     def _random_walk(cls, sim_mtx, v_prob, step=1):
-        res = np.ones(v_prob.shape)
+        res = np.array(v_prob)  # initial node weights
         logging.info('start random walk with step [%d]', step)
         for i in xrange(step):
-            res = sim_mtx * v_prob
-        res = np.sum(res, axis=1)
+            res = np.sum(sim_mtx * res, axis=1)
         logging.info('random walk done, pr scores: %s', json.dumps(res.tolist()))
         return res
 
