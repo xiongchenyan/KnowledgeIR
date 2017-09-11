@@ -150,10 +150,9 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         restart_mtx = v_restart_prod.reshape(v_restart_prod.shape[0], 1).dot(
             np.ones((1, v_restart_prod.shape[0])))
         sim_mtx += 0.1 * restart_mtx
-        logging.info('first rows of sim mtx %s', json.dumps(sim_mtx[:1,:].tolist()))
+        # logging.info('first rows of sim mtx %s', json.dumps(sim_mtx[:1,:].tolist()))
         z = np.sum(sim_mtx, axis=0)
-        logging.info('norm %s', json.dumps(z.tolist()))
-        for p in z.tolist():
-            assert int(p) == 1
+        # logging.info('norm %s', json.dumps(z.tolist()))
+
         return sim_mtx
 
