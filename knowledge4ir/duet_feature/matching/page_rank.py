@@ -27,12 +27,13 @@ from knowledge4ir.utils import (
     add_feature_prefix,
     term2lm,
 )
+from scipy import spatial
 
 
 class PageRankFeatureExtractor(LeToRFeatureExtractor):
     # random_start_p = Float(0.1, help='random start prob').tag(config=True)
     l_field = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
-    l_steps = List(Int, default_value=[1, 5, 20]).tag(config=True)
+    l_steps = List(Int, default_value=[1, 5, 10]).tag(config=True)
     embedding_in = Unicode(help='word2vec formatted embedding in').tag(config=True)
     tagger = Unicode('spot')
     max_e_per_d = Int(1000, help='maximum e allowed per d').tag(config=True)
@@ -64,7 +65,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         l_doc_e, v_doc_e_w = self._filter_doc_e(l_doc_e)
         sim_mtx = self._build_translation_mtx(l_doc_e, v_doc_e_w, self.embedding)
         logging.info('random walk matrix with size [%d]', len(l_doc_e))
-        v_init = np.ones(len(l_doc_e))
+        v_init = v_doc_e_w
         for step in self.l_steps:
             # can be optimized.. but let use this for now
             q_mean, q_max = 0, 0
@@ -111,8 +112,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         else:
             return 0, 0
 
-    @classmethod
-    def _build_translation_mtx(cls, l_doc_e, v_doc_e_w, emb_model):
+    def _build_translation_mtx(self, l_doc_e, v_doc_e_w, emb_model):
         """
         build a q-d entity cosine similarity matrix
         :param l_q_e: query entities
@@ -121,6 +121,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         :return: a matrix with cosine(q_e, doc_e)
         """
         sim_mtx = np.zeros((len(l_doc_e), len(l_doc_e)))
+        emb_mtx = np.array([self.embedding[e] for e in l_doc_e])
         if l_doc_e:
             for i in xrange(len(l_doc_e)):
                 e_i = l_doc_e[i]
@@ -129,10 +130,10 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
                     if e_i == e_j:
                         sim_mtx[i, j] = 1.0
                         continue
-                    if (e_i in emb_model) & (e_j in emb_model):
-                        sim_mtx[i, j] = max(emb_model.similarity(e_i, e_j), 0)
+                    sim_mtx[i, j] = max(0, 1 - spatial.distance.cosine(emb_mtx[i], emb_mtx[j]))
             sim_mtx /= np.sum(sim_mtx, axis=0)
-            sim_mtx = cls._add_random_start_prob(sim_mtx, v_doc_e_w)
+            if self.restart:
+                sim_mtx = self._add_random_start_prob(sim_mtx, v_doc_e_w)
         logging.info('part of translation mtx: %s', json.dumps(sim_mtx[:10, :10].tolist()))
         return sim_mtx
 
