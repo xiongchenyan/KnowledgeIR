@@ -30,22 +30,22 @@ class GraphTranslation(nn.Module):
     def forward(self, v_e, v_score):
         """
         return probability of each one being salient
-        :param v_e: the input entity id's
-        :param v_score: the initial weights on each entity
+        :param v_e: the input entity id's, has to be Variable()
+        :param v_score: the initial weights on each entity, has to be Variable()
         :return: score for each one
         """
         mtx_embedding = self.embedding(v_e)
         mtx_embedding = mtx_embedding.div(
-            torch.norm(mtx_embedding, p=2, dim=1).expand_as(mtx_embedding))
+            torch.norm(mtx_embedding, p=2, dim=1).unsqueeze(-1).expand_as(mtx_embedding))
 
         trans_mtx = torch.mm(mtx_embedding, mtx_embedding.transpose(0, 1))
         trans_mtx = trans_mtx.div(
-            torch.norm(trans_mtx, p=1, dim=0).expand_as(trans_mtx)
+            torch.norm(trans_mtx, p=1, dim=0).unsqueeze(0).expand_as(trans_mtx)
         )
-        output = Variable(v_score)
+        output = v_score.unsqueeze(-1)
         for p in xrange(self.random_walk_step):
             output = torch.mm(trans_mtx, output)
 
         output = F.sigmoid(self.logistic(output))
-        return output
+        return output.squeeze(-1)
 
