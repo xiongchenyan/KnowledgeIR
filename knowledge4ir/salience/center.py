@@ -43,7 +43,7 @@ import torch.nn.functional as F
 class SalienceModelCenter(Configurable):
     learning_rate = Float(1e-3, help='learning rate').tag(config=True)
     pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
-    model_name = Unicode('trans', help="model name: trans").tag(config=True)
+    model_name = Unicode(help="model name: trans").tag(config=True)
     random_walk_step = Int(1, help='random walk step').tag(config=True)  # need to be a config para
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
 
@@ -57,6 +57,7 @@ class SalienceModelCenter(Configurable):
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
+        self.pre_emb = None
         if self.pre_trained_emb_in:
             logging.info('loading pre trained embedding [%s]', self.pre_trained_emb_in)
             self.pre_emb = np.load(open(self.pre_trained_emb_in))
@@ -65,11 +66,12 @@ class SalienceModelCenter(Configurable):
         self._init_model()
 
     def _init_model(self):
-        self.model = self.h_model[self.model_name](self.random_walk_step,
-                                                   self.pre_emb.shape[0],
-                                                   self.pre_emb.shape[1],
-                                                   self.pre_emb,
-                                                   )
+        if self.model_name:
+            self.model = self.h_model[self.model_name](self.random_walk_step,
+                                                       self.pre_emb.shape[0],
+                                                       self.pre_emb.shape[1],
+                                                       self.pre_emb,
+                                                       )
 
     def train(self, train_in_name):
         """
