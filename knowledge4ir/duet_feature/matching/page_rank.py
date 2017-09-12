@@ -33,7 +33,7 @@ from scipy import spatial
 class PageRankFeatureExtractor(LeToRFeatureExtractor):
     # random_start_p = Float(0.1, help='random start prob').tag(config=True)
     l_fields = List(Unicode, default_value=TARGET_TEXT_FIELDS).tag(config=True)
-    l_steps = List(Int, default_value=[1, 5, 10]).tag(config=True)
+    l_steps = List(Int, default_value=[1, 5, 20]).tag(config=True)
     embedding_in = Unicode(help='word2vec formatted embedding in').tag(config=True)
     tagger = Unicode('spot')
     max_e_per_d = Int(1000, help='maximum e allowed per d').tag(config=True)
