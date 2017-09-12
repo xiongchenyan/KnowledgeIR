@@ -38,6 +38,7 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('spot')
     max_e_per_d = Int(1000, help='maximum e allowed per d').tag(config=True)
     restart = Bool(False, help='whether to restart randomly').tag(config=True)
+    init_with_freq = Bool(True, help='whether initial pr score is frequency').tag(config=True)
 
     def __init__(self, **kwargs):
         super(LeToRFeatureExtractor, self).__init__(**kwargs)
@@ -65,7 +66,10 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         l_doc_e, v_doc_e_w = self._filter_doc_e(l_doc_e)
         sim_mtx = self._build_translation_mtx(l_doc_e, v_doc_e_w, self.embedding)
         logging.info('random walk matrix with size [%d]', len(l_doc_e))
-        v_init = v_doc_e_w
+        if self.init_with_freq:
+            v_init = v_doc_e_w
+        else:
+            v_init = np.ones(v_doc_e_w.shape)
         for step in self.l_steps:
             # can be optimized.. but let use this for now
             q_mean, q_max = 0, 0
@@ -121,7 +125,6 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
         :return: a matrix with cosine(q_e, doc_e)
         """
         sim_mtx = np.zeros((len(l_doc_e), len(l_doc_e)))
-        emb_mtx = np.array([self.embedding[e] for e in l_doc_e])
         if l_doc_e:
             for i in xrange(len(l_doc_e)):
                 e_i = l_doc_e[i]
@@ -129,8 +132,8 @@ class PageRankFeatureExtractor(LeToRFeatureExtractor):
                     e_j = l_doc_e[j]
                     if e_i == e_j:
                         sim_mtx[i, j] = 1.0
-                        continue
-                    sim_mtx[i, j] = max(0, 1 - spatial.distance.cosine(emb_mtx[i], emb_mtx[j]))
+                    else:
+                        sim_mtx[i, j] = max(0, self.embedding.similarity(e_i, e_j))
             sim_mtx /= np.sum(sim_mtx, axis=0)
             if self.restart:
                 sim_mtx = self._add_random_start_prob(sim_mtx, v_doc_e_w)
