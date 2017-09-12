@@ -185,4 +185,3 @@ if __name__ == '__main__':
     para = Main(config=conf)
     model.train(para.train_in)
     model.predict(para.test_in, para.test_out)
-    
