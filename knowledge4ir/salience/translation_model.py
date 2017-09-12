@@ -49,4 +49,3 @@ class GraphTranslation(nn.Module):
         output = F.sigmoid(self.logistic(output))
         return output
 
-
