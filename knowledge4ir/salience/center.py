@@ -66,7 +66,7 @@ class SalienceModelCenter(Configurable):
             logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
         self.model = None
         self._init_model()
-        self.class_weight = torch.cuda.LongTensor(self.l_class_weights)
+        self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
 
     def _init_model(self):
         if self.model_name:
