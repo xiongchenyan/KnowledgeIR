@@ -47,6 +47,7 @@ class SalienceModelCenter(Configurable):
     model_name = Unicode(help="model name: trans").tag(config=True)
     random_walk_step = Int(1, help='random walk step').tag(config=True)  # need to be a config para
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
+    l_class_weights = [1, 4]
 
     max_e_per_doc = Int(1000, help='max e per doc')
     h_model = {
@@ -65,6 +66,7 @@ class SalienceModelCenter(Configurable):
             logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
         self.model = None
         self._init_model()
+        self.class_weight = torch.cuda.LongTensor(self.l_class_weights)
 
     def _init_model(self):
         if self.model_name:
@@ -82,7 +84,7 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
-        criterion = nn.NLLLoss()
+        criterion = nn.NLLLoss(weight=self.class_weight)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
@@ -130,7 +132,7 @@ class SalienceModelCenter(Configurable):
             output = self.model(v_e, v_w).cpu()
             v_e = v_e.cpu()
             v_label = v_label.cpu()
-            pre_label = output.data.max(-1, keepdim=True)[1]
+            pre_label = output.data.max(-1)
             h_out = dict()
             h_out['docno'] = docno
             l_e = v_e.data.numpy().tolist()

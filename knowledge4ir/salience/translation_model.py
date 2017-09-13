@@ -18,7 +18,7 @@ class GraphTranslation(nn.Module):
     output: p(target e id is salient)
     """
 
-    def __init__(self, random_walk_step, vocab_size, embedding_dim, pre_embedding=None):
+    def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
         super(GraphTranslation, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.linear = nn.Linear(1, 2, bias=True)
@@ -26,7 +26,7 @@ class GraphTranslation(nn.Module):
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
             self.linear.cuda()
-        self.random_walk_step = random_walk_step
+        self.layer = layer
         if pre_embedding is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
         return
@@ -47,7 +47,7 @@ class GraphTranslation(nn.Module):
             torch.norm(trans_mtx, p=1, dim=0).unsqueeze(0).expand_as(trans_mtx)
         )
         output = v_score.unsqueeze(-1)
-        for p in xrange(self.random_walk_step):
+        for p in xrange(self.layer):
             output = torch.mm(trans_mtx, output)
 
         output = F.log_softmax(self.linear(output))
