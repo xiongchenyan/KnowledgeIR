@@ -125,6 +125,8 @@ class SalienceModelCenter(Configurable):
         for line in open(test_in_name):
             docno = json.loads(line)['docno']
             v_e, v_w, v_label = self._data_io(line)
+            if (not v_e.size()) | (not v_label.size()):
+                continue
             output = self.model(v_e, v_w).cpu()
             v_e = v_e.cpu()
             v_label = v_label.cpu()
