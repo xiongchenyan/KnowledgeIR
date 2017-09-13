@@ -141,6 +141,7 @@ class SalienceModelCenter(Configurable):
             this_acc = np.mean(correct / float(len(l_e)))
             total_accuracy += this_acc
             p += 1
+            logging.debug('doc [%d][%s] accuracy [%f]', p, docno, this_acc)
             if not p % 100:
                 logging.info('predicted [%d] docs, accuracy [%f]', p, total_accuracy / p)
         logging.info('finished predicting [%d] docs, accuracy [%f]', p, total_accuracy / p)
