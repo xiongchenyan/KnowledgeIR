@@ -130,14 +130,14 @@ class SalienceModelCenter(Configurable):
             docno = json.loads(line)['docno']
             v_e, v_w, v_label = self._data_io(line)
             output = self.model(v_e, v_w)
-
             h_out = dict()
             h_out['docno'] = docno
-            l_e = v_e.data.numpy().tolist()
-            l_res = output.data.numpy().tolist()
+            l_e = v_e.cpu().data.numpy().tolist()
+            l_res = output.cpu().data.numpy().tolist()
+            v_label.cpu()
             h_out['predict'] = zip(l_e, l_res)
             print >> out, json.dumps(h_out)
-            this_acc = output == v_label
+            this_acc = output.cpu() == v_label.cpu()
             this_acc = np.mean(this_acc.data.numpy())
             total_accuracy += this_acc
             p += 1
@@ -179,7 +179,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)

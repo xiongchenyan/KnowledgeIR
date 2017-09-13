@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch import optim
 import torch.nn.functional as F
-
+import logging
 use_cuda = torch.cuda.is_available()
 
 
@@ -23,6 +23,7 @@ class GraphTranslation(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.logistic = nn.Linear(1, 1, bias=True)
         if use_cuda:
+            logging.info('copying parameter to cuda')
             self.embedding.cuda()
             self.logistic.cuda()
         self.random_walk_step = random_walk_step
