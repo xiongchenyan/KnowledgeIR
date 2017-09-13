@@ -134,12 +134,15 @@ class SalienceModelCenter(Configurable):
             v_e = v_e.cpu()
             v_label = v_label.cpu()
             pre_label = output.data.max(-1)[1]
+            score = output.data[:, 1]
             h_out = dict()
             h_out['docno'] = docno
             l_e = v_e.data.numpy().tolist()
             l_res = pre_label.numpy().tolist()
-            h_out['predict'] = zip(l_e, l_res)
+
+            h_out['predict'] = zip(l_e, zip(score.numpy().tolist(), l_res))
             print >> out, json.dumps(h_out)
+
             correct = pre_label.eq(v_label.data.view_as(pre_label)).sum()
             this_acc = np.mean(correct / float(len(l_e)))
             total_accuracy += this_acc
