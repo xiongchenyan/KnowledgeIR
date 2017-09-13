@@ -106,7 +106,8 @@ class SalienceModelCenter(Configurable):
                 p += 1
                 if not p % 100:
                     logging.info('data [%d], average loss [%f]', p, total_loss / p)
-            logging.info('epoch [%d] finished with loss [%f] on [%d] data', total_loss / p, p)
+            logging.info('epoch [%d] finished with loss [%f] on [%d] data',
+                         epoch, total_loss / p, p)
             l_epoch_loss.append(total_loss / p)
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
         return
@@ -131,12 +132,12 @@ class SalienceModelCenter(Configurable):
 
             h_out = dict()
             h_out['docno'] = docno
-            l_e = v_e.numpy().tolist()
-            l_res = output.numpy().tolist()
+            l_e = v_e.data.numpy().tolist()
+            l_res = output.data.numpy().tolist()
             h_out['predict'] = zip(l_e, l_res)
             print >> out, json.dumps(h_out)
             this_acc = output == v_label
-            this_acc = np.mean(this_acc.numpy())
+            this_acc = np.mean(this_acc.data.numpy())
             total_accuracy += this_acc
             p += 1
             if not p % 100:
