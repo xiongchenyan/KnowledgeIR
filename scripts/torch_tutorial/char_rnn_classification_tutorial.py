@@ -376,7 +376,7 @@ for iter in range(1, n_iters + 1):
     # Print iter number, loss, name and guess
     if iter % print_every == 0:
         guess, guess_i = categoryFromOutput(output)
-        correct = '✓' if guess == category else '✗ (%s)' % category
+        correct = '1' if guess == category else '-1 (%s)' % category
         print('%d %d%% (%s) %.4f %s / %s %s' % (iter, iter / n_iters * 100, timeSince(start), loss, line, guess, correct))
 
     # Add current loss avg to list of losses
