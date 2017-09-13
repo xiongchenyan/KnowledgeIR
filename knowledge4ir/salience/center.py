@@ -81,7 +81,7 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
-        criterion = nn.SoftMarginLoss()
+        criterion = nn.BCELoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
@@ -92,11 +92,12 @@ class SalienceModelCenter(Configurable):
                 v_e, v_w, v_label = self._data_io(line)
                 optimizer.zero_grad()
                 output = self.model(v_e, v_w)
+                # v_label = Variable(v_label, requires_grad=False)
                 print "label"
                 print v_label
                 print "output"
                 print output
-                loss = criterion(v_label, output)
+                loss = criterion(output, v_label)
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.data[0]
