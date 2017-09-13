@@ -74,6 +74,10 @@ print(findFiles('data/names/*.txt'))
 
 import unicodedata
 import string
+import sys
+
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 all_letters = string.ascii_letters + " .,;'"
 n_letters = len(all_letters)
