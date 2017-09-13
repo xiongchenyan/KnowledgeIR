@@ -95,17 +95,13 @@ class SalienceModelCenter(Configurable):
                     continue
                 optimizer.zero_grad()
                 output = self.model(v_e, v_w)
-                # print "label"
-                # print v_label[:2]
-                # print "output"
-                # print output[:2]
                 loss = criterion(output, v_label)
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.data[0]
                 logging.debug('[%d] data [%f] loss', p, loss.data[0])
                 p += 1
-                if not p % 100:
+                if not p % 1000:
                     logging.info('data [%d], average loss [%f]', p, total_loss / p)
             logging.info('epoch [%d] finished with loss [%f] on [%d] data',
                          epoch, total_loss / p, p)
@@ -130,14 +126,13 @@ class SalienceModelCenter(Configurable):
             docno = json.loads(line)['docno']
             v_e, v_w, v_label = self._data_io(line)
             output = self.model(v_e, v_w)
-            pre_label = output.data.max(-1, keepdim=True)[1]
+            pre_label = output.cpu().data.max(-1, keepdim=True)[1]
             h_out = dict()
             h_out['docno'] = docno
             l_e = v_e.cpu().data.numpy().tolist()
-            l_res = pre_label.cpu().data.numpy().tolist()
+            l_res = pre_label.numpy().tolist()
             h_out['predict'] = zip(l_e, l_res)
             print >> out, json.dumps(h_out)
-            this_acc = output.cpu() == v_label.cpu()
             correct = pre_label.eq(v_label.data.view_as(pre_label)).cpu().sum()
             this_acc = np.mean(correct / float(len(l_e)))
             total_accuracy += this_acc
