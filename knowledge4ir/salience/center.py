@@ -132,7 +132,7 @@ class SalienceModelCenter(Configurable):
             output = self.model(v_e, v_w).cpu()
             v_e = v_e.cpu()
             v_label = v_label.cpu()
-            pre_label = output.data.max(-1)
+            pre_label = output.data.max(-1)[1]
             h_out = dict()
             h_out['docno'] = docno
             l_e = v_e.data.numpy().tolist()
