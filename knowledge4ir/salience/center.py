@@ -159,7 +159,7 @@ class SalienceModelCenter(Configurable):
         l_label = [1 if e in s_salient_e else -1 for e in l_e]
         v_e = Variable(torch.LongTensor(l_e))
         v_w = Variable(torch.FloatTensor(l_w))
-        v_label = Variable(torch.LongTensor(l_label))
+        v_label = torch.LongTensor(l_label)
         return v_e, v_w, v_label
 
 
