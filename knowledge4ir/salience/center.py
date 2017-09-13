@@ -47,7 +47,7 @@ class SalienceModelCenter(Configurable):
     model_name = Unicode(help="model name: trans").tag(config=True)
     random_walk_step = Int(1, help='random walk step').tag(config=True)  # need to be a config para
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
-    l_class_weights = [1, 4]
+    l_class_weights = [0.1, 1]
 
     max_e_per_doc = Int(1000, help='max e per doc')
     h_model = {
