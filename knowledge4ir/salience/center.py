@@ -92,6 +92,10 @@ class SalienceModelCenter(Configurable):
                 v_e, v_w, v_label = self._data_io(line)
                 optimizer.zero_grad()
                 output = self.model(v_e, v_w)
+                print "label"
+                print v_label
+                print "output"
+                print output
                 loss = criterion(v_label, output)
                 loss.backward()
                 optimizer.step()
