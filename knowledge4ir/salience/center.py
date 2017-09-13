@@ -90,7 +90,7 @@ class SalienceModelCenter(Configurable):
             logging.info('start epoch [%d]', epoch)
             for line in open(train_in_name):
                 v_e, v_w, v_label = self._data_io(line)
-                if (not v_e) | (not v_label):
+                if (not v_e.size()) | (not v_label.size()):
                     continue
                 optimizer.zero_grad()
                 output = self.model(v_e, v_w)
