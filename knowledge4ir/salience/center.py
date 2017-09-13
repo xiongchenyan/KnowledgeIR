@@ -92,15 +92,15 @@ class SalienceModelCenter(Configurable):
                 v_e, v_w, v_label = self._data_io(line)
                 optimizer.zero_grad()
                 output = self.model(v_e, v_w)
-                # v_label = Variable(v_label, requires_grad=False)
-                print "label"
-                print v_label
-                print "output"
-                print output
+                # print "label"
+                # print v_label
+                # print "output"
+                # print output
                 loss = criterion(output, v_label)
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.data[0]
+                logging.debug('[%d] data [%f] loss', p, loss.data[0])
                 p += 1
                 if not p % 100:
                     logging.info('data [%d], average loss [%f]', p, total_loss / p)
