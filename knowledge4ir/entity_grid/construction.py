@@ -18,7 +18,7 @@ from knowledge4ir.utils.boe import form_boe_per_field
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     QUERY_FIELD,
-    abstract_field,
+    paper_abstract_field,
 )
 import json
 import sys
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         print "form entity grid"
         print "2+ para: tagged doc in + out_name + out format:full (default)|pretty"
         sys.exit(-1)
-    l_full_field = TARGET_TEXT_FIELDS + [abstract_field]
+    l_full_field = TARGET_TEXT_FIELDS + [paper_abstract_field]
     out = open(sys.argv[2], 'w')
     out_format = 'full'
     if len(sys.argv) > 3:

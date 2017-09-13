@@ -18,7 +18,7 @@ from knowledge4ir.utils import (
     body_field,
     title_field,
     QUERY_FIELD,
-    abstract_field,
+    paper_abstract_field,
 )
 from knowledge4ir.utils.boe import SPOT_FIELD
 from knowledge4ir.prepare.boe.tagme_offset_to_token_offest import convert_offset
