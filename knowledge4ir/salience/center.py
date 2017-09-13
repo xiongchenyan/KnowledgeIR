@@ -81,7 +81,7 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
-        criterion = nn.BCELoss()
+        criterion = nn.SoftMarginLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
