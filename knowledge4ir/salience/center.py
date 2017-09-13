@@ -82,7 +82,7 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
-        criterion = nn.SoftMarginLoss()
+        criterion = nn.NLLLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
@@ -130,15 +130,16 @@ class SalienceModelCenter(Configurable):
             docno = json.loads(line)['docno']
             v_e, v_w, v_label = self._data_io(line)
             output = self.model(v_e, v_w)
+            pre_label = output.data.max(-1, keepdim=True)[1]
             h_out = dict()
             h_out['docno'] = docno
             l_e = v_e.cpu().data.numpy().tolist()
-            l_res = output.cpu().data.numpy().tolist()
-            v_label.cpu()
+            l_res = pre_label.cpu().data.numpy().tolist()
             h_out['predict'] = zip(l_e, l_res)
             print >> out, json.dumps(h_out)
             this_acc = output.cpu() == v_label.cpu()
-            this_acc = np.mean(this_acc.data.numpy())
+            correct = pre_label.eq(v_label.data.view_as(pre_label)).cpu().sum()
+            this_acc = np.mean(correct / float(len(l_e)))
             total_accuracy += this_acc
             p += 1
             if not p % 100:
@@ -165,10 +166,10 @@ class SalienceModelCenter(Configurable):
         l_e = [item[0] for item in l_e_tf]
         z = float(sum([item[1] for item in l_e_tf]))
         l_w = [item[1] / z for item in l_e_tf]
-        l_label = [1 if e in s_salient_e else -1 for e in l_e]
+        l_label = [1 if e in s_salient_e else 0 for e in l_e]
         v_e = Variable(torch.LongTensor(l_e)).cuda() if use_cuda else Variable(torch.LongTensor(l_e))
         v_w = Variable(torch.FloatTensor(l_w)).cuda() if use_cuda else Variable(torch.FloatTensor(l_w))
-        v_label = Variable(torch.FloatTensor(l_label)).cuda() if use_cuda else Variable(torch.FloatTensor(l_label))
+        v_label = Variable(torch.LongTensor(l_label)).cuda() if use_cuda else Variable(torch.FloatTensor(l_label))
 
         return v_e, v_w, v_label
 
