@@ -36,7 +36,7 @@ class BiGRU(nn.Module):
         return probability of each one being salient
         :param v_e: the input entity id's, has to be Variable()
         :param v_score: the initial weights on each entity, has to be Variable()
-        :return: score for each one
+        :return: score for each one log_softmax of each categories' prob
         """
         return
 
