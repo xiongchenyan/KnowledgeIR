@@ -19,7 +19,6 @@ from traitlets.config import Configurable
 from traitlets import (
     Unicode,
     List,
-    Int,
 )
 from knowledge4ir.utils.condor import qsub_job
 

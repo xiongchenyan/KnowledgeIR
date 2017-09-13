@@ -12,7 +12,7 @@ import sys
 import json
 from knowledge4ir.utils import (
     body_field,
-    abstract_field,
+    paper_abstract_field,
     title_field,
     load_json_info,
     SPOT_FIELD,
@@ -49,11 +49,11 @@ def merge_raw_field(h_doc_info_base, h_doc_info_update):
 
 def s2_replace(h_info):
     if body_field in h_info:
-        h_info[abstract_field] = h_info[body_field]
+        h_info[paper_abstract_field] = h_info[body_field]
         del h_info[body_field]
     if SPOT_FIELD in h_info:
         if body_field in h_info[SPOT_FIELD]:
-            h_info[SPOT_FIELD][abstract_field] = h_info[SPOT_FIELD][body_field]
+            h_info[SPOT_FIELD][paper_abstract_field] = h_info[SPOT_FIELD][body_field]
             del h_info[SPOT_FIELD][body_field]
     return h_info
 

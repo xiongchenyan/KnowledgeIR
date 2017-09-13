@@ -41,8 +41,9 @@ class JointSemanticResource(Configurable):
     l_nlss_path = List(Unicode, help='paths to different nlss dumps').tag(config=True)
     l_nlss_name = List(Unicode, help='names of nlss').tag(config=True)
     max_nlss_per_e = Int(100, help='maximum nlss per e to derive').tag(config=True)
-
     entity_desp_path = Unicode(help='e id desp file').tag(config=True)
+
+
     def __init__(self, **kwargs):
         super(JointSemanticResource, self).__init__(**kwargs)
         self.embedding = None

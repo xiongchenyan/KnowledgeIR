@@ -26,7 +26,7 @@ from knowledge4ir.utils import (
 import math
 
 
-class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
+class LeToRBoeEmbFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('tagme', help='tagger used, as in q info and d info'
                      ).tag(config=True)
     l_target_fields = List(Unicode,
@@ -51,8 +51,8 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     top_k = Int(3,
                 help="number of soft match feature per paper field"
                 ).tag(config=True)
-    feature_name_pre = Unicode('BOEEmb')
-    nb_bin = Int(5, help='number of similarity bins').tag(config=True)
+    feature_name_pre = Unicode('ESR')
+    nb_bin = Int(6, help='number of similarity bins').tag(config=True)
     bin_func = Unicode('log',
                        help="the func to apply on bin count: log|tf|norm_tf"
                        ).tag(config=True)
@@ -66,7 +66,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     log_min = Float(1e-10, help='log of zero bin').tag(config=True)
 
     def __init__(self, **kwargs):
-        super(LeToRBOEEmbFeatureExtractor, self).__init__(**kwargs)
+        super(LeToRBoeEmbFeatureExtractor, self).__init__(**kwargs)
         if self.embedding_in:
             self.l_embedding_in.append(self.embedding_in)
             self.l_embedding_name.append('')
@@ -79,8 +79,15 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             self._form_bins()
         logging.info('use bins %s', json.dumps(self.l_bins))
 
+        self.h_pool_func = {
+            'max': self._max_bin,
+            'mean': self._mean_bin,
+            'mean-all': self._mean_all,
+            'topk': self._top_k_all
+        }
+
     def set_external_info(self, external_info):
-        super(LeToRBOEEmbFeatureExtractor, self).set_external_info(external_info)
+        super(LeToRBoeEmbFeatureExtractor, self).set_external_info(external_info)
         self.l_embedding = external_info.l_embedding
         self.l_embedding_name = external_info.l_embedding_name
 
@@ -107,21 +114,14 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
             else:
                 m_sim_mtx = self._build_sim_mtx(l_e, l_doc_e, emb_model)
                 l_sim_mtx.append(m_sim_mtx)
-            # m_sim_mtx = self._build_cosine_mtx(l_e, l_doc_e, emb_model)
-            # logging.debug('sim mtx: %s', np.array2string(m_sim_mtx))
 
             l_total_bin_score = []
             for d in xrange(len(l_sim_mtx)):
                 l_this_bin_score = []
                 m_sim_mtx = l_sim_mtx[d]
-                if 'mean' in self.pool_func:
-                    l_this_bin_score.extend(self._mean_bin(m_sim_mtx))
-                if 'max' in self.pool_func:
-                    l_this_bin_score.extend(self._max_bin(m_sim_mtx))
-                if 'mean-all' in self.pool_func:
-                    l_this_bin_score.extend(self._mean_all(m_sim_mtx))
-                if 'topk' in self.pool_func:
-                    l_this_bin_score.extend(self._top_k_all(m_sim_mtx))
+                for pool_name in self.pool_func:
+                    assert pool_name in self.h_pool_func
+                    l_this_bin_score.extend(self.h_pool_func[pool_name](m_sim_mtx))
                 if len(l_sim_mtx) > 1:
                     l_this_bin_score = [('D%03d' % d + item[0], item[1]) for item in l_this_bin_score]
                 l_total_bin_score.extend(l_this_bin_score)
@@ -188,6 +188,7 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
     def _build_fine_grained_l1_tensor(cls, l_q_e, l_doc_e, emb_model):
         """
         build a q-d entity l1 similarity tensor, fine grained to each dimension of embedding
+        deprecated
         :param l_q_e: query entities
         :param l_doc_e: doc entities
         :param emb_model: embedding model loaded
@@ -210,25 +211,25 @@ class LeToRBOEEmbFeatureExtractor(LeToRFeatureExtractor):
 
         return l_sim_mtx
 
-    def _soft_embedding_sim(self, m_sim_mtx):
-        """
-        Not in use not 11/04/2016
-        soft matching weights
-        exactly matched document's entities have been exclude before calculating the similarity matrix
-        :param m_sim_mtx: q-e <-> doc-e similarity matrix
-        :return: similarity scores as defined in self.l_soft_similarities
-        """
-        l_sim = []
-
-        if 'Mean' in self.l_soft_similarities:
-            l_sim.append(['Mean', np.mean(m_sim_mtx)])
-        if 'TopK' in self.l_soft_similarities:
-            mid = m_sim_mtx.reshape((m_sim_mtx.shape[0] * m_sim_mtx.shape[1],))
-            l_top_k = mid[mid.argsort()[-self.top_k_soft:]].tolist()
-            l_top_k.sort(reversed=True)
-            for k in xrange(self.top_k_soft):
-                l_sim.append(['Top%d' % (k + 1), l_top_k[k]])
-        return l_sim
+    # def _soft_embedding_sim(self, m_sim_mtx):
+    #     """
+    #     Not in use not 11/04/2016
+    #     soft matching weights
+    #     exactly matched document's entities have been exclude before calculating the similarity matrix
+    #     :param m_sim_mtx: q-e <-> doc-e similarity matrix
+    #     :return: similarity scores as defined in self.l_soft_similarities
+    #     """
+    #     l_sim = []
+    #
+    #     if 'Mean' in self.l_soft_similarities:
+    #         l_sim.append(['Mean', np.mean(m_sim_mtx)])
+    #     if 'TopK' in self.l_soft_similarities:
+    #         mid = m_sim_mtx.reshape((m_sim_mtx.shape[0] * m_sim_mtx.shape[1],))
+    #         l_top_k = mid[mid.argsort()[-self.top_k_soft:]].tolist()
+    #         l_top_k.sort(reversed=True)
+    #         for k in xrange(self.top_k_soft):
+    #             l_sim.append(['Top%d' % (k + 1), l_top_k[k]])
+    #     return l_sim
 
     def _mean_bin(self, m_sim_mtx):
         """

@@ -56,10 +56,10 @@ def process(in_name, out_pre):
     pickle.dump(h_e, open(out_pre + '.entity.pickle', 'w'))
     print "dumping word emb..."
     mtx_emb = np.array(l_word_emb)
-    np.save(open(out_pre + 'word_emb.npy', 'w'), mtx_emb)
+    np.save(open(out_pre + '_word_emb.npy', 'w'), mtx_emb)
     print "dumping entity emb..."
     mtx_emb = np.array(l_e_emb)
-    np.save(open(out_pre + 'entity_emb.npy', 'w'), mtx_emb)
+    np.save(open(out_pre + '_entity_emb.npy', 'w'), mtx_emb)
 
     print "finished"
 
