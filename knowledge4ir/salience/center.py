@@ -38,6 +38,7 @@ import torch
 from torch.autograd import Variable
 from torch import nn
 import torch.nn.functional as F
+use_cuda = torch.cuda.is_available()
 
 
 class SalienceModelCenter(Configurable):
@@ -165,9 +166,10 @@ class SalienceModelCenter(Configurable):
         z = float(sum([item[1] for item in l_e_tf]))
         l_w = [item[1] / z for item in l_e_tf]
         l_label = [1 if e in s_salient_e else -1 for e in l_e]
-        v_e = Variable(torch.LongTensor(l_e))
-        v_w = Variable(torch.FloatTensor(l_w))
-        v_label = Variable(torch.FloatTensor(l_label))
+        v_e = Variable(torch.LongTensor(l_e)).cuda() if use_cuda else Variable(torch.LongTensor(l_e))
+        v_w = Variable(torch.FloatTensor(l_w)).cuda() if use_cuda else Variable(torch.FloatTensor(l_w))
+        v_label = Variable(torch.FloatTensor(l_label)).cuda() if use_cuda else Variable(torch.FloatTensor(l_label))
+
         return v_e, v_w, v_label
 
 

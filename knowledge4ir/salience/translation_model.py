@@ -22,6 +22,9 @@ class GraphTranslation(nn.Module):
         super(GraphTranslation, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.logistic = nn.Linear(1, 1, bias=True)
+        if use_cuda:
+            self.embedding.cuda()
+            self.logistic.cuda()
         self.random_walk_step = random_walk_step
         if pre_embedding is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
@@ -47,5 +50,9 @@ class GraphTranslation(nn.Module):
             output = torch.mm(trans_mtx, output)
 
         output = F.sigmoid(self.logistic(output))
-        return output.squeeze(-1)
+        output = output.squeeze(-1)
+        if use_cuda:
+            return output.cuda()
+        else:
+            return output
 
