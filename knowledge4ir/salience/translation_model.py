@@ -39,6 +39,7 @@ class GraphTranslation(nn.Module):
         :return: score for each one
         """
         mtx_embedding = self.embedding(v_e)
+        mtx_embedding += 0.001  # protect zero norm
         mtx_embedding = mtx_embedding.div(
             torch.norm(mtx_embedding, p=2, dim=1).unsqueeze(-1).expand_as(mtx_embedding))
 
