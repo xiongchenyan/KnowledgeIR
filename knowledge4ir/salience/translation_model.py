@@ -45,7 +45,7 @@ class GraphTranslation(nn.Module):
         mtx_embedding = mtx_embedding.div(
             torch.norm(mtx_embedding, p=2, dim=1).unsqueeze(-1).expand_as(mtx_embedding))
 
-        trans_mtx = torch.mm(mtx_embedding, mtx_embedding.transpose(0, 1))
+        trans_mtx = torch.mm(mtx_embedding, mtx_embedding.transpose(0, 1)) + 1.0
         trans_mtx = trans_mtx.div(
             torch.norm(trans_mtx, p=1, dim=0).unsqueeze(0).expand_as(trans_mtx)
         )
