@@ -190,6 +190,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
+    set_basic_log(logging.INFO)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
@@ -206,7 +207,7 @@ if __name__ == '__main__':
 
     conf = load_py_config(sys.argv[1])
     para = Main(config=conf)
-    set_basic_log(para.log_level)
+    # set_basic_log(para.log_level)
     model = SalienceModelCenter(config=conf)
     model.train(para.train_in)
     model.predict(para.test_in, para.test_out)
