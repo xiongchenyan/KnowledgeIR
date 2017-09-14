@@ -10,6 +10,7 @@ from torch.autograd import Variable
 from torch import optim
 import torch.nn.functional as F
 import logging
+import json
 use_cuda = torch.cuda.is_available()
 
 
@@ -49,7 +50,20 @@ class GraphTranslation(nn.Module):
             torch.norm(trans_mtx, p=1, dim=0).unsqueeze(0).expand_as(trans_mtx)
         )
         mid = trans_mtx.cpu().data.numpy()
-        assert not np.sum(np.isnan(mid))
+        if np.sum(np.isnan(mid)):
+            logging.info('entities are:\n%s',
+                         json.dumps(v_e.data.cpu().numpy().tolist())
+                         )
+            logging.info('init scores are:\n%s',
+                         json.dumps(v_score.cpu().numpy().tolist())
+                         )
+            logging.info('embeddings are:\n %s',
+                         json.dumps(mtx_embedding.data.cpu().numpy().tolist())
+                         )
+            logging.info('trans_mtx are:\n %s',
+                         json.dumps(trans_mtx.data.cpu().numpy().tolist())
+                         )
+            raise ValueError
         output = v_score.unsqueeze(-1)
         for p in xrange(self.layer):
             output = torch.mm(trans_mtx, output)
