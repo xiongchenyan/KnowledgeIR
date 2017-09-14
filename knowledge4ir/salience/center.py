@@ -100,7 +100,7 @@ class SalienceModelCenter(Configurable):
                 output = self.model(v_e, v_w)
                 loss = criterion(output, v_label)
                 loss.backward()
-                nn.utils.clip_grad_norm(self.model.parameters())
+                nn.utils.clip_grad_norm(self.model.parameters(), 10)
                 optimizer.step()
                 total_loss += loss.data[0]
                 logging.debug('[%d] data [%f] loss', p, loss.data[0])
