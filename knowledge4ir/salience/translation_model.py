@@ -5,6 +5,7 @@ or basic page rank model
 
 import torch
 import torch.nn as nn
+import numpy as np
 from torch.autograd import Variable
 from torch import optim
 import torch.nn.functional as F
@@ -39,7 +40,7 @@ class GraphTranslation(nn.Module):
         :return: score for each one
         """
         mtx_embedding = self.embedding(v_e)
-        mtx_embedding += 0.001  # protect zero norm
+        # mtx_embedding += 0.001  # protect zero norm
         mtx_embedding = mtx_embedding.div(
             torch.norm(mtx_embedding, p=2, dim=1).unsqueeze(-1).expand_as(mtx_embedding))
 
@@ -47,6 +48,8 @@ class GraphTranslation(nn.Module):
         trans_mtx = trans_mtx.div(
             torch.norm(trans_mtx, p=1, dim=0).unsqueeze(0).expand_as(trans_mtx)
         )
+        mid = trans_mtx.cpu().data.numpy()
+        assert not np.isnan(mid)
         output = v_score.unsqueeze(-1)
         for p in xrange(self.layer):
             output = torch.mm(trans_mtx, output)

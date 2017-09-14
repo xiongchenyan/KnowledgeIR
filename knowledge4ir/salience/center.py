@@ -35,6 +35,7 @@ from knowledge4ir.utils import (
     abstract_field,
     term2lm,
 )
+import math
 import torch
 from torch.autograd import Variable
 from torch import nn
@@ -96,14 +97,16 @@ class SalienceModelCenter(Configurable):
                 v_e, v_w, v_label = self._data_io(line)
                 if (not v_e.size()) | (not v_label.size()):
                     continue
+                logging.debug('doc [%s]', json.loads(line)['docno'])
                 optimizer.zero_grad()
                 output = self.model(v_e, v_w)
                 loss = criterion(output, v_label)
                 loss.backward()
-                nn.utils.clip_grad_norm(self.model.parameters(), 10)
+                # nn.utils.clip_grad_norm(self.model.parameters(), 10)
                 optimizer.step()
                 total_loss += loss.data[0]
                 logging.debug('[%d] data [%f] loss', p, loss.data[0])
+                assert not math.isnan(loss.data[0])
                 p += 1
                 if not p % 1000:
                     logging.info('data [%d], average loss [%f]', p, total_loss / p)
@@ -187,7 +190,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
