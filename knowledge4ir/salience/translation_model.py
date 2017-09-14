@@ -49,7 +49,7 @@ class GraphTranslation(nn.Module):
             torch.norm(trans_mtx, p=1, dim=0).unsqueeze(0).expand_as(trans_mtx)
         )
         mid = trans_mtx.cpu().data.numpy()
-        assert not np.isnan(mid)
+        assert not np.sum(np.isnan(mid))
         output = v_score.unsqueeze(-1)
         for p in xrange(self.layer):
             output = torch.mm(trans_mtx, output)
