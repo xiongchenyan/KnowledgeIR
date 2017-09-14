@@ -190,12 +190,12 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.DEBUG)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
         test_out = Unicode(help='test res').tag(config=True)
+        log_level = Int(10, help='10:debug, 20:info, +10 each').tag(config=True)
 
     if 2 != len(sys.argv):
         print "unit test model train test"
@@ -205,7 +205,8 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     conf = load_py_config(sys.argv[1])
-    model = SalienceModelCenter(config=conf)
     para = Main(config=conf)
+    set_basic_log(para.log_level)
+    model = SalienceModelCenter(config=conf)
     model.train(para.train_in)
     model.predict(para.test_in, para.test_out)
