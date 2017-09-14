@@ -51,18 +51,21 @@ class GraphTranslation(nn.Module):
         )
         mid = trans_mtx.cpu().data.numpy()
         if np.sum(np.isnan(mid)):
-            logging.info('entities are:\n%s',
+            logging.info('entities:\n%s',
                          json.dumps(v_e.data.cpu().numpy().tolist())
                          )
-            logging.info('init scores are:\n%s',
-                         json.dumps(v_score.cpu().numpy().tolist())
+            logging.info('init scores:\n%s',
+                         json.dumps(v_score.data.cpu().numpy().tolist())
                          )
+            logging.info('linear weights:\n%s',
+                         json.dumps(self.linear.weight.data.cpu().numpy().tolist()))
             logging.info('embeddings are:\n %s',
                          json.dumps(mtx_embedding.data.cpu().numpy().tolist())
                          )
-            logging.info('trans_mtx are:\n %s',
+            logging.info('trans_mtx:\n %s',
                          json.dumps(trans_mtx.data.cpu().numpy().tolist())
                          )
+
             raise ValueError
         output = v_score.unsqueeze(-1)
         for p in xrange(self.layer):
