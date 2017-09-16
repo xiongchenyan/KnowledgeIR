@@ -151,7 +151,7 @@ class SalienceModelCenter(Configurable):
 
         out = open(label_out_name, 'w')
         logging.info('start predicting for [%s]', test_in_name)
-        total_accuracy = 0
+        total_accuracy, total_precision, total_recall = 0, 0, 0
         p = 0
         for line in open(test_in_name):
             if self._filter_empty_line(line):
@@ -174,13 +174,27 @@ class SalienceModelCenter(Configurable):
             print >> out, json.dumps(h_out)
 
             correct = pre_label.eq(v_label.data.view_as(pre_label)).sum()
-            this_acc = np.mean(correct / float(len(l_e)))
+            precision = (
+                pre_label.eq(v_label.data.view_as(pre_label)).type(torch.LongTensor) * pre_label
+            ).sum()
+
+            recall = (
+                pre_label.eq(v_label.data.view_as(pre_label)).type(torch.LongTensor) * v_label
+            ).sum()
+            z = float(len(l_e))
+            this_acc = correct / z
+            this_pre = precision / z
+            this_recall = recall / z
             total_accuracy += this_acc
+            total_precision += this_pre
+            total_recall += recall
             p += 1
             # logging.debug('doc [%d][%s] accuracy [%f]', p, docno, this_acc)
             if not p % 1000:
-                logging.info('predicted [%d] docs, accuracy [%f]', p, total_accuracy / p)
-        logging.info('finished predicting [%d] docs, accuracy [%f]', p, total_accuracy / p)
+                logging.info('predicted [%d] docs, accuracy [%f], precision [%f], recall [%f]', p,
+                             total_accuracy / p, total_precision / p, total_recall / p)
+        logging.info('finished predicting [%d] docs, accuracy [%f], precision [%f], recall [%f]', p,
+                     total_accuracy / p, total_precision / p, total_recall / p)
         out.close()
         return
 
@@ -237,7 +251,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
