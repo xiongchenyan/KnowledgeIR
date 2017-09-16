@@ -96,6 +96,8 @@ class SalienceModelCenter(Configurable):
             logging.info('start epoch [%d]', epoch)
             l_this_batch_line = []
             for line in open(train_in_name):
+                if self._filter_empty_line(line):
+                    continue
                 l_this_batch_line.append(line)
                 if len(l_this_batch_line) >= self.batch_size:
                     this_loss = self._batch_train(l_this_batch_line, criterion, optimizer)
@@ -150,6 +152,8 @@ class SalienceModelCenter(Configurable):
         total_accuracy = 0
         p = 0
         for line in open(test_in_name):
+            if self._filter_empty_line(line):
+                continue
             docno = json.loads(line)['docno']
             v_e, v_w, v_label = self._data_io([line])
             if (not v_e[0].size()) | (not v_label[0].size()):
@@ -178,6 +182,11 @@ class SalienceModelCenter(Configurable):
         out.close()
         return
 
+    def _filter_empty_line(self, line):
+        h = json.loads(line)
+        l_e = h[self.spot_field].get(self.in_field, [])
+        return not l_e
+
     def _data_io(self, l_line):
         """
         convert data to the input for the model
@@ -200,7 +209,6 @@ class SalienceModelCenter(Configurable):
             z = float(sum([item[1] for item in l_e_tf]))
             l_w = [item[1] / z for item in l_e_tf]
             l_label = [1 if e in s_salient_e else 0 for e in l_e]
-
             ll_e.append(l_e)
             ll_w.append(l_w)
             ll_label.append(l_label)
