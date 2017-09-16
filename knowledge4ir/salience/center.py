@@ -19,7 +19,7 @@ hyper-parameters:
 
 """
 
-from knowledge4ir.salience.translation_model import GraphTranslation
+from knowledge4ir.salience.translation_model import GraphTranslation, BachPageRank
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
@@ -50,10 +50,11 @@ class SalienceModelCenter(Configurable):
     random_walk_step = Int(1, help='random walk step').tag(config=True)  # need to be a config para
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
+    batch_size = Int(128, help='number of documents per batch').tag(config=True)
 
     max_e_per_doc = Int(1000, help='max e per doc')
     h_model = {
-        "trans": GraphTranslation,
+        "trans": BachPageRank,
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
@@ -93,28 +94,44 @@ class SalienceModelCenter(Configurable):
             p = 0
             total_loss = 0
             logging.info('start epoch [%d]', epoch)
+            l_this_batch_line = []
             for line in open(train_in_name):
-                v_e, v_w, v_label = self._data_io(line)
-                if (not v_e.size()) | (not v_label.size()):
-                    continue
-                logging.debug('doc [%s]', json.loads(line)['docno'])
-                optimizer.zero_grad()
-                output = self.model(v_e, v_w)
-                loss = criterion(output, v_label)
-                loss.backward()
-                # nn.utils.clip_grad_norm(self.model.parameters(), 10)
-                optimizer.step()
-                total_loss += loss.data[0]
-                logging.debug('[%d] data [%f] loss', p, loss.data[0])
-                assert not math.isnan(loss.data[0])
+                l_this_batch_line.append(line)
+                if len(l_this_batch_line) >= self.batch_size:
+                    this_loss = self._batch_train(l_this_batch_line, criterion, optimizer)
+                    p += 1
+                    total_loss += this_loss
+                    logging.debug('[%d] batch [%f] loss', p, this_loss)
+                    assert not math.isnan(this_loss)
+                    if not p % 1000:
+                        logging.info('batch [%d], average loss [%f]', p, total_loss / p)
+                    l_this_batch_line = []
+
+            if l_this_batch_line:
+                this_loss = self._batch_train(l_this_batch_line, criterion, optimizer)
                 p += 1
-                if not p % 1000:
-                    logging.info('data [%d], average loss [%f]', p, total_loss / p)
-            logging.info('epoch [%d] finished with loss [%f] on [%d] data',
+                total_loss += this_loss
+                logging.debug('[%d] batch [%f] loss', p, this_loss)
+                assert not math.isnan(this_loss)
+                l_this_batch_line = []
+
+            logging.info('epoch [%d] finished with loss [%f] on [%d] batch',
                          epoch, total_loss / p, p)
             l_epoch_loss.append(total_loss / p)
+
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
         return
+
+    def _batch_train(self, l_line, criterion, optimizer):
+        m_e, m_w, m_label = self._data_io(l_line)
+        optimizer.zero_grad()
+        output = self.model(m_e, m_w)
+        loss = criterion(output.view(-1, output.size()[-1]), m_label.view(m_label.size()[0]))
+        loss.backward()
+        # nn.utils.clip_grad_norm(self.model.parameters(), 10)
+        optimizer.step()
+        assert not math.isnan(loss.data[0])
+        return loss.data[0]
 
     def predict(self, test_in_name, label_out_name):
         """
@@ -131,12 +148,12 @@ class SalienceModelCenter(Configurable):
         p = 0
         for line in open(test_in_name):
             docno = json.loads(line)['docno']
-            v_e, v_w, v_label = self._data_io(line)
-            if (not v_e.size()) | (not v_label.size()):
+            v_e, v_w, v_label = self._data_io([line])
+            if (not v_e[0].size()) | (not v_label[0].size()):
                 continue
-            output = self.model(v_e, v_w).cpu()
-            v_e = v_e.cpu()
-            v_label = v_label.cpu()
+            output = self.model(v_e, v_w).cpu()[0]
+            v_e = v_e[0].cpu()
+            v_label = v_label[0].cpu()
             pre_label = output.data.max(-1)[1]
             score = output.data[:, 1]
             h_out = dict()
@@ -158,7 +175,7 @@ class SalienceModelCenter(Configurable):
         out.close()
         return
 
-    def _data_io(self, line):
+    def _data_io(self, l_line):
         """
         convert data to the input for the model
         :param line: the json formatted data
@@ -167,21 +184,38 @@ class SalienceModelCenter(Configurable):
         v_w: initial weight, TF
         v_label: 1 or -1, salience or not, if label not given, will be 0
         """
+        ll_e = []
+        ll_w = []
+        ll_label = []
+        for line in l_line:
+            h = json.loads(line)
+            l_e = h[self.spot_field].get(self.in_field, [])
+            s_salient_e = set(h[self.spot_field].get(self.salience_field, []))
+            h_e_tf = term2lm(l_e)
+            l_e_tf = sorted(h_e_tf.items(), key=lambda item: -item[1])[:self.max_e_per_doc]
+            l_e = [item[0] for item in l_e_tf]
+            z = float(sum([item[1] for item in l_e_tf]))
+            l_w = [item[1] / z for item in l_e_tf]
+            l_label = [1 if e in s_salient_e else 0 for e in l_e]
 
-        h = json.loads(line)
-        l_e = h[self.spot_field].get(self.in_field, [])
-        s_salient_e = set(h[self.spot_field].get(self.salience_field, []))
-        h_e_tf = term2lm(l_e)
-        l_e_tf = sorted(h_e_tf.items(), key=lambda item: -item[1])[:self.max_e_per_doc]
-        l_e = [item[0] for item in l_e_tf]
-        z = float(sum([item[1] for item in l_e_tf]))
-        l_w = [item[1] / z for item in l_e_tf]
-        l_label = [1 if e in s_salient_e else 0 for e in l_e]
-        v_e = Variable(torch.LongTensor(l_e)).cuda() if use_cuda else Variable(torch.LongTensor(l_e))
-        v_w = Variable(torch.FloatTensor(l_w)).cuda() if use_cuda else Variable(torch.FloatTensor(l_w))
-        v_label = Variable(torch.LongTensor(l_label)).cuda() if use_cuda else Variable(torch.FloatTensor(l_label))
+            ll_e.append(l_e)
+            ll_w.append(l_w)
+            ll_label.append(l_label)
 
-        return v_e, v_w, v_label
+        self._padding(ll_e, 0)
+        self._padding(ll_w, 0)
+        self._padding(ll_label, 0)
+
+        m_e = Variable(torch.LongTensor(ll_e)).cuda() if use_cuda else Variable(torch.LongTensor(ll_e))
+        m_w = Variable(torch.FloatTensor(ll_w)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_w))
+        m_label = Variable(torch.LongTensor(ll_label)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_label))
+        return m_e, m_w, m_label
+
+    def _padding(self,ll, filler):
+        n = max([len(l) for l in ll])
+        for i in xrange(len(ll)):
+            ll[i] += [filler] * n
+        return ll
 
 
 if __name__ == '__main__':
@@ -196,7 +230,6 @@ if __name__ == '__main__':
         train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
         test_out = Unicode(help='test res').tag(config=True)
-        log_level = Int(10, help='10:debug, 20:info, +10 each').tag(config=True)
 
     if 2 != len(sys.argv):
         print "unit test model train test"
@@ -207,7 +240,6 @@ if __name__ == '__main__':
 
     conf = load_py_config(sys.argv[1])
     para = Main(config=conf)
-    # set_basic_log(para.log_level)
     model = SalienceModelCenter(config=conf)
     model.train(para.train_in)
     model.predict(para.test_in, para.test_out)

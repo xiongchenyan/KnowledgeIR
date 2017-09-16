@@ -43,7 +43,7 @@ import torch.nn.functional as F
 use_cuda = torch.cuda.is_available()
 
 
-class SalienceModelCenter(Configurable):
+class NbSalienceModelCenter(Configurable):
     learning_rate = Float(1e-3, help='learning rate').tag(config=True)
     pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
     model_name = Unicode(help="model name: trans").tag(config=True)

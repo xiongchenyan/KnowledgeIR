@@ -88,7 +88,7 @@ class BachPageRank(nn.Module):
 
     def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
         super(BachPageRank, self).__init__()
-        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.linear = nn.Linear(1, 2, bias=True)
         if use_cuda:
             logging.info('copying parameter to cuda')
@@ -106,13 +106,14 @@ class BachPageRank(nn.Module):
         :param v_score: the initial weights on each entity, has to be Variable()
         :return: score for each one
         """
-        mtx_embedding = self.embedding(mtx_e, padding_idx=-1)
+        mtx_embedding = self.embedding(mtx_e)
         mtx_embedding = mtx_embedding.div(
-            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding))
+            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
+        )
 
-        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)) + 1.0
+        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)).clamp(min=0)
         trans_mtx = trans_mtx.div(
-            torch.norm(trans_mtx, p=1, dim=-2, keepdim=True).expand_as(trans_mtx)
+            torch.norm(trans_mtx, p=1, dim=-2, keepdim=True).expand_as(trans_mtx) + 1e-8
         )
         # mid = trans_mtx.cpu().data.numpy()
         # if np.sum(np.isnan(mid)):
@@ -137,6 +138,7 @@ class BachPageRank(nn.Module):
             output = torch.matmul(trans_mtx, output)
 
         # output = F.log_softmax(self.linear(output))
+        output = self.linear(output)
         output = torch.stack([F.log_softmax(output[i]) for i in range(output.size()[0])])
         # output = output.squeeze(-1)
         if use_cuda:
