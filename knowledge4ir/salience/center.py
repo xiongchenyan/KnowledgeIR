@@ -126,7 +126,10 @@ class SalienceModelCenter(Configurable):
         m_e, m_w, m_label = self._data_io(l_line)
         optimizer.zero_grad()
         output = self.model(m_e, m_w)
-        loss = criterion(output.view(-1, output.size()[-1]), m_label.view(m_label.size()[0]))
+        loss = criterion(
+            output.view(-1, output.size()[-1]),
+            m_label.view(-1, 1).squeeze(-1)
+                         )
         loss.backward()
         # nn.utils.clip_grad_norm(self.model.parameters(), 10)
         optimizer.step()
