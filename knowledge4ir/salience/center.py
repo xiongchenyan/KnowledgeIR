@@ -93,11 +93,13 @@ class SalienceModelCenter(Configurable):
         for epoch in xrange(self.nb_epochs):
             p = 0
             total_loss = 0
+            data_cnt = 0
             logging.info('start epoch [%d]', epoch)
             l_this_batch_line = []
             for line in open(train_in_name):
                 if self._filter_empty_line(line):
                     continue
+                data_cnt += 1
                 l_this_batch_line.append(line)
                 if len(l_this_batch_line) >= self.batch_size:
                     this_loss = self._batch_train(l_this_batch_line, criterion, optimizer)
@@ -106,7 +108,7 @@ class SalienceModelCenter(Configurable):
                     logging.debug('[%d] batch [%f] loss', p, this_loss)
                     assert not math.isnan(this_loss)
                     if not p % 1000:
-                        logging.info('batch [%d], average loss [%f]', p, total_loss / p)
+                        logging.info('batch [%d] [%d] data, average loss [%f]', p, data_cnt, total_loss / p)
                     l_this_batch_line = []
 
             if l_this_batch_line:
@@ -117,8 +119,8 @@ class SalienceModelCenter(Configurable):
                 assert not math.isnan(this_loss)
                 l_this_batch_line = []
 
-            logging.info('epoch [%d] finished with loss [%f] on [%d] batch',
-                         epoch, total_loss / p, p)
+            logging.info('epoch [%d] finished with loss [%f] on [%d] batch [%d] doc',
+                         epoch, total_loss / p, p, data_cnt)
             l_epoch_loss.append(total_loss / p)
 
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
@@ -176,7 +178,7 @@ class SalienceModelCenter(Configurable):
             total_accuracy += this_acc
             p += 1
             logging.debug('doc [%d][%s] accuracy [%f]', p, docno, this_acc)
-            if not p % 100:
+            if not p % 1000:
                 logging.info('predicted [%d] docs, accuracy [%f]', p, total_accuracy / p)
         logging.info('finished predicting [%d] docs, accuracy [%f]', p, total_accuracy / p)
         out.close()
@@ -235,7 +237,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
