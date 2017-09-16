@@ -202,9 +202,9 @@ class SalienceModelCenter(Configurable):
             ll_w.append(l_w)
             ll_label.append(l_label)
 
-        self._padding(ll_e, 0)
-        self._padding(ll_w, 0)
-        self._padding(ll_label, 0)
+        ll_e = self._padding(ll_e, 0)
+        ll_w = self._padding(ll_w, 0)
+        ll_label = self._padding(ll_label, 0)
 
         m_e = Variable(torch.LongTensor(ll_e)).cuda() if use_cuda else Variable(torch.LongTensor(ll_e))
         m_w = Variable(torch.FloatTensor(ll_w)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_w))
@@ -214,7 +214,7 @@ class SalienceModelCenter(Configurable):
     def _padding(self,ll, filler):
         n = max([len(l) for l in ll])
         for i in xrange(len(ll)):
-            ll[i] += [filler] * n
+            ll[i] += [filler] * (n - len(ll[i]))
         return ll
 
 
