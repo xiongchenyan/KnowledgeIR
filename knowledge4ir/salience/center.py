@@ -172,22 +172,21 @@ class SalienceModelCenter(Configurable):
 
             h_out['predict'] = zip(l_e, zip(score.numpy().tolist(), l_res))
             print >> out, json.dumps(h_out)
-
-            correct = pre_label.eq(v_label.data.view_as(pre_label)).sum()
+            y = v_label.data.view_as(pre_label)
+            correct = pre_label.eq(y).sum()
             precision = (
-                pre_label.eq(v_label.data.view_as(pre_label)).type(torch.LongTensor) * pre_label
+                pre_label.eq(y).type(torch.LongTensor) * pre_label
             ).sum()
 
             recall = (
-                pre_label.eq(v_label.data.view_as(pre_label)).type(torch.LongTensor) * v_label
+                pre_label.eq(y).type(torch.LongTensor) * y
             ).sum()
-            z = float(len(l_e))
-            this_acc = correct / z
-            this_pre = precision / z
-            this_recall = recall / z
+            this_acc = correct / float(len(l_e))
+            this_pre = precision / max(pre_label.sum(), 1.0)
+            this_recall = recall / max(y.sum(), 1.0)
             total_accuracy += this_acc
             total_precision += this_pre
-            total_recall += recall
+            total_recall += this_recall
             p += 1
             # logging.debug('doc [%d][%s] accuracy [%f]', p, docno, this_acc)
             if not p % 1000:
