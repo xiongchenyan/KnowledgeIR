@@ -159,7 +159,7 @@ class SalienceModelCenter(Configurable):
 
         out = open(label_out_name, 'w')
         logging.info('start predicting for [%s]', test_in_name)
-        total_accuracy, total_precision, total_recall, total_p1, total_p5 = 0, 0, 0, 0, 0
+        total_accuracy, total_precision, total_recall, total_p1, total_p5, total_p10 = 0, 0, 0, 0, 0, 0
         p = 0
         for line in open(test_in_name):
             if self._filter_empty_line(line):
@@ -196,20 +196,24 @@ class SalienceModelCenter(Configurable):
 
             p_at_1 = p_at_k(score, y.numpy().tolist(), 1)
             p_at_5 = p_at_k(score, y.numpy().tolist(), 5)
+            p_at_10 = p_at_k(score, y.numpy().tolist(), 10)
             total_accuracy += this_acc
             total_precision += this_pre
             total_recall += this_recall
             total_p1 += p_at_1
             total_p5 += p_at_5
+            total_p10 += p_at_10
             p += 1
             # logging.debug('doc [%d][%s] accuracy [%f]', p, docno, this_acc)
             if not p % 1000:
-                logging.info('predicted [%d] docs, accuracy [%f], precision [%f], recall [%f], p@1,5 [%f,%f]', p,
+                logging.info('predicted [%d] docs, accuracy [%.4f], '
+                             'precision [%.4f], recall [%.4f], p@1,5, 10 [%.4f,%.4f, %.4f]', p,
                              total_accuracy / p, total_precision / p, total_recall / p,
-                             total_p1 / p, total_p5 / p)
-        logging.info('finished predicting [%d] docs, accuracy [%f], precision [%f], recall [%f], p@1,5 [%f,%f]', p,
+                             total_p1 / p, total_p5 / p, total_p10 / p)
+        logging.info('finished redicted [%d] docs, accuracy [%.4f], '
+                     'precision [%.4f], recall [%.4f], p@1,5, 10 [%.4f,%.4f, %.4f]', p,
                      total_accuracy / p, total_precision / p, total_recall / p,
-                     total_p1 / p, total_p5 / p)
+                     total_p1 / p, total_p5 / p, total_p10 / p)
         out.close()
         return
 
