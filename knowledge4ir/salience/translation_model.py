@@ -89,7 +89,7 @@ class BachPageRank(nn.Module):
     def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
         super(BachPageRank, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
-        self.linear = nn.Linear(1, 2, bias=True)
+        self.linear = nn.Linear(1, 1, bias=True)
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
@@ -139,8 +139,8 @@ class BachPageRank(nn.Module):
 
         # output = F.log_softmax(self.linear(output))
         output = self.linear(output)
-        output = torch.stack([F.log_softmax(output[i]) for i in range(output.size()[0])])
-        # output = output.squeeze(-1)
+        # output = torch.stack([F.log_softmax(output[i]) for i in range(output.size()[0])])
+        output = output.squeeze(-1)
         if use_cuda:
             return output.cuda()
         else:

@@ -40,6 +40,7 @@ import torch
 from torch.autograd import Variable
 from torch import nn
 import torch.nn.functional as F
+from knowledge4ir.salience.utils import hinge_loss
 use_cuda = torch.cuda.is_available()
 
 
@@ -87,7 +88,8 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
-        criterion = nn.NLLLoss(weight=self.class_weight)
+        # criterion = nn.NLLLoss(weight=self.class_weight)
+        criterion = hinge_loss
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
@@ -130,10 +132,11 @@ class SalienceModelCenter(Configurable):
         m_e, m_w, m_label = self._data_io(l_line)
         optimizer.zero_grad()
         output = self.model(m_e, m_w)
-        loss = criterion(
-            output.view(-1, output.size()[-1]),
-            m_label.view(-1, 1).squeeze(-1)
-                         )
+        # loss = criterion(
+        #     output.view(-1, output.size()[-1]),
+        #     m_label.view(-1, 1).squeeze(-1)
+        #                  )
+        loss = criterion(output, m_label)
         loss.backward()
         # nn.utils.clip_grad_norm(self.model.parameters(), 10)
         optimizer.step()
@@ -163,8 +166,9 @@ class SalienceModelCenter(Configurable):
             output = self.model(v_e, v_w).cpu()[0]
             v_e = v_e[0].cpu()
             v_label = v_label[0].cpu()
-            pre_label = output.data.max(-1)[1]
-            score = output.data[:, 1]
+            # pre_label = output.data.max(-1)[1]
+            pre_label = output.data.sign()
+            score = output.data
             h_out = dict()
             h_out['docno'] = docno
             l_e = v_e.data.numpy().tolist()
@@ -175,11 +179,11 @@ class SalienceModelCenter(Configurable):
             y = v_label.data.view_as(pre_label)
             correct = pre_label.eq(y).sum()
             precision = (
-                pre_label.eq(y).type(torch.LongTensor) * pre_label
+                pre_label.eq(y).type(torch.LongTensor) * (pre_label.eq(1).type(torch.FloatTensor))
             ).sum()
 
             recall = (
-                pre_label.eq(y).type(torch.LongTensor) * y
+                pre_label.eq(y).type(torch.LongTensor) * (y.eq(1).type(torch.FloatTensor))
             ).sum()
             this_acc = correct / float(len(l_e))
             this_pre = precision / max(pre_label.sum(), 1.0)
@@ -223,7 +227,7 @@ class SalienceModelCenter(Configurable):
             l_e = [item[0] for item in l_e_tf]
             z = float(sum([item[1] for item in l_e_tf]))
             l_w = [item[1] / z for item in l_e_tf]
-            l_label = [1 if e in s_salient_e else 0 for e in l_e]
+            l_label = [1 if e in s_salient_e else -1 for e in l_e]
             ll_e.append(l_e)
             ll_w.append(l_w)
             ll_label.append(l_label)
