@@ -14,3 +14,12 @@ def hinge_loss(output, target):
     loss = loss.clamp(min=0).mean()
     return loss
 
+
+def p_at_k(l_score, l_label, k):
+    l_d = zip(l_score, l_label)
+    l_d.sort(key=lambda item: -item[0])
+    correct = 0
+    for score, label in l_d[:k]:
+        if label > 0:
+            correct += 1
+    return float(correct) / k

@@ -44,7 +44,7 @@ import torch
 from torch.autograd import Variable
 from torch import nn
 import torch.nn.functional as F
-from knowledge4ir.salience.utils import hinge_loss
+from knowledge4ir.salience.utils import hinge_loss, p_at_k
 use_cuda = torch.cuda.is_available()
 
 
@@ -159,7 +159,7 @@ class SalienceModelCenter(Configurable):
 
         out = open(label_out_name, 'w')
         logging.info('start predicting for [%s]', test_in_name)
-        total_accuracy, total_precision, total_recall = 0, 0, 0
+        total_accuracy, total_precision, total_recall, total_p1, total_p5 = 0, 0, 0, 0, 0
         p = 0
         for line in open(test_in_name):
             if self._filter_empty_line(line):
@@ -173,13 +173,13 @@ class SalienceModelCenter(Configurable):
             v_label = v_label[0].cpu()
             # pre_label = output.data.max(-1)[1]
             pre_label = output.data.sign().type(torch.LongTensor)
-            score = output.data
+            score = output.data.numpy().tolist()
             h_out = dict()
             h_out['docno'] = docno
             l_e = v_e.data.numpy().tolist()
             l_res = pre_label.numpy().tolist()
 
-            h_out['predict'] = zip(l_e, zip(score.numpy().tolist(), l_res))
+            h_out['predict'] = zip(l_e, zip(score, l_res))
             print >> out, json.dumps(h_out)
             y = v_label.data.view_as(pre_label)
             correct = pre_label.eq(y).sum()
@@ -193,16 +193,23 @@ class SalienceModelCenter(Configurable):
             this_acc = correct / float(len(l_e))
             this_pre = precision / max(pre_label.sum(), 1.0)
             this_recall = recall / max(y.sum(), 1.0)
+
+            p_at_1 = p_at_k(score, y.numpy().tolist(), 1)
+            p_at_5 = p_at_k(score, y.numpy().tolist(), 5)
             total_accuracy += this_acc
             total_precision += this_pre
             total_recall += this_recall
+            total_p1 += p_at_1
+            total_p5 += p_at_5
             p += 1
             # logging.debug('doc [%d][%s] accuracy [%f]', p, docno, this_acc)
             if not p % 1000:
-                logging.info('predicted [%d] docs, accuracy [%f], precision [%f], recall [%f]', p,
-                             total_accuracy / p, total_precision / p, total_recall / p)
-        logging.info('finished predicting [%d] docs, accuracy [%f], precision [%f], recall [%f]', p,
-                     total_accuracy / p, total_precision / p, total_recall / p)
+                logging.info('predicted [%d] docs, accuracy [%f], precision [%f], recall [%f], p@1,5 [%f,%f]', p,
+                             total_accuracy / p, total_precision / p, total_recall / p,
+                             total_p1 / p, total_p5 / p)
+        logging.info('finished predicting [%d] docs, accuracy [%f], precision [%f], recall [%f], p@1,5 [%f,%f]', p,
+                     total_accuracy / p, total_precision / p, total_recall / p,
+                     total_p1 / p, total_p5 / p)
         out.close()
         return
 
