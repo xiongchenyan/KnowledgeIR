@@ -162,6 +162,7 @@ class EdgeCNN(nn.Module):
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
+            self.projection.cuda()
             self.linear.cuda()
         self.layer = layer
         if pre_embedding is not None:
