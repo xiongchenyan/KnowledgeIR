@@ -19,7 +19,11 @@ hyper-parameters:
 
 """
 
-from knowledge4ir.salience.translation_model import GraphTranslation, BachPageRank
+from knowledge4ir.salience.translation_model import (
+    GraphTranslation,
+    BachPageRank,
+    EdgeCNN,
+)
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
@@ -56,6 +60,7 @@ class SalienceModelCenter(Configurable):
     max_e_per_doc = Int(1000, help='max e per doc')
     h_model = {
         "trans": BachPageRank,
+        'EdgeCNN': EdgeCNN,
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
@@ -167,7 +172,7 @@ class SalienceModelCenter(Configurable):
             v_e = v_e[0].cpu()
             v_label = v_label[0].cpu()
             # pre_label = output.data.max(-1)[1]
-            pre_label = output.data.sign()
+            pre_label = output.data.sign().type(torch.LongTensor)
             score = output.data
             h_out = dict()
             h_out['docno'] = docno
@@ -179,11 +184,11 @@ class SalienceModelCenter(Configurable):
             y = v_label.data.view_as(pre_label)
             correct = pre_label.eq(y).sum()
             precision = (
-                pre_label.eq(y).type(torch.LongTensor) * (pre_label.eq(1).type(torch.FloatTensor))
+                (pre_label.eq(y)) * (pre_label.eq(1))
             ).sum()
 
             recall = (
-                pre_label.eq(y).type(torch.LongTensor) * (y.eq(1).type(torch.FloatTensor))
+                (pre_label.eq(y)) * (y.eq(1))
             ).sum()
             this_acc = correct / float(len(l_e))
             this_pre = precision / max(pre_label.sum(), 1.0)
