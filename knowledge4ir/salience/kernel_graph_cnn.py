@@ -85,9 +85,6 @@ class KernelGraphCNN(nn.Module):
         )
 
         trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)).clamp(min=0)
-        trans_mtx = trans_mtx.div(
-            torch.norm(trans_mtx, p=1, dim=-2, keepdim=True).expand_as(trans_mtx) + 1e-8
-        )
         kp_mtx = self.kp(trans_mtx, mtx_score)
         output = self.linear(kp_mtx)
         # output = torch.stack([F.log_softmax(output[i]) for i in range(output.size()[0])])
