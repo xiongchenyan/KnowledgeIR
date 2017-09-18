@@ -21,7 +21,7 @@ def hinge_loss(output, target):
     """
     _assert(output, target)
     loss = target.type_as(output) * (target.type_as(output) - output)
-    loss = loss.clamp(min=0).mean()
+    loss = loss.clamp(min=0).sum() / ((target != 0).type_as(output).sum())
     return loss
 
 
