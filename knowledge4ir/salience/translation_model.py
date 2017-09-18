@@ -95,8 +95,8 @@ class BachPageRank(nn.Module):
             self.embedding.cuda()
             self.linear.cuda()
         self.layer = layer
-        if pre_embedding is not None:
-            self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
+        # if pre_embedding is not None:
+        #     self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
         return
 
     def forward(self, mtx_e, mtx_score):
