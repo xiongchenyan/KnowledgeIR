@@ -90,13 +90,13 @@ class BachPageRank(nn.Module):
         super(BachPageRank, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.linear = nn.Linear(1, 1, bias=True)
+        # if pre_embedding is not None:
+        #     self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
             self.linear.cuda()
         self.layer = layer
-        # if pre_embedding is not None:
-        #     self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
         return
 
     def forward(self, mtx_e, mtx_score):
