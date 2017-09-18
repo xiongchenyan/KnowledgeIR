@@ -20,10 +20,7 @@ def hinge_loss(output, target):
     :return:
     """
     _assert(output, target)
-    if use_cuda:
-        loss = target.type(torch.cuda.FloatTensor) * (target.type(torch.cuda.FloatTensor) - output)
-    else:
-        loss = target.type(torch.FloatTensor) * (target.type(torch.FloatTensor) - output)
+    loss = target.type_as(output) * (target.type_as(output) - output)
     loss = loss.clamp(min=0).mean()
     return loss
 
@@ -71,6 +68,6 @@ def _pairwise_label_padding(target):
     mid_score = mid_score.expand(
         mid_score.size()[:-1] + (mid_score.size()[-2],)
     )
-    mid_score = (mid_score != 0).type(mid_score.type())
+    mid_score = (mid_score != 0).type_as(mid_score)
     ts_padding = mid_score * mid_score.transpose(-2, -1)
     return ts_padding
