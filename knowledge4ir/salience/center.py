@@ -214,7 +214,7 @@ class SalienceModelCenter(Configurable):
         logging.info('finished predicted [%d] docs, eva %s', p, json.dumps(h_mean_eva))
         json.dump(
             h_mean_eva,
-            open(label_out_name.replace('.json', '') + '.eval.json', 'w'),
+            open(label_out_name + '.eval', 'w'),
             indent=1
         )
         out.close()
