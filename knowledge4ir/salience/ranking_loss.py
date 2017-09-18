@@ -13,6 +13,12 @@ def _assert(output, target):
 
 
 def hinge_loss(output, target):
+    """
+    target = 0 is used in padding
+    :param output:
+    :param target:
+    :return:
+    """
     _assert(output, target)
     if use_cuda:
         loss = target.type(torch.cuda.FloatTensor) * (target.type(torch.cuda.FloatTensor) - output)
@@ -37,7 +43,7 @@ def pairwise_loss(output, target):
     _assert(output, target)
     pairwise_output = _pair_diff(output)
     pairwise_target = _pair_diff(target)
-    pairwise_target = pairwise_target.sign()
+    pairwise_target = pairwise_target.sign() * _pairwise_label_padding(target)
     return hinge_loss(pairwise_output, pairwise_target)
 
 
@@ -51,4 +57,20 @@ def _pair_diff(ts_score):
     mid_score = mid_score.expand(
         mid_score.size()[:-1] + (mid_score.size()[-2],)
     )
-    return mid_score.transpose(-2, -1)
+    pair_diff = mid_score - mid_score.transpose(-2, -1)
+    return pair_diff
+
+
+def _pairwise_label_padding(target):
+    """
+
+    :param target:
+    :return:
+    """
+    mid_score = target.unsqueeze(-1)
+    mid_score = mid_score.expand(
+        mid_score.size()[:-1] + (mid_score.size()[-2],)
+    )
+    mid_score = (mid_score != 0).type(mid_score.type())
+    ts_padding = mid_score * mid_score.transpose(-2, -1)
+    return ts_padding

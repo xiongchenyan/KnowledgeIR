@@ -20,7 +20,6 @@ hyper-parameters:
 """
 
 from knowledge4ir.salience.translation_model import (
-    GraphTranslation,
     BachPageRank,
     EdgeCNN,
 )
@@ -44,7 +43,10 @@ import torch
 from torch.autograd import Variable
 from torch import nn
 import torch.nn.functional as F
-from knowledge4ir.salience.utils import hinge_loss
+from knowledge4ir.salience.ranking_loss import (
+    hinge_loss,
+    pairwise_loss,
+)
 from knowledge4ir.salience.evaluation import SalienceEva
 from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
 use_cuda = torch.cuda.is_available()
@@ -58,6 +60,7 @@ class SalienceModelCenter(Configurable):
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
     batch_size = Int(128, help='number of documents per batch').tag(config=True)
+    loss_func = Unicode('hinge', help='loss function to use: hinge, pairwise').tag(config=True)
 
     max_e_per_doc = Int(1000, help='max e per doc')
     h_model = {
@@ -70,6 +73,11 @@ class SalienceModelCenter(Configurable):
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
+        h_loss = {
+            "hinge": hinge_loss,
+            "pairwise": pairwise_loss
+        }
+        self.criterion = h_loss[self.loss_func]
         self.evaluator = SalienceEva(**kwargs)
         self.pre_emb = None
         if self.pre_trained_emb_in:
@@ -101,7 +109,6 @@ class SalienceModelCenter(Configurable):
         """
         logging.info('training with data in [%s]', train_in_name)
         # criterion = nn.NLLLoss(weight=self.class_weight)
-        criterion = hinge_loss
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
@@ -116,17 +123,18 @@ class SalienceModelCenter(Configurable):
                 data_cnt += 1
                 l_this_batch_line.append(line)
                 if len(l_this_batch_line) >= self.batch_size:
-                    this_loss = self._batch_train(l_this_batch_line, criterion, optimizer)
+                    this_loss = self._batch_train(l_this_batch_line, self.criterion, optimizer)
                     p += 1
                     total_loss += this_loss
                     logging.debug('[%d] batch [%f] loss', p, this_loss)
                     assert not math.isnan(this_loss)
                     if not p % 1000:
-                        logging.info('batch [%d] [%d] data, average loss [%f]', p, data_cnt, total_loss / p)
+                        logging.info('batch [%d] [%d] data, average loss [%f]',
+                                     p, data_cnt, total_loss / p)
                     l_this_batch_line = []
 
             if l_this_batch_line:
-                this_loss = self._batch_train(l_this_batch_line, criterion, optimizer)
+                this_loss = self._batch_train(l_this_batch_line, self.criterion, optimizer)
                 p += 1
                 total_loss += this_loss
                 logging.debug('[%d] batch [%f] loss', p, this_loss)
@@ -240,10 +248,10 @@ class SalienceModelCenter(Configurable):
 
         m_e = Variable(torch.LongTensor(ll_e)).cuda() if use_cuda else Variable(torch.LongTensor(ll_e))
         m_w = Variable(torch.FloatTensor(ll_w)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_w))
-        m_label = Variable(torch.LongTensor(ll_label)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_label))
+        m_label = Variable(torch.FloatTensor(ll_label)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_label))
         return m_e, m_w, m_label
 
-    def _padding(self,ll, filler):
+    def _padding(self, ll, filler):
         n = max([len(l) for l in ll])
         for i in xrange(len(ll)):
             ll[i] += [filler] * (n - len(ll[i]))
