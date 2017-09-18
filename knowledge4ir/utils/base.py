@@ -298,6 +298,13 @@ def add_svm_feature(h_feature_a, h_feature_b):
     return h_res
 
 
+def mutiply_svm_feature(h_feature, w):
+    h_res = dict()
+    for key, score in h_feature.items():
+        h_res[key] = score * w
+    return h_res
+
+
 def dump_svm_feature(l_svm_data, out_name):
     """
     svm_data:
