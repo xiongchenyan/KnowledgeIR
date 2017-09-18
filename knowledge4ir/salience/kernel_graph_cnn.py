@@ -27,12 +27,12 @@ class KernelPooling(nn.Module):
         super(KernelPooling, self).__init__()
         if l_mu is None:
             l_mu = [1, 0.9, 0.7, 0.5, 0.3, 0.1, -0.1, -0.3, -0.5, -0.7, -0.9]
-        self.v_mu = torch.FloatTensor(l_mu)
+        self.v_mu = Variable(torch.FloatTensor(l_mu), requires_grad=False)
         self.K = len(l_mu)
         if sigma is None:
             sigma = 0.1
         l_sigma = [1e-3] + [sigma] * (self.v_mu.size()[-1] - 1)
-        self.v_sigma = torch.FloatTensor(l_sigma)
+        self.v_sigma = Variable(torch.FloatTensor(l_sigma), requires_grad=False)
         if use_cuda:
             self.v_mu = self.v_mu.cuda()
             self.v_sigma = self.v_sigma.cuda()
