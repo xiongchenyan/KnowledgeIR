@@ -44,7 +44,7 @@ import torch
 from torch.autograd import Variable
 from torch import nn
 import torch.nn.functional as F
-from knowledge4ir.salience.utils import hinge_loss, p_at_k
+from knowledge4ir.salience.utils import hinge_loss
 from knowledge4ir.salience.evaluation import SalienceEva
 from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
 use_cuda = torch.cuda.is_available()
