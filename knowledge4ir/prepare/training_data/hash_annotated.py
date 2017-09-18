@@ -10,6 +10,7 @@ do:
 """
 import json
 import pickle
+from knowledge4ir.utils import body_field
 
 
 def hash_per_info(h_info, h_word_id, h_entity_id):
@@ -42,6 +43,9 @@ def process(json_info_in, word_id_pickle_in, entity_id_pickle_in, out_name):
             print "hashed [%d] lines" % p
         h_info = json.loads(line)
         h_hashed = hash_per_info(h_info, h_word_id, h_entity_id)
+        if not h_hashed.get('spot', {}).get(body_field, []):
+            # skip empty docs
+            continue
         print >> out, json.dumps(h_hashed)
 
     out.close()
