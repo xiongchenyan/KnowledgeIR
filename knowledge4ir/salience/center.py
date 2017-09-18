@@ -193,16 +193,18 @@ class SalienceModelCenter(Configurable):
             l_score = output.data.numpy().tolist()
             y = v_label.data.view_as(pre_label)
             l_label = y.numpy().tolist()
+
             h_out = dict()
             h_out['docno'] = docno
+
             l_e = v_e.data.numpy().tolist()
             l_res = pre_label.numpy().tolist()
-
             h_out['predict'] = zip(l_e, zip(l_score, l_res))
-            print >> out, json.dumps(h_out)
-
             h_this_eva = self.evaluator.evaluate(l_score, l_label)
             h_total_eva = add_svm_feature(h_total_eva, h_this_eva)
+            h_out['eval'] = h_this_eva
+            print >> out, json.dumps(h_out)
+
             p += 1
             # logging.debug('doc [%d][%s] accuracy [%f]', p, docno, json.dumps(h_this_eva))
             h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
