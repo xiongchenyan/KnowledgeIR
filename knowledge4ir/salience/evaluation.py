@@ -12,7 +12,7 @@ from traitlets import (
 
 class SalienceEva(Configurable):
     l_depth = List(Int, default_value=[1, 5, 10, 20]).tag(config=True)
-    l_metrics = List(Unicode, default_value=['p']).tag(config=True)
+    l_metrics = List(Unicode, default_value=['p', 'precision', 'recall']).tag(config=True)
 
     def __init__(self, **kwargs):
         super(SalienceEva, self).__init__(**kwargs)
@@ -34,15 +34,17 @@ class SalienceEva(Configurable):
         l_d = zip(l_score, l_label)
         l_d.sort(key=lambda item: -item[0])
         correct = 0
+
         for p in xrange(max(self.l_depth)):
             label = 0
             if p < len(l_d):
                 label = l_d[p][1]
             if label > 0:
                 correct += 1
-            if p in self.l_depth:
-                res = float(correct) / p
-                h_p['p@%d' % p] = res
+            depth = p + 1
+            if depth in self.l_depth:
+                res = float(correct) / depth
+                h_p['p@%d' % depth] = res
         return h_p
 
     def precision(self, l_score, l_label):
