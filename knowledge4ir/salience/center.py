@@ -64,7 +64,7 @@ class SalienceModelCenter(Configurable):
     batch_size = Int(128, help='number of documents per batch').tag(config=True)
     loss_func = Unicode('hinge', help='loss function to use: hinge, pairwise').tag(config=True)
 
-    max_e_per_doc = Int(1000, help='max e per doc')
+    max_e_per_doc = Int(200, help='max e per doc')
     h_model = {
         "trans": BachPageRank,
         'EdgeCNN': EdgeCNN,
@@ -275,7 +275,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
