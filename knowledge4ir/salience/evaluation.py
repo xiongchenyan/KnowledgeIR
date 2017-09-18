@@ -74,7 +74,7 @@ class SalienceEva(Configurable):
                 if score > 0:
                     c += 1
         z = len(l_score)
-        return {'recall': float(c) / max(z, 1.0)}
+        return {'accuracy': float(c) / max(z, 1.0)}
 
 
 
