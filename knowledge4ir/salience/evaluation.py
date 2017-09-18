@@ -12,7 +12,7 @@ from traitlets import (
 
 class SalienceEva(Configurable):
     l_depth = List(Int, default_value=[1, 5, 10, 20]).tag(config=True)
-    l_metrics = List(Unicode, default_value=['p', 'precision', 'recall']).tag(config=True)
+    l_metrics = List(Unicode, default_value=['p', 'precision', 'recall', 'accuracy']).tag(config=True)
 
     def __init__(self, **kwargs):
         super(SalienceEva, self).__init__(**kwargs)
