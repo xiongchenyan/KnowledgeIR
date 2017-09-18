@@ -199,7 +199,7 @@ class SalienceModelCenter(Configurable):
             h_out['predict'] = zip(l_e, zip(l_score, l_res))
             print >> out, json.dumps(h_out)
 
-            h_this_eva = self.evaluator(l_score, l_label)
+            h_this_eva = self.evaluator.evaluate(l_score, l_label)
             h_total_eva = add_svm_feature(h_total_eva, h_this_eva)
             p += 1
             # logging.debug('doc [%d][%s] accuracy [%f]', p, docno, json.dumps(h_this_eva))
