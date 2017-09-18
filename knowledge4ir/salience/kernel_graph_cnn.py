@@ -43,7 +43,7 @@ class KernelPooling(nn.Module):
 
     def forward(self, in_tensor, mtx_score):
         in_tensor = in_tensor.unsqueeze(-1)
-        in_tensor = in_tensor.expand(in_tensor.size()[:-2] + (self.K,))
+        in_tensor = in_tensor.expand(in_tensor.size()[:-1] + (self.K,))
         score = -(in_tensor - self.v_mu) * (in_tensor - self.v_mu)
         kernel_value = torch.exp(score / (2.0 * self.v_sigma * self.v_sigma))
         mtx_score = mtx_score.unsqueeze(-1).unsqueeze(1)
