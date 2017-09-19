@@ -60,6 +60,7 @@ class KernelGraphCNN(SalienceBaseModel):
         self.kp = KernelPooling(l_mu, l_sigma)
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
+        self.dropout = nn.Dropout(p=para.dropout_rate)
         self.linear = nn.Linear(self.K, 1, bias=True)
         if pre_embedding is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
@@ -83,7 +84,8 @@ class KernelGraphCNN(SalienceBaseModel):
             torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
         )
 
-        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)).clamp(min=0)
+        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
+        trans_mtx = self.dropout(trans_mtx)
         kp_mtx = self.kp(trans_mtx, mtx_score)
         output = self.linear(kp_mtx)
         output = output.squeeze(-1)
@@ -133,7 +135,7 @@ class KernelGraphWalk(SalienceBaseModel):
             torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
         )
 
-        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)).clamp(min=0)
+        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
         output = mtx_score
         for linear in self.l_linear:
             kp_mtx = self.kp(trans_mtx, output)

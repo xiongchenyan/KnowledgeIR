@@ -20,6 +20,7 @@ class NNPara(Configurable):
     nb_random_walk_steps = Int(1, help='random walk steps').tag(config=True)
     nb_mu = Int(10, help='number of mu').tag(config=True)
     sigma = Float(0.1, help='sigma').tag(config=True)
+    dropout_rate = Float(0, help='dropout rate').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
