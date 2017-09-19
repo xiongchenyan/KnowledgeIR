@@ -65,7 +65,6 @@ class SalienceModelCenter(Configurable):
     learning_rate = Float(1e-3, help='learning rate').tag(config=True)
     pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
     model_name = Unicode(help="model name: trans").tag(config=True)
-    random_walk_step = Int(1, help='random walk step').tag(config=True)  # need to be a config para
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
     batch_size = Int(128, help='number of documents per batch').tag(config=True)
