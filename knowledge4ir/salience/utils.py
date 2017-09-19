@@ -26,7 +26,7 @@ class NNPara(Configurable):
         l_sigma = [1e-3]
         bin_range = 2.0 / self.nb_mu
         st = 1.0 - bin_range / 2.0
-        for i in range(len(self.nb_mu)):
+        for i in range(self.nb_mu):
             l_mu.append(st - i * bin_range)
             l_sigma.append(self.sigma)
         return l_mu, l_sigma
