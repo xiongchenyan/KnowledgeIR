@@ -99,7 +99,11 @@ class SalienceModelCenter(Configurable):
             logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
             if self.para.embedding_dim is None:
                 self.para.entity_vocab_size, self.para.embedding_dim = self.pre_emb.shape
-            assert (self.para.entity_vocab_size, self.para.embedding_dim) == self.pre_emb.shape
+            if self.para.entity_vocab_size != self.pre_emb.shape[0]:
+                logging.error('given entity vocab size not equal to embedding shape [%d != %d]',
+                              self.para.entity_vocab_size, self.pre_emb.shape[0])
+            assert self.para.entity_vocab_size == self.pre_emb.shape[0]
+            assert self.para.embedding_dim == self.pre_emb.shape[1]
         self.model = None
         self._init_model()
         self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
