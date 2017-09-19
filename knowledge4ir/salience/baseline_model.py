@@ -8,14 +8,14 @@ import logging
 
 import torch
 import torch.nn as nn
-
+from knowledge4ir.salience.utils import SalienceBaseModel
 use_cuda = torch.cuda.is_available()
 
 
-class FrequencySalience(nn.Module):
+class FrequencySalience(SalienceBaseModel):
 
-    def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
-        super(FrequencySalience, self).__init__()
+    def __init__(self, para, pre_embedding=None):
+        super(FrequencySalience, self).__init__(para, pre_embedding)
         self.linear = nn.Linear(1, 1)
         if use_cuda:
             self.linear.cuda()

@@ -13,30 +13,27 @@ output:
 
 import torch
 import torch.nn as nn
-import numpy as np
 from torch.autograd import Variable
-from torch import optim
-import torch.nn.functional as F
+from knowledge4ir.salience.utils import SalienceBaseModel
 import logging
 import json
 use_cuda = torch.cuda.is_available()
 
 
 class KernelPooling(nn.Module):
-    def __init__(self, l_mu=None, sigma=None):
+    def __init__(self, l_mu=None, l_sigma=None):
         super(KernelPooling, self).__init__()
         if l_mu is None:
             l_mu = [1, 0.9, 0.7, 0.5, 0.3, 0.1, -0.1, -0.3, -0.5, -0.7, -0.9]
         self.v_mu = Variable(torch.FloatTensor(l_mu), requires_grad=False)
         self.K = len(l_mu)
-        if sigma is None:
-            sigma = 0.1
-        l_sigma = [1e-3] + [sigma] * (self.v_mu.size()[-1] - 1)
+        if l_sigma is None:
+            l_sigma = [1e-3] + [0.1] * (self.v_mu.size()[-1] - 1)
         self.v_sigma = Variable(torch.FloatTensor(l_sigma), requires_grad=False)
         if use_cuda:
             self.v_mu = self.v_mu.cuda()
             self.v_sigma = self.v_sigma.cuda()
-        logging.info('[%d] kernel pool with kernels %s',
+        logging.info('[%d] pooling kernels: %s',
                      self.K, json.dumps(zip(l_mu, l_sigma))
                      )
         return
@@ -54,13 +51,15 @@ class KernelPooling(nn.Module):
         return sum_kernel_value
 
 
-class KernelGraphCNN(nn.Module):
+class KernelGraphCNN(SalienceBaseModel):
 
-    def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
-        super(KernelGraphCNN, self).__init__()
-        self.K = 11
-        self.kp = KernelPooling()
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+    def __init__(self, para, pre_embedding=None):
+        super(KernelGraphCNN, self).__init__(para, pre_embedding)
+        l_mu, l_sigma = para.form_kernels()
+        self.K = len(l_mu)
+        self.kp = KernelPooling(l_mu, l_sigma)
+        self.embedding = nn.Embedding(para.entity_vocab_size,
+                                      para.embedding_dim, padding_idx=0)
         self.linear = nn.Linear(self.K, 1, bias=True)
         if pre_embedding is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
@@ -69,14 +68,14 @@ class KernelGraphCNN(nn.Module):
             self.embedding.cuda()
             self.kp.cuda()
             self.linear.cuda()
-        self.layer = layer
+        self.layer = para.nb_hidden_layers
         return
 
     def forward(self, mtx_e, mtx_score):
         """
         return probability of each one being salient
-        :param v_e: the input entity id's, has to be Variable()
-        :param v_score: the initial weights on each entity, has to be Variable()
+        :param mtx_e: the input entity id's, has to be Variable()
+        :param mtx_score: the initial weights on each entity, has to be Variable()
         :return: score for each one
         """
         mtx_embedding = self.embedding(mtx_e)
@@ -94,17 +93,20 @@ class KernelGraphCNN(nn.Module):
             return output
 
 
-class KernelGraphWalk(nn.Module):
+class KernelGraphWalk(SalienceBaseModel):
     """
-    no working now...
+    no working now... cannot converge. 9/19
     """
-    def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
-        super(KernelGraphWalk, self).__init__()
-        self.K = 11
-        self.kp = KernelPooling()
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+    def __init__(self, para, pre_embedding=None):
+        super(KernelGraphWalk, self).__init__(para, pre_embedding)
+        l_mu, l_sigma = para.form_kernels()
+        self.K = len(l_mu)
+        self.kp = KernelPooling(l_mu, l_sigma)
+        self.embedding = nn.Embedding(para.entity_vocab_size,
+                                      para.embedding_dim, padding_idx=0)
+        self.layer = para.nb_hidden_layers
         self.l_linear = []
-        for __ in xrange(layer):
+        for __ in xrange(self.layer):
             self.l_linear.append(nn.Linear(self.K, 1, bias=True))
         # self.linear = nn.Linear(self.K, 1, bias=True)
         if pre_embedding is not None:
@@ -116,14 +118,14 @@ class KernelGraphWalk(nn.Module):
             # self.linear.cuda()
             for linear in self.l_linear:
                 linear.cuda()
-        self.layer = layer
+
         return
 
     def forward(self, mtx_e, mtx_score):
         """
         return probability of each one being salient
-        :param v_e: the input entity id's, has to be Variable()
-        :param v_score: the initial weights on each entity, has to be Variable()
+        :param mtx_e: the input entity id's, has to be Variable()
+        :param mtx_score: the initial weights on each entity, has to be Variable()
         :return: score for each one
         """
         mtx_embedding = self.embedding(mtx_e)

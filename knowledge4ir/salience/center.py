@@ -20,7 +20,7 @@ hyper-parameters:
 """
 
 from knowledge4ir.salience.translation_model import (
-    BachPageRank,
+    EmbPageRank,
     EdgeCNN,
 )
 from knowledge4ir.salience.kernel_graph_cnn import (
@@ -31,6 +31,7 @@ from knowledge4ir.salience.baseline_model import (
     FrequencySalience,
 )
 from knowledge4ir.salience.dense_model import EmbeddingLR
+from knowledge4ir.salience.utils import NNPara
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
@@ -72,7 +73,7 @@ class SalienceModelCenter(Configurable):
 
     max_e_per_doc = Int(200, help='max e per doc')
     h_model = {
-        "trans": BachPageRank,
+        "trans": EmbPageRank,
         'EdgeCNN': EdgeCNN,
         'lr': EmbeddingLR,
         'knrm': KernelGraphCNN,
@@ -85,6 +86,7 @@ class SalienceModelCenter(Configurable):
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
+        self.para = NNPara(**kwargs)
         h_loss = {
             "hinge": hinge_loss,
             "pairwise": pairwise_loss
@@ -96,19 +98,21 @@ class SalienceModelCenter(Configurable):
             logging.info('loading pre trained embedding [%s]', self.pre_trained_emb_in)
             self.pre_emb = np.load(open(self.pre_trained_emb_in))
             logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
+            if self.para.embedding_dim is None:
+                self.para.entity_vocab_size, self.para.embedding_dim = self.pre_emb.shape
+            assert (self.para.entity_vocab_size, self.para.embedding_dim) == self.pre_emb.shape
         self.model = None
         self._init_model()
         self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
 
     def class_print_help(cls, inst=None):
         super(SalienceModelCenter, cls).class_print_help(inst)
+        NNPara.class_print_help(inst)
         SalienceEva.class_print_help(inst)
 
     def _init_model(self):
         if self.model_name:
-            self.model = self.h_model[self.model_name](self.random_walk_step,
-                                                       self.pre_emb.shape[0],
-                                                       self.pre_emb.shape[1],
+            self.model = self.h_model[self.model_name](self.para,
                                                        self.pre_emb,
                                                        )
 

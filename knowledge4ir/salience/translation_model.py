@@ -7,20 +7,23 @@ import logging
 
 import torch
 import torch.nn as nn
+from knowledge4ir.salience.utils import SalienceBaseModel
 
 use_cuda = torch.cuda.is_available()
 
 
-class BachPageRank(nn.Module):
+class EmbPageRank(SalienceBaseModel):
     """
     input: matrix's |doc||v_e|, |doc||v_score| of these v_e
         e=-1 is padding
     output: p(target e id is salient)
     """
 
-    def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
-        super(BachPageRank, self).__init__()
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+    def __init__(self, para, pre_embedding=None):
+        super(EmbPageRank, self).__init__(para, pre_embedding)
+        vocab_size = para.entity_vocab_size
+        self.embedding = nn.Embedding(para.entity_vocab_size,
+                                      para.embedding_dim, padding_idx=0)
         self.linear = nn.Linear(1, 1, bias=True)
         if pre_embedding is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
@@ -28,14 +31,14 @@ class BachPageRank(nn.Module):
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
             self.linear.cuda()
-        self.layer = layer
+        self.layer = para.nb_hidden_layers
         return
 
     def forward(self, mtx_e, mtx_score):
         """
         return probability of each one being salient
-        :param v_e: the input entity id's, has to be Variable()
-        :param v_score: the initial weights on each entity, has to be Variable()
+        :param mtx_e: the input entity id's, has to be Variable()
+        :param mtx_score: the initial weights on each entity, has to be Variable()
         :return: score for each one
         """
         mtx_embedding = self.embedding(mtx_e)
@@ -47,31 +50,11 @@ class BachPageRank(nn.Module):
         trans_mtx = trans_mtx.div(
             torch.norm(trans_mtx, p=1, dim=-2, keepdim=True).expand_as(trans_mtx) + 1e-8
         )
-        # mid = trans_mtx.cpu().data.numpy()
-        # if np.sum(np.isnan(mid)):
-        #     logging.info('entities:\n%s',
-        #                  json.dumps(v_e.data.cpu().numpy().tolist())
-        #                  )
-        #     logging.info('init scores:\n%s',
-        #                  json.dumps(v_score.data.cpu().numpy().tolist())
-        #                  )
-        #     logging.info('linear weights:\n%s',
-        #                  json.dumps(self.linear.weight.data.cpu().numpy().tolist()))
-        #     logging.info('embeddings are:\n %s',
-        #                  json.dumps(mtx_embedding.data.cpu().numpy().tolist())
-        #                  )
-        #     logging.info('trans_mtx:\n %s',
-        #                  json.dumps(trans_mtx.data.cpu().numpy().tolist())
-        #                  )
-        #
-        #     raise ValueError
         output = mtx_score.unsqueeze(-1)
         for p in xrange(self.layer):
             output = torch.matmul(trans_mtx, output)
 
-        # output = F.log_softmax(self.linear(output))
         output = self.linear(output)
-        # output = torch.stack([F.log_softmax(output[i]) for i in range(output.size()[0])])
         output = output.squeeze(-1)
         if use_cuda:
             return output.cuda()
@@ -79,33 +62,34 @@ class BachPageRank(nn.Module):
             return output
 
 
-class EdgeCNN(nn.Module):
+class EdgeCNN(SalienceBaseModel):
     """
     input: matrix's |doc||v_e|, |doc||v_score| of these v_e
         e=-1 is padding
     output: p(target e id is salient)
     """
 
-    def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
-        super(EdgeCNN, self).__init__()
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+    def __init__(self, para, pre_embedding=None):
+        super(EdgeCNN, self).__init__(para, pre_embedding)
+        self.embedding = nn.Embedding(para.entity_vocab_size,
+                                      para.embedding_dim, padding_idx=0)
         if pre_embedding is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
-        self.projection = nn.Linear(embedding_dim, embedding_dim, bias=False)
+        self.projection = nn.Linear(para.embedding_dim, para.embedding_dim, bias=False)
         self.linear = nn.Linear(1, 1, bias=True)
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
             self.projection.cuda()
             self.linear.cuda()
-        self.layer = layer
+        self.layer = para.nb_hidden_layers
         return
 
     def forward(self, mtx_e, mtx_score):
         """
         return probability of each one being salient
-        :param v_e: the input entity id's, has to be Variable()
-        :param v_score: the initial weights on each entity, has to be Variable()
+        :param mtx_e: the input entity id's, has to be Variable()
+        :param mtx_score: the initial weights on each entity, has to be Variable()
         :return: score for each one
         """
         mtx_embedding = self.embedding(mtx_e)
@@ -115,31 +99,12 @@ class EdgeCNN(nn.Module):
         trans_mtx = trans_mtx.div(
             torch.norm(trans_mtx, p=1, dim=-2, keepdim=True).expand_as(trans_mtx) + 1e-8
         )
-        # mid = trans_mtx.cpu().data.numpy()
-        # if np.sum(np.isnan(mid)):
-        #     logging.info('entities:\n%s',
-        #                  json.dumps(v_e.data.cpu().numpy().tolist())
-        #                  )
-        #     logging.info('init scores:\n%s',
-        #                  json.dumps(v_score.data.cpu().numpy().tolist())
-        #                  )
-        #     logging.info('linear weights:\n%s',
-        #                  json.dumps(self.linear.weight.data.cpu().numpy().tolist()))
-        #     logging.info('embeddings are:\n %s',
-        #                  json.dumps(mtx_embedding.data.cpu().numpy().tolist())
-        #                  )
-        #     logging.info('trans_mtx:\n %s',
-        #                  json.dumps(trans_mtx.data.cpu().numpy().tolist())
-        #                  )
-        #
-        #     raise ValueError
+
         output = mtx_score.unsqueeze(-1)
         for p in xrange(self.layer):
             output = torch.matmul(trans_mtx, output)
 
-        # output = F.log_softmax(self.linear(output))
         output = self.linear(output)
-        # output = torch.stack([F.log_softmax(output[i]) for i in range(output.size()[0])])
         output = output.squeeze(-1)
         if use_cuda:
             return output.cuda()
