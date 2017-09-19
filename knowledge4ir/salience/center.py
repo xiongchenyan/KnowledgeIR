@@ -27,6 +27,9 @@ from knowledge4ir.salience.kernel_graph_cnn import (
     KernelGraphCNN,
     KernelGraphWalk,
 )
+from knowledge4ir.salience.baseline_model import (
+    FrequencySalience,
+)
 from knowledge4ir.salience.dense_model import EmbeddingLR
 from traitlets.config import Configurable
 from traitlets import (
@@ -74,6 +77,7 @@ class SalienceModelCenter(Configurable):
         'lr': EmbeddingLR,
         'knrm': KernelGraphCNN,
         'kernel_pr': KernelGraphWalk,
+        'frequency': FrequencySalience
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
