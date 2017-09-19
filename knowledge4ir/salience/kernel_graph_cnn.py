@@ -50,7 +50,7 @@ class KernelPooling(nn.Module):
         mtx_score = mtx_score.expand_as(kernel_value)
         weighted_kernel_value = kernel_value * mtx_score
         weighted_kernel_value = torch.log(weighted_kernel_value.clamp(min=1e-10))
-        sum_kernel_value = torch.sum(weighted_kernel_value, dim=-2)  # add entity freq/weight
+        sum_kernel_value = torch.mean(weighted_kernel_value, dim=-2)  # add entity freq/weight
         return sum_kernel_value
 
 
