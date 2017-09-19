@@ -32,7 +32,7 @@ class NNPara(Configurable):
         return l_mu, l_sigma
 
 
-class SalienceBaseModel(nn):
+class SalienceBaseModel(nn.Module):
 
     def __init__(self, para, pre_emb=None):
         """
