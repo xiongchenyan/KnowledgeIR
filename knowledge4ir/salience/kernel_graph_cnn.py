@@ -96,23 +96,27 @@ class KernelGraphCNN(nn.Module):
 
 
 class KernelGraphWalk(nn.Module):
-
+    """
+    no working now...
+    """
     def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
         super(KernelGraphWalk, self).__init__()
         self.K = 11
         self.kp = KernelPooling()
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
-        self.l_linear = []
-        for __ in xrange(layer):
-            self.l_linear.append(nn.Linear(self.K, 1, bias=True))
+        # self.l_linear = []
+        # for __ in xrange(layer):
+        #     self.l_linear.append(nn.Linear(self.K, 1, bias=True))
+        self.linear = nn.Linear(self.K, 1, bias=True)
         if pre_embedding is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
             self.kp.cuda()
-            for linear in self.l_linear:
-                linear.cuda()
+            self.linear.cuda()
+            # for linear in self.l_linear:
+            #     linear.cuda()
         self.layer = layer
         return
 
@@ -129,11 +133,9 @@ class KernelGraphWalk(nn.Module):
         )
 
         trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)).clamp(min=0)
-        output = mtx_score
-        for linear in self.l_linear:
-            kp_mtx = self.kp(trans_mtx, output)
-            output = F.tanh(linear(kp_mtx)).clamp(min=0)
-            output = output.squeeze(-1)
+        kp_mtx = self.kp(trans_mtx, mtx_score)
+        output = F.tanh(self.linear(kp_mtx))
+        output = output.squeeze(-1)
         if use_cuda:
             return output.cuda()
         else:
