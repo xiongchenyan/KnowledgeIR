@@ -111,7 +111,8 @@ class KernelGraphWalk(nn.Module):
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
             self.kp.cuda()
-            self.linear.cuda()
+            for linear in self.l_linear:
+                linear.cuda()
         self.layer = layer
         return
 
