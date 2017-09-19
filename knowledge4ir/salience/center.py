@@ -97,11 +97,11 @@ class SalienceModelCenter(Configurable):
             logging.info('loading pre trained embedding [%s]', self.pre_trained_emb_in)
             self.pre_emb = np.load(open(self.pre_trained_emb_in))
             logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
-            if self.para.embedding_dim is None:
+            if not self.para.embedding_dim:
                 self.para.entity_vocab_size, self.para.embedding_dim = self.pre_emb.shape
-            if self.para.entity_vocab_size != self.pre_emb.shape[0]:
-                logging.error('given entity vocab size not equal to embedding shape [%d != %d]',
-                              self.para.entity_vocab_size, self.pre_emb.shape[0])
+            # if self.para.entity_vocab_size != self.pre_emb.shape[0]:
+            #     logging.error('given entity vocab size not equal to embedding shape [%d != %d]',
+            #                   self.para.entity_vocab_size, self.pre_emb.shape[0])
             assert self.para.entity_vocab_size == self.pre_emb.shape[0]
             assert self.para.embedding_dim == self.pre_emb.shape[1]
         self.model = None
