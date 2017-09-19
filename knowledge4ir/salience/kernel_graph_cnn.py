@@ -134,7 +134,7 @@ class KernelGraphWalk(nn.Module):
 
         trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)).clamp(min=0)
         kp_mtx = self.kp(trans_mtx, mtx_score)
-        output = F.tanh(self.linear(kp_mtx))
+        output = self.linear(kp_mtx)
         output = output.squeeze(-1)
         if use_cuda:
             return output.cuda()
