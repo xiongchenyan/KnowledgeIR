@@ -23,7 +23,10 @@ from knowledge4ir.salience.translation_model import (
     BachPageRank,
     EdgeCNN,
 )
-from knowledge4ir.salience.kernel_graph_cnn import KernelGraphCNN
+from knowledge4ir.salience.kernel_graph_cnn import (
+    KernelGraphCNN,
+    KernelGraphWalk,
+)
 from knowledge4ir.salience.dense_model import EmbeddingLR
 from traitlets.config import Configurable
 from traitlets import (
@@ -70,6 +73,7 @@ class SalienceModelCenter(Configurable):
         'EdgeCNN': EdgeCNN,
         'lr': EmbeddingLR,
         'knrm': KernelGraphCNN,
+        'kernel_pr': KernelGraphWalk,
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)

@@ -93,3 +93,47 @@ class KernelGraphCNN(nn.Module):
             return output.cuda()
         else:
             return output
+
+
+class KernelGraphWalk(nn.Module):
+
+    def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
+        super(KernelGraphWalk, self).__init__()
+        self.K = 11
+        self.kp = KernelPooling()
+        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+        self.l_linear = []
+        for __ in xrange(layer):
+            self.l_linear.append(nn.Linear(self.K, 1, bias=True))
+        if pre_embedding is not None:
+            self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
+        if use_cuda:
+            logging.info('copying parameter to cuda')
+            self.embedding.cuda()
+            self.kp.cuda()
+            self.linear.cuda()
+        self.layer = layer
+        return
+
+    def forward(self, mtx_e, mtx_score):
+        """
+        return probability of each one being salient
+        :param v_e: the input entity id's, has to be Variable()
+        :param v_score: the initial weights on each entity, has to be Variable()
+        :return: score for each one
+        """
+        mtx_embedding = self.embedding(mtx_e)
+        mtx_embedding = mtx_embedding.div(
+            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
+        )
+
+        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1)).clamp(min=0)
+        output = mtx_score
+        for linear in self.l_linear:
+            kp_mtx = self.kp(trans_mtx, output)
+            output = F.tanh(linear(kp_mtx)).clamp(min=0)
+            output = output.squeeze(-1)
+        if use_cuda:
+            return output.cuda()
+        else:
+            return output
