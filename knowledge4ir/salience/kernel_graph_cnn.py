@@ -89,10 +89,20 @@ class KernelGraphCNN(SalienceBaseModel):
         kp_mtx = self.kp(trans_mtx, mtx_score)
         output = self.linear(kp_mtx)
         output = output.squeeze(-1)
-        if use_cuda:
-            return output.cuda()
-        else:
-            return output
+        return output
+
+
+class HighwayKCNN(KernelGraphCNN):
+    def __init__(self, para, pre_embedding=None):
+        super(HighwayKCNN, self).__init__(para, pre_embedding)
+        self.linear_combine = nn.Linear(2, 1)
+        return
+
+    def forward(self, mtx_e, mtx_score):
+        knrm_res = super(HighwayKCNN, self).forward(mtx_e, mtx_score)
+        mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), mtx_score.unsqueeze(-1)), -1)
+        output = self.linear_combine(mixed_knrm).squeeze(-1)
+        return output
 
 
 class KernelGraphWalk(SalienceBaseModel):

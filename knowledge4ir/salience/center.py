@@ -26,6 +26,7 @@ from knowledge4ir.salience.translation_model import (
 from knowledge4ir.salience.kernel_graph_cnn import (
     KernelGraphCNN,
     KernelGraphWalk,
+    HighwayKCNN,
 )
 from knowledge4ir.salience.baseline_model import (
     FrequencySalience,
@@ -77,6 +78,7 @@ class SalienceModelCenter(Configurable):
         'lr': EmbeddingLR,
         'knrm': KernelGraphCNN,
         'kernel_pr': KernelGraphWalk,
+        'highway_knrm': HighwayKCNN,
         'frequency': FrequencySalience
     }
     in_field = Unicode(body_field)
