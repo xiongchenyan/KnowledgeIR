@@ -195,10 +195,6 @@ class SalienceModelCenter(Configurable):
         m_e, m_w, m_label = self._data_io(l_line)
         optimizer.zero_grad()
         output = self.model(m_e, m_w)
-        # loss = criterion(
-        #     output.view(-1, output.size()[-1]),
-        #     m_label.view(-1, 1).squeeze(-1)
-        #                  )
         loss = criterion(output, m_label)
         loss.backward()
         # nn.utils.clip_grad_norm(self.model.parameters(), 10)
@@ -280,9 +276,9 @@ class SalienceModelCenter(Configurable):
         convert data to the input for the model
         :param line: the json formatted data
         :return: v_e, v_w, v_label
-        v_e: entities in the doc
-        v_w: initial weight, TF
-        v_label: 1 or -1, salience or not, if label not given, will be 0
+        m_e: entities in the doc
+        m_w: initial weight, TF
+        m_label: 1 or -1, salience or not, if label not given, will be 0
         """
         ll_e = []
         ll_w = []
@@ -329,7 +325,7 @@ if __name__ == '__main__':
         train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
         test_out = Unicode(help='test res').tag(config=True)
-        valid_in = Unicode(None, help='validation in').tag(config=True)
+        valid_in = Unicode(help='validation in').tag(config=True)
 
     if 2 != len(sys.argv):
         print "unit test model train test"
