@@ -131,8 +131,10 @@ class SalienceModelCenter(Configurable):
         if validation_in_name:
             logging.info('loading validation data from [%s]', validation_in_name)
             l_valid_lines = open(validation_in_name).read().splitlines()
-            valid_e, valid_w, valid_label = self._data_io(l_valid_lines)
-            logging.info('validation with [%d] doc', valid_e.size()[0])
+            ll_valid_line = [l_valid_lines[i:i + self.batch_size]
+                             for i in xrange(0, len(l_valid_lines), self.batch_size)]
+            # valid_e, valid_w, valid_label = self._data_io(l_valid_lines)
+            logging.info('validation with [%d] doc', len(l_valid_lines))
             patient_cnt = 0
             best_valid_loss = None
 
@@ -174,7 +176,9 @@ class SalienceModelCenter(Configurable):
 
             # validation
             if validation_in_name:
-                this_valid_loss = self._batch_test(valid_e, valid_w, valid_label)
+                this_valid_loss = sum([self._batch_test(l_one_batch)
+                                       for l_one_batch in ll_valid_line])
+                this_valid_loss /= float(len(ll_valid_line))
                 logging.info('valid loss [%f]', this_valid_loss)
                 if best_valid_loss is None:
                     best_valid_loss = this_valid_loss
@@ -261,7 +265,8 @@ class SalienceModelCenter(Configurable):
         h_out['eval'] = h_this_eva
         return h_out, h_this_eva
 
-    def _batch_test(self, v_e, v_w, v_label):
+    def _batch_test(self, l_lines):
+        v_e, v_w, v_label = self._data_io(l_lines)
         output = self.model(v_e, v_w).cpu()[0]
         loss = self.criterion(output, v_label)
         return loss.data[0]
