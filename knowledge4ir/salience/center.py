@@ -185,11 +185,11 @@ class SalienceModelCenter(Configurable):
                 elif this_valid_loss > best_valid_loss:
                     patient_cnt += 1
                     logging.info('valid loss increased [%.4f -> %.4f][%d]',
-                                 this_valid_loss, best_valid_loss, patient_cnt)
+                                 best_valid_loss, this_valid_loss, patient_cnt)
                 else:
                     patient_cnt = 0
-                    logging.info('valid loss decreased [%.4f -> $.4f][%d]',
-                                 this_valid_loss, best_valid_loss, patient_cnt)
+                    logging.info('valid loss decreased [%.4f -> %.4f][%d]',
+                                 best_valid_loss, this_valid_loss, patient_cnt)
                     best_valid_loss = this_valid_loss
 
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
