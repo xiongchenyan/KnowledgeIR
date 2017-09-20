@@ -186,6 +186,9 @@ class SalienceModelCenter(Configurable):
                     patient_cnt += 1
                     logging.info('valid loss increased [%.4f -> %.4f][%d]',
                                  best_valid_loss, this_valid_loss, patient_cnt)
+                    if patient_cnt >= self.early_stopping_patient:
+                        logging.info('early stopped at [%d] epoch', epoch)
+                        break
                 else:
                     patient_cnt = 0
                     logging.info('valid loss decreased [%.4f -> %.4f][%d]',
