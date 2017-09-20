@@ -96,6 +96,8 @@ class HighwayKCNN(KernelGraphCNN):
     def __init__(self, para, pre_embedding=None):
         super(HighwayKCNN, self).__init__(para, pre_embedding)
         self.linear_combine = nn.Linear(2, 1)
+        if use_cuda:
+            self.linear_combine.cuda()
         return
 
     def forward(self, mtx_e, mtx_score):
