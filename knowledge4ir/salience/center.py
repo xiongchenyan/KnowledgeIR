@@ -136,7 +136,9 @@ class SalienceModelCenter(Configurable):
             # valid_e, valid_w, valid_label = self._data_io(l_valid_lines)
             logging.info('validation with [%d] doc', len(l_valid_lines))
             patient_cnt = 0
-            best_valid_loss = None
+            best_valid_loss = sum([self._batch_test(l_one_batch)
+                                   for l_one_batch in ll_valid_line]) / float(len(ll_valid_line))
+            logging.info('initial validation loss [%.4f]', best_valid_loss)
 
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
@@ -177,8 +179,7 @@ class SalienceModelCenter(Configurable):
             # validation
             if validation_in_name:
                 this_valid_loss = sum([self._batch_test(l_one_batch)
-                                       for l_one_batch in ll_valid_line])
-                this_valid_loss /= float(len(ll_valid_line))
+                                       for l_one_batch in ll_valid_line]) / float(len(ll_valid_line))
                 logging.info('valid loss [%f]', this_valid_loss)
                 if best_valid_loss is None:
                     best_valid_loss = this_valid_loss
