@@ -266,9 +266,9 @@ class SalienceModelCenter(Configurable):
         return h_out, h_this_eva
 
     def _batch_test(self, l_lines):
-        v_e, v_w, v_label = self._data_io(l_lines)
-        output = self.model(v_e, v_w).cpu()[0]
-        loss = self.criterion(output, v_label)
+        m_e, m_w, m_label = self._data_io(l_lines)
+        output = self.model(m_e, m_w)
+        loss = self.criterion(output, m_label)
         return loss.data[0]
 
     def _filter_empty_line(self, line):
