@@ -19,6 +19,7 @@ class NNPara(Configurable):
     nb_hidden_layers = Int(1, help='total number of hidden layers').tag(config=True)
     nb_random_walk_steps = Int(1, help='random walk steps').tag(config=True)
     nb_mu = Int(10, help='number of mu').tag(config=True)
+    first_k_mu = Int(help='first k mu to use').tag(config=True)
     sigma = Float(0.1, help='sigma').tag(config=True)
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
 
@@ -30,6 +31,9 @@ class NNPara(Configurable):
         for i in range(self.nb_mu):
             l_mu.append(st - i * bin_range)
             l_sigma.append(self.sigma)
+        if self.first_k_mu:
+            l_mu = l_mu[:self.first_k_mu]
+            l_sigma = l_sigma[:self.first_k_mu]
         return l_mu, l_sigma
 
 
