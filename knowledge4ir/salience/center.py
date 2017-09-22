@@ -20,16 +20,26 @@ hyper-parameters:
 """
 
 from knowledge4ir.salience.translation_model import (
-    BachPageRank,
+    EmbPageRank,
     EdgeCNN,
 )
+from knowledge4ir.salience.kernel_graph_cnn import (
+    KernelGraphCNN,
+    KernelGraphWalk,
+    HighwayKCNN,
+)
+from knowledge4ir.salience.baseline_model import (
+    FrequencySalience,
+)
 from knowledge4ir.salience.dense_model import EmbeddingLR
+from knowledge4ir.salience.utils import NNPara
 from traitlets.config import Configurable
 from traitlets import (
     Unicode,
     Int,
     Float,
     List,
+    Bool,
 )
 import numpy as np
 import json
@@ -57,17 +67,21 @@ class SalienceModelCenter(Configurable):
     learning_rate = Float(1e-3, help='learning rate').tag(config=True)
     pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
     model_name = Unicode(help="model name: trans").tag(config=True)
-    random_walk_step = Int(1, help='random walk step').tag(config=True)  # need to be a config para
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
     batch_size = Int(128, help='number of documents per batch').tag(config=True)
     loss_func = Unicode('hinge', help='loss function to use: hinge, pairwise').tag(config=True)
-
-    max_e_per_doc = Int(1000, help='max e per doc')
+    early_stopping_patient = Int(5, help='epochs before early stopping').tag(config=True)
+    max_e_per_doc = Int(200, help='max e per doc')
+    save_model = Bool(True, help='weather to save the trained model').tag(config=True)
     h_model = {
-        "trans": BachPageRank,
+        "trans": EmbPageRank,
         'EdgeCNN': EdgeCNN,
         'lr': EmbeddingLR,
+        'knrm': KernelGraphCNN,
+        'kernel_pr': KernelGraphWalk,
+        'highway_knrm': HighwayKCNN,
+        'frequency': FrequencySalience
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
@@ -75,6 +89,7 @@ class SalienceModelCenter(Configurable):
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
+        self.para = NNPara(**kwargs)
         h_loss = {
             "hinge": hinge_loss,
             "pairwise": pairwise_loss
@@ -86,31 +101,50 @@ class SalienceModelCenter(Configurable):
             logging.info('loading pre trained embedding [%s]', self.pre_trained_emb_in)
             self.pre_emb = np.load(open(self.pre_trained_emb_in))
             logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
+            if not self.para.embedding_dim:
+                self.para.entity_vocab_size, self.para.embedding_dim = self.pre_emb.shape
+            # if self.para.entity_vocab_size != self.pre_emb.shape[0]:
+            #     logging.error('given entity vocab size not equal to embedding shape [%d != %d]',
+            #                   self.para.entity_vocab_size, self.pre_emb.shape[0])
+            assert self.para.entity_vocab_size == self.pre_emb.shape[0]
+            assert self.para.embedding_dim == self.pre_emb.shape[1]
         self.model = None
         self._init_model()
         self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
 
+    @classmethod
     def class_print_help(cls, inst=None):
         super(SalienceModelCenter, cls).class_print_help(inst)
+        NNPara.class_print_help(inst)
         SalienceEva.class_print_help(inst)
 
     def _init_model(self):
         if self.model_name:
-            self.model = self.h_model[self.model_name](self.random_walk_step,
-                                                       self.pre_emb.shape[0],
-                                                       self.pre_emb.shape[1],
+            self.model = self.h_model[self.model_name](self.para,
                                                        self.pre_emb,
                                                        )
 
-    def train(self, train_in_name):
+    def train(self, train_in_name, validation_in_name=None):
         """
         train using the given data
         will use each doc as the mini-batch for now
-        :param train_in_name:
+        :param train_in_name: training data
+        :param validation_in_name: validation data
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
-        # criterion = nn.NLLLoss(weight=self.class_weight)
+        if validation_in_name:
+            logging.info('loading validation data from [%s]', validation_in_name)
+            l_valid_lines = open(validation_in_name).read().splitlines()
+            ll_valid_line = [l_valid_lines[i:i + self.batch_size]
+                             for i in xrange(0, len(l_valid_lines), self.batch_size)]
+            # valid_e, valid_w, valid_label = self._data_io(l_valid_lines)
+            logging.info('validation with [%d] doc', len(l_valid_lines))
+            patient_cnt = 0
+            best_valid_loss = sum([self._batch_test(l_one_batch)
+                                   for l_one_batch in ll_valid_line]) / float(len(ll_valid_line))
+            logging.info('initial validation loss [%.4f]', best_valid_loss)
+
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
@@ -147,17 +181,36 @@ class SalienceModelCenter(Configurable):
                          epoch, total_loss / p, p, data_cnt)
             l_epoch_loss.append(total_loss / p)
 
+            # validation
+            if validation_in_name:
+                this_valid_loss = sum([self._batch_test(l_one_batch)
+                                       for l_one_batch in ll_valid_line]) / float(len(ll_valid_line))
+                logging.info('valid loss [%f]', this_valid_loss)
+                if best_valid_loss is None:
+                    best_valid_loss = this_valid_loss
+                elif this_valid_loss > best_valid_loss:
+                    patient_cnt += 1
+                    logging.info('valid loss increased [%.4f -> %.4f][%d]',
+                                 best_valid_loss, this_valid_loss, patient_cnt)
+                    if patient_cnt >= self.early_stopping_patient:
+                        logging.info('early stopped at [%d] epoch', epoch)
+                        break
+                else:
+                    patient_cnt = 0
+                    logging.info('valid loss decreased [%.4f -> %.4f][%d]',
+                                 best_valid_loss, this_valid_loss, patient_cnt)
+                    best_valid_loss = this_valid_loss
+
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
+
+        if self.save_model:
+            self.model.save(train_in_name + '.model')
         return
 
     def _batch_train(self, l_line, criterion, optimizer):
         m_e, m_w, m_label = self._data_io(l_line)
         optimizer.zero_grad()
         output = self.model(m_e, m_w)
-        # loss = criterion(
-        #     output.view(-1, output.size()[-1]),
-        #     m_label.view(-1, 1).squeeze(-1)
-        #                  )
         loss = criterion(output, m_label)
         loss.backward()
         # nn.utils.clip_grad_norm(self.model.parameters(), 10)
@@ -181,32 +234,12 @@ class SalienceModelCenter(Configurable):
         for line in open(test_in_name):
             if self._filter_empty_line(line):
                 continue
-            docno = json.loads(line)['docno']
-            v_e, v_w, v_label = self._data_io([line])
-            if (not v_e[0].size()) | (not v_label[0].size()):
+            h_out, h_this_eva = self._per_doc_predict(line)
+            if h_out is None:
                 continue
-            output = self.model(v_e, v_w).cpu()[0]
-            v_e = v_e[0].cpu()
-            v_label = v_label[0].cpu()
-            # pre_label = output.data.max(-1)[1]
-            pre_label = output.data.sign().type(torch.LongTensor)
-            l_score = output.data.numpy().tolist()
-            y = v_label.data.view_as(pre_label)
-            l_label = y.numpy().tolist()
-
-            h_out = dict()
-            h_out['docno'] = docno
-
-            l_e = v_e.data.numpy().tolist()
-            l_res = pre_label.numpy().tolist()
-            h_out['predict'] = zip(l_e, zip(l_score, l_res))
-            h_this_eva = self.evaluator.evaluate(l_score, l_label)
             h_total_eva = add_svm_feature(h_total_eva, h_this_eva)
-            h_out['eval'] = h_this_eva
             print >> out, json.dumps(h_out)
-
             p += 1
-            # logging.debug('doc [%d][%s] accuracy [%f]', p, docno, json.dumps(h_this_eva))
             h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
             if not p % 1000:
                 logging.info('predicted [%d] docs, eva %s', p, json.dumps(h_mean_eva))
@@ -220,6 +253,36 @@ class SalienceModelCenter(Configurable):
         out.close()
         return
 
+    def _per_doc_predict(self, line):
+        docno = json.loads(line)['docno']
+        v_e, v_w, v_label = self._data_io([line])
+        if (not v_e[0].size()) | (not v_label[0].size()):
+            return None, None
+        output = self.model(v_e, v_w).cpu()[0]
+        v_e = v_e[0].cpu()
+        v_label = v_label[0].cpu()
+        # pre_label = output.data.max(-1)[1]
+        pre_label = output.data.sign().type(torch.LongTensor)
+        l_score = output.data.numpy().tolist()
+        y = v_label.data.view_as(pre_label)
+        l_label = y.numpy().tolist()
+
+        h_out = dict()
+        h_out['docno'] = docno
+
+        l_e = v_e.data.numpy().tolist()
+        l_res = pre_label.numpy().tolist()
+        h_out['predict'] = zip(l_e, zip(l_score, l_res))
+        h_this_eva = self.evaluator.evaluate(l_score, l_label)
+        h_out['eval'] = h_this_eva
+        return h_out, h_this_eva
+
+    def _batch_test(self, l_lines):
+        m_e, m_w, m_label = self._data_io(l_lines)
+        output = self.model(m_e, m_w)
+        loss = self.criterion(output, m_label)
+        return loss.data[0]
+
     def _filter_empty_line(self, line):
         h = json.loads(line)
         l_e = h[self.spot_field].get(self.in_field, [])
@@ -230,9 +293,9 @@ class SalienceModelCenter(Configurable):
         convert data to the input for the model
         :param line: the json formatted data
         :return: v_e, v_w, v_label
-        v_e: entities in the doc
-        v_w: initial weight, TF
-        v_label: 1 or -1, salience or not, if label not given, will be 0
+        m_e: entities in the doc
+        m_w: initial weight, TF
+        m_label: 1 or -1, salience or not, if label not given, will be 0
         """
         ll_e = []
         ll_w = []
@@ -279,6 +342,7 @@ if __name__ == '__main__':
         train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
         test_out = Unicode(help='test res').tag(config=True)
+        valid_in = Unicode(help='validation in').tag(config=True)
 
     if 2 != len(sys.argv):
         print "unit test model train test"
@@ -290,5 +354,5 @@ if __name__ == '__main__':
     conf = load_py_config(sys.argv[1])
     para = Main(config=conf)
     model = SalienceModelCenter(config=conf)
-    model.train(para.train_in)
+    model.train(para.train_in, para.valid_in)
     model.predict(para.test_in, para.test_out)
