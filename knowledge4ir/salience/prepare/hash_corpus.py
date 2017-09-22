@@ -15,6 +15,7 @@ from knowledge4ir.utils import term2lm
 import pickle
 import numpy as np
 
+
 class CorpusHasher(Configurable):
     word_id_pickle_in = Unicode(help='pickle of word  id').tag(config=True)
     entity_id_pickle_in = Unicode(help='pickle of entity id').tag(config=True)

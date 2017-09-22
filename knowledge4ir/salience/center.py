@@ -204,7 +204,7 @@ class SalienceModelCenter(Configurable):
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
 
         if self.save_model:
-            self.model.save(train_in_name + '.model')
+            self.model.save_model(train_in_name + '.model')
         return
 
     def _batch_train(self, l_line, criterion, optimizer):
