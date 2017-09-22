@@ -39,6 +39,7 @@ from traitlets import (
     Int,
     Float,
     List,
+    Bool,
 )
 import numpy as np
 import json
@@ -72,6 +73,7 @@ class SalienceModelCenter(Configurable):
     loss_func = Unicode('hinge', help='loss function to use: hinge, pairwise').tag(config=True)
     early_stopping_patient = Int(5, help='epochs before early stopping').tag(config=True)
     max_e_per_doc = Int(200, help='max e per doc')
+    save_model = Bool(True, help='weather to save the trained model').tag(config=True)
     h_model = {
         "trans": EmbPageRank,
         'EdgeCNN': EdgeCNN,
@@ -110,6 +112,7 @@ class SalienceModelCenter(Configurable):
         self._init_model()
         self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
 
+    @classmethod
     def class_print_help(cls, inst=None):
         super(SalienceModelCenter, cls).class_print_help(inst)
         NNPara.class_print_help(inst)
@@ -199,6 +202,9 @@ class SalienceModelCenter(Configurable):
                     best_valid_loss = this_valid_loss
 
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
+
+        if self.save_model:
+            self.model.save(train_in_name + '.model')
         return
 
     def _batch_train(self, l_line, criterion, optimizer):

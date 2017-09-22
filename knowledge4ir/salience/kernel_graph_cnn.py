@@ -17,6 +17,7 @@ from torch.autograd import Variable
 from knowledge4ir.salience.utils import SalienceBaseModel
 import logging
 import json
+import numpy as np
 use_cuda = torch.cuda.is_available()
 
 
@@ -90,6 +91,15 @@ class KernelGraphCNN(SalienceBaseModel):
         output = self.linear(kp_mtx)
         output = output.squeeze(-1)
         return output
+
+    def save_model(self, output_name):
+        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
+        emb_mtx = self.embedding.weight.data.cpu().numpy()
+        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+        np.save(open(output_name + '.linear.npy', 'w'),
+                self.linear.weight.data.cpu().numpy())
+
+
 
 
 class HighwayKCNN(KernelGraphCNN):

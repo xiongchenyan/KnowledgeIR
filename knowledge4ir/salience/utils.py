@@ -55,3 +55,6 @@ class SalienceBaseModel(nn.Module):
         :param mtx_score: batch * e per doc, pre-given entity scores, typically frequency
         :return:
         """
+
+    def save_model(self, output_name):
+        return
