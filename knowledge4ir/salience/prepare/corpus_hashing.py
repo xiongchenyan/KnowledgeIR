@@ -68,3 +68,32 @@ class CorpusHasher(Configurable):
 
             h_hashed['spot'][field] = this_field_data
         return h_hashed
+
+    def process(self):
+        out = open(self.out_name, 'w')
+        for p, line in enumerate(open(self.corpus_in)):
+            if not p % 1000:
+                logging.info('processing [%d] lines', p)
+            h_hashed = self.hash_per_info(json.loads(line))
+            print >> out, json.dumps(h_hashed)
+
+        out.close()
+        logging.info('finished')
+        return
+
+
+if __name__ == '__main__':
+    import sys
+    from knowledge4ir.utils import (
+        load_py_config,
+        set_basic_log
+    )
+    set_basic_log(logging.INFO)
+    if 2 != len(sys.argv):
+        print "hashing corpus, 1 para, config:"
+        CorpusHasher.class_print_help()
+        sys.exit(-1)
+
+    hasher = CorpusHasher(config=load_py_config(sys.argv[1]))
+    hasher.process()
+    
