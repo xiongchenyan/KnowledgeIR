@@ -96,4 +96,3 @@ if __name__ == '__main__':
 
     hasher = CorpusHasher(config=load_py_config(sys.argv[1]))
     hasher.process()
-    
