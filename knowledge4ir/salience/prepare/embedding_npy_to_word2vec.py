@@ -12,7 +12,7 @@ def convert_one_line(mtx, k, l_id):
     l = mtx[k].tolist()
     key = l_id[k]
     res = key + ' ' + ' '.join(
-        ['%f' for a in l]
+        ['%f' % a for a in l]
     )
     return res
 
