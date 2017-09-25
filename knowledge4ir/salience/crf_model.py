@@ -41,6 +41,13 @@ class KernelCRF(KernelGraphCNN):
         output = super(KernelCRF, self).forward(h_mid_data)
         return output
 
+    def save_model(self, output_name):
+        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
+        emb_mtx = self.embedding.weight.data.cpu().numpy()
+        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+        np.save(open(output_name + '.node_lr.npy', 'w'),
+                self.node_lr.weight.data.cpu().numpy())
+
 
 class LinearKernelCRF(KernelGraphCNN):
     def __init__(self, para, pre_embedding=None):
@@ -70,3 +77,13 @@ class LinearKernelCRF(KernelGraphCNN):
         mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), node_score.unsqueeze(-1)), -1)
         output = self.linear_combine(mixed_knrm).squeeze(-1)
         return output
+
+    def save_model(self, output_name):
+        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
+        emb_mtx = self.embedding.weight.data.cpu().numpy()
+        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+        np.save(open(output_name + '.node_lr.npy', 'w'),
+                self.node_lr.weight.data.cpu().numpy())
+        np.save(open(output_name + '.linear_combine.npy', 'w'),
+                self.linear_combine.weight.data.cpu().numpy())
+        
