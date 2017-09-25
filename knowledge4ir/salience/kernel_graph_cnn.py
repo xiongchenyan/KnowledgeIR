@@ -106,7 +106,7 @@ class HighwayKCNN(KernelGraphCNN):
             self.linear_combine.cuda()
         return
 
-    def forward(self, h_packed_data,):
+    def forward(self, h_packed_data):
         assert 'mtx_e' in h_packed_data
         assert 'mtx_score' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
