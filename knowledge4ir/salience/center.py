@@ -304,7 +304,10 @@ class SalienceModelCenter(Configurable):
 
     def _filter_empty_line(self, line):
         h = json.loads(line)
-        l_e = h[self.spot_field].get(self.in_field, [])
+        if self.input_format == 'raw':
+            l_e = h[self.spot_field].get(self.in_field, [])
+        else:
+            l_e = h[self.spot_field].geT(self.in_field, {}).get('entities')
         return not l_e
 
     def _data_io(self, l_line):
@@ -316,8 +319,6 @@ class SalienceModelCenter(Configurable):
         :param l_line:
         :return: h_packed_data, with mtx_e and ts_feature fields, m_label, the label
         """
-        h_packed_data = dict()
-        m_label = None
         ll_e = []
         lll_feature = []
         ll_label = []
@@ -327,6 +328,8 @@ class SalienceModelCenter(Configurable):
             packed = h[self.spot_field].get(self.in_field, {})
             l_e = packed.get('entities', [])
             ll_feature = packed.get('features', [])
+            if not l_e:
+                continue
             if ll_feature:
                 f_dim = max(f_dim, len(ll_feature[0]))
             s_salient_e = set(h[self.spot_field].get(self.salience_field, {}).get('entities', []))
@@ -338,7 +341,6 @@ class SalienceModelCenter(Configurable):
         ll_e = self._padding(ll_e, 0)
         ll_label = self._padding(ll_label, 0)
         lll_feature = self._padding(lll_feature, [0] * f_dim)
-
         m_e = Variable(torch.LongTensor(ll_e)).cuda() \
             if use_cuda else Variable(torch.LongTensor(ll_e))
         m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
@@ -378,7 +380,6 @@ class SalienceModelCenter(Configurable):
         ll_e = self._padding(ll_e, 0)
         ll_w = self._padding(ll_w, 0)
         ll_label = self._padding(ll_label, 0)
-
         m_e = Variable(torch.LongTensor(ll_e)).cuda() \
             if use_cuda else Variable(torch.LongTensor(ll_e))
         m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
