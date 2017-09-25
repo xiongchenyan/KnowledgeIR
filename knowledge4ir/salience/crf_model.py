@@ -34,7 +34,7 @@ class KernelCRF(KernelGraphCNN):
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
 
-        if ts_feature.size()[-1] != self.node_feature_dim
+        if ts_feature.size()[-1] != self.node_feature_dim:
             logging.error('feature shape: %s != feature dim [%d]',
                           json.dumps(ts_feature.size()), self.node_feature_dim)
         assert ts_feature.size()[-1] == self.node_feature_dim
@@ -53,8 +53,7 @@ class KernelCRF(KernelGraphCNN):
 
     def save_model(self, output_name):
         logging.info('saving knrm embedding and linear weights to [%s]', output_name)
-        emb_mtx = self.embedding.weight.data.cpu().numpy()
-        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+        super(KernelCRF, self).save_model(output_name)
         np.save(open(output_name + '.node_lr.npy', 'w'),
                 self.node_lr.weight.data.cpu().numpy())
 
@@ -77,7 +76,7 @@ class LinearKernelCRF(KernelGraphCNN):
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
 
-        if ts_feature.size()[-1] != self.node_feature_dim
+        if ts_feature.size()[-1] != self.node_feature_dim:
             logging.error('feature shape: %s != feature dim [%d]',
                           json.dumps(ts_feature.size()), self.node_feature_dim)
         assert ts_feature.size()[-1] == self.node_feature_dim
@@ -100,8 +99,7 @@ class LinearKernelCRF(KernelGraphCNN):
 
     def save_model(self, output_name):
         logging.info('saving knrm embedding and linear weights to [%s]', output_name)
-        emb_mtx = self.embedding.weight.data.cpu().numpy()
-        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+        super(LinearKernelCRF, self).save_model(output_name)
         np.save(open(output_name + '.node_lr.npy', 'w'),
                 self.node_lr.weight.data.cpu().numpy())
         np.save(open(output_name + '.linear_combine.npy', 'w'),
