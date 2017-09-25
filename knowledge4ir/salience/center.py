@@ -222,8 +222,10 @@ class SalienceModelCenter(Configurable):
         h_packed_data, m_label = self._data_io(l_line)
         optimizer.zero_grad()
         output = self.model(h_packed_data)
-        logging.debug('prediced: %s',
+        logging.debug('predicted: %s',
                       json.dumps(output.data.cpu().numpy().tolist()))
+        logging.debug('target: %s',
+                      json.dumps(m_label.data.cpu().numpy().tolist()))
         loss = criterion(output, m_label)
         loss.backward()
         optimizer.step()
