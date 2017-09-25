@@ -47,7 +47,7 @@ class CorpusHasher(Configurable):
         for field, l_ana in h_info['spot'].items():
             l_ana_id = [self.h_entity_id.get(ana['entities'][0]['id'], 0)
                         for ana in l_ana]
-            ll_e_features = [ana['entities'][0].get('feature', {}).get('featureArray')
+            ll_e_features = [ana['entities'][0].get('feature', {}).get('featureArray', [])
                              for ana in l_ana]
             h_e_id_feature = dict(zip(l_ana_id, ll_e_features))
             l_id_tf = term2lm([id for id in l_ana_id if id != 0]).items()
@@ -56,6 +56,11 @@ class CorpusHasher(Configurable):
             l_id = [item[0] for item in l_id_tf]
             ll_feature = []
             feature_dim = max([len(l_f) for l_f in ll_e_features])
+            if self.with_feature:
+                if not feature_dim:
+                    logging.error('doc [%s] feature empty', h_hashed['docno'])
+                assert feature_dim
+
             for e_id, tf in l_id_tf:
                 l_feature = h_e_id_feature[e_id]
                 l_feature += [0] * (feature_dim - len(l_feature))
