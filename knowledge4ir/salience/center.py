@@ -227,6 +227,8 @@ class SalienceModelCenter(Configurable):
         logging.debug('target: %s',
                       json.dumps(m_label.data.cpu().numpy().tolist()))
         loss = criterion(output, m_label)
+        logging.debug('loss: %s',
+                      json.dumps(loss.data.cpu().numpy().tolist()))
         loss.backward()
         optimizer.step()
         assert not math.isnan(loss.data[0])
