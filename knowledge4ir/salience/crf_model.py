@@ -55,8 +55,7 @@ class KernelCRF(KernelGraphCNN):
 
 class LinearKernelCRF(KernelGraphCNN):
     def __init__(self, para, pre_embedding=None):
-        super(KernelGraphCNN, self).__init__(para, pre_embedding)
-        assert self.embedding
+        super(LinearKernelCRF, self).__init__(para, pre_embedding)
         self.node_feature_dim = para.node_feature_dim
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
         logging.info('node feature dim %d', self.node_feature_dim)
