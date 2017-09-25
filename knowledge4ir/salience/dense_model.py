@@ -70,4 +70,3 @@ class FeatureLR(SalienceBaseModel):
         logging.info('saving node feature linear weights to [%s]', output_name)
         np.save(open(output_name + '.linear.npy', 'w'),
                 self.linear.weight.data.cpu().numpy())
-        

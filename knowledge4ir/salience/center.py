@@ -408,7 +408,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
