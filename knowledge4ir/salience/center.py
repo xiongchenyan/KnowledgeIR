@@ -322,7 +322,7 @@ class SalienceModelCenter(Configurable):
             l_e = packed.get('entities', [])
             ll_feature = packed.get('features', [])
             if ll_feature:
-                f_dim = max(f_dim, max(ll_feature[0]))
+                f_dim = max(f_dim, len(ll_feature[0]))
             s_salient_e = set(h[self.spot_field].get(self.salience_field, []))
             l_label = [1 if e in s_salient_e else -1 for e in l_e]
             ll_e.append(l_e)
