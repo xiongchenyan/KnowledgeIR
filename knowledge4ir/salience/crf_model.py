@@ -33,7 +33,7 @@ class KernelCRF(KernelGraphCNN):
         assert 'ts_feature' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
-        node_score = F.relu(self.linear(ts_feature))
+        node_score = F.relu(self.node_lr(ts_feature))
         h_mid_data = {
             "mtx_e": mtx_e,
             "mtx_score": node_score
@@ -65,9 +65,9 @@ class LinearKernelCRF(KernelGraphCNN):
         assert 'ts_feature' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
-        node_score = F.tanh(self.linear(ts_feature))
+        node_score = F.tanh(self.node_lr(ts_feature))
 
-        mtx_score = ts_feature.narrow(-1, 0, 1)  # frequency is the first dim of feature, always
+        mtx_score = ts_feature.narrow(-1, 0, 1).squeeze(-1)  # frequency is the first dim of feature, always
         h_mid_data = {
             "mtx_e": mtx_e,
             "mtx_score": mtx_score
@@ -86,4 +86,3 @@ class LinearKernelCRF(KernelGraphCNN):
                 self.node_lr.weight.data.cpu().numpy())
         np.save(open(output_name + '.linear_combine.npy', 'w'),
                 self.linear_combine.weight.data.cpu().numpy())
-        
