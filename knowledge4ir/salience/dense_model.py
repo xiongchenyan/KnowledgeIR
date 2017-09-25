@@ -66,3 +66,8 @@ class FeatureLR(SalienceBaseModel):
         output = F.tanh(output).squeeze(-1)
         return output
 
+    def save_model(self, output_name):
+        logging.info('saving node feature linear weights to [%s]', output_name)
+        np.save(open(output_name + '.linear.npy', 'w'),
+                self.linear.weight.data.cpu().numpy())
+        

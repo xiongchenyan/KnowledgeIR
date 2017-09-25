@@ -291,8 +291,8 @@ class SalienceModelCenter(Configurable):
 
     def _batch_test(self, l_lines):
         h_packed_data, m_label = self._data_io(l_lines)
-        m_e, m_w = h_packed_data['mtx_e'], h_packed_data['mtx_score']
-        output = self.model(m_e, m_w)
+        # m_e, m_w = h_packed_data['mtx_e'], h_packed_data['mtx_score']
+        output = self.model(h_packed_data)
         loss = self.criterion(output, m_label)
         return loss.data[0]
 
