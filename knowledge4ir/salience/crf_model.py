@@ -76,7 +76,7 @@ class LinearKernelCRF(KernelGraphCNN):
             "mtx_e": mtx_e,
             "mtx_score": mtx_score
         }
-        knrm_res = super(KernelGraphCNN, self).forward(h_mid_data)
+        knrm_res = super(LinearKernelCRF, self).forward(h_mid_data)
 
         mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), node_score.unsqueeze(-1)), -1)
         output = self.linear_combine(mixed_knrm).squeeze(-1)
