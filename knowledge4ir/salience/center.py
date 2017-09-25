@@ -307,7 +307,7 @@ class SalienceModelCenter(Configurable):
         if self.input_format == 'raw':
             l_e = h[self.spot_field].get(self.in_field, [])
         else:
-            l_e = h[self.spot_field].geT(self.in_field, {}).get('entities')
+            l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
         return not l_e
 
     def _data_io(self, l_line):
