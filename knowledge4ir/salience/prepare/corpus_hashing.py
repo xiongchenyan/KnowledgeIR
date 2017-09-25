@@ -22,7 +22,7 @@ class CorpusHasher(Configurable):
     corpus_in = Unicode(help='input').tag(config=True)
     out_name = Unicode().tag(config=True)
     with_feature = Bool(False, help='whether load feature, or just frequency').tag(config=True)
-    l_target_field = List(Unicode, default_value=[body_field]).tag(config=True)
+    # l_target_field = List(Unicode, default_value=[body_field]).tag(config=True)
     max_e_per_d = Int(200, help="top k frequent entities to use per doc").tag(config=True)
 
     def __init__(self, **kwargs):
@@ -46,10 +46,17 @@ class CorpusHasher(Configurable):
 
         h_hashed['spot'] = dict()
         for field, l_ana in h_info['spot'].items():
-            if field not in self.l_target_field:
-                continue
+            # if field not in self.l_target_field:
+            #     continue
             l_ana_id = [self.h_entity_id.get(ana['entities'][0]['id'], 0)
                         for ana in l_ana]
+            if not l_ana_id:
+                this_field_data = {
+                    "entities": [],
+                    "features": []
+                }
+                h_hashed['spot'][field] = this_field_data
+                continue
             ll_e_features = [ana['entities'][0].get('feature', {}).get('featureArray', [])
                              for ana in l_ana]
             h_e_id_feature = dict(zip(l_ana_id, ll_e_features))
@@ -59,10 +66,9 @@ class CorpusHasher(Configurable):
             l_id = [item[0] for item in l_id_tf]
             ll_feature = []
             feature_dim = max([len(l_f) for l_f in ll_e_features])
-            if self.with_feature:
-                if not feature_dim:
-                    logging.error('doc [%s] feature empty', h_hashed['docno'])
-                assert feature_dim
+            # if self.with_feature:
+            #     if not feature_dim:
+            #         logging.error('doc [%s] feature empty', h_hashed['docno'])
 
             for e_id, tf in l_id_tf:
                 l_feature = h_e_id_feature[e_id]
