@@ -76,7 +76,6 @@ class SalienceModelCenter(Configurable):
     loss_func = Unicode('hinge', help='loss function to use: hinge, pairwise').tag(config=True)
     early_stopping_patient = Int(5, help='epochs before early stopping').tag(config=True)
     max_e_per_doc = Int(200, help='max e per doc')
-    save_model = Bool(True, help='weather to save the trained model').tag(config=True)
     input_format = Unicode('raw', help='input format: raw | featured').tag(config=True)
     h_model = {
         "trans": EmbPageRank,
@@ -133,12 +132,13 @@ class SalienceModelCenter(Configurable):
                                                        self.pre_emb,
                                                        )
 
-    def train(self, train_in_name, validation_in_name=None):
+    def train(self, train_in_name, validation_in_name=None, model_out_name=None):
         """
         train using the given data
         will use each doc as the mini-batch for now
         :param train_in_name: training data
         :param validation_in_name: validation data
+        :param model_out_name: name to dump the model
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
@@ -214,8 +214,8 @@ class SalienceModelCenter(Configurable):
 
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
 
-        if self.save_model:
-            self.model.save_model(train_in_name + '.model')
+        if model_out_name:
+            self.model.save_model(model_out_name)
         return
 
     def _batch_train(self, l_line, criterion, optimizer):
@@ -415,13 +415,14 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-    set_basic_log(logging.DEBUG)
+    set_basic_log(logging.INFO)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
         test_out = Unicode(help='test res').tag(config=True)
         valid_in = Unicode(help='validation in').tag(config=True)
+        model_out = Unicode(help='model dump out name').tag(config=True)
 
     if 2 != len(sys.argv):
         print "unit test model train test"
@@ -433,5 +434,5 @@ if __name__ == '__main__':
     conf = load_py_config(sys.argv[1])
     para = Main(config=conf)
     model = SalienceModelCenter(config=conf)
-    model.train(para.train_in, para.valid_in)
+    model.train(para.train_in, para.valid_in, para.model_out)
     model.predict(para.test_in, para.test_out)
