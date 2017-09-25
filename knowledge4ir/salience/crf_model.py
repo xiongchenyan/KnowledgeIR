@@ -70,8 +70,13 @@ class LinearKernelCRF(KernelGraphCNN):
         assert 'ts_feature' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
-        logging.debug('feature shape: %s', json.dumps(ts_feature.size()))
+        if ts_feature.size()[-1] != self.node_feature_dim
+            logging.error('feature shape: %s != feature dim [%d]',
+                          json.dumps(ts_feature.size()), self.node_feature_dim)
         assert ts_feature.size()[-1] == self.node_feature_dim
+        if mtx_e.size()[:2] != ts_feature.size()[:2]:
+            logging.error('e mtx and feature tensor shape do not match: %s != %s',
+                          json.dumps(mtx_e.size()), json.dumps(ts_feature.size()))
         assert mtx_e.size()[:2] == ts_feature.size()[:2]
         node_score = F.tanh(self.node_lr(ts_feature))
 
