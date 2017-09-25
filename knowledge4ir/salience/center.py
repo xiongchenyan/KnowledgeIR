@@ -181,7 +181,7 @@ class SalienceModelCenter(Configurable):
                     total_loss += this_loss
                     logging.debug('[%d] batch [%f] loss', p, this_loss)
                     assert not math.isnan(this_loss)
-                    if not p % 1000:
+                    if not p % 100:
                         logging.info('batch [%d] [%d] data, average loss [%f]',
                                      p, data_cnt, total_loss / p)
                     l_this_batch_line = []
