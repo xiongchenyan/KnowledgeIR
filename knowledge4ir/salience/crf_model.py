@@ -33,7 +33,11 @@ class KernelCRF(KernelGraphCNN):
         assert 'ts_feature' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
-        node_score = F.relu(self.node_lr(ts_feature))
+        logging.debug('feature shape: %s', json.dumps(ts_feature.size()))
+        assert ts_feature.size()[-1] == self.node_feature_dim
+        assert mtx_e.size()[:2] == ts_feature.size()[:2]
+
+        node_score = F.relu(self.node_lr(ts_feature)).squeeze(-1)
         h_mid_data = {
             "mtx_e": mtx_e,
             "mtx_score": node_score
@@ -52,6 +56,7 @@ class KernelCRF(KernelGraphCNN):
 class LinearKernelCRF(KernelGraphCNN):
     def __init__(self, para, pre_embedding=None):
         super(KernelGraphCNN, self).__init__(para, pre_embedding)
+        assert self.embedding
         self.node_feature_dim = para.node_feature_dim
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
         logging.info('node feature dim %d', self.node_feature_dim)
