@@ -22,6 +22,7 @@ class NNPara(Configurable):
     first_k_mu = Int(help='first k mu to use').tag(config=True)
     sigma = Float(0.1, help='sigma').tag(config=True)
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
+    node_feature_dim = Int(help='node feature dimension').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]

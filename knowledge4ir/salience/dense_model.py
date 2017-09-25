@@ -5,7 +5,9 @@ lr on entity embedding
 import torch
 import torch.nn as nn
 import numpy as np
+import torch.nn.functional as F
 import logging
+from knowledge4ir.salience.utils import SalienceBaseModel
 use_cuda = torch.cuda.is_available()
 
 
@@ -33,19 +35,34 @@ class EmbeddingLR(nn.Module):
                 linear.cuda()
         return
 
-    def forward(self, h_packed_data,):
+    def forward(self, h_packed_data):
         assert 'mtx_e' in h_packed_data
         assert 'mtx_score' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
-        mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
-        mtx_score = mtx_embedding
+        output = mtx_embedding
         for linear in self.l_linear:
-            mtx_score = linear(mtx_score)
+            output = linear(output)
 
-        output = mtx_score.squeeze(-1)
+        output = output.squeeze(-1)
         return output
-        # if use_cuda:
-        #     return output.cuda()
-        # else:
-        #     return output
+
+
+class FeatureLR(SalienceBaseModel):
+
+    def __init__(self, para, pre_embedding=None):
+        super(FeatureLR, self).__init__(para, pre_embedding)
+        self.node_feature_dim = para.node_feature_dim
+        self.linear = nn.Linear(self.node_feature_dim, 1, bias=True)
+
+        if use_cuda:
+            self.linear.cuda()
+
+    def forward(self, h_packed_data):
+        assert 'ts_feature' in h_packed_data
+        ts_feature = h_packed_data['ts_feature']
+
+        output = self.linear(ts_feature)
+        output = F.tanh(output).squeeze(-1)
+        return output
+
