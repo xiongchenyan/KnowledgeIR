@@ -89,6 +89,10 @@ class CorpusHasher(Configurable):
             if not p % 1000:
                 logging.info('processing [%d] lines', p)
             h_hashed = self.hash_per_info(json.loads(line))
+            if not h_hashed['spot'][body_field]['entities']:
+                continue
+            if not h_hashed['spot']['abstract']['entities']:
+                continue
             print >> out, json.dumps(h_hashed)
 
         out.close()
