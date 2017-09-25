@@ -53,7 +53,7 @@ class FeatureLR(SalienceBaseModel):
     def __init__(self, para, pre_embedding=None):
         super(FeatureLR, self).__init__(para, pre_embedding)
         self.node_feature_dim = para.node_feature_dim
-        self.linear = nn.Linear(self.node_feature_dim, 1, bias=True)
+        self.linear = nn.Linear(self.node_feature_dim, 1, bias=False)
 
         if use_cuda:
             self.linear.cuda()

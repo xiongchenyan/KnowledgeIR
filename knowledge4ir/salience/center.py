@@ -315,16 +315,23 @@ class SalienceModelCenter(Configurable):
         ll_e = []
         lll_feature = []
         ll_label = []
+        f_dim = 0
         for line in l_line:
             h = json.loads(line)
             packed = h[self.spot_field].get(self.in_field, {})
             l_e = packed.get('entities', [])
             ll_feature = packed.get('features', [])
+            if ll_feature:
+                f_dim = max(f_dim, max(ll_feature[0]))
             s_salient_e = set(h[self.spot_field].get(self.salience_field, []))
             l_label = [1 if e in s_salient_e else -1 for e in l_e]
             ll_e.append(l_e)
             ll_label.append(l_label)
             lll_feature.append(ll_feature)
+
+        ll_e = self._padding(ll_e, 0)
+        ll_label = self._padding(ll_label, 0)
+        lll_feature = self._padding(lll_feature, [0] * f_dim)
 
         m_e = Variable(torch.LongTensor(ll_e)).cuda() \
             if use_cuda else Variable(torch.LongTensor(ll_e))
