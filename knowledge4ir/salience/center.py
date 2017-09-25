@@ -74,6 +74,7 @@ class SalienceModelCenter(Configurable):
     early_stopping_patient = Int(5, help='epochs before early stopping').tag(config=True)
     max_e_per_doc = Int(200, help='max e per doc')
     save_model = Bool(True, help='weather to save the trained model').tag(config=True)
+    input_format = Unicode('raw', help='input format: raw | featured').tag(config=True)
     h_model = {
         "trans": EmbPageRank,
         'EdgeCNN': EdgeCNN,
@@ -93,6 +94,10 @@ class SalienceModelCenter(Configurable):
         h_loss = {
             "hinge": hinge_loss,
             "pairwise": pairwise_loss
+        }
+        self.h_io_func = {
+            'raw': self._raw_io,
+            'featured': self._feature_io,
         }
         self.criterion = h_loss[self.loss_func]
         self.evaluator = SalienceEva(**kwargs)
@@ -293,6 +298,45 @@ class SalienceModelCenter(Configurable):
         return not l_e
 
     def _data_io(self, l_line):
+        return self.h_io_func[self.input_format](l_line)
+
+    def _feature_io(self, l_line):
+        """
+        io with pre-filtered entity list and feature matrices
+        :param l_line:
+        :return: h_packed_data, with mtx_e and ts_feature fields, m_label, the label
+        """
+        h_packed_data = dict()
+        m_label = None
+        ll_e = []
+        lll_feature = []
+        ll_label = []
+        for line in l_line:
+            h = json.loads(line)
+            packed = h[self.spot_field].get(self.in_field, {})
+            l_e = packed.get('entities', [])
+            ll_feature = packed.get('features', [])
+            s_salient_e = set(h[self.spot_field].get(self.salience_field, []))
+            l_label = [1 if e in s_salient_e else -1 for e in l_e]
+            ll_e.append(l_e)
+            ll_label.append(l_label)
+            lll_feature.append(ll_feature)
+
+        m_e = Variable(torch.LongTensor(ll_e)).cuda() \
+            if use_cuda else Variable(torch.LongTensor(ll_e))
+        m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+            if use_cuda else Variable(torch.FloatTensor(ll_label))
+        ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
+            if use_cuda else Variable(torch.FloatTensor(lll_feature))
+
+        h_packed_data = {
+            "mtx_e": m_e,
+            "ts_feature": ts_feature
+        }
+
+        return h_packed_data, m_label
+
+    def _raw_io(self, l_line):
         """
         convert data to the input for the model
         :param l_line: the json formatted data, batched
@@ -307,12 +351,8 @@ class SalienceModelCenter(Configurable):
         for line in l_line:
             h = json.loads(line)
             l_e = h[self.spot_field].get(self.in_field, [])
+            l_e, l_w = self._get_top_k_e(l_e)
             s_salient_e = set(h[self.spot_field].get(self.salience_field, []))
-            h_e_tf = term2lm(l_e)
-            l_e_tf = sorted(h_e_tf.items(), key=lambda item: -item[1])[:self.max_e_per_doc]
-            l_e = [item[0] for item in l_e_tf]
-            z = float(sum([item[1] for item in l_e_tf]))
-            l_w = [item[1] / z for item in l_e_tf]
             l_label = [1 if e in s_salient_e else -1 for e in l_e]
             ll_e.append(l_e)
             ll_w.append(l_w)
@@ -334,6 +374,14 @@ class SalienceModelCenter(Configurable):
             "mtx_score": m_w
         }
         return h_packed_data, m_label
+
+    def _get_top_k_e(self, l_e):
+        h_e_tf = term2lm(l_e)
+        l_e_tf = sorted(h_e_tf.items(), key=lambda item: -item[1])[:self.max_e_per_doc]
+        l_e = [item[0] for item in l_e_tf]
+        z = float(sum([item[1] for item in l_e_tf]))
+        l_w = [item[1] / z for item in l_e_tf]
+        return l_e, l_w
 
     @classmethod
     def _padding(cls, ll, filler):
