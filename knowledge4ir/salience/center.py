@@ -133,6 +133,8 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
+        patient_cnt = 0
+        best_valid_loss = None
         if validation_in_name:
             logging.info('loading validation data from [%s]', validation_in_name)
             l_valid_lines = open(validation_in_name).read().splitlines()
@@ -208,12 +210,11 @@ class SalienceModelCenter(Configurable):
         return
 
     def _batch_train(self, l_line, criterion, optimizer):
-        m_e, m_w, m_label = self._data_io(l_line)
+        h_packed_data, m_label = self._data_io(l_line)
         optimizer.zero_grad()
-        output = self.model(m_e, m_w)
+        output = self.model(h_packed_data)
         loss = criterion(output, m_label)
         loss.backward()
-        # nn.utils.clip_grad_norm(self.model.parameters(), 10)
         optimizer.step()
         assert not math.isnan(loss.data[0])
         return loss.data[0]
@@ -255,10 +256,12 @@ class SalienceModelCenter(Configurable):
 
     def _per_doc_predict(self, line):
         docno = json.loads(line)['docno']
-        v_e, v_w, v_label = self._data_io([line])
+        h_packed_data, v_label = self._data_io([line])
+        v_e = h_packed_data['mtx_e']
+        # v_w = h_packed_data['mtx_score']
         if (not v_e[0].size()) | (not v_label[0].size()):
             return None, None
-        output = self.model(v_e, v_w).cpu()[0]
+        output = self.model(h_packed_data).cpu()[0]
         v_e = v_e[0].cpu()
         v_label = v_label[0].cpu()
         # pre_label = output.data.max(-1)[1]
@@ -278,7 +281,8 @@ class SalienceModelCenter(Configurable):
         return h_out, h_this_eva
 
     def _batch_test(self, l_lines):
-        m_e, m_w, m_label = self._data_io(l_lines)
+        h_packed_data, m_label = self._data_io(l_lines)
+        m_e, m_w = h_packed_data['mtx_e'], h_packed_data['mtx_score']
         output = self.model(m_e, m_w)
         loss = self.criterion(output, m_label)
         return loss.data[0]
@@ -291,7 +295,7 @@ class SalienceModelCenter(Configurable):
     def _data_io(self, l_line):
         """
         convert data to the input for the model
-        :param line: the json formatted data
+        :param l_line: the json formatted data, batched
         :return: v_e, v_w, v_label
         m_e: entities in the doc
         m_w: initial weight, TF
@@ -318,12 +322,21 @@ class SalienceModelCenter(Configurable):
         ll_w = self._padding(ll_w, 0)
         ll_label = self._padding(ll_label, 0)
 
-        m_e = Variable(torch.LongTensor(ll_e)).cuda() if use_cuda else Variable(torch.LongTensor(ll_e))
-        m_w = Variable(torch.FloatTensor(ll_w)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_w))
-        m_label = Variable(torch.FloatTensor(ll_label)).cuda() if use_cuda else Variable(torch.FloatTensor(ll_label))
-        return m_e, m_w, m_label
+        m_e = Variable(torch.LongTensor(ll_e)).cuda() \
+            if use_cuda else Variable(torch.LongTensor(ll_e))
+        m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
+            if use_cuda else Variable(torch.FloatTensor(ll_w))
+        m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+            if use_cuda else Variable(torch.FloatTensor(ll_label))
 
-    def _padding(self, ll, filler):
+        h_packed_data = {
+            "mtx_e": m_e,
+            "mtx_score": m_w
+        }
+        return h_packed_data, m_label
+
+    @classmethod
+    def _padding(cls, ll, filler):
         n = max([len(l) for l in ll])
         for i in xrange(len(ll)):
             ll[i] += [filler] * (n - len(ll[i]))

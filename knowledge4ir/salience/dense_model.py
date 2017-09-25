@@ -33,13 +33,11 @@ class EmbeddingLR(nn.Module):
                 linear.cuda()
         return
 
-    def forward(self, mtx_e, mtx_score):
-        """
-        return probability of each one being salient
-        :param v_e: the input entity id's, has to be Variable()
-        :param v_score: the initial weights on each entity, has to be Variable()
-        :return: score for each one
-        """
+    def forward(self, h_packed_data,):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         mtx_score = mtx_embedding
         for linear in self.l_linear:

@@ -48,11 +48,12 @@ class SalienceBaseModel(nn.Module):
         """
         super(SalienceBaseModel, self).__init__()
 
-    def forward(self, mtx_e, mtx_score):
+    def forward(self, h_packed_data):
         """
-
-        :param mtx_e: batch * e per doc, entity ids
-        :param mtx_score: batch * e per doc, pre-given entity scores, typically frequency
+        :param h_packed_data: the packed data to get, can contain:
+            mtx_e: batch * e per doc, entity ids
+            mtx_score: batch * e per doc, pre-given entity scores, typically frequency
+            ts_feature: one feature vector for each e
         :return:
         """
 
