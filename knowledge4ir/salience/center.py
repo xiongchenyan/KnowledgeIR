@@ -19,54 +19,55 @@ hyper-parameters:
 
 """
 
-from knowledge4ir.salience.translation_model import (
-    EmbPageRank,
-    EdgeCNN,
-)
-from knowledge4ir.salience.kernel_graph_cnn import (
-    KernelGraphCNN,
-    KernelGraphWalk,
-    HighwayKCNN,
-)
-from knowledge4ir.salience.baseline_model import (
-    FrequencySalience,
-)
-from knowledge4ir.salience.dense_model import (
-    FeatureLR,
-)
-from knowledge4ir.salience.crf_model import (
-    KernelCRF,
-    LinearKernelCRF,
-)
-from knowledge4ir.salience.dense_model import EmbeddingLR
-from knowledge4ir.salience.utils import NNPara
-from traitlets.config import Configurable
+import json
+import logging
+import math
+
+import numpy as np
+import torch
 from traitlets import (
     Unicode,
     Int,
     Float,
     List,
-    Bool,
 )
-import numpy as np
-import json
-import logging
-from knowledge4ir.utils import (
-    body_field,
-    abstract_field,
-    term2lm,
+from traitlets.config import Configurable
+
+from knowledge4ir.salience.baseline_model import (
+    FrequencySalience,
 )
-import math
-import torch
-from torch.autograd import Variable
-from torch import nn
-import torch.nn.functional as F
+from knowledge4ir.salience.crf_model import (
+    KernelCRF,
+    LinearKernelCRF,
+)
+from knowledge4ir.salience.data_io import (
+    raw_io,
+    feature_io)
+from knowledge4ir.salience.dense_model import EmbeddingLR
+from knowledge4ir.salience.dense_model import (
+    FeatureLR,
+)
+from knowledge4ir.salience.evaluation import SalienceEva
+from knowledge4ir.salience.kernel_graph_cnn import (
+    KernelGraphCNN,
+    KernelGraphWalk,
+    HighwayKCNN,
+)
 from knowledge4ir.salience.ranking_loss import (
     hinge_loss,
     pairwise_loss,
 )
-from knowledge4ir.salience.evaluation import SalienceEva
+from knowledge4ir.salience.translation_model import (
+    EmbPageRank,
+    EdgeCNN,
+)
+from knowledge4ir.salience.utils import NNPara
 from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
+from knowledge4ir.utils import (
+    body_field,
+    abstract_field,
+)
+
 use_cuda = torch.cuda.is_available()
 
 
@@ -82,15 +83,15 @@ class SalienceModelCenter(Configurable):
     max_e_per_doc = Int(200, help='max e per doc')
     input_format = Unicode('raw', help='input format: raw | featured').tag(config=True)
     h_model = {
-        "trans": EmbPageRank,
-        'EdgeCNN': EdgeCNN,
-        'lr': EmbeddingLR,
+        "trans": EmbPageRank,  # not working
+        'EdgeCNN': EdgeCNN,  # not working
+        'lr': EmbeddingLR,   # not working
         'knrm': KernelGraphCNN,
-        'kernel_pr': KernelGraphWalk,
+        'kernel_pr': KernelGraphWalk,  # not working
         'highway_knrm': HighwayKCNN,
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
-        'kcrf': KernelCRF,
+        'kcrf': KernelCRF,  # not working
         'linear_kcrf': LinearKernelCRF,
     }
     in_field = Unicode(body_field)
@@ -105,8 +106,8 @@ class SalienceModelCenter(Configurable):
             "pairwise": pairwise_loss
         }
         self.h_io_func = {
-            'raw': self._raw_io,
-            'featured': self._feature_io,
+            'raw': raw_io,
+            'featured': feature_io,
         }
         self.criterion = h_loss[self.loss_func]
         self.evaluator = SalienceEva(**kwargs)
@@ -117,9 +118,6 @@ class SalienceModelCenter(Configurable):
             logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
             if not self.para.embedding_dim:
                 self.para.entity_vocab_size, self.para.embedding_dim = self.pre_emb.shape
-            # if self.para.entity_vocab_size != self.pre_emb.shape[0]:
-            #     logging.error('given entity vocab size not equal to embedding shape [%d != %d]',
-            #                   self.para.entity_vocab_size, self.pre_emb.shape[0])
             assert self.para.entity_vocab_size == self.pre_emb.shape[0]
             assert self.para.embedding_dim == self.pre_emb.shape[1]
         self.model = None
@@ -318,102 +316,9 @@ class SalienceModelCenter(Configurable):
         return not l_e
 
     def _data_io(self, l_line):
-        return self.h_io_func[self.input_format](l_line)
-
-    def _feature_io(self, l_line):
-        """
-        io with pre-filtered entity list and feature matrices
-        :param l_line:
-        :return: h_packed_data, with mtx_e and ts_feature fields, m_label, the label
-        """
-        ll_e = []
-        lll_feature = []
-        ll_label = []
-        f_dim = 0
-        for line in l_line:
-            h = json.loads(line)
-            packed = h[self.spot_field].get(self.in_field, {})
-            l_e = packed.get('entities', [])
-            ll_feature = packed.get('features', [])
-            if not l_e:
-                continue
-            if ll_feature:
-                f_dim = max(f_dim, len(ll_feature[0]))
-            s_salient_e = set(h[self.spot_field].get(self.salience_field, {}).get('entities', []))
-            l_label = [1 if e in s_salient_e else -1 for e in l_e]
-            ll_e.append(l_e)
-            ll_label.append(l_label)
-            lll_feature.append(ll_feature)
-
-        ll_e = self._padding(ll_e, 0)
-        ll_label = self._padding(ll_label, 0)
-        lll_feature = self._padding(lll_feature, [0] * f_dim)
-        m_e = Variable(torch.LongTensor(ll_e)).cuda() \
-            if use_cuda else Variable(torch.LongTensor(ll_e))
-        m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
-            if use_cuda else Variable(torch.FloatTensor(ll_label))
-        ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
-            if use_cuda else Variable(torch.FloatTensor(lll_feature))
-
-        h_packed_data = {
-            "mtx_e": m_e,
-            "ts_feature": ts_feature
-        }
-
-        return h_packed_data, m_label
-
-    def _raw_io(self, l_line):
-        """
-        convert data to the input for the model
-        :param l_line: the json formatted data, batched
-        :return: v_e, v_w, v_label
-        m_e: entities in the doc
-        m_w: initial weight, TF
-        m_label: 1 or -1, salience or not, if label not given, will be 0
-        """
-        ll_e = []
-        ll_w = []
-        ll_label = []
-        for line in l_line:
-            h = json.loads(line)
-            l_e = h[self.spot_field].get(self.in_field, [])
-            l_e, l_w = self._get_top_k_e(l_e)
-            s_salient_e = set(h[self.spot_field].get(self.salience_field, []))
-            l_label = [1 if e in s_salient_e else -1 for e in l_e]
-            ll_e.append(l_e)
-            ll_w.append(l_w)
-            ll_label.append(l_label)
-
-        ll_e = self._padding(ll_e, 0)
-        ll_w = self._padding(ll_w, 0)
-        ll_label = self._padding(ll_label, 0)
-        m_e = Variable(torch.LongTensor(ll_e)).cuda() \
-            if use_cuda else Variable(torch.LongTensor(ll_e))
-        m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
-            if use_cuda else Variable(torch.FloatTensor(ll_w))
-        m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
-            if use_cuda else Variable(torch.FloatTensor(ll_label))
-
-        h_packed_data = {
-            "mtx_e": m_e,
-            "mtx_score": m_w
-        }
-        return h_packed_data, m_label
-
-    def _get_top_k_e(self, l_e):
-        h_e_tf = term2lm(l_e)
-        l_e_tf = sorted(h_e_tf.items(), key=lambda item: -item[1])[:self.max_e_per_doc]
-        l_e = [item[0] for item in l_e_tf]
-        z = float(sum([item[1] for item in l_e_tf]))
-        l_w = [item[1] / z for item in l_e_tf]
-        return l_e, l_w
-
-    @classmethod
-    def _padding(cls, ll, filler):
-        n = max([len(l) for l in ll])
-        for i in xrange(len(ll)):
-            ll[i] += [filler] * (n - len(ll[i]))
-        return ll
+        return self.h_io_func[self.input_format](
+            l_line, self.spot_field, self.in_field, self.salience_field, self.max_e_per_doc
+        )
 
 
 if __name__ == '__main__':
