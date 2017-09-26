@@ -62,8 +62,8 @@ class FeatureLR(SalienceBaseModel):
         self.l_node_lr.append(nn.Linear(last_dim, 1, bias=False))
 
         if use_cuda:
-            for i in xrange(len(self.l_node_lr)):
-                self.l_node_lr[i].cuda()
+            for linear in self.l_node_lr:
+                linear.cuda()
 
     def forward(self, h_packed_data):
         assert 'ts_feature' in h_packed_data
