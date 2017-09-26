@@ -137,6 +137,9 @@ class SalienceModelCenter(Configurable):
             self.model = self.h_model[self.model_name](self.para,
                                                        self.pre_emb,
                                                        )
+            logging.info('use model [%s]', self.model_name)
+            print self.model.parameters()
+            print self.model.l_node_lr
 
     def train(self, train_in_name, validation_in_name=None, model_out_name=None):
         """
