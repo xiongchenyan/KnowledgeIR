@@ -8,7 +8,8 @@ from traitlets.config import Configurable
 from traitlets import (
     Int,
     Float,
-    List
+    List,
+    Unicode,
 )
 from torch import nn
 
@@ -24,6 +25,9 @@ class NNPara(Configurable):
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
     node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
     l_hidden_dim = List(Int, default_value=[], help='multi layer DNN hidden dim').tag(config=True)
+    word_emb_in = Unicode(
+        help='pre trained word embedding, npy format, must be comparable with entity embedding'
+    ).tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
