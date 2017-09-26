@@ -57,7 +57,8 @@ class FeatureLR(SalienceBaseModel):
         last_dim = self.node_feature_dim
         self.l_node_lr = []
         for hidden_d in self.l_hidden_dim:
-            self.l_node_lr.append(nn.Linear(last_dim, hidden_d, bias=False))
+            this_linear = nn.Linear(last_dim, hidden_d, bias=False)
+            self.l_node_lr.append(this_linear)
             last_dim = hidden_d
         self.l_node_lr.append(nn.Linear(last_dim, 1, bias=False))
 
