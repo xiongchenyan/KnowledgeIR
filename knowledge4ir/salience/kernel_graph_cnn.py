@@ -73,13 +73,11 @@ class KernelGraphCNN(SalienceBaseModel):
         self.layer = para.nb_hidden_layers
         return
 
-    def forward(self, mtx_e, mtx_score):
-        """
-        return probability of each one being salient
-        :param mtx_e: the input entity id's, has to be Variable()
-        :param mtx_score: the initial weights on each entity, has to be Variable()
-        :return: score for each one
-        """
+    def forward(self, h_packed_data,):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         mtx_embedding = mtx_embedding.div(
             torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
@@ -100,8 +98,6 @@ class KernelGraphCNN(SalienceBaseModel):
                 self.linear.weight.data.cpu().numpy())
 
 
-
-
 class HighwayKCNN(KernelGraphCNN):
     def __init__(self, para, pre_embedding=None):
         super(HighwayKCNN, self).__init__(para, pre_embedding)
@@ -110,7 +106,11 @@ class HighwayKCNN(KernelGraphCNN):
             self.linear_combine.cuda()
         return
 
-    def forward(self, mtx_e, mtx_score):
+    def forward(self, h_packed_data):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
         knrm_res = super(HighwayKCNN, self).forward(mtx_e, mtx_score)
         mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), mtx_score.unsqueeze(-1)), -1)
         output = self.linear_combine(mixed_knrm).squeeze(-1)
@@ -145,13 +145,11 @@ class KernelGraphWalk(SalienceBaseModel):
 
         return
 
-    def forward(self, mtx_e, mtx_score):
-        """
-        return probability of each one being salient
-        :param mtx_e: the input entity id's, has to be Variable()
-        :param mtx_score: the initial weights on each entity, has to be Variable()
-        :return: score for each one
-        """
+    def forward(self, h_packed_data,):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         mtx_embedding = mtx_embedding.div(
             torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8

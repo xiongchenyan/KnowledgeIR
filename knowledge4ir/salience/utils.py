@@ -22,6 +22,8 @@ class NNPara(Configurable):
     first_k_mu = Int(help='first k mu to use').tag(config=True)
     sigma = Float(0.1, help='sigma').tag(config=True)
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
+    node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
+    l_hidden_dim = List(Int, default_value=[], help='multi layer DNN hidden dim').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
@@ -48,11 +50,12 @@ class SalienceBaseModel(nn.Module):
         """
         super(SalienceBaseModel, self).__init__()
 
-    def forward(self, mtx_e, mtx_score):
+    def forward(self, h_packed_data):
         """
-
-        :param mtx_e: batch * e per doc, entity ids
-        :param mtx_score: batch * e per doc, pre-given entity scores, typically frequency
+        :param h_packed_data: the packed data to get, can contain:
+            mtx_e: batch * e per doc, entity ids
+            mtx_score: batch * e per doc, pre-given entity scores, typically frequency
+            ts_feature: one feature vector for each e
         :return:
         """
 

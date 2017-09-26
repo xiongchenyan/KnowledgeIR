@@ -34,13 +34,11 @@ class EmbPageRank(SalienceBaseModel):
         self.layer = para.nb_hidden_layers
         return
 
-    def forward(self, mtx_e, mtx_score):
-        """
-        return probability of each one being salient
-        :param mtx_e: the input entity id's, has to be Variable()
-        :param mtx_score: the initial weights on each entity, has to be Variable()
-        :return: score for each one
-        """
+    def forward(self, h_packed_data,):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         mtx_embedding = mtx_embedding.div(
             torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
@@ -85,13 +83,11 @@ class EdgeCNN(SalienceBaseModel):
         self.layer = para.nb_hidden_layers
         return
 
-    def forward(self, mtx_e, mtx_score):
-        """
-        return probability of each one being salient
-        :param mtx_e: the input entity id's, has to be Variable()
-        :param mtx_score: the initial weights on each entity, has to be Variable()
-        :return: score for each one
-        """
+    def forward(self, h_packed_data,):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         projected_emb = self.projection(mtx_embedding)
 

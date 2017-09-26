@@ -21,7 +21,11 @@ class FrequencySalience(SalienceBaseModel):
             self.linear.cuda()
         return
 
-    def forward(self, mtx_e, mtx_score):
+    def forward(self, h_packed_data,):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
         output = mtx_score.unsqueeze(-1)
         output = self.linear(output)
         output = output.squeeze(-1)
