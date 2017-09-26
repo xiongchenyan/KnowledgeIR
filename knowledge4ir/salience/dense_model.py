@@ -53,7 +53,12 @@ class FeatureLR(SalienceBaseModel):
     def __init__(self, para, pre_embedding=None):
         super(FeatureLR, self).__init__(para, pre_embedding)
         self.node_feature_dim = para.node_feature_dim
-        self.linear = nn.Linear(self.node_feature_dim, 1, bias=False)
+        self.l_hidden_dim = para.l_hidden_dim
+        last_dim = self.node_feature_dim
+        self.l_node_lr = []
+        for hidden_d in self.l_hidden_dim:
+            self.l_node_lr.append(nn.Linear(last_dim, hidden_d, bias=False))
+        self.l_node_lr.append(nn.Linear(last_dim, 1, bias=False))
 
         if use_cuda:
             self.linear.cuda()
@@ -61,9 +66,10 @@ class FeatureLR(SalienceBaseModel):
     def forward(self, h_packed_data):
         assert 'ts_feature' in h_packed_data
         ts_feature = h_packed_data['ts_feature']
-
-        output = self.linear(ts_feature)
-        output = F.tanh(output).squeeze(-1)
+        middle = ts_feature
+        for linear in self.l_node_lr:
+            middle = F.tanh(linear(middle))
+        output = middle.squeeze(-1)
         return output
 
     def save_model(self, output_name):

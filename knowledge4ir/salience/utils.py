@@ -23,6 +23,7 @@ class NNPara(Configurable):
     sigma = Float(0.1, help='sigma').tag(config=True)
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
     node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
+    l_hidden_dim = List(Int, default_value=[], help='multi layer DNN hidden dim').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
