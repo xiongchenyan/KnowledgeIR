@@ -5,9 +5,15 @@ import json
 
 import torch
 from torch.autograd import Variable
-
-from knowledge4ir.utils import term2lm
+from knowledge4ir.utils import (
+    term2lm,
+    SPOT_FIELD,
+    body_field,
+    title_field,
+    abstract_field,
+)
 use_cuda = torch.cuda.is_available()
+
 
 def padding(ll, filler):
     n = max([len(l) for l in ll])
@@ -25,7 +31,8 @@ def get_top_k_e(l_e, max_e_per_d):
     return l_e, l_w
 
 
-def raw_io(l_line, spot_field, in_field, salience_field, max_e_per_d=200):
+def raw_io(l_line, spot_field=SPOT_FIELD,
+           in_field=body_field, salience_field=abstract_field, max_e_per_d=200):
     """
     convert data to the input for the model
     """
@@ -59,7 +66,8 @@ def raw_io(l_line, spot_field, in_field, salience_field, max_e_per_d=200):
     return h_packed_data, m_label
 
 
-def feature_io(l_line, spot_field, in_field, salience_field, max_e_per_d=None):
+def feature_io(l_line, spot_field=SPOT_FIELD,
+               in_field=body_field, salience_field=abstract_field, max_e_per_d=200):
     """
     io with pre-filtered entity list and feature matrices
     """
@@ -99,7 +107,8 @@ def feature_io(l_line, spot_field, in_field, salience_field, max_e_per_d=None):
     return h_packed_data, m_label
 
 
-def uw_io(l_line, spot_field, in_field, salience_field, max_e_per_d=None):
+def uw_io(l_line, spot_field=SPOT_FIELD,
+          in_field=body_field, salience_field=abstract_field, max_e_per_d=200):
     """
     prepare local words around each entity's location
     :param l_line: hashed data with loc fields
@@ -175,8 +184,27 @@ def _form_local_context(l_loc, l_words, sent_len):
     return l_sent
 
 
+if __name__ == '__main__':
+    """
+    unit test tbd
+    """
+    import sys
+    from knowledge4ir.utils import (
+        set_basic_log,
+        load_py_config,
+    )
+    from traitlets.config import Configurable
+    from traitlets import (
+        Unicode,
+        List,
+        Int
+    )
 
+    set_basic_log()
 
+    class IOTester(Configurable):
+        in_name = Unicode(help='in data test').tag(config=True)
+        io_func = Unicode('uw', help='io function to test').tag(config=True)
 
 
 
