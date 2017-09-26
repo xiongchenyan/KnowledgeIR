@@ -157,8 +157,8 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
         if use_cuda else Variable(torch.LongTensor(ll_e))
     m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(ll_label))
-    ts_local_context = Variable(torch.FloatTensor(lll_sent)).cuda() \
-        if use_cuda else Variable(torch.FloatTensor(lll_sent))
+    ts_local_context = Variable(torch.LongTensor(lll_sent)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(lll_sent))
     h_packed_data = {
         "mtx_e": m_e,
         "ts_local_context": ts_local_context
@@ -176,7 +176,7 @@ def _form_local_context(l_loc, l_words, sent_len):
     """
     l_sent = []
     for st, ed in l_loc:
-        uw_st = max(st - sent_len, 0)
+        uw_st = max(st - sent_len / 2, 0)
         uw_st = min(uw_st, len(l_words) - sent_len)
         sent = l_words[uw_st: uw_st + sent_len]
         sent += [0] * (sent_len - len(sent))
