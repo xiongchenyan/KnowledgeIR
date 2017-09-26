@@ -46,40 +46,30 @@ class CorpusHasher(Configurable):
 
         h_hashed['spot'] = dict()
         for field, l_ana in h_info['spot'].items():
-            # if field not in self.l_target_field:
-            #     continue
             l_ana_id = [self.h_entity_id.get(ana['entities'][0]['id'], 0)
                         for ana in l_ana]
             if not l_ana_id:
                 this_field_data = {
                     "entities": [],
-                    "features": []
+                    "features": [],
                 }
                 h_hashed['spot'][field] = this_field_data
                 continue
-            ll_e_features = [ana['entities'][0].get('feature', {}).get('featureArray', [])
-                             for ana in l_ana]
-            h_e_id_feature = dict(zip(l_ana_id, ll_e_features))
             l_id_tf = term2lm([id for id in l_ana_id if id != 0]).items()
             l_id_tf.sort(key=lambda item: -item[1])
             l_id_tf = l_id_tf[:self.max_e_per_d]
             l_id = [item[0] for item in l_id_tf]
             ll_feature = []
-            feature_dim = max([len(l_f) for l_f in ll_e_features])
-            # if self.with_feature:
-            #     if not feature_dim:
-            #         logging.error('doc [%s] feature empty', h_hashed['docno'])
-
             for e_id, tf in l_id_tf:
-                l_feature = h_e_id_feature[e_id]
-                l_feature += [0] * (feature_dim - len(l_feature))
-                l_feature = [tf] + l_feature
-                ll_feature.append(l_feature)
+                ll_feature.append([tf])
+
+            if self.with_feature:
+                ll_feature = self._add_node_features(l_ana, l_id, ll_feature)
+
             this_field_data = {
                 "entities": l_id,
                 "features": ll_feature
             }
-
             h_hashed['spot'][field] = this_field_data
         return h_hashed
 
@@ -98,6 +88,21 @@ class CorpusHasher(Configurable):
         out.close()
         logging.info('finished')
         return
+
+    def _add_node_features(self, l_ana, l_id_tf, ll_feature):
+        assert len(l_id_tf) == ll_feature
+        l_ana_id = [self.h_entity_id.get(ana['entities'][0]['id'], 0)
+                    for ana in l_ana]
+        ll_e_features = [ana['entities'][0].get('feature', {}).get('featureArray', [])
+                         for ana in l_ana]
+        h_e_id_feature = dict(zip(l_ana_id, ll_e_features))
+        feature_dim = max([len(l_f) for l_f in ll_e_features])
+        for p in xrange(len(l_id_tf)):
+            e_id, tf = l_id_tf[p]
+            l_feature = h_e_id_feature[e_id]
+            l_feature += [0] * (feature_dim - len(l_feature))
+            ll_feature[p] += l_feature
+        return ll_feature
 
 
 if __name__ == '__main__':
