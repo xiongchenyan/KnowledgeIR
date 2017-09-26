@@ -58,6 +58,7 @@ class FeatureLR(SalienceBaseModel):
         self.l_node_lr = []
         for hidden_d in self.l_hidden_dim:
             self.l_node_lr.append(nn.Linear(last_dim, hidden_d, bias=False))
+            last_dim = hidden_d
         self.l_node_lr.append(nn.Linear(last_dim, 1, bias=False))
 
         if use_cuda:
