@@ -40,9 +40,13 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
+from knowledge4ir.salience.local_context import (
+    LocalAvgWordVotes,
+)
 from knowledge4ir.salience.data_io import (
     raw_io,
-    feature_io)
+    feature_io
+)
 from knowledge4ir.salience.dense_model import EmbeddingLR
 from knowledge4ir.salience.dense_model import (
     FeatureLR,
@@ -93,6 +97,7 @@ class SalienceModelCenter(Configurable):
         'feature_lr': FeatureLR,
         'kcrf': KernelCRF,  # not working
         'linear_kcrf': LinearKernelCRF,
+        "avg_local_vote": LocalAvgWordVotes
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
