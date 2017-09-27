@@ -139,7 +139,7 @@ class LocalRNNVotes(LocalAvgWordVotes):
         backward_rnn_out = rnn_out[:, 1, :].contiguous()
 
         logging.debug('rnn out shape %s', json.dumps(forward_rnn_out.size()))
-        rnn_out = rnn_out.view(ts_e_sent_word_embedding.size()[:-2] + rnn_out.size()[-2:])
+        # rnn_out = rnn_out.view(ts_e_sent_word_embedding.size()[:-2] + rnn_out.size()[-2:])
 
         forward_rnn_out = forward_rnn_out.view(
             ts_e_sent_word_embedding.size()[:-2] + forward_rnn_out.size()[-1:])
