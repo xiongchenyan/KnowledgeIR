@@ -73,7 +73,7 @@ class LocalAvgWordVotes(SalienceBaseModel):
         logging.debug('ts_e_voteFeature size: %s', json.dumps(ts_e_voteFeature.size()))
         # batch-doc-e-[feature: max and mean]
         output = F.tanh(self.linear_combine(ts_e_voteFeature).squeeze(-1))
-        logging.debug('output size: %s', json.dumps(ts_e_voteFeature.size()))
+        logging.debug('output size: %s', json.dumps(output.size()))
         return output
 
     def save_model(self, output_name):
