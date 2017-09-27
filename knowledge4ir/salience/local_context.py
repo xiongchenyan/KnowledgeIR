@@ -52,10 +52,14 @@ class LocalAvgWordVotes(SalienceBaseModel):
 
     def forward(self, h_packed_data):
         mtx_e = h_packed_data['mtx_e']
-        ts_context = h_packed_data['ts_local_context']
+        ts_context = h_packed_data['ts_local_context']  # batch-doc-e-sent-word
 
         ts_e_embedding = self.embedding(mtx_e)   # batch-doc-e-embedding
-        ts_e_sent_word_embedding = self.word_embedding(ts_context)   # batch-doc-e-sent-word-word2vec
+
+        ts_e_sent_word_embedding = self.word_embedding(
+            ts_context.view(-1, ts_context.size()[-1])
+        ).view(ts_context.size() + (self.embedding_dim, ))
+        # batch-doc-e-sent-word-word2vec
         logging.debug('sent emb size: %s', json.dumps(ts_e_sent_word_embedding.size()))
         # batch-doc-e-sent-embedding
         ts_e_sent_embedding = torch.mean(ts_e_sent_word_embedding, dim=-2, keepdim=False)
