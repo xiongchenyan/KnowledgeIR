@@ -66,7 +66,9 @@ class LocalAvgWordVotes(SalienceBaseModel):
         ts_e_sent_embedding = torch.mean(ts_e_sent_word_embedding, dim=-2, keepdim=False)
 
         ts_e_sum, ts_e_max = self.sent_vote(ts_e_embedding, ts_e_sent_embedding)
-
+        logging.debug('sum and max vote shapes %s %s',
+                      json.dumps(ts_e_sum.size()),
+                      json.dumps(ts_e_max.size()))
         ts_e_voteFeature = torch.cat((ts_e_sum, ts_e_max), -1)
         logging.debug('ts_e_voteFeature size: %s', json.dumps(ts_e_voteFeature.size()))
         # batch-doc-e-[feature: max and mean]
