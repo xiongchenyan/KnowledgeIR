@@ -134,7 +134,7 @@ class LocalRNNVotes(LocalAvgWordVotes):
         if use_cuda:
             h0 = h0.cuda()
         __, rnn_out = self.rnn(batch_rnn_input, h0)
-        rnn_out = rnn_out.transpose(0, 1)
+        rnn_out = rnn_out.transpose(0, 1).contiguous()
         logging.debug('rnn out shape %s', json.dumps(rnn_out.size()))
         rnn_out = rnn_out.view(ts_e_sent_word_embedding.size()[:-2] + rnn_out.size()[-2:])
         logging.debug('reshaped to %s', json.dumps(rnn_out.size()))
