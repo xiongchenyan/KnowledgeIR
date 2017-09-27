@@ -61,19 +61,19 @@ class LocalAvgWordVotes(SalienceBaseModel):
             ts_context.view(-1, ts_context.size()[-1])
         ).view(ts_context.size() + (self.embedding_dim, ))
         # batch-doc-e-sent-word-word2vec
-        logging.debug('sent emb size: %s', json.dumps(ts_e_sent_word_embedding.size()))
+        # logging.debug('sent emb size: %s', json.dumps(ts_e_sent_word_embedding.size()))
         # batch-doc-e-sent-embedding
         ts_e_sent_embedding = torch.mean(ts_e_sent_word_embedding, dim=-2, keepdim=False)
 
         ts_e_sum, ts_e_max = self.sent_vote(ts_e_embedding, ts_e_sent_embedding)
-        logging.debug('sum and max vote shapes %s %s',
-                      json.dumps(ts_e_sum.size()),
-                      json.dumps(ts_e_max.size()))
+        # logging.debug('sum and max vote shapes %s %s',
+        #               json.dumps(ts_e_sum.size()),
+        #               json.dumps(ts_e_max.size()))
         ts_e_voteFeature = torch.cat((ts_e_sum, ts_e_max), -1)
-        logging.debug('ts_e_voteFeature size: %s', json.dumps(ts_e_voteFeature.size()))
+        # logging.debug('ts_e_voteFeature size: %s', json.dumps(ts_e_voteFeature.size()))
+
         # batch-doc-e-[feature: max and mean]
         output = F.tanh(self.linear_combine(ts_e_voteFeature).squeeze(-1))
-        logging.debug('output size: %s', json.dumps(output.size()))
         return output
 
     def save_model(self, output_name):
@@ -91,7 +91,8 @@ class LocalAvgWordVotes(SalienceBaseModel):
         ts_e_embedding = ts_e_embedding.unsqueeze(-1)
         ts_e_sent_vote = torch.matmul(ts_e_sent_embedding, ts_e_embedding).squeeze(-1)
         #  ts_e_sent_vote is a batch-doc-e-sent tensor, last dim is the vote from each local sent
-        logging.debug('sent voting size: %s', json.dumps(ts_e_sent_vote.size()))
+
+        # logging.debug('sent voting size: %s', json.dumps(ts_e_sent_vote.size()))
 
         ts_e_sum = torch.sum(ts_e_sent_vote, dim=-1, keepdim=True)
         ts_e_max = torch.max(ts_e_sent_vote, dim=-1, keepdim=True)[0]
