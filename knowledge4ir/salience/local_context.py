@@ -166,7 +166,7 @@ class LocalRNNVotes(LocalAvgWordVotes):
         super(LocalRNNVotes, self).save_model(output_name)
         for name, weights in self.rnn._parameters.items():
             mtx = weights.data.cpu().numpy()
-            np.save(open(output_name + '.' + weights + '.npy', 'w'),
+            np.save(open(output_name + '.' + name + '.npy', 'w'),
                     mtx)
 
 
