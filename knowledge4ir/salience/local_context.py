@@ -185,8 +185,8 @@ class LocalRNNMaxSim(LocalRNNVotes):
 
         max_forward = torch.max(forward_rnn_out, dim=-2, keepdim=False)[0]
         max_backward = torch.max(backward_rnn_out, dim=-2, keepdim=False)[0]
-        logging.debug('maxpooled forward rnn shape: %s',
-                      json.dumps(max_forward.size()))
+        # logging.debug('maxpooled forward rnn shape: %s',
+        #               json.dumps(max_forward.size()))
         ts_e_embedding = self.embedding(mtx_e)
 
         forward_sim = torch.sum(
