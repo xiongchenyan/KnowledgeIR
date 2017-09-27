@@ -120,6 +120,7 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
     """
     sent_len = 10
     max_sent_cnt = 0
+    max_sent_allowed = 10
     ll_e = []
     ll_label = []
     lll_sent = []   #
@@ -130,7 +131,7 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
         l_e = packed.get('entities', [])
         ll_loc = packed.get('loc', [])
         l_words = h[in_field]
-        ll_sent = [_form_local_context(l_loc, l_words, sent_len)
+        ll_sent = [_form_local_context(l_loc[:max_sent_allowed], l_words, sent_len)
                    for l_loc in ll_loc]
 
         this_max_sent_cnt = max([len(l_sent) for l_sent in ll_sent])
