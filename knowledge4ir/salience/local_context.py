@@ -28,13 +28,14 @@ class LocalAvgWordVotes(SalienceBaseModel):
         assert para.word_emb_in
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
-
+        self.embedding_dim = para.embedding_dim
         if pre_emb is not None:
             logging.info('copying entity embedding to model...')
             self.embedding.weight.data.copy_(torch.from_numpy(pre_emb))
 
         logging.info('loading pre trained word emb from [%s]...', para.word_emb_in)
         word_emb = np.load(open(para.word_emb_in))
+        logging.info('loaded word emb with shape %s', json.dumps(word_emb.shape))
         self.word_embedding = nn.Embedding(word_emb.shape[0],
                                            word_emb.shape[1],
                                            padding_idx=0,
@@ -108,7 +109,6 @@ class LocalRNNVotes(LocalAvgWordVotes):
             batch_first=True,
             bidirectional=True
         )
-        self.embedding_dim = para.embedding_dim
         if use_cuda:
             self.rnn.cuda()
 
