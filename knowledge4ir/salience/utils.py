@@ -10,6 +10,7 @@ from traitlets import (
     Float,
     List,
     Unicode,
+    Bool,
 )
 from torch import nn
 
@@ -23,6 +24,7 @@ class NNPara(Configurable):
     first_k_mu = Int(help='first k mu to use').tag(config=True)
     sigma = Float(0.1, help='sigma').tag(config=True)
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
+    train_word_emb = Bool(False, help='whether train word embedding').tag(config=True)
     node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
     l_hidden_dim = List(Int, default_value=[], help='multi layer DNN hidden dim').tag(config=True)
     word_emb_in = Unicode(

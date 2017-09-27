@@ -42,7 +42,7 @@ class LocalAvgWordVotes(SalienceBaseModel):
                                            )
         assert word_emb.shape[1] == para.embedding_dim
         self.word_embedding.weight.data.copy_(torch.from_numpy(word_emb))
-        self.word_embedding.requires_grad = False   # not training the word embedding
+        self.word_embedding.requires_grad = para.train_word_emb   # not training the word embedding
         self.linear_combine = nn.Linear(self.final_combine_dim, 1)   # combine the max pool and sum pool of votes
 
         if use_cuda:
