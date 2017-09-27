@@ -29,7 +29,7 @@ class LocalAvgWordVotes(SalienceBaseModel):
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
 
-        if pre_emb:
+        if pre_emb is not None:
             logging.info('copying entity embedding to model...')
             self.embedding.weight.data.copy_(torch.from_numpy(pre_emb))
 

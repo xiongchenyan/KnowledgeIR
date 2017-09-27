@@ -46,7 +46,8 @@ from knowledge4ir.salience.local_context import (
 )
 from knowledge4ir.salience.data_io import (
     raw_io,
-    feature_io
+    feature_io,
+    uw_io,
 )
 from knowledge4ir.salience.dense_model import EmbeddingLR
 from knowledge4ir.salience.dense_model import (
@@ -110,11 +111,12 @@ class SalienceModelCenter(Configurable):
         self.para = NNPara(**kwargs)
         h_loss = {
             "hinge": hinge_loss,
-            "pairwise": pairwise_loss
+            "pairwise": pairwise_loss,
         }
         self.h_io_func = {
             'raw': raw_io,
             'featured': feature_io,
+            'loc': uw_io,
         }
         self.criterion = h_loss[self.loss_func]
         self.evaluator = SalienceEva(**kwargs)
