@@ -130,7 +130,7 @@ class LocalRNNVotes(LocalAvgWordVotes):
         batch_rnn_input = ts_e_sent_word_embedding.view(
             (-1,) + ts_e_sent_word_embedding.size()[-2:]
         )
-        h0 = torch.randn(batch_rnn_input.size()[0], 2, self.embedding_dim)
+        h0 = Variable(torch.randn(batch_rnn_input.size()[0], 2, self.embedding_dim))
         __, rnn_out = self.rnn(batch_rnn_input, h0)
         rnn_out = rnn_out.transpose(0, 1).view(ts_e_sent_word_embedding.size()[:-2] + (2, -1))
         forward_rnn_out = rnn_out[:, 0, :]  # now batch-doc-e-sent-embedding
