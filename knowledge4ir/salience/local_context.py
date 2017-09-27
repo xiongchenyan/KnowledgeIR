@@ -130,7 +130,7 @@ class LocalRNNVotes(LocalAvgWordVotes):
         batch_rnn_input = ts_e_sent_word_embedding.view(
             (-1,) + ts_e_sent_word_embedding.size()[-2:]
         )
-        h0 = Variable(torch.randn(batch_rnn_input.size()[0], 2, self.embedding_dim))
+        h0 = Variable(torch.randn(2, batch_rnn_input.size()[0], self.embedding_dim))
         if use_cuda:
             h0 = h0.cuda()
         __, rnn_out = self.rnn(batch_rnn_input, h0)
