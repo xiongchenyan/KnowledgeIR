@@ -120,7 +120,7 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
     """
     sent_len = 10
     max_sent_cnt = 0
-    max_sent_allowed = 10
+    max_sent_allowed = 5
     ll_e = []
     ll_label = []
     lll_sent = []   #
