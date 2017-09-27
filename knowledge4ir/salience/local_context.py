@@ -80,6 +80,8 @@ class LocalAvgWordVotes(SalienceBaseModel):
         logging.info('saving embedding and linear combine weights to [%s]', output_name)
         emb_mtx = self.embedding.weight.data.cpu().numpy()
         np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+        word_emb_mtx = self.word_embedding.weight.data.cpu().numpy()
+        np.save(open(output_name + '.word_emb.npy', 'w'), word_emb_mtx)
         np.save(open(output_name + '.linear_combine.npy', 'w'),
                 self.linear_combine.weight.data.cpu().numpy())
 
