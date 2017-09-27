@@ -131,10 +131,8 @@ class LocalRNNVotes(LocalAvgWordVotes):
             (-1,) + ts_e_sent_word_embedding.size()[-2:]
         )
         h0 = Variable(torch.randn(batch_rnn_input.size()[0], 2, self.embedding_dim))
-        print type(batch_rnn_input)
-        print type(batch_rnn_input.data)
-        print type(h0)
-        print type(h0.data)
+        if use_cuda:
+            h0 = h0.cuda()
         __, rnn_out = self.rnn(batch_rnn_input, h0)
         rnn_out = rnn_out.transpose(0, 1).view(ts_e_sent_word_embedding.size()[:-2] + (2, -1))
         forward_rnn_out = rnn_out[:, 0, :]  # now batch-doc-e-sent-embedding
