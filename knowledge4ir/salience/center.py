@@ -42,6 +42,7 @@ from knowledge4ir.salience.crf_model import (
 )
 from knowledge4ir.salience.local_context import (
     LocalAvgWordVotes,
+    LocalRNNVotes,
 )
 from knowledge4ir.salience.data_io import (
     raw_io,
@@ -97,7 +98,8 @@ class SalienceModelCenter(Configurable):
         'feature_lr': FeatureLR,
         'kcrf': KernelCRF,  # not working
         'linear_kcrf': LinearKernelCRF,
-        "avg_local_vote": LocalAvgWordVotes
+        "avg_local_vote": LocalAvgWordVotes,
+        'local_rnn': LocalRNNVotes,
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
@@ -166,7 +168,10 @@ class SalienceModelCenter(Configurable):
                                    for l_one_batch in ll_valid_line]) / float(len(ll_valid_line))
             logging.info('initial validation loss [%.4f]', best_valid_loss)
 
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(
+            filter(lambda model_para: model_para.requires_grad, self.model.parameters()),
+            lr=self.learning_rate
+        )
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
             p = 0
