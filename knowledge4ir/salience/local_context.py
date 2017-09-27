@@ -94,7 +94,7 @@ class LocalAvgWordVotes(SalienceBaseModel):
         logging.debug('sent voting size: %s', json.dumps(ts_e_sent_vote.size()))
 
         ts_e_sum = torch.sum(ts_e_sent_vote, dim=-1, keepdim=True)
-        ts_e_max = torch.max(ts_e_sent_vote, dim=-1, keepdim=True)
+        ts_e_max = torch.max(ts_e_sent_vote, dim=-1, keepdim=True)[0]
         return ts_e_sum, ts_e_max
 
 
