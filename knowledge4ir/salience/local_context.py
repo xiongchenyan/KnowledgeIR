@@ -122,6 +122,24 @@ class LocalRNNVotes(LocalAvgWordVotes):
         mtx_e = h_packed_data['mtx_e']
         ts_context = h_packed_data['ts_local_context']
 
+        forward_rnn_out, backward_rnn_out = self._get_rnns(ts_context)
+
+        ts_e_embedding = self.embedding(mtx_e)
+        forward_sent_vote_sum, forward_sent_vote_mean = self.sent_vote(
+            ts_e_embedding, forward_rnn_out
+        )
+        backward_sent_vote_sum, backward_sent_vote_mean = self.sent_vote(
+            ts_e_embedding, backward_rnn_out
+        )
+
+        ts_e_voteFeature = torch.cat((
+            forward_sent_vote_sum, forward_sent_vote_mean,
+            backward_sent_vote_sum, backward_sent_vote_mean), -1)
+
+        output = F.tanh(self.linear_combine(ts_e_voteFeature)).squeeze(-1)
+        return output
+
+    def _get_rnns(self, ts_context):
         ts_e_sent_word_embedding = self.word_embedding(
             ts_context.view(-1, ts_context.size()[-1])
         ).view(ts_context.size() + (self.embedding_dim, ))
@@ -144,23 +162,8 @@ class LocalRNNVotes(LocalAvgWordVotes):
             ts_e_sent_word_embedding.size()[:-2] + forward_rnn_out.size()[-1:])
         backward_rnn_out = backward_rnn_out.view(
             ts_e_sent_word_embedding.size()[:-2] + backward_rnn_out.size()[-1:])
-
         # logging.debug('reshaped to %s', json.dumps(forward_rnn_out.size()))
-
-        ts_e_embedding = self.embedding(mtx_e)
-        forward_sent_vote_sum, forward_sent_vote_mean = self.sent_vote(
-            ts_e_embedding, forward_rnn_out
-        )
-        backward_sent_vote_sum, backward_sent_vote_mean = self.sent_vote(
-            ts_e_embedding, backward_rnn_out
-        )
-
-        ts_e_voteFeature = torch.cat((
-            forward_sent_vote_sum, forward_sent_vote_mean,
-            backward_sent_vote_sum, backward_sent_vote_mean), -1)
-
-        output = F.tanh(self.linear_combine(ts_e_voteFeature)).squeeze(-1)
-        return output
+        return forward_rnn_out, backward_rnn_out
 
     def save_model(self, output_name):
         super(LocalRNNVotes, self).save_model(output_name)
@@ -168,6 +171,41 @@ class LocalRNNVotes(LocalAvgWordVotes):
             mtx = weights.data.cpu().numpy()
             np.save(open(output_name + '.' + name + '.npy', 'w'),
                     mtx)
+
+
+class LocalRNNMaxSim(LocalRNNVotes):
+    final_combine_dim = 2
+
+    def forward(self, h_packed_data):
+        self._assert_input(h_packed_data)
+        mtx_e = h_packed_data['mtx_e']
+        ts_context = h_packed_data['ts_local_context']
+
+        forward_rnn_out, backward_rnn_out = self._get_rnns(ts_context)
+
+        max_forward = torch.max(forward_rnn_out, dim=-2, keepdim=False)[0]
+        max_backward = torch.max(backward_rnn_out, dim=-2, keepdim=False)[0]
+        logging.debug('maxpooled forward rnn shape: %s',
+                      json.dumps(max_forward.size()))
+        ts_e_embedding = self.embedding(mtx_e)
+
+        forward_sim = torch.sum(
+            max_forward * ts_e_embedding,
+            dim=-1,
+            keepdim=True
+        )
+        backward_sim = torch.sum(
+            max_backward * ts_e_embedding,
+            dim=-1,
+            keepdim=True
+        )
+
+        ts_e_voteFeature = torch.cat(
+            (forward_sim, backward_sim,),
+            -1
+        )
+        output = F.tanh(self.linear_combine(ts_e_voteFeature)).squeeze(-1)
+        return output
 
 
 

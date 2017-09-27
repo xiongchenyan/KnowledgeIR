@@ -43,6 +43,7 @@ from knowledge4ir.salience.crf_model import (
 from knowledge4ir.salience.local_context import (
     LocalAvgWordVotes,
     LocalRNNVotes,
+    LocalRNNMaxSim,
 )
 from knowledge4ir.salience.data_io import (
     raw_io,
@@ -101,6 +102,7 @@ class SalienceModelCenter(Configurable):
         'linear_kcrf': LinearKernelCRF,
         "avg_local_vote": LocalAvgWordVotes,
         'local_rnn': LocalRNNVotes,
+        'local_max_rnn': LocalRNNMaxSim
     }
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
