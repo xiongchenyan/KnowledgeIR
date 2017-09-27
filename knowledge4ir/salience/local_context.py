@@ -122,7 +122,10 @@ class LocalRNNVotes(LocalAvgWordVotes):
         mtx_e = h_packed_data['mtx_e']
         ts_context = h_packed_data['ts_local_context']
 
-        ts_e_sent_word_embedding = self.word_embedding(ts_context)   # batch-doc-e-sent-word-word2vec
+        ts_e_sent_word_embedding = self.word_embedding(
+            ts_context.view(-1, ts_context.size()[-1])
+        ).view(ts_context.size() + (self.embedding_dim, ))
+        # batch-doc-e-sent-word-word2vec
 
         batch_rnn_input = ts_e_sent_word_embedding.view((-1,) + ts_e_sent_word_embedding[-2:])
         h0 = torch.randn(batch_rnn_input.size()[0], 2, self.embedding_dim)
