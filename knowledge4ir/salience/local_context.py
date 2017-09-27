@@ -134,9 +134,9 @@ class LocalRNNVotes(LocalAvgWordVotes):
         if use_cuda:
             h0 = h0.cuda()
         __, rnn_out = self.rnn(batch_rnn_input, h0)
-        rnn_out = rnn_out.transpose(0, 1).contiguous()
-        forward_rnn_out = rnn_out[:, 0, :]  # now batch-doc-e-sent-embedding
-        backward_rnn_out = rnn_out[:, 1, :]
+        rnn_out = rnn_out.transpose(0, 1)
+        forward_rnn_out = rnn_out[:, 0, :].contiguous()  # now batch-doc-e-sent-embedding
+        backward_rnn_out = rnn_out[:, 1, :].contiguous()
 
         logging.debug('rnn out shape %s', json.dumps(forward_rnn_out.size()))
         rnn_out = rnn_out.view(ts_e_sent_word_embedding.size()[:-2] + rnn_out.size()[-2:])
