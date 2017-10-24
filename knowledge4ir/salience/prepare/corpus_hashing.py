@@ -24,6 +24,8 @@ class CorpusHasher(Configurable):
     with_feature = Bool(False, help='whether load feature, or just frequency').tag(config=True)
     # l_target_field = List(Unicode, default_value=[body_field]).tag(config=True)
     max_e_per_d = Int(200, help="top k frequent entities to use per doc").tag(config=True)
+    with_position = Bool(False, help='whether add position').tag(config=True)
+    max_position_per_e = Int(20, help='max loc per e to keep').tag(config=True)
 
     def __init__(self, **kwargs):
         super(CorpusHasher, self).__init__(**kwargs)
@@ -46,41 +48,37 @@ class CorpusHasher(Configurable):
 
         h_hashed['spot'] = dict()
         for field, l_ana in h_info['spot'].items():
-            # if field not in self.l_target_field:
-            #     continue
             l_ana_id = [self.h_entity_id.get(ana['entities'][0]['id'], 0)
                         for ana in l_ana]
             if not l_ana_id:
                 this_field_data = {
                     "entities": [],
-                    "features": []
+                    "features": [],
                 }
+                if self.with_position:
+                    this_field_data['loc'] = []
                 h_hashed['spot'][field] = this_field_data
                 continue
-            ll_e_features = [ana['entities'][0].get('feature', {}).get('featureArray', [])
-                             for ana in l_ana]
-            h_e_id_feature = dict(zip(l_ana_id, ll_e_features))
             l_id_tf = term2lm([id for id in l_ana_id if id != 0]).items()
             l_id_tf.sort(key=lambda item: -item[1])
             l_id_tf = l_id_tf[:self.max_e_per_d]
             l_id = [item[0] for item in l_id_tf]
             ll_feature = []
-            feature_dim = max([len(l_f) for l_f in ll_e_features])
-            # if self.with_feature:
-            #     if not feature_dim:
-            #         logging.error('doc [%s] feature empty', h_hashed['docno'])
-
             for e_id, tf in l_id_tf:
-                l_feature = h_e_id_feature[e_id]
-                l_feature += [0] * (feature_dim - len(l_feature))
-                l_feature = [tf] + l_feature
-                ll_feature.append(l_feature)
+                ll_feature.append([tf])
+
+            if self.with_feature:
+                ll_feature = self._add_node_features(l_ana, l_id_tf, ll_feature)
+
             this_field_data = {
                 "entities": l_id,
                 "features": ll_feature
             }
-
+            if self.with_position:
+                ll_position = self._add_entity_loc(l_ana, l_id_tf)
+                this_field_data['loc'] = ll_position
             h_hashed['spot'][field] = this_field_data
+
         return h_hashed
 
     def process(self):
@@ -98,6 +96,40 @@ class CorpusHasher(Configurable):
         out.close()
         logging.info('finished')
         return
+
+    def _add_node_features(self, l_ana, l_id_tf, ll_feature):
+        assert len(l_id_tf) == ll_feature
+        l_ana_id = [self.h_entity_id.get(ana['entities'][0]['id'], 0)
+                    for ana in l_ana]
+        ll_e_features = [ana['entities'][0].get('feature', {}).get('featureArray', [])
+                         for ana in l_ana]
+        h_e_id_feature = dict(zip(l_ana_id, ll_e_features))
+        feature_dim = max([len(l_f) for l_f in ll_e_features])
+        for p in xrange(len(l_id_tf)):
+            e_id, tf = l_id_tf[p]
+            l_feature = h_e_id_feature[e_id]
+            l_feature += [0] * (feature_dim - len(l_feature))
+            ll_feature[p] += l_feature
+        return ll_feature
+
+    def _add_entity_loc(self, l_ana, l_id_tf):
+        l_ana_id = [self.h_entity_id.get(ana['entities'][0]['id'], 0)
+                    for ana in l_ana]
+        l_ana_loc = [ana['loc'] for ana in l_ana]
+        h_id_loc = {}
+        for e_id, loc in zip(l_ana_id, l_ana_loc):
+            l_loc = h_id_loc.get(e_id, [])
+            if len(l_loc) >= self.max_position_per_e:
+                continue
+            l_loc.append(loc)
+            h_id_loc[e_id] = l_loc
+
+        ll_loc = []
+        for e_id, _ in l_id_tf:
+            ll_loc.append(h_id_loc[e_id])
+        return ll_loc
+
+
 
 
 if __name__ == '__main__':
