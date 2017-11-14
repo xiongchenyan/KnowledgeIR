@@ -5,7 +5,7 @@ import json
 import logging
 
 import torch
-from torch import nn, nn as nn
+from torch import nn
 from torch.autograd import Variable
 from traitlets import (
     Int,
@@ -14,9 +14,10 @@ from traitlets import (
     Unicode,
     Bool,
 )
+import numpy as np
 from traitlets.config import Configurable
 
-from knowledge4ir.salience.kernel_graph_cnn import use_cuda
+from knowledge4ir.salience.knrm_vote import use_cuda
 
 
 class NNPara(Configurable):
@@ -31,9 +32,9 @@ class NNPara(Configurable):
     train_word_emb = Bool(False, help='whether train word embedding').tag(config=True)
     node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
     l_hidden_dim = List(Int, default_value=[], help='multi layer DNN hidden dim').tag(config=True)
-    word_emb_in = Unicode(
-        help='pre trained word embedding, npy format, must be comparable with entity embedding'
-    ).tag(config=True)
+    # word_emb_in = Unicode(
+    #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
+    # ).tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
@@ -49,14 +50,54 @@ class NNPara(Configurable):
         return l_mu, l_sigma
 
 
+class ExtData(Configurable):
+    """
+    external data config and read
+    """
+    entity_emb_in = Unicode(help='hashed numpy entity embedding path').tag(config=True)
+    word_emb_in = Unicode(help='hashed numpy word embedding in').tag(config=True)
+    entity_desp_in = Unicode(help='hashed desp numpy array').tag(config=True)
+    entity_rdf_in = Unicode(help='hashed rdf triple numpy array').tag(config=True)
+    entity_nlss_in = Unicode(help='hashed entity natural language support sentence array').tag(config=True)
+
+    def __init__(self, **kwargs):
+        super(ExtData, self).__init__(**kwargs)
+        self.entity_emb = np.zeros((0, 0))
+        self.word_emb = np.zeros((0, 0))
+        self.entity_desp = np.zeros((0, 0))
+        self.entity_rdf = np.zeros((0, 0, 0))
+        self.entity_nlss = np.zeros((0, 0, 0))
+        self._load()
+
+    def _load(self):
+        if self.entity_emb_in:
+            logging.info('loading entity_emb_in [%s]', self.entity_emb_in)
+            self.entity_emb = np.load(self.entity_emb_in)
+        if self.word_emb_in:
+            logging.info('loading word_emb_in [%s]', self.word_emb_in)
+            self.word_emb = np.load(self.word_emb_in)
+        if self.entity_desp_in:
+            logging.info('loading entity_desp_in [%s]', self.entity_desp_in)
+            self.entity_desp = np.load(self.entity_desp_in)
+        if self.entity_rdf_in:
+            logging.info('loading entity_rdf_in [%s]', self.entity_rdf_in)
+            self.entity_rdf = np.load(self.entity_rdf_in)
+        if self.entity_nlss_in:
+            logging.info('loading entity_nlss_in [%s]', self.entity_nlss_in)
+            self.entity_nlss = np.load(self.entity_nlss_in)
+        logging.info('ext data loaded')
+
+    def assert_with_para(self, nn_para):
+        assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
+        assert nn_para.embedding_dim == self.entity_emb.shape[1]
+
+
 class SalienceBaseModel(nn.Module):
 
-    def __init__(self, para, pre_emb=None):
+    def __init__(self, para, ext_data=None):
         """
-        para is NNPara
-        pre_emb is a numpy matrix of entity embeddings
-        :param para:
-        :param pre_emb:
+        :param para: NNPara
+        :param ext_data: external data to use, in ExtData
         """
         super(SalienceBaseModel, self).__init__()
 
@@ -74,6 +115,17 @@ class SalienceBaseModel(nn.Module):
 
 
 class KernelPooling(nn.Module):
+    """
+    kernel pooling layer
+    init:
+        v_mu: a 1-d dimension of mu's
+        sigma: the sigma
+    input:
+        similar to Linear()
+            a n-D tensor, last dimension is the one to enforce kernel pooling
+    output:
+        n-K tensor, K is the v_mu.size(), number of kernels
+    """
     def __init__(self, l_mu=None, l_sigma=None):
         super(KernelPooling, self).__init__()
         if l_mu is None:

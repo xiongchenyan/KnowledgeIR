@@ -33,12 +33,12 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.salience.base import NNPara
+from knowledge4ir.salience.base import NNPara, ExtData
 from knowledge4ir.salience.baseline.node_feature import (
-    EmbeddingLR,
     FrequencySalience,
     FeatureLR,
 )
+from knowledge4ir.salience.deprecated.node_feature import EmbeddingLR
 from knowledge4ir.salience.baseline.local_context import (
     LocalAvgWordVotes,
     LocalRNNVotes,
@@ -52,8 +52,8 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
-from knowledge4ir.salience.kernel_graph_cnn import (
-    KernelGraphCNN,
+from knowledge4ir.salience.knrm_vote import (
+    KNRM,
 )
 from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
@@ -89,7 +89,7 @@ class SalienceModelCenter(Configurable):
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
-        'knrm': KernelGraphCNN,
+        'knrm': KNRM,
         'linear_kcrf': LinearKernelCRF,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
@@ -127,36 +127,22 @@ class SalienceModelCenter(Configurable):
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
         self.para = NNPara(**kwargs)
+        self.ext_data = ExtData(**kwargs)
+        self.ext_data.assert_with_para(self.para)
         h_loss = {
             "hinge": hinge_loss,    # hinge classification loss does not work
             "pairwise": pairwise_loss,
         }
-        # self.h_io_func = {
-        #     'raw': raw_io,      # e id
-        #     'featured': feature_io,   # + node feature
-        #     'loc': uw_io,   # for local votes, does not work
-        # }
         self.criterion = h_loss[self.loss_func]
+        self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
+
         self.evaluator = SalienceEva(**kwargs)
-        self.pre_emb = None
-        self._load_pre_trained_emb()
         self.model = None
         self._init_model()
-        self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
 
         self.patient_cnt = 0
         self.best_valid_loss = 0
         self.ll_valid_line = []
-
-    def _load_pre_trained_emb(self):
-        if self.pre_trained_emb_in:
-            logging.info('loading pre trained embedding [%s]', self.pre_trained_emb_in)
-            self.pre_emb = np.load(open(self.pre_trained_emb_in))
-            logging.info('loaded with shape %s', json.dumps(self.pre_emb.shape))
-            if not self.para.embedding_dim:
-                self.para.entity_vocab_size, self.para.embedding_dim = self.pre_emb.shape
-            assert self.para.entity_vocab_size == self.pre_emb.shape[0]
-            assert self.para.embedding_dim == self.pre_emb.shape[1]
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -166,7 +152,7 @@ class SalienceModelCenter(Configurable):
 
     def _init_model(self):
         if self.model_name:
-            self.model = self.h_model[self.model_name](self.para, self.pre_emb)
+            self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
     def train(self, train_in_name, validation_in_name=None, model_out_name=None):

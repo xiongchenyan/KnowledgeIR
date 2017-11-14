@@ -1,13 +1,5 @@
 """
-kernel pooling layer
-init:
-    v_mu: a 1-d dimension of mu's
-    sigma: the sigma
-input:
-    similar to Linear()
-        a n-D tensor, last dimension is the one to enforce kernel pooling
-output:
-    n-K tensor, K is the v_mu.size(), number of kernels
+kernel based votes from other entities
 """
 
 import logging
@@ -20,10 +12,10 @@ from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
 use_cuda = torch.cuda.is_available()
 
 
-class KernelGraphCNN(SalienceBaseModel):
+class KNRM(SalienceBaseModel):
 
-    def __init__(self, para, pre_embedding=None):
-        super(KernelGraphCNN, self).__init__(para, pre_embedding)
+    def __init__(self, para, ext_data=None):
+        super(KNRM, self).__init__(para, ext_data)
         l_mu, l_sigma = para.form_kernels()
         self.K = len(l_mu)
         self.kp = KernelPooling(l_mu, l_sigma)
@@ -31,8 +23,8 @@ class KernelGraphCNN(SalienceBaseModel):
                                       para.embedding_dim, padding_idx=0)
         self.dropout = nn.Dropout(p=para.dropout_rate)
         self.linear = nn.Linear(self.K, 1, bias=True)
-        if pre_embedding is not None:
-            self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
+        if ext_data.entity_emb is not None:
+            self.embedding.weight.data.copy_(torch.from_numpy(ext_data.entity_emb))
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
@@ -41,7 +33,7 @@ class KernelGraphCNN(SalienceBaseModel):
         self.layer = para.nb_hidden_layers
         return
 
-    def forward(self, h_packed_data,):
+    def forward(self, h_packed_data):
         assert 'mtx_e' in h_packed_data
         assert 'mtx_score' in h_packed_data
         mtx_e = h_packed_data['mtx_e']

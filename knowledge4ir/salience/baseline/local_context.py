@@ -24,25 +24,22 @@ use_cuda = torch.cuda.is_available()
 class LocalAvgWordVotes(SalienceBaseModel):
     final_combine_dim = 2   # sum and mean of local votes
 
-    def __init__(self, para, pre_emb=None):
-        super(LocalAvgWordVotes, self).__init__(para, pre_emb)
-        assert para.word_emb_in
+    def __init__(self, para, ext_data=None):
+        super(LocalAvgWordVotes, self).__init__(para, ext_data)
+        assert ext_data.word_emb is not None
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
         self.embedding_dim = para.embedding_dim
-        if pre_emb is not None:
+        if ext_data.entity_emb is not None:
             logging.info('copying entity embedding to model...')
-            self.embedding.weight.data.copy_(torch.from_numpy(pre_emb))
+            self.embedding.weight.data.copy_(torch.from_numpy(ext_data.entity_emb))
 
-        logging.info('loading pre trained word emb from [%s]...', para.word_emb_in)
-        word_emb = np.load(open(para.word_emb_in))
-        logging.info('loaded word emb with shape %s', json.dumps(word_emb.shape))
-        self.word_embedding = nn.Embedding(word_emb.shape[0],
-                                           word_emb.shape[1],
+        self.word_embedding = nn.Embedding(ext_data.word_emb.shape[0],
+                                           ext_data.word_emb.shape[1],
                                            padding_idx=0,
                                            )
-        assert word_emb.shape[1] == para.embedding_dim
-        self.word_embedding.weight.data.copy_(torch.from_numpy(word_emb))
+        logging.info('copying word embedding to model...')
+        self.word_embedding.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
         self.word_embedding.requires_grad = para.train_word_emb   # not training the word embedding
         self.linear_combine = nn.Linear(self.final_combine_dim, 1)   # combine the max pool and sum pool of votes
 
@@ -100,8 +97,8 @@ class LocalAvgWordVotes(SalienceBaseModel):
 class LocalRNNVotes(LocalAvgWordVotes):
     final_combine_dim = 4   # sum, max of forward and backward GRU votes
 
-    def __init__(self, para, pre_emb=None):
-        super(LocalRNNVotes, self).__init__(para, pre_emb)
+    def __init__(self, para, ext_data=None):
+        super(LocalRNNVotes, self).__init__(para, ext_data)
         self.rnn = torch.nn.GRU(
             input_size=para.embedding_dim,
             hidden_size=para.embedding_dim,
