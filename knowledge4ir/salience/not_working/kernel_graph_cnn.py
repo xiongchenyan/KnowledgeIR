@@ -4,7 +4,7 @@ import torch
 from torch import nn as nn
 
 from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
-from knowledge4ir.salience.kernel_graph_cnn import use_cuda, KernelGraphCNN
+from knowledge4ir.salience.knrm_vote import use_cuda, KNRM
 
 
 class KernelGraphWalk(SalienceBaseModel):
@@ -57,7 +57,7 @@ class KernelGraphWalk(SalienceBaseModel):
             return output
 
 
-class HighwayKCNN(KernelGraphCNN):
+class HighwayKCNN(KNRM):
     def __init__(self, para, pre_embedding=None):
         super(HighwayKCNN, self).__init__(para, pre_embedding)
         self.linear_combine = nn.Linear(2, 1)
