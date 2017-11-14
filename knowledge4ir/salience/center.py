@@ -34,11 +34,9 @@ from traitlets import (
 from traitlets.config import Configurable
 
 from knowledge4ir.salience.base import NNPara
-from knowledge4ir.salience.baseline.baseline_model import (
+from knowledge4ir.salience.baseline.node_feature import (
+    EmbeddingLR,
     FrequencySalience,
-)
-from knowledge4ir.salience.baseline.dense_model import EmbeddingLR
-from knowledge4ir.salience.baseline.dense_model import (
     FeatureLR,
 )
 from knowledge4ir.salience.baseline.local_context import (
@@ -56,9 +54,8 @@ from knowledge4ir.salience.crf_model import (
 )
 from knowledge4ir.salience.kernel_graph_cnn import (
     KernelGraphCNN,
-    KernelGraphWalk,
-    HighwayKCNN,
 )
+from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
@@ -88,22 +85,41 @@ class SalienceModelCenter(Configurable):
     loss_func = Unicode('hinge', help='loss function to use: hinge, pairwise').tag(config=True)
     early_stopping_patient = Int(5, help='epochs before early stopping').tag(config=True)
     max_e_per_doc = Int(200, help='max e per doc')
-    input_format = Unicode('raw', help='input format: raw | featured').tag(config=True)
+    # input_format = Unicode('raw', help='input format: raw | featured').tag(config=True)
     h_model = {
+        'frequency': FrequencySalience,
+        'feature_lr': FeatureLR,
+        'knrm': KernelGraphCNN,
+        'linear_kcrf': LinearKernelCRF,
+
+        "avg_local_vote": LocalAvgWordVotes,  # not working
+        'local_rnn': LocalRNNVotes,  # not working
+        'local_max_rnn': LocalRNNMaxSim,  # not working
         "trans": EmbPageRank,  # not working
         'EdgeCNN': EdgeCNN,  # not working
         'lr': EmbeddingLR,   # not working
-        'knrm': KernelGraphCNN,
         'kernel_pr': KernelGraphWalk,  # not working
-        'highway_knrm': HighwayKCNN,
-        'frequency': FrequencySalience,
-        'feature_lr': FeatureLR,
+        'highway_knrm': HighwayKCNN,   # not working
         'kcrf': KernelCRF,  # not working
-        'linear_kcrf': LinearKernelCRF,
-        "avg_local_vote": LocalAvgWordVotes,
-        'local_rnn': LocalRNNVotes,
-        'local_max_rnn': LocalRNNMaxSim
     }
+
+    h_model_io = {
+        'frequency': feature_io,
+        'feature_lr': feature_io,
+        'knrm': raw_io,
+        'linear_kcrf': feature_io,
+
+        "avg_local_vote": uw_io,  # not working
+        'local_rnn': uw_io,  # not working
+        'local_max_rnn': uw_io,  # not working
+        "trans": raw_io,  # not working
+        'EdgeCNN': raw_io,  # not working
+        'lr': feature_io,   # not working
+        'kernel_pr': raw_io,  # not working
+        'highway_knrm': raw_io,   # not working
+        'kcrf': raw_io,  # not working
+    }
+
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
     spot_field = Unicode('spot')
@@ -112,17 +128,27 @@ class SalienceModelCenter(Configurable):
         super(SalienceModelCenter, self).__init__(**kwargs)
         self.para = NNPara(**kwargs)
         h_loss = {
-            "hinge": hinge_loss,
+            "hinge": hinge_loss,    # hinge classification loss does not work
             "pairwise": pairwise_loss,
         }
-        self.h_io_func = {
-            'raw': raw_io,
-            'featured': feature_io,
-            'loc': uw_io,
-        }
+        # self.h_io_func = {
+        #     'raw': raw_io,      # e id
+        #     'featured': feature_io,   # + node feature
+        #     'loc': uw_io,   # for local votes, does not work
+        # }
         self.criterion = h_loss[self.loss_func]
         self.evaluator = SalienceEva(**kwargs)
         self.pre_emb = None
+        self._load_pre_trained_emb()
+        self.model = None
+        self._init_model()
+        self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
+
+        self.patient_cnt = 0
+        self.best_valid_loss = 0
+        self.ll_valid_line = []
+
+    def _load_pre_trained_emb(self):
         if self.pre_trained_emb_in:
             logging.info('loading pre trained embedding [%s]', self.pre_trained_emb_in)
             self.pre_emb = np.load(open(self.pre_trained_emb_in))
@@ -131,9 +157,6 @@ class SalienceModelCenter(Configurable):
                 self.para.entity_vocab_size, self.para.embedding_dim = self.pre_emb.shape
             assert self.para.entity_vocab_size == self.pre_emb.shape[0]
             assert self.para.embedding_dim == self.pre_emb.shape[1]
-        self.model = None
-        self._init_model()
-        self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -143,9 +166,7 @@ class SalienceModelCenter(Configurable):
 
     def _init_model(self):
         if self.model_name:
-            self.model = self.h_model[self.model_name](self.para,
-                                                       self.pre_emb,
-                                                       )
+            self.model = self.h_model[self.model_name](self.para, self.pre_emb)
             logging.info('use model [%s]', self.model_name)
 
     def train(self, train_in_name, validation_in_name=None, model_out_name=None):
@@ -158,19 +179,9 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
-        patient_cnt = 0
-        best_valid_loss = None
+
         if validation_in_name:
-            logging.info('loading validation data from [%s]', validation_in_name)
-            l_valid_lines = open(validation_in_name).read().splitlines()
-            ll_valid_line = [l_valid_lines[i:i + self.batch_size]
-                             for i in xrange(0, len(l_valid_lines), self.batch_size)]
-            # valid_e, valid_w, valid_label = self._data_io(l_valid_lines)
-            logging.info('validation with [%d] doc', len(l_valid_lines))
-            patient_cnt = 0
-            best_valid_loss = sum([self._batch_test(l_one_batch)
-                                   for l_one_batch in ll_valid_line]) / float(len(ll_valid_line))
-            logging.info('initial validation loss [%.4f]', best_valid_loss)
+            self._init_early_stopper(validation_in_name)
 
         optimizer = torch.optim.Adam(
             filter(lambda model_para: model_para.requires_grad, self.model.parameters()),
@@ -213,23 +224,9 @@ class SalienceModelCenter(Configurable):
 
             # validation
             if validation_in_name:
-                this_valid_loss = sum([self._batch_test(l_one_batch)
-                                       for l_one_batch in ll_valid_line]) / float(len(ll_valid_line))
-                logging.info('valid loss [%f]', this_valid_loss)
-                if best_valid_loss is None:
-                    best_valid_loss = this_valid_loss
-                elif this_valid_loss > best_valid_loss:
-                    patient_cnt += 1
-                    logging.info('valid loss increased [%.4f -> %.4f][%d]',
-                                 best_valid_loss, this_valid_loss, patient_cnt)
-                    if patient_cnt >= self.early_stopping_patient:
-                        logging.info('early stopped at [%d] epoch', epoch)
-                        break
-                else:
-                    patient_cnt = 0
-                    logging.info('valid loss decreased [%.4f -> %.4f][%d]',
-                                 best_valid_loss, this_valid_loss, patient_cnt)
-                    best_valid_loss = this_valid_loss
+                if self._early_stop():
+                    logging.info('early stopped at [%d] epoch', epoch)
+                    break
 
         logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
 
@@ -237,17 +234,45 @@ class SalienceModelCenter(Configurable):
             self.model.save_model(model_out_name)
         return
 
+    def _init_early_stopper(self, validation_in_name):
+        self.patient_cnt = 0
+        self.best_valid_loss = None
+        self.ll_valid_line = []
+        logging.info('loading validation data from [%s]', validation_in_name)
+        l_valid_lines = open(validation_in_name).read().splitlines()
+        self.ll_valid_line = [l_valid_lines[i:i + self.batch_size]
+                              for i in xrange(0, len(l_valid_lines), self.batch_size)]
+        logging.info('validation with [%d] doc', len(l_valid_lines))
+        self.best_valid_loss = sum([self._batch_test(l_one_batch)
+                                    for l_one_batch in self.ll_valid_line]
+                                   ) / float(len(self.ll_valid_line))
+        logging.info('initial validation loss [%.4f]', self.best_valid_loss)
+
+    def _early_stop(self):
+        this_valid_loss = sum([self._batch_test(l_one_batch)
+                               for l_one_batch in self.ll_valid_line]
+                              ) / float(len(self.ll_valid_line))
+        logging.info('valid loss [%f]', this_valid_loss)
+        if self.best_valid_loss is None:
+            self.best_valid_loss = this_valid_loss
+        elif this_valid_loss > self.best_valid_loss:
+            self.patient_cnt += 1
+            logging.info('valid loss increased [%.4f -> %.4f][%d]',
+                         self.best_valid_loss, this_valid_loss, self.patient_cnt)
+            if self.patient_cnt >= self.early_stopping_patient:
+                return True
+        else:
+            self.patient_cnt = 0
+            logging.info('valid loss decreased [%.4f -> %.4f][%d]',
+                         self.best_valid_loss, this_valid_loss, self.patient_cnt)
+            self.best_valid_loss = this_valid_loss
+        return False
+
     def _batch_train(self, l_line, criterion, optimizer):
         h_packed_data, m_label = self._data_io(l_line)
         optimizer.zero_grad()
         output = self.model(h_packed_data)
-        # logging.debug('predicted: %s',
-        #               json.dumps(output.data.cpu().numpy().tolist()))
-        # logging.debug('target: %s',
-        #               json.dumps(m_label.data.cpu().numpy().tolist()))
         loss = criterion(output, m_label)
-        # logging.debug('loss: %s',
-        #               json.dumps(loss.data.cpu().numpy().tolist()))
         loss.backward()
         optimizer.step()
         assert not math.isnan(loss.data[0])
@@ -298,7 +323,6 @@ class SalienceModelCenter(Configurable):
         output = self.model(h_packed_data).cpu()[0]
         v_e = v_e[0].cpu()
         v_label = v_label[0].cpu()
-        # pre_label = output.data.max(-1)[1]
         pre_label = output.data.sign().type(torch.LongTensor)
         l_score = output.data.numpy().tolist()
         y = v_label.data.view_as(pre_label)
@@ -323,14 +347,14 @@ class SalienceModelCenter(Configurable):
 
     def _filter_empty_line(self, line):
         h = json.loads(line)
-        if self.input_format == 'raw':
+        if self.h_model_io[self.model_name] == raw_io:
             l_e = h[self.spot_field].get(self.in_field, [])
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
         return not l_e
 
     def _data_io(self, l_line):
-        return self.h_io_func[self.input_format](
+        return self.h_model_io[self.model_name](
             l_line, self.spot_field, self.in_field, self.salience_field, self.max_e_per_doc
         )
 
