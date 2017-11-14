@@ -10,8 +10,8 @@ KernelCRF:
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from knowledge4ir.salience.base import SalienceBaseModel
-from knowledge4ir.salience.kernel_graph_cnn import KernelPooling, KernelGraphCNN
+from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
+from knowledge4ir.salience.kernel_graph_cnn import KernelGraphCNN
 import logging
 import json
 import torch.nn.functional as F

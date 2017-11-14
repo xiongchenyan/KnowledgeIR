@@ -1,8 +1,12 @@
 """
 utils for salience inference
 """
+import json
+import logging
 
-from torch import nn
+import torch
+from torch import nn, nn as nn
+from torch.autograd import Variable
 from traitlets import (
     Int,
     Float,
@@ -11,6 +15,8 @@ from traitlets import (
     Bool,
 )
 from traitlets.config import Configurable
+
+from knowledge4ir.salience.kernel_graph_cnn import use_cuda
 
 
 class NNPara(Configurable):
@@ -65,3 +71,34 @@ class SalienceBaseModel(nn.Module):
 
     def save_model(self, output_name):
         return
+
+
+class KernelPooling(nn.Module):
+    def __init__(self, l_mu=None, l_sigma=None):
+        super(KernelPooling, self).__init__()
+        if l_mu is None:
+            l_mu = [1, 0.9, 0.7, 0.5, 0.3, 0.1, -0.1, -0.3, -0.5, -0.7, -0.9]
+        self.v_mu = Variable(torch.FloatTensor(l_mu), requires_grad=False)
+        self.K = len(l_mu)
+        if l_sigma is None:
+            l_sigma = [1e-3] + [0.1] * (self.v_mu.size()[-1] - 1)
+        self.v_sigma = Variable(torch.FloatTensor(l_sigma), requires_grad=False)
+        if use_cuda:
+            self.v_mu = self.v_mu.cuda()
+            self.v_sigma = self.v_sigma.cuda()
+        logging.info('[%d] pooling kernels: %s',
+                     self.K, json.dumps(zip(l_mu, l_sigma))
+                     )
+        return
+
+    def forward(self, in_tensor, mtx_score):
+        in_tensor = in_tensor.unsqueeze(-1)
+        in_tensor = in_tensor.expand(in_tensor.size()[:-1] + (self.K,))
+        score = -(in_tensor - self.v_mu) * (in_tensor - self.v_mu)
+        kernel_value = torch.exp(score / (2.0 * self.v_sigma * self.v_sigma))
+        mtx_score = mtx_score.unsqueeze(-1).unsqueeze(1)
+        mtx_score = mtx_score.expand_as(kernel_value)
+        weighted_kernel_value = kernel_value * mtx_score
+        sum_kernel_value = torch.sum(weighted_kernel_value, dim=-2).clamp(min=1e-10)  # add entity freq/weight
+        sum_kernel_value = torch.log(sum_kernel_value)
+        return sum_kernel_value

@@ -56,9 +56,8 @@ from knowledge4ir.salience.crf_model import (
 )
 from knowledge4ir.salience.kernel_graph_cnn import (
     KernelGraphCNN,
-    KernelGraphWalk,
-    HighwayKCNN,
 )
+from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
