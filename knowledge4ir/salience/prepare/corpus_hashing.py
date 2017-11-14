@@ -22,7 +22,6 @@ class CorpusHasher(Configurable):
     corpus_in = Unicode(help='input').tag(config=True)
     out_name = Unicode().tag(config=True)
     with_feature = Bool(False, help='whether load feature, or just frequency').tag(config=True)
-    # l_target_field = List(Unicode, default_value=[body_field]).tag(config=True)
     max_e_per_d = Int(200, help="top k frequent entities to use per doc").tag(config=True)
     with_position = Bool(False, help='whether add position').tag(config=True)
     max_position_per_e = Int(20, help='max loc per e to keep').tag(config=True)
