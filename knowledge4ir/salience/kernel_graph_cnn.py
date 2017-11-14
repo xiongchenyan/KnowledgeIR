@@ -14,7 +14,7 @@ output:
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from knowledge4ir.salience.utils import SalienceBaseModel
+from knowledge4ir.salience.base import SalienceBaseModel
 import logging
 import json
 import numpy as np

@@ -1,5 +1,6 @@
 """
 rnn model
+not implemented yet
 """
 
 

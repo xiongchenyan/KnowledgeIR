@@ -2,9 +2,7 @@
 utils for salience inference
 """
 
-from ranking_loss import *
-
-from traitlets.config import Configurable
+from torch import nn
 from traitlets import (
     Int,
     Float,
@@ -12,7 +10,7 @@ from traitlets import (
     Unicode,
     Bool,
 )
-from torch import nn
+from traitlets.config import Configurable
 
 
 class NNPara(Configurable):

@@ -6,7 +6,7 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 
-from knowledge4ir.salience.translation_model import use_cuda
+from knowledge4ir.salience.baseline.translation_model import use_cuda
 
 
 class GraphTranslation(nn.Module):

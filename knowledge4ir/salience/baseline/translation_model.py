@@ -7,7 +7,7 @@ import logging
 
 import torch
 import torch.nn as nn
-from knowledge4ir.salience.utils import SalienceBaseModel
+from knowledge4ir.salience.base import SalienceBaseModel
 
 use_cuda = torch.cuda.is_available()
 

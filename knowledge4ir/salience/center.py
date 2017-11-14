@@ -33,42 +33,42 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.salience.baseline_model import (
+from knowledge4ir.salience.base import NNPara
+from knowledge4ir.salience.baseline.baseline_model import (
     FrequencySalience,
+)
+from knowledge4ir.salience.baseline.dense_model import EmbeddingLR
+from knowledge4ir.salience.baseline.dense_model import (
+    FeatureLR,
+)
+from knowledge4ir.salience.baseline.local_context import (
+    LocalAvgWordVotes,
+    LocalRNNVotes,
+    LocalRNNMaxSim,
+)
+from knowledge4ir.salience.baseline.translation_model import (
+    EmbPageRank,
+    EdgeCNN,
 )
 from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
-from knowledge4ir.salience.local_context import (
-    LocalAvgWordVotes,
-    LocalRNNVotes,
-    LocalRNNMaxSim,
-)
-from knowledge4ir.salience.data_io import (
-    raw_io,
-    feature_io,
-    uw_io,
-)
-from knowledge4ir.salience.dense_model import EmbeddingLR
-from knowledge4ir.salience.dense_model import (
-    FeatureLR,
-)
-from knowledge4ir.salience.evaluation import SalienceEva
 from knowledge4ir.salience.kernel_graph_cnn import (
     KernelGraphCNN,
     KernelGraphWalk,
     HighwayKCNN,
 )
-from knowledge4ir.salience.ranking_loss import (
+from knowledge4ir.salience.utils.data_io import (
+    raw_io,
+    feature_io,
+    uw_io,
+)
+from knowledge4ir.salience.utils.evaluation import SalienceEva
+from knowledge4ir.salience.utils.ranking_loss import (
     hinge_loss,
     pairwise_loss,
 )
-from knowledge4ir.salience.translation_model import (
-    EmbPageRank,
-    EdgeCNN,
-)
-from knowledge4ir.salience.utils import NNPara
 from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
 from knowledge4ir.utils import (
     body_field,

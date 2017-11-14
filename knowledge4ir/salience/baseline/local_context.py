@@ -5,13 +5,14 @@ used data:
     ts_local_context: l_sentence word id mtx for each entity
     pre_trained word embedding
     entity embedding
+does not work 11/14/2017
 """
 
 
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from knowledge4ir.salience.utils import SalienceBaseModel
+from knowledge4ir.salience.base import SalienceBaseModel
 import logging
 import json
 import torch.nn.functional as F

@@ -3,13 +3,13 @@ unit test
 TODO
 """
 
-from traitlets.config import Configurable
-from traitlets import Unicode
-import sys
-from knowledge4ir.salience.translation_model import GraphTranslation
-import numpy as np
 import logging
-import json
+
+import numpy as np
+from traitlets import Unicode
+from traitlets.config import Configurable
+
+from knowledge4ir.salience.baseline.translation_model import GraphTranslation
 
 
 class ModuleTester(Configurable):

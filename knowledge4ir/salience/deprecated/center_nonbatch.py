@@ -19,27 +19,29 @@ hyper-parameters:
 
 """
 
-from knowledge4ir.salience.translation_model import GraphTranslation
-from traitlets.config import Configurable
+import json
+import logging
+import math
+
+import numpy as np
+import torch
+from torch import nn
+from torch.autograd import Variable
 from traitlets import (
     Unicode,
     Int,
     Float,
     List,
 )
-import numpy as np
-import json
-import logging
+from traitlets.config import Configurable
+
+from knowledge4ir.salience.baseline.translation_model import GraphTranslation
 from knowledge4ir.utils import (
     body_field,
     abstract_field,
     term2lm,
 )
-import math
-import torch
-from torch.autograd import Variable
-from torch import nn
-import torch.nn.functional as F
+
 use_cuda = torch.cuda.is_available()
 
 
