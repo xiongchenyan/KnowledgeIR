@@ -19,14 +19,14 @@ class EmbPageRank(SalienceBaseModel):
     output: p(target e id is salient)
     """
 
-    def __init__(self, para, pre_embedding=None):
-        super(EmbPageRank, self).__init__(para, pre_embedding)
+    def __init__(self, para, ext_data=None):
+        super(EmbPageRank, self).__init__(para, ext_data)
         vocab_size = para.entity_vocab_size
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
         self.linear = nn.Linear(1, 1, bias=True)
-        if pre_embedding is not None:
-            self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
+        if ext_data.entity_emb is not None:
+            self.embedding.weight.data.copy_(torch.from_numpy(ext_data.entity_emb))
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
@@ -67,12 +67,12 @@ class EdgeCNN(SalienceBaseModel):
     output: p(target e id is salient)
     """
 
-    def __init__(self, para, pre_embedding=None):
-        super(EdgeCNN, self).__init__(para, pre_embedding)
+    def __init__(self, para, ext_data=None):
+        super(EdgeCNN, self).__init__(para, ext_data)
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
-        if pre_embedding is not None:
-            self.embedding.weight.data.copy_(torch.from_numpy(pre_embedding))
+        if ext_data.entity_emb is not None:
+            self.embedding.weight.data.copy_(torch.from_numpy(ext_data.entity_emb))
         self.projection = nn.Linear(para.embedding_dim, para.embedding_dim, bias=False)
         self.linear = nn.Linear(1, 1, bias=True)
         if use_cuda:

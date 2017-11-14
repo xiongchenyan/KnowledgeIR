@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
-from knowledge4ir.salience.kernel_graph_cnn import KernelGraphCNN
+from knowledge4ir.salience.knrm_vote import KNRM
 import logging
 import json
 import torch.nn.functional as F
@@ -19,9 +19,9 @@ import numpy as np
 use_cuda = torch.cuda.is_available()
 
 
-class KernelCRF(KernelGraphCNN):
-    def __init__(self, para, pre_embedding=None):
-        super(KernelCRF, self).__init__(para, pre_embedding)
+class KernelCRF(KNRM):
+    def __init__(self, para, ext_data=None):
+        super(KernelCRF, self).__init__(para, ext_data)
         self.node_feature_dim = para.node_feature_dim
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
         if use_cuda:
@@ -58,9 +58,9 @@ class KernelCRF(KernelGraphCNN):
                 self.node_lr.weight.data.cpu().numpy())
 
 
-class LinearKernelCRF(KernelGraphCNN):
-    def __init__(self, para, pre_embedding=None):
-        super(LinearKernelCRF, self).__init__(para, pre_embedding)
+class LinearKernelCRF(KNRM):
+    def __init__(self, para, ext_data=None):
+        super(LinearKernelCRF, self).__init__(para, ext_data)
         self.node_feature_dim = para.node_feature_dim
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
         logging.info('node feature dim %d', self.node_feature_dim)
