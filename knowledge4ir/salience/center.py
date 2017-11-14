@@ -34,11 +34,9 @@ from traitlets import (
 from traitlets.config import Configurable
 
 from knowledge4ir.salience.base import NNPara
-from knowledge4ir.salience.baseline.baseline_model import (
+from knowledge4ir.salience.baseline.node_feature import (
+    EmbeddingLR,
     FrequencySalience,
-)
-from knowledge4ir.salience.baseline.dense_model import EmbeddingLR
-from knowledge4ir.salience.baseline.dense_model import (
     FeatureLR,
 )
 from knowledge4ir.salience.baseline.local_context import (

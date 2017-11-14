@@ -5,14 +5,14 @@ import numpy as np
 import torch
 from torch import nn as nn
 from torch.nn import functional as F
-
-from knowledge4ir.salience.baseline.translation_model import use_cuda
+use_cuda = torch.cuda.is_available()
 
 
 class GraphTranslation(nn.Module):
     """
     input: list of document entities + frequency, target e id
     output: p(target e id is salient)
+    deprecated and replaced by translation_model.EmbPageRank
     """
 
     def __init__(self, layer, vocab_size, embedding_dim, pre_embedding=None):
