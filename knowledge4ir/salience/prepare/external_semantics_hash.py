@@ -94,7 +94,7 @@ class ExtSemanticPrep(Configurable):
             if not p % 1000:
                 logging.info('loaded [%d] json h [%d] targets', p, e_cnt)
 
-            h = json.loads(p)
+            h = json.loads(line)
             e_id = h['id']
             if e_id not in self.h_e_id:
                 continue
