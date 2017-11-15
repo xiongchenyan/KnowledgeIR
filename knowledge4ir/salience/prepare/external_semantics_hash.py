@@ -49,18 +49,17 @@ class ExtSemanticPrep(Configurable):
         self.h_w_id = dict()
         self._load_ids()
 
-
     def process(self):
         ts_desp, ts_rdf, ts_nlss = self._load_semantics()
-        if ts_desp:
+        if ts_desp is not None:
             logging.info('saving desp ts %s', json.dumps(ts_desp.shape))
             np.save(open(self.out_name + '.desp.npy', 'wb'), ts_desp)
 
-        if ts_rdf:
+        if ts_rdf is not None:
             logging.info('saving rdf ts %s', json.dumps(ts_rdf.shape))
             np.save(open(self.out_name + '.rdf.npy', 'wb'), ts_rdf)
 
-        if ts_nlss:
+        if ts_nlss is not None:
             logging.info('saving nlss ts %s', json.dumps(ts_nlss.shape))
             np.save(open(self.out_name + '.nlss.npy', 'wb'), ts_nlss)
         logging.info('external semantics hashed and dumped to [%s]', self.out_name)
