@@ -84,9 +84,9 @@ class ExtSemanticPrep(Configurable):
 
         nb_e = len(self.h_e_id)
         logging.info('initializing zero starts')
-        ts_desp = np.zeros((nb_e, self.max_desp_len))
-        ts_rdf = np.zeros((nb_e, self.max_rdf_nb, 2))
-        ts_nlss = np.zeros((nb_e, self.max_nlss_nb, self.max_nlss_len))
+        ts_desp = np.zeros((nb_e, self.max_desp_len), dtype=np.int)
+        ts_rdf = np.zeros((nb_e, self.max_rdf_nb, 2), dtype=np.int)
+        ts_nlss = np.zeros((nb_e, self.max_nlss_nb, self.max_nlss_len), dtype=np.int)
 
         e_cnt = 0
         for p, line in enumerate(open(self.semantic_json_in)):
