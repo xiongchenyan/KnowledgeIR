@@ -132,6 +132,7 @@ if __name__ == '__main__':
     if 2 != len(sys.argv):
         print "1 para, config"
         ExtSemanticPrep.class_print_help()
+        sys.exit(-1)
 
     preper = ExtSemanticPrep(config=load_py_config(sys.argv[1]))
     preper.process()
