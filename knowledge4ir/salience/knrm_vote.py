@@ -39,6 +39,16 @@ class KNRM(SalienceBaseModel):
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
+        return self._knrm_opt(mtx_embedding, mtx_score)
+
+    def save_model(self, output_name):
+        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
+        emb_mtx = self.embedding.weight.data.cpu().numpy()
+        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+        np.save(open(output_name + '.linear.npy', 'w'),
+                self.linear.weight.data.cpu().numpy())
+
+    def _knrm_opt(self, mtx_embedding, mtx_score):
         mtx_embedding = mtx_embedding.div(
             torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
         )
@@ -49,12 +59,3 @@ class KNRM(SalienceBaseModel):
         output = self.linear(kp_mtx)
         output = output.squeeze(-1)
         return output
-
-    def save_model(self, output_name):
-        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
-        emb_mtx = self.embedding.weight.data.cpu().numpy()
-        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
-        np.save(open(output_name + '.linear.npy', 'w'),
-                self.linear.weight.data.cpu().numpy())
-
-

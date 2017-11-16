@@ -35,6 +35,8 @@ class NNPara(Configurable):
     # word_emb_in = Unicode(
     #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
     # ).tag(config=True)
+    desp_sent_len = Int(20, help='the first k words to use in the description').tag(config=True)
+
 
     def form_kernels(self):
         l_mu = [1.0]

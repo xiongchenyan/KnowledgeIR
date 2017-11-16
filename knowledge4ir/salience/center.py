@@ -56,6 +56,10 @@ from knowledge4ir.salience.knrm_vote import (
     KNRM,
 )
 from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
+from knowledge4ir.salience.external_semantics import (
+    DespWordAvgEmbKNRM,
+    DespSentRNNEmbedKNRM,
+)
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
@@ -91,6 +95,8 @@ class SalienceModelCenter(Configurable):
         'feature_lr': FeatureLR,
         'knrm': KNRM,
         'linear_kcrf': LinearKernelCRF,
+        'desp_rnn': DespSentRNNEmbedKNRM,
+        'desp_word': DespWordAvgEmbKNRM,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -108,6 +114,8 @@ class SalienceModelCenter(Configurable):
         'feature_lr': feature_io,
         'knrm': raw_io,
         'linear_kcrf': feature_io,
+        'desp_rnn': raw_io,
+        'desp_word': raw_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
@@ -340,7 +348,7 @@ class SalienceModelCenter(Configurable):
         return not l_e
 
     def _data_io(self, l_line):
-        return self.h_model_io[self.model_name](
+        return self.h_model_io.get(self.model_name, raw_io)(
             l_line, self.spot_field, self.in_field, self.salience_field, self.max_e_per_doc
         )
 
