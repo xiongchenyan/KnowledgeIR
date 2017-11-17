@@ -53,22 +53,23 @@ class DespWordAvgEmbKNRM(KNRM):
 
         self.word_emb = nn.Embedding(ext_data.word_emb.shape[0],
                                      ext_data.word_emb.shape[1], padding_idx=0)
-        self.word_emb.weight.data._copy(torch.from_numpy(ext_data.word_emb))
+        self.word_emb.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
 
         self.word_att_emb = nn.Embedding(ext_data.word_emb.shape[0],
                                          ext_data.word_emb.shape[1], padding_idx=0)
-        self.word_att_emb.weight.data._copy(torch.from_numpy(ext_data.word_emb))
+        self.word_att_emb.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
 
         self.emb_merge = torch.linear(para.embedding_dim + ext_data.word_emb.shape[1], para.embedding_dim, bias=False)
 
         self.e_desp_mtx = torch.LongTensor(ext_data.entity_desp)
-
+        logging.info('desp word avg knrm model initialized')
         if use_cuda:
             self.word_att_emb.cuda()
             self.word_emb.cuda()
             self.e_desp_mtx.cuda()
             self.e_att_embedding.cuda()
             self.emb_merge.cuda()
+            logging.info('model parameters copied to cuda')
 
     def forward(self, h_packed_data):
         assert 'mtx_e' in h_packed_data
