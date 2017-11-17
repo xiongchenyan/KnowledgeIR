@@ -63,11 +63,11 @@ class ExtData(Configurable):
 
     def __init__(self, **kwargs):
         super(ExtData, self).__init__(**kwargs)
-        self.entity_emb = np.zeros((0, 0))
-        self.word_emb = np.zeros((0, 0))
-        self.entity_desp = np.zeros((0, 0))
-        self.entity_rdf = np.zeros((0, 0, 0))
-        self.entity_nlss = np.zeros((0, 0, 0))
+        self.entity_emb = None
+        self.word_emb = None
+        self.entity_desp = None
+        self.entity_rdf = None
+        self.entity_nlss = None
         self._load()
 
     def _load(self):

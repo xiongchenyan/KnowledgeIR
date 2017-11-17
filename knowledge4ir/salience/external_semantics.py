@@ -43,8 +43,8 @@ class DespWordAvgEmbKNRM(KNRM):
 
     def __init__(self, para, ext_data=None):
         super(DespWordAvgEmbKNRM, self).__init__(para, ext_data)
-        assert ext_data.word_emb
-        assert ext_data.entity_desp
+        assert ext_data.word_emb is not None
+        assert ext_data.entity_desp is not None
 
         self.e_att_embedding = nn.Embedding(para.entity_vocab_size,
                                             para.embedding_dim, padding_idx=0)
