@@ -193,7 +193,7 @@ class DespSentRNNEmbedKNRM(KNRM):
         forward_rnn_out = desp_rnn_out[:, 0, :].contiguous()  # now batch-embedding
         backward_rnn_out = desp_rnn_out[:, 1, :].contiguous()
 
-        forward_rnn_out = forward_rnn_out.view(mtx_e.size() + (-1,))
+        forward_rnn_out = forward_rnn_out.view(mtx_e.size() + forward_rnn_out.size()[-1:])
         backward_rnn_out = backward_rnn_out.view_as(forward_rnn_out)
         logging.debug('rnn out shape %s', json.dumps(forward_rnn_out.size()))
         enriched_e_embedding = self.emb_merge(
