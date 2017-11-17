@@ -17,6 +17,8 @@ from traitlets import (
 import numpy as np
 from traitlets.config import Configurable
 
+use_cuda = torch.cuda.is_available()
+
 
 class NNPara(Configurable):
     embedding_dim = Int(help='embedding dimension').tag(config=True)
