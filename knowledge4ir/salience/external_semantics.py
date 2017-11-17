@@ -187,6 +187,7 @@ class DespSentRNNEmbedKNRM(KNRM):
         if use_cuda:
             h0 = h0.cuda()
         logging.debug('starting the bi-gru with shape %s', json.dumps(h0.size()))
+        logging.debug('and input sequence shape %s', json.dumps(ts_desp_emb.size()))
         __, desp_rnn_out = self.desp_rnn(ts_desp_emb, h0)
 
         desp_rnn_out.transpose(0, 1)
