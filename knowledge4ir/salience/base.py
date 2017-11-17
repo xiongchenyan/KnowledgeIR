@@ -35,7 +35,6 @@ class NNPara(Configurable):
     # ).tag(config=True)
     desp_sent_len = Int(20, help='the first k words to use in the description').tag(config=True)
 
-
     def form_kernels(self):
         l_mu = [1.0]
         l_sigma = [1e-3]
@@ -73,21 +72,30 @@ class ExtData(Configurable):
         if self.entity_emb_in:
             logging.info('loading entity_emb_in [%s]', self.entity_emb_in)
             self.entity_emb = np.load(self.entity_emb_in)
+            logging.info('shape %s', json.dumps(self.entity_emb.shape))
         if self.word_emb_in:
             logging.info('loading word_emb_in [%s]', self.word_emb_in)
             self.word_emb = np.load(self.word_emb_in)
+            logging.info('shape %s', json.dumps(self.word_emb.shape))
         if self.entity_desp_in:
             logging.info('loading entity_desp_in [%s]', self.entity_desp_in)
             self.entity_desp = np.load(self.entity_desp_in)
+            logging.info('shape %s', json.dumps(self.entity_desp.shape))
         if self.entity_rdf_in:
             logging.info('loading entity_rdf_in [%s]', self.entity_rdf_in)
             self.entity_rdf = np.load(self.entity_rdf_in)
+            logging.info('shape %s', json.dumps(self.entity_rdf.shape))
         if self.entity_nlss_in:
             logging.info('loading entity_nlss_in [%s]', self.entity_nlss_in)
             self.entity_nlss = np.load(self.entity_nlss_in)
+            logging.info('shape %s', json.dumps(self.entity_nlss.shape))
         logging.info('ext data loaded')
 
     def assert_with_para(self, nn_para):
+        if (not nn_para.embedding_dim) | (not nn_para.entity_vocab_size):
+            nn_para.entity_vocab_size, nn_para.embedding_dim = self.entity_emb.shape
+            logging.info('setting para using  entity emb mtx shape %s',
+                         json.dumps(self.entity_emb.shape))
         assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
         assert nn_para.embedding_dim == self.entity_emb.shape[1]
 

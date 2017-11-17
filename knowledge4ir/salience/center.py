@@ -23,7 +23,6 @@ import json
 import logging
 import math
 
-import numpy as np
 import torch
 from traitlets import (
     Unicode,
@@ -32,7 +31,6 @@ from traitlets import (
     List,
 )
 from traitlets.config import Configurable
-
 from knowledge4ir.salience.base import NNPara, ExtData
 from knowledge4ir.salience.baseline.node_feature import (
     FrequencySalience,
@@ -52,9 +50,7 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
-from knowledge4ir.salience.knrm_vote import (
-    KNRM,
-)
+from knowledge4ir.salience.knrm_vote import KNRM
 from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
 from knowledge4ir.salience.external_semantics import (
     DespWordAvgEmbKNRM,
@@ -70,10 +66,11 @@ from knowledge4ir.salience.utils.ranking_loss import (
     hinge_loss,
     pairwise_loss,
 )
-from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
 from knowledge4ir.utils import (
     body_field,
     abstract_field,
+    add_svm_feature,
+    mutiply_svm_feature
 )
 
 use_cuda = torch.cuda.is_available()
@@ -81,7 +78,7 @@ use_cuda = torch.cuda.is_available()
 
 class SalienceModelCenter(Configurable):
     learning_rate = Float(1e-3, help='learning rate').tag(config=True)
-    pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
+    # pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
     model_name = Unicode(help="model name: trans").tag(config=True)
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
