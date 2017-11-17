@@ -156,6 +156,7 @@ class SalienceModelCenter(Configurable):
     def class_print_help(cls, inst=None):
         super(SalienceModelCenter, cls).class_print_help(inst)
         NNPara.class_print_help(inst)
+        ExtData.class_print_help(inst)
         SalienceEva.class_print_help(inst)
 
     def _init_model(self):
