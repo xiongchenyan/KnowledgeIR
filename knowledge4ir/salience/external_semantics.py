@@ -26,6 +26,7 @@ model:
 
 import logging
 import numpy as np
+import json
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -102,11 +103,25 @@ class DespWordAvgEmbKNRM(KNRM):
         return ts_desp_att_emb, ts_desp_content_emb
 
     def _att_avg_emb(self, mtx_att_embedding, ts_desp_att_emb, ts_desp_content_emb):
+        """
+
+        :param mtx_att_embedding: batch * entity * emb
+        :param ts_desp_att_emb:   batch * entity * desp words * emb
+        :param ts_desp_content_emb: batch * entity * desp words * emb
+        :return:
+        """
+        logging.debug('mtx_att_embedding shape %s', json.dumps(mtx_att_embedding.size()))
+        logging.debug('ts_desp_att_emb shape %s', json.dumps(ts_desp_att_emb.size()))
+        logging.debug('ts_desp_content_emb shape %s', json.dumps(ts_desp_content_emb.size()))
+
+        # batch, e id, desp word' weights
         att_score = torch.matmul(
-            ts_desp_att_emb, mtx_att_embedding.unsqueeze(-1)).squeeze(-1)    # batch, e id, desp word' weights
+            ts_desp_att_emb, mtx_att_embedding.unsqueeze(-1)).squeeze(-1)
+        logging.debug('att_score shape %s', json.dumps(att_score.size()))
         att_score = nn.functional.softmax(att_score)
         att_word_emb = torch.matmul(
-            att_score.unsqueeze(-2), ts_desp_content_emb).unsqueeze(-2)   # avg desp word emb for each entity
+            att_score.unsqueeze(-2), ts_desp_content_emb).squeeze(-2)   # avg desp word emb for each entity
+        logging.debug('att_word_emb shape %s', json.dumps(att_word_emb.size()))
         return att_word_emb
 
 
