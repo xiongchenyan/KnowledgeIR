@@ -188,14 +188,13 @@ class DespSentRNNEmbedKNRM(KNRM):
         logging.debug('starting the bi-gru with shape %s', json.dumps(h0.size()))
         logging.debug('and input sequence shape %s', json.dumps(ts_desp_emb.size()))
         __, desp_rnn_out = self.desp_rnn(ts_desp_emb, h0)
-
+        logging.debug('rnn out shape %s', json.dumps(desp_rnn_out.size()))
         desp_rnn_out.transpose(0, 1)
         forward_rnn_out = desp_rnn_out[:, 0, :].contiguous()  # now batch-embedding
         backward_rnn_out = desp_rnn_out[:, 1, :].contiguous()
-
+        logging.debug('rnn out shape %s', json.dumps(forward_rnn_out.size()))
         forward_rnn_out = forward_rnn_out.view(mtx_e.size() + forward_rnn_out.size()[-1:])
         backward_rnn_out = backward_rnn_out.view_as(forward_rnn_out)
-        logging.debug('rnn out shape %s', json.dumps(forward_rnn_out.size()))
         enriched_e_embedding = self.emb_merge(
             torch.cat((mtx_embedding, forward_rnn_out, backward_rnn_out), dim=-1)
         )
