@@ -17,8 +17,6 @@ from traitlets import (
 import numpy as np
 from traitlets.config import Configurable
 
-from knowledge4ir.salience.knrm_vote import use_cuda
-
 
 class NNPara(Configurable):
     embedding_dim = Int(help='embedding dimension').tag(config=True)
