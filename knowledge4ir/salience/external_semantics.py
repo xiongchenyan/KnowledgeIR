@@ -136,7 +136,8 @@ class DespSentRNNEmbedKNRM(KNRM):
         assert ext_data.word_emb
         assert ext_data.entity_desp
         assert para.desp_sent_len
-        self.e_desp_mtx = self.e_desp_mtx[:, :para.desp_sent_len]
+        self.e_desp_mtx = Variable(torch.LongTensor(ext_data.entity_desp[:, :para.desp_sent_len]))
+        # self.e_desp_mtx = self.e_desp_mtx[:, :para.desp_sent_len]
 
         self.word_emb = nn.Embedding(ext_data.word_emb.shape[0],
                                      ext_data.word_emb.shape[1], padding_idx=0)
@@ -172,11 +173,20 @@ class DespSentRNNEmbedKNRM(KNRM):
             mtx_e.size() + (self.e_desp_mtx.size()[-1],)
         )     # batch, e id, desp word id
 
-        ts_desp_emb = self.word_emb(Variable(ts_desp))     # batch, e, word, embedding
+        v_desp_words = ts_desp.view(-1)
+        ts_desp_emb = self.word_emb(v_desp_words)
+
+        # batch * entity * desp words * word embedding
+        ts_desp_emb = ts_desp_emb.view(ts_desp.size() + ts_desp_emb.size()[-1:])
+
+        # reshape for RNN:
+        # now is (batch * entity) * desp's words * word embedding
         ts_desp_emb = ts_desp_emb.view((-1,) + ts_desp_emb.size()[-2:])
 
         h0 = Variable(torch.randn(2, ts_desp_emb.size()[-2], ts_desp_emb.size()[-1]))
-
+        if use_cuda:
+            h0 = h0.cuda()
+        logging.debug('starting the bi-gru with shape %s', json.dumps(h0.size()))
         __, desp_rnn_out = self.desp_rnn(ts_desp_emb, h0)
 
         desp_rnn_out.transpose(0, 1)
@@ -185,7 +195,7 @@ class DespSentRNNEmbedKNRM(KNRM):
 
         forward_rnn_out = forward_rnn_out.view(mtx_e.size() + (-1,))
         backward_rnn_out = backward_rnn_out.view_as(forward_rnn_out)
-
+        logging.debug('rnn out shape %s', json.dumps(forward_rnn_out.size()))
         enriched_e_embedding = self.emb_merge(
             torch.cat((mtx_embedding, forward_rnn_out, backward_rnn_out), dim=-1)
         )
