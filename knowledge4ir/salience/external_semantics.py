@@ -90,7 +90,6 @@ class DespWordAvgEmbKNRM(KNRM):
         return self._knrm_opt(enriched_e_embedding, mtx_score)
 
     def _form_ext_desp(self, mtx_e):
-        logging.info(mtx_e.data.type())
         ts_desp = self.e_desp_mtx[mtx_e.data.view(-1)].view(
             mtx_e.size() + (self.e_desp_mtx.size()[-1],)
         )     # batch, e id, desp word id
@@ -105,7 +104,7 @@ class DespWordAvgEmbKNRM(KNRM):
     def _att_avg_emb(self, mtx_att_embedding, ts_desp_att_emb, ts_desp_content_emb):
         att_score = torch.matmul(
             ts_desp_att_emb, mtx_att_embedding.unsqueeze(-1)).squeeze(-1)    # batch, e id, desp word' weights
-        att_score = nn.functional.softmax(att_score, dim=-1)
+        att_score = nn.functional.softmax(att_score)
         att_word_emb = torch.matmul(
             att_score.unsqueeze(-2), ts_desp_content_emb).unsqueeze(-2)   # avg desp word emb for each entity
         return att_word_emb
