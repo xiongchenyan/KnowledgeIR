@@ -59,7 +59,7 @@ class DespWordAvgEmbKNRM(KNRM):
                                          ext_data.word_emb.shape[1], padding_idx=0)
         self.word_att_emb.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
 
-        self.emb_merge = nn.linear(para.embedding_dim + ext_data.word_emb.shape[1], para.embedding_dim, bias=False)
+        self.emb_merge = nn.Linear(para.embedding_dim + ext_data.word_emb.shape[1], para.embedding_dim, bias=False)
 
         self.e_desp_mtx = torch.LongTensor(ext_data.entity_desp)
         logging.info('desp word avg knrm model initialized')
@@ -132,7 +132,7 @@ class DespSentRNNEmbedKNRM(KNRM):
             batch_first=True,
             bidirectional=True
         )
-        self.emb_merge = nn.linear(
+        self.emb_merge = nn.Linear(
             para.embedding_dim * 3,
             para.embedding_dim,
             bias=False
