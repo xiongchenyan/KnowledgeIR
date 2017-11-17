@@ -133,8 +133,8 @@ class DespSentRNNEmbedKNRM(KNRM):
     def __init__(self, para, ext_data=None):
         super(DespSentRNNEmbedKNRM, self).__init__(para, ext_data)
 
-        assert ext_data.word_emb
-        assert ext_data.entity_desp
+        assert ext_data.word_emb is not None
+        assert ext_data.entity_desp is not None
         assert para.desp_sent_len
         self.e_desp_mtx = Variable(torch.LongTensor(ext_data.entity_desp[:, :para.desp_sent_len]))
         # self.e_desp_mtx = self.e_desp_mtx[:, :para.desp_sent_len]
