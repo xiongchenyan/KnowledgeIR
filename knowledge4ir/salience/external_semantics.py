@@ -138,7 +138,6 @@ class DespSentRNNEmbedKNRM(KNRM):
         assert para.desp_sent_len
         self.e_desp_mtx = Variable(torch.LongTensor(ext_data.entity_desp[:, :para.desp_sent_len]))
         # self.e_desp_mtx = self.e_desp_mtx[:, :para.desp_sent_len]
-
         self.word_emb = nn.Embedding(ext_data.word_emb.shape[0],
                                      ext_data.word_emb.shape[1], padding_idx=0)
         self.word_emb.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
@@ -183,7 +182,7 @@ class DespSentRNNEmbedKNRM(KNRM):
         # now is (batch * entity) * desp's words * word embedding
         ts_desp_emb = ts_desp_emb.view((-1,) + ts_desp_emb.size()[-2:])
 
-        h0 = Variable(torch.randn(2, ts_desp_emb.size()[-2], ts_desp_emb.size()[-1]))
+        h0 = Variable(torch.randn(2, ts_desp_emb.size()[0], ts_desp_emb.size()[-1]))
         if use_cuda:
             h0 = h0.cuda()
         logging.debug('starting the bi-gru with shape %s', json.dumps(h0.size()))
