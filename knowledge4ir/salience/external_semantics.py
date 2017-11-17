@@ -90,7 +90,7 @@ class DespWordAvgEmbKNRM(KNRM):
         return self._knrm_opt(enriched_e_embedding, mtx_score)
 
     def _form_ext_desp(self, mtx_e):
-        ts_desp = self.e_desp_mtx[mtx_e.view(-1)].view(
+        ts_desp = self.e_desp_mtx[mtx_e.data.view(-1)].view(
             mtx_e.size() + (self.e_desp_mtx.size()[-1],)
         )     # batch, e id, desp word id
 
