@@ -61,7 +61,7 @@ class DespWordAvgEmbKNRM(KNRM):
 
         self.emb_merge = nn.Linear(para.embedding_dim + ext_data.word_emb.shape[1], para.embedding_dim, bias=False)
 
-        self.e_desp_mtx = torch.LongTensor(ext_data.entity_desp)
+        self.e_desp_mtx = Variable(torch.LongTensor(ext_data.entity_desp))
         logging.info('desp word avg knrm model initialized')
         if use_cuda:
             self.word_att_emb.cuda()
@@ -94,9 +94,12 @@ class DespWordAvgEmbKNRM(KNRM):
         ts_desp = self.e_desp_mtx[mtx_e.data.view(-1)].view(
             mtx_e.size() + (self.e_desp_mtx.size()[-1],)
         )     # batch, e id, desp word id
-
-        ts_desp_content_emb = self.word_emb(Variable(ts_desp))
-        ts_desp_att_emb = self.word_att_emb(Variable(ts_desp))     # batch, e id, desp word id, emb
+        v_desp_words = ts_desp.view(-1)
+        ts_desp_content_emb = self.word_emb(v_desp_words)
+        ts_desp_att_emb = self.word_att_emb(v_desp_words)    # words * emb
+        # reshape to batch, e id, desp word id, emb
+        ts_desp_content_emb = ts_desp_content_emb.view(ts_desp.size() + ts_desp_content_emb.size()[-1:])
+        ts_desp_att_emb = ts_desp_att_emb.view(ts_desp.size() + ts_desp_att_emb.size()[-1:])
         return ts_desp_att_emb, ts_desp_content_emb
 
     def _att_avg_emb(self, mtx_att_embedding, ts_desp_att_emb, ts_desp_content_emb):
