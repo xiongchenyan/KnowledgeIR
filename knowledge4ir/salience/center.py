@@ -55,6 +55,7 @@ from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, 
 from knowledge4ir.salience.external_semantics import (
     DespWordAvgEmbKNRM,
     DespSentRNNEmbedKNRM,
+    GlossCNNEmbedKNRM,
 )
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
@@ -94,6 +95,7 @@ class SalienceModelCenter(Configurable):
         'linear_kcrf': LinearKernelCRF,
         'desp_rnn': DespSentRNNEmbedKNRM,
         'desp_word': DespWordAvgEmbKNRM,
+        'gloss_cnn': GlossCNNEmbedKNRM,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -113,6 +115,7 @@ class SalienceModelCenter(Configurable):
         'linear_kcrf': feature_io,
         'desp_rnn': raw_io,
         'desp_word': raw_io,
+        'gloss_cnn': raw_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
