@@ -123,7 +123,7 @@ class ExtSemanticPrep(Configurable):
         return ts_desp, ts_rdf, ts_nlss
 
     def _fetch_desp(self, h):
-        e_id = h['id']
+        e_id = h.get('id', None)
         if e_id not in self.h_e_id:
             return None, None
         e_pos = self.h_e_id[e_id]
