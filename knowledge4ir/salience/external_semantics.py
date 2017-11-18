@@ -258,12 +258,13 @@ class GlossCNNEmbedKNRM(KNRM):
         ts_desp_emb = ts_desp_emb.view((-1,) + ts_desp_emb.size()[-2:])
         ts_desp_emb = ts_desp_emb.transpose(-1, -2)   # now batch * embedding * words
         logging.debug('cnn input sequence shape %s', json.dumps(ts_desp_emb.size()))
-        cnn_filter = self.gloss_cnn(ts_desp_emb).transpose(-2, -1)   # batch * strides * filters
+        cnn_filter = self.gloss_cnn(ts_desp_emb)
+        logging.debug('cnn raw output sequence shape %s', json.dumps(ts_desp_emb.size()))
+        cnn_filter = cnn_filter.transpose(-2, -1).contiguous()   # batch * strides * filters
         cnn_filter = cnn_filter.view(
             mtx_e.size() + cnn_filter.size()[-2:]
         )    # batch * entity * strides * filters
-        logging.debug('cnn raw out shape %s', json.dumps(cnn_filter.size()))
-
+        logging.debug('cnn out converted to shape %s', json.dumps(cnn_filter.size()))
         cnn_emb, __ = torch.max(
             cnn_filter, dim=-2, keepdim=False
         )
