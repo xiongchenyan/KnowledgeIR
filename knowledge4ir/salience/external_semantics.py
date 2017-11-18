@@ -268,7 +268,7 @@ class GlossCNNEmbedKNRM(KNRM):
         cnn_emb, __ = torch.max(
             cnn_filter, dim=-2, keepdim=False
         )
-        logging.debug('max pooled CNN Emb shape %s', json.dumps(cnn_emb))
+        logging.debug('max pooled CNN Emb shape %s', json.dumps(cnn_emb.size()))
         enriched_e_embedding = self.emb_merge(
             torch.cat((mtx_embedding, cnn_emb), dim=-1)
         )
