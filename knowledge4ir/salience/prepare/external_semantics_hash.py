@@ -106,7 +106,7 @@ class ExtSemanticPrep(Configurable):
             l_pos, ll_nlss_words = self._fetch_nlss(h)
             if l_pos is not None:
                 for pos, l_nlss_words in zip(l_pos, ll_nlss_words):
-                    while l_nlss_idx[pos] <= self.max_nlss_nb:
+                    while l_nlss_idx[pos] < self.max_nlss_nb:
                         ts_nlss[pos][l_nlss_idx[pos]][:len(l_nlss_words)] = np.array(l_nlss_words)
                         l_nlss_idx[pos] += 1
                         nlss_cnt += 1
