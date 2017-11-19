@@ -12,6 +12,7 @@ from knowledge4ir.utils import (
     title_field,
     abstract_field,
 )
+
 use_cuda = torch.cuda.is_available()
 
 
@@ -66,8 +67,62 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
     return h_packed_data, m_label
 
 
-def feature_io(l_line, spot_field=SPOT_FIELD,
-               in_field=body_field, salience_field=abstract_field, max_e_per_d=200):
+def event_feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
+                     salience_field=abstract_field, max_e_per_d=200):
+    """
+    io with events and corresponding feature matrices
+    """
+    ll_e = []
+    lll_feature = []
+    ll_label = []
+    f_dim = 0
+    for line in l_line:
+        h = json.loads(line)
+        event_spots = h[spot_field].get(in_field, {})
+
+        for spot in event_spots:
+            ll_feature = spot['feature'].get('featureArray', [])
+            l_label = spot.get('salience', 0)
+            if ll_feature:
+                f_dim = max(f_dim, len(ll_feature[0]))
+
+            ll_e.append(l_e)
+            ll_label.append(l_label)
+            lll_feature.append(ll_feature)
+
+        l_e = event_spots.get('event', [])
+
+        ll_feature = event_spots.get('feature', [])
+        if not l_e:
+            continue
+        if ll_feature:
+            f_dim = max(f_dim, len(ll_feature[0]))
+        s_salient_e = set(
+            h[spot_field].get(salience_field, {}).get('entities', []))
+        l_label = event_spots.get(salience_field, {})
+        ll_e.append(l_e)
+        ll_label.append(l_label)
+        lll_feature.append(ll_feature)
+
+    ll_e = padding(ll_e, 0)
+    ll_label = padding(ll_label, 0)
+    lll_feature = padding(lll_feature, [0] * f_dim)
+    m_e = Variable(torch.LongTensor(ll_e)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_e))
+    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_label))
+    ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(lll_feature))
+
+    h_packed_data = {
+        "mtx_e": m_e,
+        "ts_feature": ts_feature
+    }
+    return h_packed_data, m_label
+
+
+def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
+               salience_field=abstract_field, max_e_per_d=200):
     """
     io with pre-filtered entity list and feature matrices
     """
@@ -84,7 +139,8 @@ def feature_io(l_line, spot_field=SPOT_FIELD,
             continue
         if ll_feature:
             f_dim = max(f_dim, len(ll_feature[0]))
-        s_salient_e = set(h[spot_field].get(salience_field, {}).get('entities', []))
+        s_salient_e = set(
+            h[spot_field].get(salience_field, {}).get('entities', []))
         l_label = [1 if e in s_salient_e else -1 for e in l_e]
         ll_e.append(l_e)
         ll_label.append(l_label)
@@ -123,7 +179,7 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
     max_sent_allowed = 5
     ll_e = []
     ll_label = []
-    lll_sent = []   #
+    lll_sent = []  #
 
     for line in l_line:
         h = json.loads(line)
@@ -131,13 +187,15 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
         l_e = packed.get('entities', [])
         ll_loc = packed.get('loc', [])
         l_words = h[in_field]
-        ll_sent = [_form_local_context(l_loc[:max_sent_allowed], l_words, sent_len)
-                   for l_loc in ll_loc]
+        ll_sent = [
+            _form_local_context(l_loc[:max_sent_allowed], l_words, sent_len)
+            for l_loc in ll_loc]
 
         this_max_sent_cnt = max([len(l_sent) for l_sent in ll_sent])
         max_sent_cnt = max(max_sent_cnt, this_max_sent_cnt)
 
-        s_salient_e = set(h[spot_field].get(salience_field, {}).get('entities', []))
+        s_salient_e = set(
+            h[spot_field].get(salience_field, {}).get('entities', []))
         l_label = [1 if e in s_salient_e else -1 for e in l_e]
 
         ll_e.append(l_e)
@@ -146,7 +204,8 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
 
     for d_p in xrange(len(lll_sent)):
         for e_p in xrange(len(lll_sent[d_p])):
-            lll_sent[d_p][e_p] += [[0] * sent_len] * (max_sent_cnt - len(lll_sent[d_p][e_p]))
+            lll_sent[d_p][e_p] += [[0] * sent_len] * (
+                max_sent_cnt - len(lll_sent[d_p][e_p]))
 
     ll_e = padding(ll_e, 0)
     ll_label = padding(ll_label, 0)
@@ -203,9 +262,7 @@ if __name__ == '__main__':
 
     set_basic_log()
 
+
     class IOTester(Configurable):
         in_name = Unicode(help='in data test').tag(config=True)
         io_func = Unicode('uw', help='io function to test').tag(config=True)
-
-
-
