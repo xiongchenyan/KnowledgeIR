@@ -36,7 +36,8 @@ class NNPara(Configurable):
     #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
     # ).tag(config=True)
     desp_sent_len = Int(20, help='the first k words to use in the description').tag(config=True)
-
+    kernel_size = Int(3, help='sentence CNN kernel size').tag(config=True)
+    
     def form_kernels(self):
         l_mu = [1.0]
         l_sigma = [1e-3]

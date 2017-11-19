@@ -222,7 +222,7 @@ class GlossCNNEmbedKNRM(KNRM):
         self.gloss_cnn = torch.nn.Conv1d(
             in_channels=para.embedding_dim,
             out_channels=para.embedding_dim,
-            kernel_size=3,
+            kernel_size=para.kernel_size,
             bias=False,
         )
         self.emb_merge = nn.Linear(
