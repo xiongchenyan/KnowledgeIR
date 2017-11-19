@@ -309,6 +309,7 @@ class LinearGlossCNNEmbedKNRM(KNRM):
             self.word_emb.cuda()
             self.e_desp_mtx = self.e_desp_mtx.cuda()
             self.emb_merge.cuda()
+            self.ext_linear.cuda()
 
     def forward(self, h_packed_data):
         assert 'mtx_e' in h_packed_data
