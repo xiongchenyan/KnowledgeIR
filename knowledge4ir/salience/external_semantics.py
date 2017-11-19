@@ -274,3 +274,79 @@ class GlossCNNEmbedKNRM(KNRM):
         )
 
         return self._knrm_opt(enriched_e_embedding, mtx_score)
+
+
+class LinearGlossCNNEmbedKNRM(KNRM):
+    """
+    rnn of the description's first 10 words
+    """
+
+    def __init__(self, para, ext_data=None):
+        super(LinearGlossCNNEmbedKNRM, self).__init__(para, ext_data)
+
+        assert ext_data.word_emb is not None
+        assert ext_data.entity_desp is not None
+        assert para.desp_sent_len
+        self.e_desp_mtx = Variable(torch.LongTensor(ext_data.entity_desp[:, :para.desp_sent_len]))
+        # self.e_desp_mtx = self.e_desp_mtx[:, :para.desp_sent_len]
+        self.word_emb = nn.Embedding(ext_data.word_emb.shape[0],
+                                     ext_data.word_emb.shape[1], padding_idx=0)
+        self.word_emb.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
+        self.ext_linear = nn.Linear(self.K, 1, bias=True)
+        self.gloss_cnn = torch.nn.Conv1d(
+            in_channels=para.embedding_dim,
+            out_channels=para.embedding_dim,
+            kernel_size=para.kernel_size,
+            bias=False,
+        )
+        self.emb_merge = nn.Linear(
+            para.embedding_dim * 2,
+            para.embedding_dim,
+            bias=False
+        )
+        if use_cuda:
+            self.gloss_cnn.cuda()
+            self.word_emb.cuda()
+            self.e_desp_mtx = self.e_desp_mtx.cuda()
+            self.emb_merge.cuda()
+
+    def forward(self, h_packed_data):
+        assert 'mtx_e' in h_packed_data
+        assert 'mtx_score' in h_packed_data
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
+        mtx_embedding = self.embedding(mtx_e)    # memory based embedding
+
+        ts_desp = self.e_desp_mtx[mtx_e.view(-1)].view(
+            mtx_e.size() + (self.e_desp_mtx.size()[-1],)
+        )     # batch, e id, desp word id
+
+        v_desp_words = ts_desp.view(-1)
+        ts_desp_emb = self.word_emb(v_desp_words)
+
+        # batch * entity * desp words * word embedding
+        ts_desp_emb = ts_desp_emb.view(ts_desp.size() + ts_desp_emb.size()[-1:])
+
+        # reshape for RNN:
+        # now is (batch * entity) * desp's words * word embedding
+        ts_desp_emb = ts_desp_emb.view((-1,) + ts_desp_emb.size()[-2:])
+        ts_desp_emb = ts_desp_emb.transpose(-1, -2)   # now batch * embedding * words
+        logging.debug('cnn input sequence shape %s', json.dumps(ts_desp_emb.size()))
+        cnn_filter = self.gloss_cnn(ts_desp_emb)
+        logging.debug('cnn raw output sequence shape %s', json.dumps(ts_desp_emb.size()))
+        cnn_filter = cnn_filter.transpose(-2, -1).contiguous()   # batch * strides * filters
+        cnn_filter = cnn_filter.view(
+            mtx_e.size() + cnn_filter.size()[-2:]
+        )    # batch * entity * strides * filters
+        logging.debug('cnn out converted to shape %s', json.dumps(cnn_filter.size()))
+        cnn_emb, __ = torch.max(
+            cnn_filter, dim=-2, keepdim=False
+        )
+        logging.debug('max pooled CNN Emb shape %s', json.dumps(cnn_emb.size()))
+
+        knrm_score = self._kernel_scores(mtx_embedding, mtx_score)
+        ext_knrm_score = self._kernel_scores(cnn_emb, mtx_score)
+
+        knrm_output = self.linear(knrm_score).squeeze(-1)
+        ext_knrm_output = self.ext_linear(ext_knrm_score).squeeze(-1)
+        return knrm_output + ext_knrm_output

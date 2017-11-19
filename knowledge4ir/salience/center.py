@@ -56,6 +56,7 @@ from knowledge4ir.salience.external_semantics import (
     DespWordAvgEmbKNRM,
     DespSentRNNEmbedKNRM,
     GlossCNNEmbedKNRM,
+    LinearGlossCNNEmbedKNRM,
 )
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
@@ -96,6 +97,7 @@ class SalienceModelCenter(Configurable):
         'desp_rnn': DespSentRNNEmbedKNRM,
         'desp_word': DespWordAvgEmbKNRM,
         'gloss_cnn': GlossCNNEmbedKNRM,
+        'linear_gloss_cnn': LinearGlossCNNEmbedKNRM,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -116,6 +118,7 @@ class SalienceModelCenter(Configurable):
         'desp_rnn': raw_io,
         'desp_word': raw_io,
         'gloss_cnn': raw_io,
+        'linear_gloss_cnn': raw_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
