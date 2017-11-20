@@ -53,9 +53,11 @@ from knowledge4ir.salience.crf_model import (
 from knowledge4ir.salience.knrm_vote import KNRM
 from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
 from knowledge4ir.salience.external_semantics import (
+    GlossCNNEmbedKNRM,
+)
+from knowledge4ir.salience.external_semantics.description import (
     DespWordAvgEmbKNRM,
     DespSentRNNEmbedKNRM,
-    GlossCNNEmbedKNRM,
     LinearGlossCNNEmbedKNRM,
 )
 from knowledge4ir.salience.utils.data_io import (
