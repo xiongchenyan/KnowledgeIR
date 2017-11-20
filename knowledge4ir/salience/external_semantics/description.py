@@ -204,7 +204,7 @@ class DespSentRNNEmbedKNRM(KNRM):
 
 class GlossCNNEmbedKNRM(KNRM):
     """
-    rnn of the description's first 10 words
+    Cnn of the description's first 20 words
     """
 
     def __init__(self, para, ext_data=None):
@@ -253,7 +253,7 @@ class GlossCNNEmbedKNRM(KNRM):
         # batch * entity * desp words * word embedding
         ts_desp_emb = ts_desp_emb.view(ts_desp.size() + ts_desp_emb.size()[-1:])
 
-        # reshape for RNN:
+        # reshape for CNN:
         # now is (batch * entity) * desp's words * word embedding
         ts_desp_emb = ts_desp_emb.view((-1,) + ts_desp_emb.size()[-2:])
         ts_desp_emb = ts_desp_emb.transpose(-1, -2)   # now batch * embedding * words
@@ -277,9 +277,6 @@ class GlossCNNEmbedKNRM(KNRM):
 
 
 class LinearGlossCNNEmbedKNRM(KNRM):
-    """
-    rnn of the description's first 10 words
-    """
 
     def __init__(self, para, ext_data=None):
         super(LinearGlossCNNEmbedKNRM, self).__init__(para, ext_data)
