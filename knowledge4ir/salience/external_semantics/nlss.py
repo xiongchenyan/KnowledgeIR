@@ -83,7 +83,7 @@ class NlssCnnKnrm(KNRM):
         logging.debug('cnn raw output sequence shape %s', json.dumps(ts_nlss_emb.size()))
         cnn_filter = cnn_filter.transpose(-2, -1).contiguous()   # batch * strides * filters
         cnn_filter = cnn_filter.view(
-            ts_nlss.size() + cnn_filter.size()[-2:]
+            ts_nlss.size()[:-1] + cnn_filter.size()[-2:]
         )    # batch * entity * nlss * strides * filters
         logging.debug('cnn out converted to shape %s', json.dumps(cnn_filter.size()))
         cnn_emb, __ = torch.max(
