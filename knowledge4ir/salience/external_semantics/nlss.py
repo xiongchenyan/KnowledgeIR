@@ -54,7 +54,7 @@ class NlssCnnKnrm(KNRM):
         if use_cuda:
             self.sentence_cnn.cuda()
             self.word_emb.cuda()
-            self.e_desp_mtx = self.e_desp_mtx.cuda()
+            self.e_nlss = self.e_nlss.cuda()
             self.emb_merge.cuda()
 
     def forward(self, h_packed_data):
