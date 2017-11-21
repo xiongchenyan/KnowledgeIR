@@ -78,6 +78,7 @@ class CorpusHasher(Configurable):
                 this_field_data = {
                     "entities": [],
                     "features": [],
+                    "salience": []
                 }
                 if self.with_position:
                     this_field_data['loc'] = []
@@ -93,9 +94,12 @@ class CorpusHasher(Configurable):
             if self.with_feature:
                 ll_feature = self._add_node_features(l_ana, l_id, ll_feature)
 
+            l_salience = self._get_node_salience(l_ana, l_id)
+
             this_field_data = {
                 "entities": l_id,
-                "features": ll_feature
+                "features": ll_feature,
+                "salience": l_salience
             }
             if self.with_position:
                 ll_position = self._add_entity_loc(l_ana, l_id)
@@ -123,10 +127,13 @@ class CorpusHasher(Configurable):
                 ll_sparse_features, ll_feature = \
                     self._add_event_features(l_ana, ll_feature)
 
+            l_salience = self._get_event_salience(l_ana)
+
             this_field_data = {
                 "frames": event_frames,
                 "features": ll_feature,
-                "sparse_features": ll_sparse_features
+                "sparse_features": ll_sparse_features,
+                "salience": l_salience
             }
             if self.with_position:
                 ll_position = self._add_event_loc(l_ana)
@@ -142,10 +149,11 @@ class CorpusHasher(Configurable):
             l_w = text.lower().split()
             l_w_id = [self.h_word_id.get(w, 0) for w in l_w]
             h_hashed[field] = l_w_id
-        for key in ['qid', 'docno', 'salience']:
+        for key in ['qid', 'docno']:
             if key in h_info:
                 h_hashed[key] = h_info[key]
 
+        # TODO: add sanity check.
         self._hash_spots(h_info, h_hashed)
         if self.hash_events:
             self._hash_events(h_info, h_hashed)
@@ -213,6 +221,21 @@ class CorpusHasher(Configurable):
             ll_feature[p] += l_feature
 
         return ll_sparse_features, ll_feature
+
+    def _get_node_salience(self, l_ana, valid_ids):
+        raw_salience = [
+            ana.get('salience', 0) for ana in l_ana
+        ]
+        l_ana_id = [self.h_entity_id.get(ana['id'], 0) for ana in l_ana]
+        h_salience = dict(zip(l_ana_id, raw_salience))
+
+        l_salience = [0] * len(valid_ids)
+        for p, e_id in enumerate(valid_ids):
+            l_salience[p] = h_salience[e_id]
+        return l_salience
+
+    def _get_event_salience(self, l_ana):
+        return [ana.get('salience', 0) for ana in l_ana]
 
     def _add_node_features(self, l_ana, valid_ids, ll_feature):
         assert len(valid_ids) == len(ll_feature)
