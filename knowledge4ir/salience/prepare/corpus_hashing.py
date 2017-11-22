@@ -153,7 +153,6 @@ class CorpusHasher(Configurable):
             if key in h_info:
                 h_hashed[key] = h_info[key]
 
-        # TODO: add sanity check.
         self._hash_spots(h_info, h_hashed)
         if self.hash_events:
             self._hash_events(h_info, h_hashed)
