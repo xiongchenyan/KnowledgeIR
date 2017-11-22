@@ -89,7 +89,7 @@ class NlssCnnKnrm(KNRM):
         cnn_emb, __ = torch.max(
             cnn_filter, dim=-2, keepdim=False
         )
-        cnn_emb, __ = torch.max(
+        cnn_emb = torch.mean(
             cnn_emb, dim=-2, keepdim=False
         )
         logging.debug('max pooled CNN Emb shape %s', json.dumps(cnn_emb.size()))
