@@ -17,7 +17,8 @@ from traitlets import (
 import numpy as np
 from traitlets.config import Configurable
 
-from knowledge4ir.salience.knrm_vote import use_cuda
+# from knowledge4ir.salience.knrm_vote import use_cuda
+use_cuda = torch.cuda.is_available()
 
 
 class NNPara(Configurable):
