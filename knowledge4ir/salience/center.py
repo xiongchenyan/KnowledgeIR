@@ -30,6 +30,7 @@ from traitlets import (
     Int,
     Float,
     List,
+    Bool
 )
 from traitlets.config import Configurable
 
@@ -55,7 +56,8 @@ from knowledge4ir.salience.crf_model import (
 from knowledge4ir.salience.knrm_vote import (
     KNRM,
 )
-from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
+from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, \
+    HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
@@ -89,6 +91,7 @@ class SalienceModelCenter(Configurable):
     early_stopping_patient = Int(5, help='epochs before early stopping').tag(
         config=True)
     max_e_per_doc = Int(200, help='max e per doc')
+    event_model = Bool(False, help='Run event model').tag(config=True)
     # input_format = Unicode('raw', help='input format: raw | featured').tag(
     #     config=True)
     h_model = {
@@ -104,7 +107,7 @@ class SalienceModelCenter(Configurable):
         'EdgeCNN': EdgeCNN,  # not working
         'lr': EmbeddingLR,  # not working
         'kernel_pr': KernelGraphWalk,  # not working
-        'highway_knrm': HighwayKCNN,   # not working
+        'highway_knrm': HighwayKCNN,  # not working
         'kcrf': KernelCRF,  # not working
     }
 
@@ -112,22 +115,24 @@ class SalienceModelCenter(Configurable):
         'frequency': feature_io,
         'feature_lr': feature_io,
         'knrm': raw_io,
-        'linear_kcrf': feature_io,
+        'linear_kcrf': event_feature_io if event_model else feature_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
         'local_max_rnn': uw_io,  # not working
         "trans": raw_io,  # not working
         'EdgeCNN': raw_io,  # not working
-        'lr': feature_io,   # not working
+        'lr': feature_io,  # not working
         'kernel_pr': raw_io,  # not working
-        'highway_knrm': raw_io,   # not working
+        'highway_knrm': raw_io,  # not working
         'kcrf': raw_io,  # not working
     }
 
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
-    spot_field = Unicode('spot')
+    spot_field = Unicode('event') if event_model else Unicode('spot')
+    # A specific field is reserved to mark the salience answer.
+    salience_gold = Unicode('salience')
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
@@ -135,7 +140,7 @@ class SalienceModelCenter(Configurable):
         self.ext_data = ExtData(**kwargs)
         self.ext_data.assert_with_para(self.para)
         h_loss = {
-            "hinge": hinge_loss,    # hinge classification loss does not work
+            "hinge": hinge_loss,  # hinge classification loss does not work
             "pairwise": pairwise_loss,
         }
         self.criterion = h_loss[self.loss_func]
@@ -173,7 +178,7 @@ class SalienceModelCenter(Configurable):
         logging.info('training with data in [%s]', train_in_name)
 
         if validation_in_name:
-             self._init_early_stopper(validation_in_name)
+            self._init_early_stopper(validation_in_name)
 
         optimizer = torch.optim.Adam(
             filter(lambda model_para: model_para.requires_grad,
@@ -221,10 +226,9 @@ class SalienceModelCenter(Configurable):
             # validation
             if validation_in_name:
 
-                if  self._early_stop():
-                        logging.info('early stopped at [%d] epoch', epoch)
-                        break
-
+                if self._early_stop():
+                    logging.info('early stopped at [%d] epoch', epoch)
+                    break
 
         logging.info('[%d] epoch done with loss %s', self.nb_epochs,
                      json.dumps(l_epoch_loss))
@@ -240,7 +244,8 @@ class SalienceModelCenter(Configurable):
         logging.info('loading validation data from [%s]', validation_in_name)
         l_valid_lines = open(validation_in_name).read().splitlines()
         self.ll_valid_line = [l_valid_lines[i:i + self.batch_size]
-                              for i in xrange(0, len(l_valid_lines), self.batch_size)]
+                              for i in
+                              xrange(0, len(l_valid_lines), self.batch_size)]
         logging.info('validation with [%d] doc', len(l_valid_lines))
         self.best_valid_loss = sum([self._batch_test(l_one_batch)
                                     for l_one_batch in self.ll_valid_line]
@@ -257,13 +262,15 @@ class SalienceModelCenter(Configurable):
         elif this_valid_loss > self.best_valid_loss:
             self.patient_cnt += 1
             logging.info('valid loss increased [%.4f -> %.4f][%d]',
-                         self.best_valid_loss, this_valid_loss, self.patient_cnt)
+                         self.best_valid_loss, this_valid_loss,
+                         self.patient_cnt)
             if self.patient_cnt >= self.early_stopping_patient:
                 return True
         else:
             self.patient_cnt = 0
             logging.info('valid loss decreased [%.4f -> %.4f][%d]',
-                         self.best_valid_loss, this_valid_loss, self.patient_cnt)
+                         self.best_valid_loss, this_valid_loss,
+                         self.patient_cnt)
             self.best_valid_loss = this_valid_loss
         return False
 
@@ -350,14 +357,15 @@ class SalienceModelCenter(Configurable):
         h = json.loads(line)
         if self.h_model_io[self.model_name] == raw_io:
             l_e = h[self.spot_field].get(self.in_field, [])
+        elif self.h_model_io[self.model_name] == event_feature_io:
+            l_e = h[self.spot_field].get(self.in_field, {}).get('frames')
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
         return not l_e
 
     def _data_io(self, l_line):
         return self.h_model_io[self.model_name](
-            l_line, self.spot_field, self.in_field, self.salience_field,
-            self.max_e_per_doc
+            l_line, self.spot_field, self.in_field, self.salience_gold
         )
 
 

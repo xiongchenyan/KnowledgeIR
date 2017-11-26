@@ -8,9 +8,11 @@ from torch.autograd import Variable
 from knowledge4ir.utils import (
     term2lm,
     SPOT_FIELD,
+    EVENT_SPOT_FIELD,
     body_field,
     title_field,
     abstract_field,
+    salience_gold
 )
 
 use_cuda = torch.cuda.is_available()
@@ -67,8 +69,8 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
     return h_packed_data, m_label
 
 
-def event_feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
-                     salience_field=abstract_field, max_e_per_d=200):
+def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
+                     salience_gold=salience_gold):
     """
     io with events and corresponding feature matrices
     """
@@ -80,7 +82,12 @@ def event_feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
         h = json.loads(line)
         event_spots = h[spot_field].get(in_field, {})
 
+        print("Reading event spots")
+        print(spot_field)
         for spot in event_spots:
+            print(spot)
+            import sys
+            sys.stdin.readline()
             ll_feature = spot['feature'].get('featureArray', [])
             l_label = spot.get('salience', 0)
             if ll_feature:
@@ -97,9 +104,7 @@ def event_feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
             continue
         if ll_feature:
             f_dim = max(f_dim, len(ll_feature[0]))
-        s_salient_e = set(
-            h[spot_field].get(salience_field, {}).get('entities', []))
-        l_label = event_spots.get(salience_field, {})
+        l_label = event_spots.get(salience_gold, {})
         ll_e.append(l_e)
         ll_label.append(l_label)
         lll_feature.append(ll_feature)
@@ -122,7 +127,7 @@ def event_feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
 
 
 def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
-               salience_field=abstract_field, max_e_per_d=200):
+               salience_gold=salience_gold):
     """
     io with pre-filtered entity list and feature matrices
     """
@@ -139,9 +144,9 @@ def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
             continue
         if ll_feature:
             f_dim = max(f_dim, len(ll_feature[0]))
-        s_salient_e = set(
-            h[spot_field].get(salience_field, {}).get('entities', []))
-        l_label = [1 if e in s_salient_e else -1 for e in l_e]
+        # Take label from salience field.
+        test_label = packed.get(salience_gold, [0] * len(l_e))
+        l_label = [1 if label == 1 else -1 for label in test_label]
         ll_e.append(l_e)
         ll_label.append(l_label)
         lll_feature.append(ll_feature)
