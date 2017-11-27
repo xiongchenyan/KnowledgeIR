@@ -58,17 +58,18 @@ class CorpusHasher(Configurable):
     frame_name_file = Unicode(help="file containing possible frame names").tag(
         config=True)
 
+    lookups = {}
+
     def __init__(self, **kwargs):
         super(CorpusHasher, self).__init__(**kwargs)
-        self.h_frame_id = load_frame_names(self.frame_name_file)
+        # self.h_frame_id = load_frame_names(self.frame_name_file)
         self.h_word_id = pickle.load(open(self.word_id_pickle_in))
         self.h_entity_id = pickle.load(open(self.entity_id_pickle_in))
 
         self.sparse_feature_dicts = {}
 
-        logging.info('loaded [%d] word ids, [%d] entity ids, [%d] frames',
-                     len(self.h_word_id), len(self.h_entity_id),
-                     len(self.h_frame_id))
+        logging.info('loaded [%d] word ids, [%d] entity ids',
+                     len(self.h_word_id), len(self.h_entity_id))
 
     def _hash_spots(self, h_info, h_hashed):
         h_hashed['spot'] = dict()
@@ -109,30 +110,51 @@ class CorpusHasher(Configurable):
     def _hash_events(self, h_info, h_hashed):
         h_hashed['event'] = dict()
         for field, l_ana in h_info['event'].items():
-            event_frames = [self.h_frame_id.get(ana['frame_name'], 0)
-                            for ana in l_ana]
-            if not event_frames:
+            l_event_frames = [ana['frame_name'] for ana in l_ana]
+            if not l_event_frames:
                 this_field_data = {
-                    "frames": [],
+                    "sparse_features": {},
                     "features": [],
+                    "salience": []
                 }
                 if self.with_position:
                     this_field_data['loc'] = []
                 h_hashed['event'][field] = this_field_data
 
             ll_feature = [[] for _ in l_ana]
-            ll_sparse_features = [[] for _ in l_ana]
 
             if self.with_feature:
-                ll_sparse_features, ll_feature = \
-                    self._add_event_features(l_ana, ll_feature)
+                ll_feature = self._add_event_features(l_ana, ll_feature)
+
+            raw_sparse_features = [
+                ana.get('feature', {}).get('sparseFeatureArray', [])
+                for ana in l_ana
+            ]
+
+            sparse_data = {}
+
+            for l_feature in raw_sparse_features:
+                for f in l_feature:
+                    fname, fvalue = f.split('_', 1)
+
+                    if fname not in sparse_data:
+                        sparse_data[fname] = []
+
+                    if fname.startswith('Lexical'):
+                        # Use word lookup for word features.
+                        wid = self.h_word_id.get(fvalue, 0)
+                        sparse_data[fname].append(wid)
+                    else:
+                        # Create a new lookup for other features, which accumulate the feature id.
+                        if fname not in self.lookups:
+                            _, self.lookups[fname] = get_lookup()
+                        sparse_data[fname].append(self.lookups[fname][fvalue])
 
             l_salience = self._get_event_salience(l_ana)
 
             this_field_data = {
-                "frames": event_frames,
                 "features": ll_feature,
-                "sparse_features": ll_sparse_features,
+                "sparse_features": sparse_data,
                 "salience": l_salience
             }
             if self.with_position:
@@ -186,40 +208,13 @@ class CorpusHasher(Configurable):
             ana.get('feature', {}).get('featureArray', []) for ana in l_ana
         ]
 
-        l_sparse_features = [
-            ana.get('feature', {}).get('sparseFeatureArray', [])
-            for ana in l_ana
-        ]
-
-        sparse_feature_names = set(chain.from_iterable(
-            ana.get('feature', {}).get('sparseFeatureName', [])
-            for ana in l_ana
-        ))
-
-        # Create a lookup for each sparse feature type.
-        for n in sparse_feature_names:
-            # unk will always be 0.
-            unk, self.sparse_feature_dicts[n] = get_lookup()
-
-        sparse_feature_dim = len(sparse_feature_names)
-
-        ll_sparse_features = [[] for _ in l_ana]
-        for p, features in enumerate(l_sparse_features):
-            l_fids = []
-            for f in features:
-                fname, fvalue = f.split("_", 1)
-                fid = self.sparse_feature_dicts[fname][fvalue]
-                l_fids.append(fid)
-            l_fids += [0] * (sparse_feature_dim - len(l_fids))
-            ll_sparse_features[p] = l_fids
-
         feature_dim = max([len(l_f) for l_f in ll_e_features])
 
         for p, l_feature in enumerate(ll_e_features):
             l_feature += [0] * (feature_dim - len(l_feature))
             ll_feature[p] += l_feature
 
-        return ll_sparse_features, ll_feature
+        return ll_feature
 
     def _get_node_salience(self, l_ana, valid_ids):
         raw_salience = [
