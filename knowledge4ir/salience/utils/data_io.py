@@ -83,6 +83,9 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
         event_spots = h[spot_field].get(in_field, {})
         l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
         ll_feature = event_spots.get('features', [])
+        # Take a subset of event features for memory issue.
+        # We put -2 to the first position because it is frequency.
+        ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
         if not l_h:
             continue
         if ll_feature:

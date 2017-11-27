@@ -44,6 +44,7 @@ def load_frame_names(frame_file):
 class CorpusHasher(Configurable):
     word_id_pickle_in = Unicode(help='pickle of word id').tag(config=True)
     entity_id_pickle_in = Unicode(help='pickle of entity id').tag(config=True)
+    event_id_pickle_in = Unicode(help='pickle of event id').tag(config=True)
     corpus_in = Unicode(help='input').tag(config=True)
     out_name = Unicode().tag(config=True)
     with_feature = Bool(False,
@@ -62,13 +63,15 @@ class CorpusHasher(Configurable):
 
     def __init__(self, **kwargs):
         super(CorpusHasher, self).__init__(**kwargs)
-        # self.h_frame_id = load_frame_names(self.frame_name_file)
         self.h_word_id = pickle.load(open(self.word_id_pickle_in))
         self.h_entity_id = pickle.load(open(self.entity_id_pickle_in))
+        if self.event_id_pickle_in:
+            self.h_event_id = pickle.load(open(self.event_id_pickle_in))
+            logging.info("Loaded [%d] event ids.", len(self.h_event_id))
 
         self.sparse_feature_dicts = {}
 
-        logging.info('loaded [%d] word ids, [%d] entity ids',
+        logging.info('loaded [%d] word ids, [%d] entity ids]',
                      len(self.h_word_id), len(self.h_entity_id))
 
     def _hash_spots(self, h_info, h_hashed):
@@ -140,12 +143,17 @@ class CorpusHasher(Configurable):
                     if fname not in sparse_data:
                         sparse_data[fname] = []
 
+                    if fname == 'LexicalHead':
+                        # Use event lookup with lexical head.
+                        wid = self.h_event_id.get(fvalue, 0)
+                        sparse_data[fname].append(wid)
                     if fname.startswith('Lexical'):
-                        # Use word lookup for word features.
+                        # Use word lookup for other lexical features.
                         wid = self.h_word_id.get(fvalue, 0)
                         sparse_data[fname].append(wid)
                     else:
-                        # Create a new lookup for other features, which accumulate the feature id.
+                        # Create a new lookup for other features, which
+                        # accumulate the feature id.
                         if fname not in self.lookups:
                             _, self.lookups[fname] = get_lookup()
                         sparse_data[fname].append(self.lookups[fname][fvalue])
