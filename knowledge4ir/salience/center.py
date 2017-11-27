@@ -22,7 +22,7 @@ hyper-parameters:
 import json
 import logging
 import math
-
+import os
 import numpy as np
 import torch
 from traitlets import (
@@ -115,7 +115,7 @@ class SalienceModelCenter(Configurable):
         'frequency': feature_io,
         'feature_lr': feature_io,
         'knrm': raw_io,
-        'linear_kcrf': event_feature_io if event_model else feature_io,
+        'linear_kcrf': feature_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
@@ -130,7 +130,7 @@ class SalienceModelCenter(Configurable):
 
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
-    spot_field = Unicode('event') if event_model else Unicode('spot')
+    spot_field = Unicode('spot')
     # A specific field is reserved to mark the salience answer.
     salience_gold = Unicode('salience')
 
@@ -164,6 +164,13 @@ class SalienceModelCenter(Configurable):
         if self.model_name:
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
+
+        if self.h_model_io[self.model_name] == feature_io:
+            if self.event_model:
+                self.h_model_io[self.model_name] = event_feature_io
+
+        if self.event_model:
+            self.spot_field = 'event'
 
     def train(self, train_in_name, validation_in_name=None,
               model_out_name=None):
@@ -234,6 +241,10 @@ class SalienceModelCenter(Configurable):
                      json.dumps(l_epoch_loss))
 
         if model_out_name:
+            model_dir = os.path.dirname(model_out_name)
+            if not os.path.exists(model_dir):
+                os.makedirs(model_dir)
+
             self.model.save_model(model_out_name)
         return
 
@@ -292,6 +303,9 @@ class SalienceModelCenter(Configurable):
         :param label_out_name:
         :return:
         """
+        res_dir = os.path.dirname(label_out_name)
+        if not os.path.exists(res_dir):
+            os.makedirs(res_dir)
 
         out = open(label_out_name, 'w')
         logging.info('start predicting for [%s]', test_in_name)
@@ -358,7 +372,7 @@ class SalienceModelCenter(Configurable):
         if self.h_model_io[self.model_name] == raw_io:
             l_e = h[self.spot_field].get(self.in_field, [])
         elif self.h_model_io[self.model_name] == event_feature_io:
-            l_e = h[self.spot_field].get(self.in_field, {}).get('frames')
+            l_e = h[self.spot_field].get(self.in_field, {}).get('salience')
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
         return not l_e

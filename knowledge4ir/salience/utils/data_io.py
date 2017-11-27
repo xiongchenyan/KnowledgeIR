@@ -74,40 +74,42 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
     """
     io with events and corresponding feature matrices
     """
-    ll_f = []  # List for frames.
+    ll_h = []  # List for frames.
     lll_feature = []
     ll_label = []
     f_dim = 0
     for line in l_line:
         h = json.loads(line)
         event_spots = h[spot_field].get(in_field, {})
-        l_f = event_spots.get('frames', [])
+        l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
         ll_feature = event_spots.get('features', [])
-        if not l_f:
+        if not l_h:
             continue
         if ll_feature:
             f_dim = max(f_dim, len(ll_feature[0]))
 
         # Take label from salience field.
-        test_label = event_spots.get(salience_gold_field, [0] * len(l_f))
+        test_label = event_spots.get(salience_gold_field, [0] * len(l_h))
         l_label = [1 if label == 1 else -1 for label in test_label]
         ll_label.append(l_label)
-        ll_f.append(l_f)
+        ll_h.append(l_h)
 
         lll_feature.append(ll_feature)
 
-    ll_f = padding(ll_f, 0)
+    ll_h = padding(ll_h, 0)
     ll_label = padding(ll_label, 0)
     lll_feature = padding(lll_feature, [0] * f_dim)
-    m_e = Variable(torch.LongTensor(ll_f)).cuda() \
-        if use_cuda else Variable(torch.LongTensor(ll_f))
+
+    # We use event head word in place of entity id.
+    m_h = Variable(torch.LongTensor(ll_h)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_h))
     m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(ll_label))
     ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(lll_feature))
 
     h_packed_data = {
-        "mtx_e": m_e,
+        "mtx_e": m_h,
         "ts_feature": ts_feature
     }
     return h_packed_data, m_label
@@ -122,6 +124,7 @@ def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
     lll_feature = []
     ll_label = []
     f_dim = 0
+
     for line in l_line:
         h = json.loads(line)
         packed = h[spot_field].get(in_field, {})
