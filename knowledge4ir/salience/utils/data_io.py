@@ -70,50 +70,37 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
 
 
 def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
-                     salience_gold=salience_gold):
+                     salience_gold_field=salience_gold):
     """
     io with events and corresponding feature matrices
     """
-    ll_e = []
+    ll_f = []  # List for frames.
     lll_feature = []
     ll_label = []
     f_dim = 0
     for line in l_line:
         h = json.loads(line)
         event_spots = h[spot_field].get(in_field, {})
-
-        print("Reading event spots")
-        print(spot_field)
-        for spot in event_spots:
-            print(spot)
-            import sys
-            sys.stdin.readline()
-            ll_feature = spot['feature'].get('featureArray', [])
-            l_label = spot.get('salience', 0)
-            if ll_feature:
-                f_dim = max(f_dim, len(ll_feature[0]))
-
-            ll_e.append(l_e)
-            ll_label.append(l_label)
-            lll_feature.append(ll_feature)
-
-        l_e = event_spots.get('event', [])
-
-        ll_feature = event_spots.get('feature', [])
-        if not l_e:
+        l_f = event_spots.get('frames', [])
+        ll_feature = event_spots.get('features', [])
+        if not l_f:
             continue
         if ll_feature:
             f_dim = max(f_dim, len(ll_feature[0]))
-        l_label = event_spots.get(salience_gold, {})
-        ll_e.append(l_e)
+
+        # Take label from salience field.
+        test_label = event_spots.get(salience_gold_field, [0] * len(l_f))
+        l_label = [1 if label == 1 else -1 for label in test_label]
         ll_label.append(l_label)
+        ll_f.append(l_f)
+
         lll_feature.append(ll_feature)
 
-    ll_e = padding(ll_e, 0)
+    ll_f = padding(ll_f, 0)
     ll_label = padding(ll_label, 0)
     lll_feature = padding(lll_feature, [0] * f_dim)
-    m_e = Variable(torch.LongTensor(ll_e)).cuda() \
-        if use_cuda else Variable(torch.LongTensor(ll_e))
+    m_e = Variable(torch.LongTensor(ll_f)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_f))
     m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(ll_label))
     ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
@@ -149,6 +136,7 @@ def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
         l_label = [1 if label == 1 else -1 for label in test_label]
         ll_e.append(l_e)
         ll_label.append(l_label)
+
         lll_feature.append(ll_feature)
 
     ll_e = padding(ll_e, 0)

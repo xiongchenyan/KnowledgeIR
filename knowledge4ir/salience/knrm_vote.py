@@ -17,6 +17,8 @@ class KNRM(SalienceBaseModel):
         l_mu, l_sigma = para.form_kernels()
         self.K = len(l_mu)
         self.kp = KernelPooling(l_mu, l_sigma)
+        print(para.entity_vocab_size)
+        print(para.embedding_dim)
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
         self.dropout = nn.Dropout(p=para.dropout_rate)
