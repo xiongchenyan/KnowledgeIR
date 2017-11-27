@@ -23,6 +23,7 @@ def get_event_vocab(dataset):
 
 def process(train_dataset, in_name, out_pre):
     vocab = get_event_vocab(train_dataset)
+    print "Event vocabulary size [%d]" % (len(vocab))
 
     l_word_emb = []
     l_word = []
@@ -36,7 +37,7 @@ def process(train_dataset, in_name, out_pre):
             l_word_emb.append(np.random.rand(d))
             continue
         if not p % 10000:
-            print "read [%d] lines" % p
+            print "Read [%d] lines of embeddings" % p
 
         cols = line.strip().split()
         v = cols[0]
@@ -46,7 +47,8 @@ def process(train_dataset, in_name, out_pre):
             l_word.append(v)
             l_word_emb.append(emb)
 
-    print "[%d] events" % (len(l_word))
+    print "[%d] events extracted from embedding out of [%d]" % (
+        len(l_word), len(vocab))
     print "dumping event hash..."
     h_w = dict(zip(l_word, range(len(l_word))))
     pickle.dump(h_w, open(out_pre + '.event.pickle', 'w'))

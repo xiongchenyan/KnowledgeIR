@@ -18,7 +18,7 @@ import gzip
 from collections import defaultdict
 from itertools import chain
 
-UNK_TOKEN = "<unk>"
+UNK_TOKEN = "UNK"
 
 
 def get_lookup():
@@ -47,6 +47,8 @@ class CorpusHasher(Configurable):
     event_id_pickle_in = Unicode(help='pickle of event id').tag(config=True)
     corpus_in = Unicode(help='input').tag(config=True)
     out_name = Unicode().tag(config=True)
+    lookup_out_dir = Unicode(help='Directory to write additional lookups').tag(
+        config=True)
     with_feature = Bool(False,
                         help='whether load feature, or just frequency').tag(
         config=True)
@@ -65,14 +67,16 @@ class CorpusHasher(Configurable):
         super(CorpusHasher, self).__init__(**kwargs)
         self.h_word_id = pickle.load(open(self.word_id_pickle_in))
         self.h_entity_id = pickle.load(open(self.entity_id_pickle_in))
-        if self.event_id_pickle_in:
-            self.h_event_id = pickle.load(open(self.event_id_pickle_in))
-            logging.info("Loaded [%d] event ids.", len(self.h_event_id))
-
-        self.sparse_feature_dicts = {}
 
         logging.info('loaded [%d] word ids, [%d] entity ids]',
                      len(self.h_word_id), len(self.h_entity_id))
+
+        if self.hash_events:
+            if self.event_id_pickle_in:
+                self.h_event_id = pickle.load(open(self.event_id_pickle_in))
+                logging.info("Loaded [%d] event ids.", len(self.h_event_id))
+
+        self.sparse_feature_dicts = {}
 
     def _hash_spots(self, h_info, h_hashed):
         h_hashed['spot'] = dict()
@@ -147,7 +151,7 @@ class CorpusHasher(Configurable):
                         # Use event lookup with lexical head.
                         wid = self.h_event_id.get(fvalue, 0)
                         sparse_data[fname].append(wid)
-                    if fname.startswith('Lexical'):
+                    elif fname.startswith('Lexical'):
                         # Use word lookup for other lexical features.
                         wid = self.h_word_id.get(fvalue, 0)
                         sparse_data[fname].append(wid)
@@ -190,18 +194,31 @@ class CorpusHasher(Configurable):
         return h_hashed
 
     def process(self):
+
         out = open(self.out_name, 'w')
         open_func = gzip.open if self.corpus_in.endswith("gz") else open
         with open_func(self.corpus_in) as in_f:
             for p, line in enumerate(in_f):
-                if not p % 1000:
-                    logging.info('processing [%d] lines', p)
                 h_hashed = self.hash_per_info(json.loads(line))
                 if not h_hashed['spot'][body_field]['entities']:
                     continue
                 if not h_hashed['spot']['abstract']['entities']:
                     continue
                 print >> out, json.dumps(h_hashed)
+                if not p % 1000:
+                    logging.info('processing [%d] lines', p)
+
+        if self.lookup_out_dir:
+            import os
+            if not os.path.exists(self.lookup_out_dir):
+                os.makedirs(self.lookup_out_dir)
+                logging.info("Additional lookup index are written to %s",
+                             self.lookup_out_dir)
+
+            for fname, lookup in self.lookups.items():
+                pickle.dump(dict(lookup), open(
+                    os.path.join(self.lookup_out_dir,
+                                 'event_feature_' + fname + '.pickle'), 'w'))
 
         out.close()
         logging.info('finished')
