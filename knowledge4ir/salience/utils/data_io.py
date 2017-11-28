@@ -69,8 +69,21 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
     return h_packed_data, m_label
 
 
+def get_frequency_mask(ll_feature, max_e_per_d):
+    sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0], reverse=True)
+    return set(zip(*sorted_features[:max_e_per_d])[0])
+
+
+def apply_mask(l, mask):
+    masked = []
+    for i, e in enumerate(l):
+        if i in mask:
+            masked.append(e)
+    return masked
+
+
 def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
-                     salience_gold_field=salience_gold):
+                     salience_gold_field=salience_gold, max_e_per_d=200):
     """
     io with events and corresponding feature matrices
     """
@@ -78,6 +91,7 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
     lll_feature = []
     ll_label = []
     f_dim = 0
+
     for line in l_line:
         h = json.loads(line)
         event_spots = h[spot_field].get(in_field, {})
@@ -86,17 +100,25 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
         # Take a subset of event features for memory issue.
         # We put -2 to the first position because it is frequency.
         ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
-        if not l_h:
-            continue
-        if ll_feature:
-            f_dim = max(f_dim, len(ll_feature[0]))
 
         # Take label from salience field.
         test_label = event_spots.get(salience_gold_field, [0] * len(l_h))
         l_label = [1 if label == 1 else -1 for label in test_label]
+
+        if not l_h:
+            continue
+        if ll_feature:
+            # Now take the most frequent events based on the feature. Here we assume the first element in the feature
+            # is always frequency count. Otherwise you are filtering the events with some other features.
+            most_freq_indices = get_frequency_mask(ll_feature, max_e_per_d)
+            l_h = apply_mask(l_h, most_freq_indices)
+            ll_feature = apply_mask(ll_feature, most_freq_indices)
+            l_label = apply_mask(l_label, most_freq_indices)
+
+            f_dim = max(f_dim, len(ll_feature[0]))
+
         ll_label.append(l_label)
         ll_h.append(l_h)
-
         lll_feature.append(ll_feature)
 
     ll_h = padding(ll_h, 0)
@@ -148,12 +170,24 @@ def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
     ll_e = padding(ll_e, 0)
     ll_label = padding(ll_label, 0)
     lll_feature = padding(lll_feature, [0] * f_dim)
+
     m_e = Variable(torch.LongTensor(ll_e)).cuda() \
         if use_cuda else Variable(torch.LongTensor(ll_e))
     m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(ll_label))
     ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(lll_feature))
+
+    print(len(ll_e))
+    print(len(ll_e[0]))
+    print(len(ll_label))
+    print(len(ll_label[0]))
+    print(len(lll_feature))
+    print(len(lll_feature[0]))
+    print(len(lll_feature[0][0]))
+
+    import sys
+    sys.stdin.readline()
 
     h_packed_data = {
         "mtx_e": m_e,
