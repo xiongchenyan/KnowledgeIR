@@ -70,7 +70,8 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
 
 
 def get_frequency_mask(ll_feature, max_e_per_d):
-    sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0], reverse=True)
+    sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0],
+                             reverse=True)
     return set(zip(*sorted_features[:max_e_per_d])[0])
 
 
@@ -108,8 +109,10 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
         if not l_h:
             continue
         if ll_feature:
-            # Now take the most frequent events based on the feature. Here we assume the first element in the feature
-            # is always frequency count. Otherwise you are filtering the events with some other features.
+            # Now take the most frequent events based on the feature.
+            # Here we assume the first element in the feature is always
+            # frequency count. Otherwise you are filtering the events with some
+            # other features.
             most_freq_indices = get_frequency_mask(ll_feature, max_e_per_d)
             l_h = apply_mask(l_h, most_freq_indices)
             ll_feature = apply_mask(ll_feature, most_freq_indices)
@@ -141,7 +144,7 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
 
 
 def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
-               salience_gold=salience_gold):
+               salience_gold=salience_gold, max_e_per_d=200):
     """
     io with pre-filtered entity list and feature matrices
     """
