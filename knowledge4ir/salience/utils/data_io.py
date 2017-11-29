@@ -104,6 +104,8 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
 
         # Take a subset of event features for memory issue.
         # We put -2 to the first position because it is frequency.
+        # headcount, sentence loc, event voting, entity voting,
+        # ss entity vote aver, ss entity vote max, ss entity vote min
         ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
 
         # Take label from salience field.
