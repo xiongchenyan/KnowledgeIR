@@ -6,6 +6,7 @@ this is sth to be used for impoet
 """
 
 from os import path
+
 ROOT_PATH = path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 GDEVAL_PATH = ROOT_PATH + '/knowledge4ir/utils/gdeval.pl'
 RANKSVM_PATH = ROOT_PATH + '/knowledge4ir/letor/svm_rank'
@@ -15,6 +16,7 @@ DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 body_field = 'bodyText'
 paper_abstract_field = 'paperAbstract'
 abstract_field = 'abstract'
+salience_gold = 'salience'
 title_field = 'title'
 E_GRID_FIELD = 'e_grid'
 TARGET_TEXT_FIELDS = [title_field, body_field, ]
@@ -27,6 +29,6 @@ e_alias_field = 'alias'
 ENTITY_TEXT_FIELDS = [e_name_field, e_alias_field, e_desp_field]
 GROUND_FIELD = 'ground'
 SPOT_FIELD = 'spot'
+EVENT_SPOT_FIELD = 'event'
 MATCH_FIELD = 'match'
 COREFERENCE_FIELD = 'coreferences'
-
