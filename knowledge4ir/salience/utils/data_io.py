@@ -15,7 +15,8 @@ from knowledge4ir.utils import (
     salience_gold
 )
 
-use_cuda = torch.cuda.is_available()
+# use_cuda = torch.cuda.is_available()
+use_cuda = False
 
 
 def padding(ll, filler):
@@ -70,6 +71,8 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
 
 
 def get_frequency_mask(ll_feature, max_e_per_d):
+    if max_e_per_d is None:
+        return range(len(ll_feature))
     sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0],
                              reverse=True)
     return set(zip(*sorted_features[:max_e_per_d])[0])
@@ -98,6 +101,7 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
         event_spots = h[spot_field].get(in_field, {})
         l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
         ll_feature = event_spots.get('features', [])
+
         # Take a subset of event features for memory issue.
         # We put -2 to the first position because it is frequency.
         ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
@@ -108,6 +112,7 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
 
         if not l_h:
             continue
+
         if ll_feature:
             # Now take the most frequent events based on the feature.
             # Here we assume the first element in the feature is always
@@ -180,17 +185,6 @@ def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
         if use_cuda else Variable(torch.FloatTensor(ll_label))
     ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(lll_feature))
-
-    print(len(ll_e))
-    print(len(ll_e[0]))
-    print(len(ll_label))
-    print(len(ll_label[0]))
-    print(len(lll_feature))
-    print(len(lll_feature[0]))
-    print(len(lll_feature[0][0]))
-
-    import sys
-    sys.stdin.readline()
 
     h_packed_data = {
         "mtx_e": m_e,
