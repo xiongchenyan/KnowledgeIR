@@ -62,7 +62,10 @@ from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
     uw_io,
-    event_feature_io
+    event_feature_io,
+    joint_feature_io,
+    event_raw_io,
+    joint_raw_io
 )
 from knowledge4ir.salience.utils.evaluation import SalienceEva
 from knowledge4ir.salience.utils.ranking_loss import (
@@ -72,7 +75,6 @@ from knowledge4ir.salience.utils.ranking_loss import (
 from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
 from knowledge4ir.utils import (
     body_field,
-    abstract_field,
     salience_gold
 )
 
@@ -93,6 +95,7 @@ class SalienceModelCenter(Configurable):
         config=True)
     max_e_per_doc = Int(200, help='max e per doc')
     event_model = Bool(False, help='Run event model').tag(config=True)
+    joint_model = Bool(False, help='Run joint model').tag(config=True)
     # input_format = Unicode('raw', help='input format: raw | featured').tag(
     #     config=True)
     h_model = {
@@ -130,8 +133,8 @@ class SalienceModelCenter(Configurable):
     }
 
     in_field = Unicode(body_field)
-    salience_field = Unicode(abstract_field)
     spot_field = Unicode('spot')
+    event_spot_field = Unicode('event')
     # A specific field is reserved to mark the salience answer.
     salience_gold = Unicode(salience_gold)
 
@@ -146,6 +149,10 @@ class SalienceModelCenter(Configurable):
         }
         self.criterion = h_loss[self.loss_func]
         self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
+
+        if self.event_model and self.joint_model:
+            logging.error("Please specify one mode only.")
+            exit(1)
 
         self.evaluator = SalienceEva(**kwargs)
         self.model = None
@@ -166,12 +173,21 @@ class SalienceModelCenter(Configurable):
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
+        # deal with various IO type.
         if self.h_model_io[self.model_name] == feature_io:
             if self.event_model:
                 self.h_model_io[self.model_name] = event_feature_io
-
-        if self.event_model:
-            self.spot_field = 'event'
+                logging.info('using event model io')
+            elif self.joint_model:
+                self.h_model_io[self.model_name] = joint_feature_io
+                logging.info('using joint model io')
+        elif self.h_model_io[self.model_name] == raw_io:
+            if self.event_model:
+                self.h_model_io[self.model_name] = event_raw_io
+                logging.info('using event raw io')
+            elif self.joint_model:
+                self.h_model_io[self.model_name] = joint_raw_io
+                logging.info('using joint raw io')
 
     def train(self, train_in_name, validation_in_name=None,
               model_out_name=None):
@@ -379,10 +395,22 @@ class SalienceModelCenter(Configurable):
         return not l_e
 
     def _data_io(self, l_line):
-        return self.h_model_io[self.model_name](
-            l_line, self.spot_field, self.in_field, self.salience_gold,
-            self.max_e_per_doc
-        )
+        if self.joint_model:
+            return self.h_model_io[self.model_name](
+                l_line,
+                self.event_spot_field,
+                self.spot_field,
+                self.in_field,
+                self.salience_gold,
+                self.max_e_per_doc
+            )
+        else:
+            spot_field = self.event_spot_field if self.event_model else \
+                self.spot_field
+            return self.h_model_io[self.model_name](
+                l_line, spot_field, self.in_field, self.salience_gold,
+                self.max_e_per_doc
+            )
 
 
 if __name__ == '__main__':

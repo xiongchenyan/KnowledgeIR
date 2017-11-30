@@ -36,7 +36,8 @@ def get_top_k_e(l_e, max_e_per_d):
 
 
 def raw_io(l_line, spot_field=SPOT_FIELD,
-           in_field=body_field, salience_field=abstract_field, max_e_per_d=200):
+           in_field=body_field, salience_gold_field=salience_gold,
+           max_e_per_d=200):
     """
     convert data to the input for the model
     """
@@ -47,7 +48,7 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
         h = json.loads(line)
         l_e = h[spot_field].get(in_field, [])
         l_e, l_w = get_top_k_e(l_e, max_e_per_d)
-        s_salient_e = set(h[spot_field].get(salience_field, []))
+        s_salient_e = set(h[spot_field].get(salience_gold_field, []))
         l_label = [1 if e in s_salient_e else -1 for e in l_e]
         ll_e.append(l_e)
         ll_w.append(l_w)
@@ -84,6 +85,85 @@ def apply_mask(l, mask):
         if i in mask:
             masked.append(e)
     return masked
+
+
+def event_raw_io(l_line, spot_field=EVENT_SPOT_FIELD,
+                 in_field=body_field, salience_gold_field=salience_gold,
+                 max_e_per_d=200):
+    """
+    convert data to the input for the model, this one does not take features
+    """
+    ll_h = []
+    ll_w = []
+    ll_label = []
+    f_dim = 0
+
+    for line in l_line:
+        h = json.loads(line)
+        event_spots = h[spot_field].get(in_field, {})
+        l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
+        ll_feature = event_spots.get('features', [])
+
+        # Take the frequency only (index -2)
+        ll_feature = [l[-2:-1] for l in ll_feature]
+
+        test_label = event_spots.get(salience_gold_field, [0] * len(l_h))
+        l_label = [1 if label == 1 else -1 for label in test_label]
+
+        l_w = [l[0] for l in ll_feature]
+
+        if not l_h:
+            continue
+
+        if ll_feature:
+            # Now take the most frequent events based on the frequency.
+            most_freq_indices = get_frequency_mask(ll_feature, max_e_per_d)
+            l_h = apply_mask(l_h, most_freq_indices)
+            ll_feature = apply_mask(ll_feature, most_freq_indices)
+            l_label = apply_mask(l_label, most_freq_indices)
+
+            z = float(sum([item[0] for item in ll_feature]))
+            l_w = [item[0] / z for item in ll_feature]
+
+            f_dim = max(f_dim, len(ll_feature[0]))
+
+        ll_h.append(l_h)
+        ll_w.append(l_w)
+        ll_label.append(l_label)
+
+    ll_h = padding(ll_h, 0)
+    ll_w = padding(ll_w, 0)
+    ll_label = padding(ll_label, 0)
+    m_e = Variable(torch.LongTensor(ll_h)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_h))
+    m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_w))
+    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_label))
+
+    h_packed_data = {
+        "mtx_e": m_e,
+        "mtx_score": m_w
+    }
+    return h_packed_data, m_label
+
+
+def joint_raw_io(l_line,
+                 entity_spot_field=SPOT_FIELD,
+                 event_spot_field=EVENT_SPOT_FIELD,
+                 in_field=body_field,
+                 salience_gold_field=salience_gold,
+                 max_e_per_d=200):
+    pass
+
+
+def joint_feature_io(l_line,
+                     entity_spot_field=SPOT_FIELD,
+                     event_spot_field=EVENT_SPOT_FIELD,
+                     in_field=body_field,
+                     salience_gold_field=salience_gold,
+                     max_e_per_d=200):
+    pass
 
 
 def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
@@ -155,6 +235,8 @@ def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
     """
     io with pre-filtered entity list and feature matrices
     """
+    # TODO This function didn't do max_e filter.
+
     ll_e = []
     lll_feature = []
     ll_label = []
