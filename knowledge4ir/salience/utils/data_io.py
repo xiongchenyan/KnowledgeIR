@@ -284,9 +284,9 @@ def _combine_features(ll_feature_e, ll_feature_evm, e_dim, evm_dim, filler=0):
 
 
 def joint_feature_io(l_line,
-                     evm_offset,
                      e_feature_dim,
                      evm_feature_dim,
+                     evm_offset,
                      entity_spot_field=SPOT_FIELD,
                      event_spot_field=EVENT_SPOT_FIELD,
                      in_field=body_field,
@@ -295,9 +295,9 @@ def joint_feature_io(l_line,
     """
     io with events and entities with their corresponding feature matrices
     :param l_line:
-    :param evm_offset:
     :param e_feature_dim:
     :param evm_feature_dim:
+    :param evm_offset:
     :param entity_spot_field:
     :param event_spot_field:
     :param in_field:
@@ -331,7 +331,6 @@ def joint_feature_io(l_line,
         l_label_all = l_e_label + l_evm_label
         ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat, e_feature_dim,
                                         evm_feature_dim)
-
         ll_label.append(l_label_all)
         ll_h.append(l_e_all)
         lll_feature.append(ll_feat_all)
