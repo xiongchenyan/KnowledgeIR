@@ -56,8 +56,10 @@ from knowledge4ir.salience.crf_model import (
 from knowledge4ir.salience.knrm_vote import (
     KNRM,
 )
-from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, \
+from knowledge4ir.salience.not_working.kernel_graph_cnn import (
+    KernelGraphWalk,
     HighwayKCNN
+)
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
@@ -141,6 +143,7 @@ class SalienceModelCenter(Configurable):
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
         self.para = NNPara(**kwargs)
+        self.para.assert_para()
         self.ext_data = ExtData(**kwargs)
         self.ext_data.assert_with_para(self.para)
         h_loss = {
@@ -170,6 +173,8 @@ class SalienceModelCenter(Configurable):
 
     def _init_model(self):
         if self.model_name:
+            if self.joint_model:
+                self._merge_para()
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
@@ -188,6 +193,21 @@ class SalienceModelCenter(Configurable):
             elif self.joint_model:
                 self.h_model_io[self.model_name] = joint_raw_io
                 logging.info('using joint raw io')
+
+    def _merge_para(self):
+        """
+        Merge the parameter of entity and event embedding, including the vocab
+        size.
+        :return:
+        """
+        self.ext_data.entity_emb = np.concatenate((self.ext_data.entity_emb,
+                                                   self.ext_data.event_emb))
+        self.para.entity_vocab_size = self.para.entity_vocab_size + \
+                                      self.para.event_vocab_size
+
+        logging.info("Embedding matrix merged into shape [%d,%d]" % (
+            self.ext_data.entity_emb.shape[0],
+            self.ext_data.entity_emb.shape[1]))
 
     def train(self, train_in_name, validation_in_name=None,
               model_out_name=None):
@@ -388,7 +408,7 @@ class SalienceModelCenter(Configurable):
         h = json.loads(line)
         if self.h_model_io[self.model_name] == raw_io:
             l_e = h[self.spot_field].get(self.in_field, [])
-        elif self.h_model_io[self.model_name] == event_feature_io:
+        elif self.event_model:
             l_e = h[self.spot_field].get(self.in_field, {}).get('salience')
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
@@ -398,8 +418,11 @@ class SalienceModelCenter(Configurable):
         if self.joint_model:
             return self.h_model_io[self.model_name](
                 l_line,
-                self.event_spot_field,
+                self.para.e_feature_dim,
+                self.para.evm_feature_dim,
+                self.para.entity_vocab_size - self.para.event_vocab_size,
                 self.spot_field,
+                self.event_spot_field,
                 self.in_field,
                 self.salience_gold,
                 self.max_e_per_doc

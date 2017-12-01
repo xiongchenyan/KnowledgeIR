@@ -227,7 +227,7 @@ class CorpusHasher(Configurable):
     def _add_event_features(self, l_ana, ll_feature):
         assert len(l_ana) == len(ll_feature)
         if len(l_ana) == 0:
-            return [], []
+            return []
 
         ll_e_features = [
             ana.get('feature', {}).get('featureArray', []) for ana in l_ana

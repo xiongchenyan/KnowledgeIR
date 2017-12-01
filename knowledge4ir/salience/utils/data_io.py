@@ -15,8 +15,7 @@ from knowledge4ir.utils import (
     salience_gold
 )
 
-# use_cuda = torch.cuda.is_available()
-use_cuda = False
+use_cuda = torch.cuda.is_available()
 
 
 def padding(ll, filler):
@@ -47,9 +46,13 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
     for line in l_line:
         h = json.loads(line)
         l_e = h[spot_field].get(in_field, [])
+        # Take label from salience field.
+        test_label = h.get(salience_gold_field, [0] * len(l_e))
+        l_label_org = [1 if label == 1 else -1 for label in test_label]
+        s_labels = dict(zip(l_e, l_label_org))
+
         l_e, l_w = get_top_k_e(l_e, max_e_per_d)
-        s_salient_e = set(h[spot_field].get(salience_gold_field, []))
-        l_label = [1 if e in s_salient_e else -1 for e in l_e]
+        l_label = [s_labels[e] for e in l_e]
         ll_e.append(l_e)
         ll_w.append(l_w)
         ll_label.append(l_label)
@@ -57,6 +60,7 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
     ll_e = padding(ll_e, 0)
     ll_w = padding(ll_w, 0)
     ll_label = padding(ll_label, 0)
+
     m_e = Variable(torch.LongTensor(ll_e)).cuda() \
         if use_cuda else Variable(torch.LongTensor(ll_e))
     m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
@@ -87,45 +91,88 @@ def apply_mask(l, mask):
     return masked
 
 
+def _get_entity_info(entity_spots, salience_gold_field, max_e_per_d,
+                     with_feature):
+    l_e = entity_spots.get('entities', [])
+    # Take label from salience field.
+    test_label = entity_spots.get(salience_gold_field, [0] * len(l_e))
+    l_label_org = [1 if label == 1 else -1 for label in test_label]
+
+    # Associate label with eid.
+    s_labels = dict(zip(l_e, l_label_org))
+
+    ll_feature = entity_spots.get('features', [])
+    l_e, l_w = get_top_k_e(l_e, max_e_per_d)
+    l_label = [s_labels[e] for e in l_e]
+
+    if with_feature:
+        return l_e, l_label, ll_feature
+    else:
+        return l_e, l_label, l_w
+
+
+def _get_event_info(event_spots, salience_gold_field, max_e_per_d,
+                    with_feature):
+    l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
+    ll_feature = event_spots.get('features', [])
+    # Take label from salience field.
+    test_label = event_spots.get(salience_gold_field, [0] * len(l_h))
+    l_label = [1 if label == 1 else -1 for label in test_label]
+
+    if not l_h:
+        if with_feature:
+            return l_h, l_label, ll_feature
+        else:
+            return l_h, [], ll_feature
+
+    # Take a subset of event features for memory issue.
+    # We put -2 to the first position because it is frequency.
+    # headcount, sentence loc, event voting, entity voting,
+    # ss entity vote aver, ss entity vote max, ss entity vote min
+    ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
+
+    z = float(sum([item[0] for item in ll_feature]))
+    l_w = [item[0] / z for item in ll_feature]
+
+    # Now take the most frequent events based on the feature.
+    # Here we assume the first element in the feature is always
+    # frequency count and filtered with its value.
+    most_freq_indices = get_frequency_mask(ll_feature, max_e_per_d)
+    l_h = apply_mask(l_h, most_freq_indices)
+    ll_feature = apply_mask(ll_feature, most_freq_indices)
+    l_label = apply_mask(l_label, most_freq_indices)
+    l_w = apply_mask(l_w, most_freq_indices)
+
+    if with_feature:
+        return l_h, l_label, ll_feature
+    else:
+        return l_h, l_label, l_w
+
+
 def event_raw_io(l_line, spot_field=EVENT_SPOT_FIELD,
                  in_field=body_field, salience_gold_field=salience_gold,
                  max_e_per_d=200):
     """
-    convert data to the input for the model, this one does not take features
+    Convert data to the input for the model, this one does not take features.
+    :param l_line:
+    :param spot_field:
+    :param in_field:
+    :param salience_gold_field:
+    :param max_e_per_d:
+    :return:
     """
     ll_h = []
     ll_w = []
     ll_label = []
-    f_dim = 0
 
     for line in l_line:
         h = json.loads(line)
         event_spots = h[spot_field].get(in_field, {})
-        l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
-        ll_feature = event_spots.get('features', [])
-
-        # Take the frequency only (index -2)
-        ll_feature = [l[-2:-1] for l in ll_feature]
-
-        test_label = event_spots.get(salience_gold_field, [0] * len(l_h))
-        l_label = [1 if label == 1 else -1 for label in test_label]
-
-        l_w = [l[0] for l in ll_feature]
+        l_h, l_label, l_w = _get_event_info(event_spots, salience_gold_field,
+                                            max_e_per_d, False)
 
         if not l_h:
             continue
-
-        if ll_feature:
-            # Now take the most frequent events based on the frequency.
-            most_freq_indices = get_frequency_mask(ll_feature, max_e_per_d)
-            l_h = apply_mask(l_h, most_freq_indices)
-            ll_feature = apply_mask(ll_feature, most_freq_indices)
-            l_label = apply_mask(l_label, most_freq_indices)
-
-            z = float(sum([item[0] for item in ll_feature]))
-            l_w = [item[0] / z for item in ll_feature]
-
-            f_dim = max(f_dim, len(ll_feature[0]))
 
         ll_h.append(l_h)
         ll_w.append(l_w)
@@ -148,28 +195,177 @@ def event_raw_io(l_line, spot_field=EVENT_SPOT_FIELD,
     return h_packed_data, m_label
 
 
+def _offset_hash(l_e, offset):
+    return [e + offset for e in l_e]
+
+
 def joint_raw_io(l_line,
+                 evm_offset,
                  entity_spot_field=SPOT_FIELD,
                  event_spot_field=EVENT_SPOT_FIELD,
                  in_field=body_field,
                  salience_gold_field=salience_gold,
                  max_e_per_d=200):
-    pass
+    """
+    Convert data to the input for the model, this one take both events and
+    entities, but not their features.
+
+    :param l_line:
+    :param evm_offset:
+    :param entity_spot_field:
+    :param event_spot_field:
+    :param in_field:
+    :param salience_gold_field:
+    :param max_e_per_d:
+    :return:
+    """
+    ll_h = []
+    ll_w = []
+    ll_label = []
+
+    for line in l_line:
+        h = json.loads(line)
+        entity_spots = h[entity_spot_field].get(in_field, {})
+        evm_spots = h[event_spot_field].get(in_field, {})
+
+        l_e, l_e_label, l_e_w = _get_entity_info(entity_spots,
+                                                 salience_gold_field,
+                                                 max_e_per_d, False)
+
+        l_evm_h, l_evm_label, l_evm_w = _get_event_info(evm_spots,
+                                                        salience_gold_field,
+                                                        max_e_per_d,
+                                                        False)
+
+        l_e_all = l_e + _offset_hash(l_evm_h, evm_offset)
+        l_label_all = l_e_label + l_evm_label
+        l_w = l_e_w + l_evm_w
+
+        if not l_e_all:
+            continue
+
+        ll_h.append(l_e_all)
+        ll_w.append(l_w)
+        ll_label.append(l_label_all)
+
+    ll_h = padding(ll_h, 0)
+    ll_w = padding(ll_w, 0)
+    ll_label = padding(ll_label, 0)
+    m_e = Variable(torch.LongTensor(ll_h)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_h))
+    m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_w))
+    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_label))
+
+    h_packed_data = {
+        "mtx_e": m_e,
+        "mtx_score": m_w
+    }
+    return h_packed_data, m_label
+
+
+def _combine_features(ll_feature_e, ll_feature_evm, e_dim, evm_dim, filler=0):
+    e_pads = [filler] * evm_dim
+    evm_pads = [filler] * e_dim
+
+    for i in xrange(len(ll_feature_e)):
+        if ll_feature_e[i]:
+            ll_feature_e[i] = ll_feature_e[i] + e_pads
+        else:
+            ll_feature_e[i] = e_pads + evm_pads
+    for i in xrange(len(ll_feature_evm)):
+        if ll_feature_evm[i]:
+            ll_feature_evm[i] = evm_pads + ll_feature_evm[i]
+        else:
+            ll_feature_evm[i] = e_pads + evm_pads
+
+    return ll_feature_e + ll_feature_evm
 
 
 def joint_feature_io(l_line,
+                     evm_offset,
+                     e_feature_dim,
+                     evm_feature_dim,
                      entity_spot_field=SPOT_FIELD,
                      event_spot_field=EVENT_SPOT_FIELD,
                      in_field=body_field,
                      salience_gold_field=salience_gold,
                      max_e_per_d=200):
-    pass
+    """
+    io with events and entities with their corresponding feature matrices
+    :param l_line:
+    :param evm_offset:
+    :param e_feature_dim:
+    :param evm_feature_dim:
+    :param entity_spot_field:
+    :param event_spot_field:
+    :param in_field:
+    :param salience_gold_field:
+    :param max_e_per_d:
+    :return:
+    """
+    ll_h = []  # List for frames.
+    lll_feature = []
+    ll_label = []
+    f_dim = e_feature_dim + evm_feature_dim
+
+    for line in l_line:
+        h = json.loads(line)
+        entity_spots = h[entity_spot_field].get(in_field, {})
+        l_e, l_e_label, ll_e_feat = _get_entity_info(entity_spots,
+                                                     salience_gold_field,
+                                                     max_e_per_d,
+                                                     True)
+        event_spots = h[event_spot_field].get(in_field, {})
+        l_evm_h, l_evm_label, ll_evm_feat = _get_event_info(event_spots,
+                                                            salience_gold_field,
+                                                            max_e_per_d,
+                                                            True)
+
+        l_e_all = l_e + _offset_hash(l_evm_h, evm_offset)
+
+        if not l_e_all:
+            continue
+
+        l_label_all = l_e_label + l_evm_label
+        ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat, e_feature_dim,
+                                        evm_feature_dim)
+
+        ll_label.append(l_label_all)
+        ll_h.append(l_e_all)
+        lll_feature.append(ll_feat_all)
+
+    ll_h = padding(ll_h, 0)
+    ll_label = padding(ll_label, 0)
+    lll_feature = padding(lll_feature, [0] * f_dim)
+
+    # We use event head word in place of entity id.
+    m_h = Variable(torch.LongTensor(ll_h)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_h))
+    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_label))
+    ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(lll_feature))
+
+    h_packed_data = {
+        "mtx_e": m_h,
+        "ts_feature": ts_feature
+    }
+    return h_packed_data, m_label
 
 
 def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
                      salience_gold_field=salience_gold, max_e_per_d=200):
     """
-    io with events and corresponding feature matrices
+    Io with events and corresponding feature matrices.
+
+    :param l_line:
+    :param spot_field:
+    :param in_field:
+    :param salience_gold_field:
+    :param max_e_per_d:
+    :return:
     """
     ll_h = []  # List for frames.
     lll_feature = []
@@ -179,34 +375,14 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
     for line in l_line:
         h = json.loads(line)
         event_spots = h[spot_field].get(in_field, {})
-        l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
-        ll_feature = event_spots.get('features', [])
-
-        # Take a subset of event features for memory issue.
-        # We put -2 to the first position because it is frequency.
-        # headcount, sentence loc, event voting, entity voting,
-        # ss entity vote aver, ss entity vote max, ss entity vote min
-        ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
-
-        # Take label from salience field.
-        test_label = event_spots.get(salience_gold_field, [0] * len(l_h))
-        l_label = [1 if label == 1 else -1 for label in test_label]
-
+        l_h, l_label, ll_feature = _get_event_info(event_spots,
+                                                   salience_gold_field,
+                                                   max_e_per_d,
+                                                   True)
         if not l_h:
             continue
 
-        if ll_feature:
-            # Now take the most frequent events based on the feature.
-            # Here we assume the first element in the feature is always
-            # frequency count. Otherwise you are filtering the events with some
-            # other features.
-            most_freq_indices = get_frequency_mask(ll_feature, max_e_per_d)
-            l_h = apply_mask(l_h, most_freq_indices)
-            ll_feature = apply_mask(ll_feature, most_freq_indices)
-            l_label = apply_mask(l_label, most_freq_indices)
-
-            f_dim = max(f_dim, len(ll_feature[0]))
-
+        f_dim = max(f_dim, len(ll_feature[0]))
         ll_label.append(l_label)
         ll_h.append(l_h)
         lll_feature.append(ll_feature)
@@ -231,12 +407,10 @@ def event_feature_io(l_line, spot_field=EVENT_SPOT_FIELD, in_field=body_field,
 
 
 def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
-               salience_gold=salience_gold, max_e_per_d=200):
+               salience_gold_field=salience_gold, max_e_per_d=200):
     """
     io with pre-filtered entity list and feature matrices
     """
-    # TODO This function didn't do max_e filter.
-
     ll_e = []
     lll_feature = []
     ll_label = []
@@ -245,18 +419,18 @@ def feature_io(l_line, spot_field=SPOT_FIELD, in_field=body_field,
     for line in l_line:
         h = json.loads(line)
         packed = h[spot_field].get(in_field, {})
-        l_e = packed.get('entities', [])
-        ll_feature = packed.get('features', [])
+
+        l_e, l_label, ll_feature = _get_entity_info(packed, salience_gold_field,
+                                                    max_e_per_d, True)
+
         if not l_e:
             continue
+
         if ll_feature:
             f_dim = max(f_dim, len(ll_feature[0]))
-        # Take label from salience field.
-        test_label = packed.get(salience_gold, [0] * len(l_e))
-        l_label = [1 if label == 1 else -1 for label in test_label]
+
         ll_e.append(l_e)
         ll_label.append(l_label)
-
         lll_feature.append(ll_feature)
 
     ll_e = padding(ll_e, 0)
