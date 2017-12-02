@@ -200,6 +200,8 @@ def _offset_hash(l_e, offset):
 
 
 def joint_raw_io(l_line,
+                 e_feature_dim,
+                 evm_feature_dim,
                  evm_offset,
                  entity_spot_field=SPOT_FIELD,
                  event_spot_field=EVENT_SPOT_FIELD,

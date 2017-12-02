@@ -13,8 +13,10 @@ from knowledge4ir.utils.base_conf import TARGET_TEXT_FIELDS
 import pickle
 import random
 
+
 def load_qid_query(in_name):
-    l_qid_query = [line.split('#')[0].strip().split('\t') for line in open(in_name)]
+    l_qid_query = [line.split('#')[0].strip().split('\t') for line in
+                   open(in_name)]
     return l_qid_query
 
 
@@ -108,10 +110,12 @@ def dump_trec_ranking_with_score(ll_qid_ranking, out_name):
                 score
             )
     out.close()
-    logging.info('[%d] query ranking dumped to [%s]', len(ll_qid_ranking), out_name)
+    logging.info('[%d] query ranking dumped to [%s]', len(ll_qid_ranking),
+                 out_name)
 
 
-def dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, method_name='na', l_comment=[]):
+def dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name,
+                                     method_name='na', l_comment=[]):
     l_data = zip(l_qid, zip(l_docno, l_score))
     l_data.sort(key=lambda item: (int(item[0]), -item[1][1]))
     h_doc_comment = dict()
@@ -127,7 +131,7 @@ def dump_trec_out_from_ranking_score(l_qid, l_docno, l_score, out_name, method_n
         if qid != this_qid:
             rank_p = 1
             this_qid = qid
-        res = '%s Q0 %s %d %f # %s' %(
+        res = '%s Q0 %s %d %f # %s' % (
             qid, docno, rank_p, score,
             method_name,
         )
@@ -196,31 +200,35 @@ def set_basic_log(log_level=logging.INFO):
     root = logging.getLogger()
     root.setLevel(log_level)
     ch = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     root.addHandler(ch)
 
 
-def set_log_with_elastic(log_level, out_dir=ROOT_PATH+'/tmp/log/'):
+def set_log_with_elastic(log_level, out_dir=ROOT_PATH + '/tmp/log/'):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     es_logger = logging.getLogger('elasticsearch')
     es_logger.propagate = False
     es_logger.setLevel(logging.INFO)
-    es_logger_handler = logging.handlers.RotatingFileHandler(out_dir + '/elastic-base.log',
-                                                           maxBytes=0.5*10**7,
-                                                           backupCount=10)
+    es_logger_handler = logging.handlers.RotatingFileHandler(
+        out_dir + '/elastic-base.log',
+        maxBytes=0.5 * 10 ** 7,
+        backupCount=10)
     es_logger_handler.setFormatter(formatter)
     es_logger.addHandler(es_logger_handler)
 
     es_tracer = logging.getLogger('elasticsearch.trace')
     es_tracer.propagate = False
     es_tracer.setLevel(logging.INFO)
-    es_tracer_handler=logging.handlers.RotatingFileHandler(out_dir + '/elastic-full.log',
-                                                           maxBytes=0.5*10**7,
-                                                           backupCount=10)
+    es_tracer_handler = logging.handlers.RotatingFileHandler(
+        out_dir + '/elastic-full.log',
+        maxBytes=0.5 * 10 ** 7,
+        backupCount=10)
     # es_tracer_handler.setFormatter(formatter)
     es_tracer.addHandler(es_tracer_handler)
 
@@ -228,10 +236,11 @@ def set_log_with_elastic(log_level, out_dir=ROOT_PATH+'/tmp/log/'):
     logger.propagate = False
     logger.setLevel(log_level)
     if log_level <= logging.DEBUG:
-    # create file handler
-        file_handler = logging.handlers.RotatingFileHandler(out_dir + '/full.log',
-                                                           maxBytes=10**6,
-                                                           backupCount=10)
+        # create file handler
+        file_handler = logging.handlers.RotatingFileHandler(
+            out_dir + '/full.log',
+            maxBytes=10 ** 6,
+            backupCount=10)
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -317,9 +326,9 @@ def dump_svm_feature(l_svm_data, out_name):
     :return:
     """
     out = open(out_name, 'w')
-    l_svm_data.sort(key=lambda item: int(item['qid'])) # sort
+    l_svm_data.sort(key=lambda item: int(item['qid']))  # sort
     for svm_data in l_svm_data:
-        print >>out, _dumps_svm_line(svm_data)
+        print >> out, _dumps_svm_line(svm_data)
     out.close()
     logging.info('dump [%d] svm line to [%s]', len(l_svm_data), out_name)
     return
@@ -442,7 +451,8 @@ def get_rel_ndcg(eva_res, base_eva_res):
     return h_q_rel_ndcg
 
 
-def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None, normalize=True):
+def rm3(ranking, l_doc_h_tf, l_doc_h_df=None, total_df=None, h_total_df=None,
+        normalize=True):
     """
     rm3 model
     if h_doc_df and total_df is None, will only use tf part
@@ -593,7 +603,8 @@ def load_json_info(in_name, key_field='docno', unpack=True):
         l_key = [h[key_field] for h in l_h]
         h_info = dict(zip(l_key, l_h))
     else:
-        logging.info('delay unpack json string at run time, return key->line mapping')
+        logging.info(
+            'delay unpack json string at run time, return key->line mapping')
         h_info = {}
         for line in open(in_name):
             h_info[json.loads(line)[key_field]] = line.strip()
@@ -656,7 +667,8 @@ def log_sum_feature(l_h_feature):
     h_res = dict()
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
-            h_res[key + "_LogSum"] = math.log(max(v, math.exp(-20))) + h_res.get(key, 0)
+            h_res[key + "_LogSum"] = math.log(
+                max(v, math.exp(-20))) + h_res.get(key, 0)
     return h_res
 
 
