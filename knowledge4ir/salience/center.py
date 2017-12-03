@@ -409,9 +409,11 @@ class SalienceModelCenter(Configurable):
         if self.h_model_io[self.model_name] == raw_io:
             l_e = h[self.spot_field].get(self.in_field, [])
         elif self.event_model:
-            l_e = h[self.spot_field].get(self.in_field, {}).get('salience')
+            l_e = h[self.event_spot_field].get(self.in_field, {}).get(
+                'salience')
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
+
         return not l_e
 
     def _data_io(self, l_line):

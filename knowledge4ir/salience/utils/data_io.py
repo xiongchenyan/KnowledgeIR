@@ -178,6 +178,9 @@ def event_raw_io(l_line, spot_field=EVENT_SPOT_FIELD,
         ll_w.append(l_w)
         ll_label.append(l_label)
 
+    if len(ll_h) == 0:
+        print l_line
+
     ll_h = padding(ll_h, 0)
     ll_w = padding(ll_w, 0)
     ll_label = padding(ll_label, 0)
