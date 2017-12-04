@@ -45,17 +45,13 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
     ll_label = []
     for line in l_line:
         h = json.loads(line)
-        l_e = h[spot_field].get(in_field, [])
-        # Take label from salience field.
-        test_label = h.get(salience_gold_field, [0] * len(l_e))
-        l_label_org = [1 if label == 1 else -1 for label in test_label]
-        s_labels = dict(zip(l_e, l_label_org))
-
-        l_e, l_w = get_top_k_e(l_e, max_e_per_d)
-        l_label = [s_labels[e] for e in l_e]
+        entity_spots = h[spot_field].get(in_field, {})
+        l_e, l_e_label, l_e_w = _get_entity_info(entity_spots,
+                                                 salience_gold_field,
+                                                 max_e_per_d, False)
         ll_e.append(l_e)
-        ll_w.append(l_w)
-        ll_label.append(l_label)
+        ll_w.append(l_e_w)
+        ll_label.append(l_e_label)
 
     ll_e = padding(ll_e, 0)
     ll_w = padding(ll_w, 0)

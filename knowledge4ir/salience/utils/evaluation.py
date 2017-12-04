@@ -34,63 +34,53 @@ def evaluate_json_joint(docs, f_predict, entity_vocab_size):
         p = 0
         skip = 0
 
-        try:
-            inline = origin.next()
-            pred_line = pred.next()
+        while True:
+            try:
+                inline = origin.next()
+                pred_line = pred.next()
 
-            p += 1
-            doc = json.loads(inline)
-            predict_res = json.loads(pred_line)
+                p += 1
+                doc = json.loads(inline)
+                predict_res = json.loads(pred_line)
 
-            gold_doc = doc['docno']
-            pred_doc = predict_res['docno']
-
-            print gold_doc
-            print pred_doc
-
-            while not gold_doc == pred_doc:
-                skip += 1
-                doc = json.loads(origin.next())
                 gold_doc = doc['docno']
-                print ''
-                print p
-                print "Origin is %s" % gold_doc
-                print "Pred is %s" % pred_doc
-                import sys
-                sys.stdin.readline()
+                pred_doc = predict_res['docno']
 
-            l_e = doc['spot']['bodyText']['entities']
-            l_label_e = doc['spot']['bodyText']['salience']
-            s_e_label = dict(zip(l_e, l_label_e))
+                while not gold_doc == pred_doc:
+                    # Some results may have skipped empty lines.
+                    skip += 1
+                    doc = json.loads(origin.next())
+                    gold_doc = doc['docno']
 
-            l_evm = doc['event']['bodyText']['sparse_features'].get(
-                'LexicalHead', [])
-            l_label_evm = doc['event']['bodyText']['salience']
-            s_evm_label = dict(zip(l_evm, l_label_evm))
+                l_e = doc['spot']['bodyText']['entities']
+                l_label_e = doc['spot']['bodyText']['salience']
+                s_e_label = dict(zip(l_e, l_label_e))
 
-            l_e_pack, l_evm_pack = split_joint_list(entity_vocab_size,
-                                                    predict_res['predict'],
-                                                    s_e_label, s_evm_label)
+                l_evm = doc['event']['bodyText']['sparse_features'].get(
+                    'LexicalHead', [])
+                l_label_evm = doc['event']['bodyText']['salience']
+                s_evm_label = dict(zip(l_evm, l_label_evm))
 
-            if l_e_pack:
-                h_e = evaluator.evaluate(l_e_pack[0], l_e_pack[1])
-                e_p += 1
-                h_e_total_eva = add_svm_feature(h_e_total_eva, h_e)
+                l_e_pack, l_evm_pack = split_joint_list(entity_vocab_size,
+                                                        predict_res['predict'],
+                                                        s_e_label, s_evm_label)
 
-            if l_evm_pack:
-                h_evm = evaluator.evaluate(l_evm_pack[0], l_evm_pack[1])
-                evm_p += 1
-                h_evm_total_eva = add_svm_feature(h_evm_total_eva, h_evm)
+                if l_e_pack:
+                    h_e = evaluator.evaluate(l_e_pack[0], l_e_pack[1])
+                    e_p += 1
+                    h_e_total_eva = add_svm_feature(h_e_total_eva, h_e)
 
-            sys.stdout.write(
-                '\rEvaluated %d files, %d with entities and %d with events, '
-                '%d line skipped.' % (p, e_p, evm_p, skip))
+                if l_evm_pack:
+                    h_evm = evaluator.evaluate(l_evm_pack[0], l_evm_pack[1])
+                    evm_p += 1
+                    h_evm_total_eva = add_svm_feature(h_evm_total_eva, h_evm)
 
+                sys.stdout.write(
+                    '\rEvaluated %d files, %d with entities and %d with events,'
+                    ' %d line skipped.' % (p, e_p, evm_p, skip))
 
-        except StopIteration:
-            print("Stopped")
-            pass
-
+            except StopIteration:
+                break
         print('')
 
     h_e_mean_eva = {}

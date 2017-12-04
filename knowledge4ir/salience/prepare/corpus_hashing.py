@@ -170,8 +170,8 @@ class CorpusHasher(Configurable):
                 "salience": l_salience
             }
             if self.with_position:
-                ll_position = self._add_event_loc(l_ana)
-                this_field_data['loc'] = ll_position
+                ll_loc = [[ana['loc']] for ana in l_ana]
+                this_field_data['loc'] = ll_loc
             h_hashed['event'][field] = this_field_data
 
     def hash_per_info(self, h_info):
@@ -194,7 +194,6 @@ class CorpusHasher(Configurable):
         return h_hashed
 
     def process(self):
-
         out = open(self.out_name, 'w')
         open_func = gzip.open if self.corpus_in.endswith("gz") else open
         with open_func(self.corpus_in) as in_f:
@@ -270,11 +269,6 @@ class CorpusHasher(Configurable):
             ll_feature[p] += l_feature
 
         return ll_feature
-
-    def _add_event_loc(self, l_ana):
-        # There is no coreference for event, each event have one single loc.
-        ll_loc = [[ana['loc']] for ana in l_ana]
-        return ll_loc
 
     def _add_entity_loc(self, l_ana, valid_ids):
         l_ana_id = [self.h_entity_id.get(ana['id'], 0) for ana in l_ana]
