@@ -61,7 +61,6 @@ class KNRM(SalienceBaseModel):
         # )
         # logging.info('mtx embedding shape %s', json.dumps(mtx_embedding.size()))
         mtx_embedding = nn.functional.normalize(mtx_embedding, p=2, dim=-1)
-        logging.info('')
         trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
         trans_mtx = self.dropout(trans_mtx)
         return self.kp(trans_mtx, mtx_score)
