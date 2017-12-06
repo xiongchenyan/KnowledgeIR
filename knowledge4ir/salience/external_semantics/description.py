@@ -24,13 +24,13 @@ model:
 """
 
 
-import logging
-import numpy as np
 import json
+import logging
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
+
 from knowledge4ir.salience.knrm_vote import KNRM
 
 use_cuda = torch.cuda.is_available()
@@ -362,7 +362,4 @@ class LinearGlossCNNEmbedKNRM(KNRM):
         logging.debug('max pooled CNN Emb shape %s', json.dumps(cnn_emb.size()))
         return cnn_emb
 
-
-
-# class DuetGlossCNN
 
