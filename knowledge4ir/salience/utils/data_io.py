@@ -321,8 +321,8 @@ def duet_io(l_line, spot_field=SPOT_FIELD,
         if use_cuda else Variable(torch.FloatTensor(ll_label))
     m_word = Variable(torch.LongTensor(ll_words)).cuda() \
         if use_cuda else Variable(torch.LongTensor(ll_words))
-    m_word_score = Variable(torch.LongTensor(ll_word_score)).cuda() \
-        if use_cuda else Variable(torch.LongTensor(ll_word_score))
+    m_word_score = Variable(torch.FloatTensor(ll_word_score)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_word_score))
     h_packed_data = {
         "mtx_e": m_e,
         "mtx_score": m_w,
