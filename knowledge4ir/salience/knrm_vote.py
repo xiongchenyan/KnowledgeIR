@@ -6,7 +6,7 @@ import logging
 import numpy as np
 import torch
 import torch.nn as nn
-
+import json
 from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
 
 use_cuda = torch.cuda.is_available()
@@ -59,6 +59,7 @@ class KNRM(SalienceBaseModel):
         # mtx_embedding = mtx_embedding.div(
         #     torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
         # )
+        logging.info('mtx embedding shape %s', json.dumps(mtx_embedding.size()))
         mtx_embedding = nn.functional.normalize(mtx_embedding, p=2, dim=-1)
         logging.info('')
         trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
