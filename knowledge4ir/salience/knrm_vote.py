@@ -7,8 +7,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling, \
-    use_cuda
+from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
+
+use_cuda = torch.cuda.is_available()
 
 
 class KNRM(SalienceBaseModel):
@@ -25,7 +26,7 @@ class KNRM(SalienceBaseModel):
             self.embedding.weight.data.copy_(
                 torch.from_numpy(ext_data.entity_emb))
         if use_cuda:
-            logging.info('copying parameter to cuda')
+            logging.info('copying knrm parameter to cuda')
             self.embedding.cuda()
             self.kp.cuda()
             self.linear.cuda()
@@ -39,7 +40,6 @@ class KNRM(SalienceBaseModel):
         mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         return self._knrm_opt(mtx_embedding, mtx_score)
-
 
     def save_model(self, output_name):
         logging.info('saving knrm embedding and linear weights to [%s]',

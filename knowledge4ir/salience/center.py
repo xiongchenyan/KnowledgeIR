@@ -67,16 +67,16 @@ from knowledge4ir.salience.external_semantics.description import (
 from knowledge4ir.salience.external_semantics.nlss import (
     NlssCnnKnrm,
 )
-from knowledge4ir.salience.knrm_vote import (
-    KNRM,
-)
+from knowledge4ir.salience.knrm_vote import KNRM
+from knowledge4ir.salience.duet_knrm import DuetKNRM
 from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, \
     HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
     uw_io,
-    event_feature_io
+    event_feature_io,
+    duet_io,
 )
 from knowledge4ir.salience.utils.evaluation import SalienceEva
 from knowledge4ir.salience.utils.ranking_loss import (
@@ -120,6 +120,7 @@ class SalienceModelCenter(Configurable):
         'gloss_cnn': GlossCNNEmbedKNRM,
         'linear_gloss_cnn': LinearGlossCNNEmbedKNRM,
         'nlss_cnn': NlssCnnKnrm,
+        'duet_knrm': DuetKNRM,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -142,6 +143,7 @@ class SalienceModelCenter(Configurable):
         'gloss_cnn': raw_io,
         'linear_gloss_cnn': raw_io,
         'nlss_cnn': raw_io,
+        'duet_knrm': duet_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working

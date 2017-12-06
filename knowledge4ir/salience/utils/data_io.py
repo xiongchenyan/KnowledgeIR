@@ -292,6 +292,7 @@ def duet_io(l_line, spot_field=SPOT_FIELD,
     ll_e = []
     ll_score = []
     ll_words = []
+    ll_word_score = []
     ll_label = []
     for line in l_line:
         h = json.loads(line)
@@ -302,13 +303,16 @@ def duet_io(l_line, spot_field=SPOT_FIELD,
         ll_e.append(l_e)
         ll_score.append(l_score)
         ll_label.append(l_label)
-        l_word = h.get(in_field, [])[:max_w_per_d]
+        l_word = h.get(in_field, [])
+        l_word, l_word_score = get_top_k_e(l_word, max_w_per_d)
         ll_words.append(l_word)
+        ll_word_score.append(l_word_score)
 
     ll_e = padding(ll_e, 0)
     ll_score = padding(ll_score, 0)
     ll_label = padding(ll_label, 0)
     ll_words = padding(ll_words, 0)
+    ll_word_score = padding(ll_word_score, 0)
     m_e = Variable(torch.LongTensor(ll_e)).cuda() \
         if use_cuda else Variable(torch.LongTensor(ll_e))
     m_w = Variable(torch.FloatTensor(ll_score)).cuda() \
@@ -317,10 +321,13 @@ def duet_io(l_line, spot_field=SPOT_FIELD,
         if use_cuda else Variable(torch.FloatTensor(ll_label))
     m_word = Variable(torch.LongTensor(ll_words)).cuda() \
         if use_cuda else Variable(torch.LongTensor(ll_words))
+    m_word_score = Variable(torch.LongTensor(ll_word_score)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_word_score))
     h_packed_data = {
         "mtx_e": m_e,
         "mtx_score": m_w,
-        "mtx_w": m_word
+        "mtx_w": m_word,
+        "mtx_w_score": m_word_score,
     }
     return h_packed_data, m_label
 
