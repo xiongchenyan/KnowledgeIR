@@ -56,7 +56,7 @@ class DuetKNRM(KNRM):
         mtx_w_score = h_packed_data['mtx_w_score']
 
         e_emb = self.embedding(mtx_e)
-        w_emb = self.embedding(mtx_w)
+        w_emb = self.word_embedding(mtx_w)
 
         entity_vote_kernels = self._kernel_scores(e_emb, mtx_score)
         word_vote_kernels = self._kernel_vote(e_emb, w_emb, mtx_w_score)
