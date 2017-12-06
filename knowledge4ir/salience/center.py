@@ -158,7 +158,7 @@ class SalienceModelCenter(Configurable):
     salience_field = Unicode(abstract_field)
     spot_field = Unicode('spot')
     # A specific field is reserved to mark the salience answer.
-    salience_gold = Unicode(salience_gold)
+    # salience_gold = Unicode(salience_gold)
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
@@ -406,7 +406,7 @@ class SalienceModelCenter(Configurable):
 
     def _data_io(self, l_line):
         return self.h_model_io.get(self.model_name, raw_io)(
-            l_line, self.spot_field, self.in_field, self.salience_gold, self.max_e_per_doc
+            l_line, self.spot_field, self.in_field, self.salience_field, self.max_e_per_doc
 
         )
 
