@@ -20,7 +20,7 @@ use_cuda = torch.cuda.is_available()
 class DuetKNRM(KNRM):
     def __init__(self, para, ext_data=None):
         super(DuetKNRM, self).__init__(para, ext_data)
-        assert ext_data.word_emb
+        assert ext_data.word_emb is not None
         self.word_embedding = nn.Embedding(
             ext_data.word_emb.shape[0],
             ext_data.word_emb.shape[1],
