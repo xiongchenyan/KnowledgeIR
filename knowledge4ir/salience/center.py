@@ -137,6 +137,7 @@ class SalienceModelCenter(Configurable):
     in_field = Unicode(body_field)
     spot_field = Unicode('spot')
     event_spot_field = Unicode('event')
+    abstract_field = Unicode('abstract')
     # A specific field is reserved to mark the salience answer.
     salience_gold = Unicode(salience_gold)
 
@@ -269,7 +270,6 @@ class SalienceModelCenter(Configurable):
 
             # validation
             if validation_in_name:
-
                 if self._early_stop():
                     logging.info('early stopped at [%d] epoch', epoch)
                     break
@@ -426,6 +426,7 @@ class SalienceModelCenter(Configurable):
                 self.spot_field,
                 self.event_spot_field,
                 self.in_field,
+                self.abstract_field,
                 self.salience_gold,
                 self.max_e_per_doc
             )
@@ -433,8 +434,8 @@ class SalienceModelCenter(Configurable):
             spot_field = self.event_spot_field if self.event_model else \
                 self.spot_field
             return self.h_model_io[self.model_name](
-                l_line, spot_field, self.in_field, self.salience_gold,
-                self.max_e_per_doc
+                l_line, self.para.node_feature_dim, spot_field, self.in_field,
+                self.abstract_field, self.salience_gold, self.max_e_per_doc
             )
 
 
