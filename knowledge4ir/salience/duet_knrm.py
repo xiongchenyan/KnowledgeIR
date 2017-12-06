@@ -10,7 +10,7 @@ import logging
 import numpy as np
 import torch
 import torch.nn as nn
-
+import json
 from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
 from knowledge4ir.salience.knrm_vote import KNRM
 
@@ -74,7 +74,9 @@ class DuetKNRM(KNRM):
         return self.kp(trans_mtx, w_score)
 
     def _normalize(self, mtx_embedding):
-        mtx_embedding = mtx_embedding.div(
-            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
-        )
+        logging.info('normalize shape %s', json.dumps(mtx_embedding.size()))
+        z = torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
+        logging.info('z shape %s', json.dumps(z.size()))
+        mtx_embedding = mtx_embedding.div(z)
+
         return mtx_embedding
