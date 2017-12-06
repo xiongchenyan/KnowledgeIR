@@ -90,7 +90,7 @@ class DuetKNRM(KNRM):
 
 class WordKNRM(KNRM):
     def __init__(self, para, ext_data=None):
-        super(DuetKNRM, self).__init__(para, ext_data)
+        super(WordKNRM, self).__init__(para, ext_data)
         assert ext_data.word_emb is not None
         self.word_embedding = nn.Embedding(
             ext_data.word_emb.shape[0],
