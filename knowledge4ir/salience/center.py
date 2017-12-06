@@ -420,9 +420,7 @@ if __name__ == '__main__':
         load_py_config,
     )
 
-    set_basic_log(logging.DEBUG)
-
-
+    # set_basic_log(logging.DEBUG)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)

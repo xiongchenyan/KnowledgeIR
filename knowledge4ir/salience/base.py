@@ -108,13 +108,16 @@ class ExtData(Configurable):
         if self.entity_emb_in:
             logging.info("Input entity embedding shape is [%d,%d]",
                          self.entity_emb.shape[0], self.entity_emb.shape[1])
-            assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
-            assert nn_para.embedding_dim == self.entity_emb.shape[1]
+            if not nn_para.entity_vocab_size:
+                nn_para.entity_vocab_size = self.entity_emb.shape[0]
+                nn_para.embedding_dim = self.entity_emb.shape[1]
+            else:
+                assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
+                assert nn_para.embedding_dim == self.entity_emb.shape[1]
         else:
             logging.warn("Entity embedding not supplied, not asserting.")
             logging.info("Defined entity embedding shape is [%d,%d]",
                          nn_para.entity_vocab_size, nn_para.embedding_dim)
-
 
 
 class SalienceBaseModel(nn.Module):
