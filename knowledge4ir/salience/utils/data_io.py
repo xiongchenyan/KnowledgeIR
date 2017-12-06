@@ -15,8 +15,8 @@ from knowledge4ir.utils import (
     salience_gold
 )
 
-# use_cuda = torch.cuda.is_available()
-use_cuda = False
+use_cuda = torch.cuda.is_available()
+# use_cuda = False   # ?????
 
 
 def padding(ll, filler):
