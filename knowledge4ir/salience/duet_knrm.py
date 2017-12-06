@@ -66,15 +66,15 @@ class DuetKNRM(KNRM):
         return output
 
     def _kernel_vote(self, e_emb, w_emb, w_score):
-        e_emb = self._normalize(e_emb)
-        w_emb = self._normalize(w_emb)
+        e_emb = nn.functional.normalize(e_emb, p=2, dim=-1)
+        w_emb = nn.functional.normalize(w_emb, p=2, dim=-1)
 
         trans_mtx = torch.matmul(e_emb, w_emb.transpose(-2, -1))
         trans_mtx = self.dropout(trans_mtx)
         return self.kp(trans_mtx, w_score)
 
-    def _normalize(self, mtx_embedding):
-        return nn.functional.normalize(mtx_embedding, p=2, dim=-1)
+    # def _normalize(self, mtx_embedding):
+    #     return nn.functional.normalize(mtx_embedding, p=2, dim=-1)
         # logging.info('normalize shape %s', json.dumps(mtx_embedding.size()))
         # z = torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
         # logging.info('z shape %s', json.dumps(z.size()))
