@@ -34,10 +34,8 @@ def get_top_k_e(l_e, max_e_per_d):
     return l_e, l_w
 
 
-def raw_io(l_line, num_features, spot_field=SPOT_FIELD,
-           in_field=body_field, salience_field=abstract_field,
-           salience_gold_field=salience_gold,
-           max_e_per_d=200):
+def raw_io(l_line, spot_field=SPOT_FIELD,
+           in_field=body_field, salience_field=abstract_field, max_e_per_d=200):
     """
     convert data to the input for the model
     """
@@ -46,19 +44,17 @@ def raw_io(l_line, num_features, spot_field=SPOT_FIELD,
     ll_label = []
     for line in l_line:
         h = json.loads(line)
-        entity_spots = h[spot_field].get(in_field, {})
-        abstract_spots = h[spot_field].get(salience_field, {})
-        l_e, l_e_label, l_e_w = _get_entity_info(entity_spots, abstract_spots,
-                                                 salience_gold_field,
-                                                 max_e_per_d, 0)
+        l_e = h[spot_field].get(in_field, [])
+        l_e, l_w = get_top_k_e(l_e, max_e_per_d)
+        s_salient_e = set(h[spot_field].get(salience_field, []))
+        l_label = [1 if e in s_salient_e else -1 for e in l_e]
         ll_e.append(l_e)
-        ll_w.append(l_e_w)
-        ll_label.append(l_e_label)
+        ll_w.append(l_w)
+        ll_label.append(l_label)
 
     ll_e = padding(ll_e, 0)
     ll_w = padding(ll_w, 0)
     ll_label = padding(ll_label, 0)
-
     m_e = Variable(torch.LongTensor(ll_e)).cuda() \
         if use_cuda else Variable(torch.LongTensor(ll_e))
     m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
@@ -185,7 +181,6 @@ def event_raw_io(l_line, spot_field=EVENT_SPOT_FIELD,
         ll_h.append(l_h)
         ll_w.append(l_w)
         ll_label.append(l_label)
-
 
     ll_h = padding(ll_h, 0)
     ll_w = padding(ll_w, 0)

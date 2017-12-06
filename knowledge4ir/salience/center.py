@@ -98,8 +98,8 @@ class SalienceModelCenter(Configurable):
     max_e_per_doc = Int(200, help='max e per doc')
     event_model = Bool(False, help='Run event model').tag(config=True)
     joint_model = Bool(False, help='Run joint model').tag(config=True)
-    # input_format = Unicode('raw', help='input format: raw | featured').tag(
-    #     config=True)
+    input_format = Unicode('featured', help='input format: raw | featured').tag(
+        config=True)
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
@@ -158,6 +158,8 @@ class SalienceModelCenter(Configurable):
             logging.error("Please specify one mode only.")
             exit(1)
 
+        logging.info("Input format is [%s]" % self.input_format)
+
         self.evaluator = SalienceEva(**kwargs)
         self.model = None
         self._init_model()
@@ -178,22 +180,6 @@ class SalienceModelCenter(Configurable):
                 self._merge_para()
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
-
-        # deal with various IO type.
-        if self.h_model_io[self.model_name] == feature_io:
-            if self.event_model:
-                self.h_model_io[self.model_name] = event_feature_io
-                logging.info('using event model io')
-            elif self.joint_model:
-                self.h_model_io[self.model_name] = joint_feature_io
-                logging.info('using joint model io')
-        elif self.h_model_io[self.model_name] == raw_io:
-            if self.event_model:
-                self.h_model_io[self.model_name] = event_raw_io
-                logging.info('using event raw io')
-            elif self.joint_model:
-                self.h_model_io[self.model_name] = joint_raw_io
-                logging.info('using joint raw io')
 
     def _merge_para(self):
         """
@@ -406,19 +392,19 @@ class SalienceModelCenter(Configurable):
 
     def _filter_empty_line(self, line):
         h = json.loads(line)
-        if self.h_model_io[self.model_name] == raw_io:
+
+        if self.input_format == "raw":
             l_e = h[self.spot_field].get(self.in_field, [])
         elif self.event_model:
             l_e = h[self.event_spot_field].get(self.in_field, {}).get(
                 'salience')
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
-
         return not l_e
 
     def _data_io(self, l_line):
         if self.joint_model:
-            return self.h_model_io[self.model_name](
+            return joint_feature_io(
                 l_line,
                 self.para.e_feature_dim,
                 self.para.evm_feature_dim,
@@ -431,12 +417,20 @@ class SalienceModelCenter(Configurable):
                 self.max_e_per_doc
             )
         else:
-            spot_field = self.event_spot_field if self.event_model else \
-                self.spot_field
-            return self.h_model_io[self.model_name](
-                l_line, self.para.node_feature_dim, spot_field, self.in_field,
-                self.abstract_field, self.salience_gold, self.max_e_per_doc
-            )
+            if self.input_format == "raw":
+                if self.event_model:
+                    raise NotImplementedError(
+                        "Event model does not support raw data format.")
+                return raw_io(l_line, self.spot_field, self.in_field,
+                              self.abstract_field)
+            else:
+                spot_field = self.event_spot_field if self.event_model else \
+                    self.spot_field
+                io_func = event_feature_io if self.event_model else feature_io
+                return io_func(l_line, self.para.node_feature_dim, spot_field,
+                               self.in_field, self.abstract_field,
+                               self.salience_gold, self.max_e_per_doc
+                               )
 
 
 if __name__ == '__main__':
