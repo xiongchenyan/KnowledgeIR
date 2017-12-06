@@ -87,7 +87,7 @@ from knowledge4ir.utils import (
     body_field,
     abstract_field,
     add_svm_feature,
-    mutiply_svm_feature
+    mutiply_svm_feature,
     salience_gold
 )
 
