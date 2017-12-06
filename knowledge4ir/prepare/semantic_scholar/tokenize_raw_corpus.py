@@ -37,6 +37,7 @@ def tokenize_json_doc(in_name, out_name, l_fields):
     out.close()
     print "finished"
 
+
 if __name__ == '__main__':
     if 3 != len(sys.argv):
         print "tokenize s2 corpus to be tagged"
