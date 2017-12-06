@@ -22,8 +22,10 @@ hyper-parameters:
 import json
 import logging
 import math
+
 import os
 import numpy as np
+
 import torch
 from traitlets import (
     Unicode,
@@ -33,7 +35,6 @@ from traitlets import (
     Bool
 )
 from traitlets.config import Configurable
-
 from knowledge4ir.salience.base import NNPara, ExtData
 from knowledge4ir.salience.baseline.node_feature import (
     FrequencySalience,
@@ -53,6 +54,19 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
+from knowledge4ir.salience.knrm_vote import KNRM
+from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
+from knowledge4ir.salience.external_semantics import (
+    GlossCNNEmbedKNRM,
+)
+from knowledge4ir.salience.external_semantics.description import (
+    DespWordAvgEmbKNRM,
+    DespSentRNNEmbedKNRM,
+    LinearGlossCNNEmbedKNRM,
+)
+from knowledge4ir.salience.external_semantics.nlss import (
+    NlssCnnKnrm,
+)
 from knowledge4ir.salience.knrm_vote import (
     KNRM,
 )
@@ -69,10 +83,11 @@ from knowledge4ir.salience.utils.ranking_loss import (
     hinge_loss,
     pairwise_loss,
 )
-from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
 from knowledge4ir.utils import (
     body_field,
     abstract_field,
+    add_svm_feature,
+    mutiply_svm_feature
     salience_gold
 )
 
@@ -81,7 +96,7 @@ use_cuda = torch.cuda.is_available()
 
 class SalienceModelCenter(Configurable):
     learning_rate = Float(1e-3, help='learning rate').tag(config=True)
-    pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
+    # pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
     model_name = Unicode(help="model name: trans").tag(config=True)
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
@@ -100,6 +115,11 @@ class SalienceModelCenter(Configurable):
         'feature_lr': FeatureLR,
         'knrm': KNRM,
         'linear_kcrf': LinearKernelCRF,
+        'desp_rnn': DespSentRNNEmbedKNRM,
+        'desp_word': DespWordAvgEmbKNRM,
+        'gloss_cnn': GlossCNNEmbedKNRM,
+        'linear_gloss_cnn': LinearGlossCNNEmbedKNRM,
+        'nlss_cnn': NlssCnnKnrm,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -117,6 +137,11 @@ class SalienceModelCenter(Configurable):
         'feature_lr': feature_io,
         'knrm': raw_io,
         'linear_kcrf': feature_io,
+        'desp_rnn': raw_io,
+        'desp_word': raw_io,
+        'gloss_cnn': raw_io,
+        'linear_gloss_cnn': raw_io,
+        'nlss_cnn': raw_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
@@ -159,6 +184,7 @@ class SalienceModelCenter(Configurable):
     def class_print_help(cls, inst=None):
         super(SalienceModelCenter, cls).class_print_help(inst)
         NNPara.class_print_help(inst)
+        ExtData.class_print_help(inst)
         SalienceEva.class_print_help(inst)
 
     def _init_model(self):
@@ -379,9 +405,9 @@ class SalienceModelCenter(Configurable):
         return not l_e
 
     def _data_io(self, l_line):
-        return self.h_model_io[self.model_name](
-            l_line, self.spot_field, self.in_field, self.salience_gold,
-            self.max_e_per_doc
+        return self.h_model_io.get(self.model_name, raw_io)(
+            l_line, self.spot_field, self.in_field, self.salience_gold, self.max_e_per_doc
+
         )
 
 
@@ -395,12 +421,14 @@ if __name__ == '__main__':
     set_basic_log(logging.DEBUG)
 
 
+
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
         test_out = Unicode(help='test res').tag(config=True)
         valid_in = Unicode(help='validation in').tag(config=True)
         model_out = Unicode(help='model dump out name').tag(config=True)
+        log_level = Unicode('INFO', help='log level').tag(config=True)
 
 
     if 2 != len(sys.argv):
@@ -412,6 +440,9 @@ if __name__ == '__main__':
 
     conf = load_py_config(sys.argv[1])
     para = Main(config=conf)
+
+    set_basic_log(logging.getLevelName(para.log_level))
+
     model = SalienceModelCenter(config=conf)
     model.train(para.train_in, para.valid_in, para.model_out)
     model.predict(para.test_in, para.test_out)

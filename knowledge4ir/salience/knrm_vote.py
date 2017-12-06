@@ -38,17 +38,8 @@ class KNRM(SalienceBaseModel):
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
-        mtx_embedding = mtx_embedding.div(
-            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(
-                mtx_embedding) + 1e-8
-        )
+        return self._knrm_opt(mtx_embedding, mtx_score)
 
-        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
-        trans_mtx = self.dropout(trans_mtx)
-        kp_mtx = self.kp(trans_mtx, mtx_score)
-        output = self.linear(kp_mtx)
-        output = output.squeeze(-1)
-        return output
 
     def save_model(self, output_name):
         logging.info('saving knrm embedding and linear weights to [%s]',
@@ -57,3 +48,17 @@ class KNRM(SalienceBaseModel):
         np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
         np.save(open(output_name + '.linear.npy', 'w'),
                 self.linear.weight.data.cpu().numpy())
+
+    def _knrm_opt(self, mtx_embedding, mtx_score):
+        kp_mtx = self._kernel_scores(mtx_embedding, mtx_score)
+        output = self.linear(kp_mtx)
+        output = output.squeeze(-1)
+        return output
+
+    def _kernel_scores(self, mtx_embedding, mtx_score):
+        mtx_embedding = mtx_embedding.div(
+            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
+        )
+        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
+        trans_mtx = self.dropout(trans_mtx)
+        return self.kp(trans_mtx, mtx_score)

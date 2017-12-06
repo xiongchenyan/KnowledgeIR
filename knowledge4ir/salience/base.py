@@ -17,7 +17,6 @@ from traitlets import (
 import numpy as np
 from traitlets.config import Configurable
 
-# from knowledge4ir.salience.knrm_vote import use_cuda
 use_cuda = torch.cuda.is_available()
 
 
@@ -40,6 +39,8 @@ class NNPara(Configurable):
     # word_emb_in = Unicode(
     #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
     # ).tag(config=True)
+    desp_sent_len = Int(20, help='the first k words to use in the description').tag(config=True)
+    kernel_size = Int(3, help='sentence CNN kernel size').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
@@ -72,32 +73,38 @@ class ExtData(Configurable):
 
     def __init__(self, **kwargs):
         super(ExtData, self).__init__(**kwargs)
-        self.entity_emb = np.zeros((0, 0))
-        self.word_emb = np.zeros((0, 0))
-        self.entity_desp = np.zeros((0, 0))
-        self.entity_rdf = np.zeros((0, 0, 0))
-        self.entity_nlss = np.zeros((0, 0, 0))
+        self.entity_emb = None
+        self.word_emb = None
+        self.entity_desp = None
+        self.entity_rdf = None
+        self.entity_nlss = None
         self._load()
 
     def _load(self):
         if self.entity_emb_in:
             logging.info('loading entity_emb_in [%s]', self.entity_emb_in)
             self.entity_emb = np.load(self.entity_emb_in)
+            logging.info('shape %s', json.dumps(self.entity_emb.shape))
         if self.word_emb_in:
             logging.info('loading word_emb_in [%s]', self.word_emb_in)
             self.word_emb = np.load(self.word_emb_in)
+            logging.info('shape %s', json.dumps(self.word_emb.shape))
         if self.entity_desp_in:
             logging.info('loading entity_desp_in [%s]', self.entity_desp_in)
             self.entity_desp = np.load(self.entity_desp_in)
+            logging.info('shape %s', json.dumps(self.entity_desp.shape))
         if self.entity_rdf_in:
             logging.info('loading entity_rdf_in [%s]', self.entity_rdf_in)
             self.entity_rdf = np.load(self.entity_rdf_in)
+            logging.info('shape %s', json.dumps(self.entity_rdf.shape))
         if self.entity_nlss_in:
             logging.info('loading entity_nlss_in [%s]', self.entity_nlss_in)
             self.entity_nlss = np.load(self.entity_nlss_in)
+            logging.info('shape %s', json.dumps(self.entity_nlss.shape))
         logging.info('ext data loaded')
 
     def assert_with_para(self, nn_para):
+
         if self.entity_emb_in:
             logging.info("Input entity embedding shape is [%d,%d]",
                          self.entity_emb.shape[0], self.entity_emb.shape[1])
@@ -107,6 +114,7 @@ class ExtData(Configurable):
             logging.warn("Entity embedding not supplied, not asserting.")
             logging.info("Defined entity embedding shape is [%d,%d]",
                          nn_para.entity_vocab_size, nn_para.embedding_dim)
+
 
 
 class SalienceBaseModel(nn.Module):
