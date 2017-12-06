@@ -74,9 +74,10 @@ class DuetKNRM(KNRM):
         return self.kp(trans_mtx, w_score)
 
     def _normalize(self, mtx_embedding):
-        logging.info('normalize shape %s', json.dumps(mtx_embedding.size()))
-        z = torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
-        logging.info('z shape %s', json.dumps(z.size()))
-        mtx_embedding = mtx_embedding.div(z)
-
-        return mtx_embedding
+        return nn.functional.normalize(mtx_embedding, p=2, dim=-1)
+        # logging.info('normalize shape %s', json.dumps(mtx_embedding.size()))
+        # z = torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
+        # logging.info('z shape %s', json.dumps(z.size()))
+        # mtx_embedding = mtx_embedding.div(z)
+        #
+        # return mtx_embedding

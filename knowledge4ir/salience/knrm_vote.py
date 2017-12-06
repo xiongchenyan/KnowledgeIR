@@ -56,9 +56,11 @@ class KNRM(SalienceBaseModel):
         return output
 
     def _kernel_scores(self, mtx_embedding, mtx_score):
-        mtx_embedding = mtx_embedding.div(
-            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
-        )
+        # mtx_embedding = mtx_embedding.div(
+        #     torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
+        # )
+        mtx_embedding = nn.functional.normalize(mtx_embedding, p=2, dim=-1)
+        logging.info('')
         trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
         trans_mtx = self.dropout(trans_mtx)
         return self.kp(trans_mtx, mtx_score)
