@@ -291,7 +291,7 @@ class LinearGlossCNNEmbedKNRM(KNRM):
         self.word_emb.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
         self.l_gloss_cnn = []
         self.l_gloss_linear = []
-        for k_size in para.l_kernel_size:
+        for k_size in para.l_cnn_length:
             self.l_gloss_cnn.append(torch.nn.Conv1d(
                 in_channels=para.embedding_dim,
                 out_channels=para.embedding_dim,
