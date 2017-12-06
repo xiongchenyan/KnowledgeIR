@@ -7,13 +7,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
-
-use_cuda = torch.cuda.is_available()
+from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling, \
+    use_cuda
 
 
 class KNRM(SalienceBaseModel):
-
     def __init__(self, para, ext_data=None):
         super(KNRM, self).__init__(para, ext_data)
         l_mu, l_sigma = para.form_kernels()
@@ -24,7 +22,8 @@ class KNRM(SalienceBaseModel):
         self.dropout = nn.Dropout(p=para.dropout_rate)
         self.linear = nn.Linear(self.K, 1, bias=True)
         if ext_data.entity_emb is not None:
-            self.embedding.weight.data.copy_(torch.from_numpy(ext_data.entity_emb))
+            self.embedding.weight.data.copy_(
+                torch.from_numpy(ext_data.entity_emb))
         if use_cuda:
             logging.info('copying parameter to cuda')
             self.embedding.cuda()
@@ -41,8 +40,10 @@ class KNRM(SalienceBaseModel):
         mtx_embedding = self.embedding(mtx_e)
         return self._knrm_opt(mtx_embedding, mtx_score)
 
+
     def save_model(self, output_name):
-        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
+        logging.info('saving knrm embedding and linear weights to [%s]',
+                     output_name)
         emb_mtx = self.embedding.weight.data.cpu().numpy()
         np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
         np.save(open(output_name + '.linear.npy', 'w'),

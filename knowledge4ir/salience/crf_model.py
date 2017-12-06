@@ -16,6 +16,7 @@ import logging
 import json
 import torch.nn.functional as F
 import numpy as np
+
 use_cuda = torch.cuda.is_available()
 
 
@@ -39,8 +40,9 @@ class KernelCRF(KNRM):
                           json.dumps(ts_feature.size()), self.node_feature_dim)
         assert ts_feature.size()[-1] == self.node_feature_dim
         if mtx_e.size()[:2] != ts_feature.size()[:2]:
-            logging.error('e mtx and feature tensor shape do not match: %s != %s',
-                          json.dumps(mtx_e.size()), json.dumps(ts_feature.size()))
+            logging.error(
+                'e mtx and feature tensor shape do not match: %s != %s',
+                json.dumps(mtx_e.size()), json.dumps(ts_feature.size()))
         assert mtx_e.size()[:2] == ts_feature.size()[:2]
 
         node_score = F.relu(self.node_lr(ts_feature)).squeeze(-1)
@@ -52,7 +54,8 @@ class KernelCRF(KNRM):
         return output
 
     def save_model(self, output_name):
-        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
+        logging.info('saving knrm embedding and linear weights to [%s]',
+                     output_name)
         super(KernelCRF, self).save_model(output_name)
         np.save(open(output_name + '.node_lr.npy', 'w'),
                 self.node_lr.weight.data.cpu().numpy())
@@ -81,12 +84,14 @@ class LinearKernelCRF(KNRM):
                           json.dumps(ts_feature.size()), self.node_feature_dim)
         assert ts_feature.size()[-1] == self.node_feature_dim
         if mtx_e.size()[:2] != ts_feature.size()[:2]:
-            logging.error('e mtx and feature tensor shape do not match: %s != %s',
-                          json.dumps(mtx_e.size()), json.dumps(ts_feature.size()))
+            logging.error(
+                'e mtx and feature tensor shape do not match: %s != %s',
+                json.dumps(mtx_e.size()), json.dumps(ts_feature.size()))
         assert mtx_e.size()[:2] == ts_feature.size()[:2]
 
         node_score = F.tanh(self.node_lr(ts_feature))
-        mtx_score = ts_feature.narrow(-1, 0, 1).squeeze(-1)  # frequency is the first dim of feature, always
+        mtx_score = ts_feature.narrow(-1, 0, 1).squeeze(
+            -1)  # frequency is the first dim of feature, always
         h_mid_data = {
             "mtx_e": mtx_e,
             "mtx_score": mtx_score
@@ -98,7 +103,8 @@ class LinearKernelCRF(KNRM):
         return output
 
     def save_model(self, output_name):
-        logging.info('saving knrm embedding and linear weights to [%s]', output_name)
+        logging.info('saving knrm embedding and linear weights to [%s]',
+                     output_name)
         super(LinearKernelCRF, self).save_model(output_name)
         np.save(open(output_name + '.node_lr.npy', 'w'),
                 self.node_lr.weight.data.cpu().numpy())

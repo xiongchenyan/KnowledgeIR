@@ -23,12 +23,16 @@ import json
 import logging
 import math
 
+import os
+import numpy as np
+
 import torch
 from traitlets import (
     Unicode,
     Int,
     Float,
     List,
+    Bool
 )
 from traitlets.config import Configurable
 from knowledge4ir.salience.base import NNPara, ExtData
@@ -63,10 +67,16 @@ from knowledge4ir.salience.external_semantics.description import (
 from knowledge4ir.salience.external_semantics.nlss import (
     NlssCnnKnrm,
 )
+from knowledge4ir.salience.knrm_vote import (
+    KNRM,
+)
+from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, \
+    HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
     uw_io,
+    event_feature_io
 )
 from knowledge4ir.salience.utils.evaluation import SalienceEva
 from knowledge4ir.salience.utils.ranking_loss import (
@@ -78,6 +88,7 @@ from knowledge4ir.utils import (
     abstract_field,
     add_svm_feature,
     mutiply_svm_feature
+    salience_gold
 )
 
 use_cuda = torch.cuda.is_available()
@@ -90,10 +101,15 @@ class SalienceModelCenter(Configurable):
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
     batch_size = Int(128, help='number of documents per batch').tag(config=True)
-    loss_func = Unicode('hinge', help='loss function to use: hinge, pairwise').tag(config=True)
-    early_stopping_patient = Int(5, help='epochs before early stopping').tag(config=True)
+    loss_func = Unicode('hinge',
+                        help='loss function to use: hinge, pairwise').tag(
+        config=True)
+    early_stopping_patient = Int(5, help='epochs before early stopping').tag(
+        config=True)
     max_e_per_doc = Int(200, help='max e per doc')
-    # input_format = Unicode('raw', help='input format: raw | featured').tag(config=True)
+    event_model = Bool(False, help='Run event model').tag(config=True)
+    # input_format = Unicode('raw', help='input format: raw | featured').tag(
+    #     config=True)
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
@@ -110,9 +126,9 @@ class SalienceModelCenter(Configurable):
         'local_max_rnn': LocalRNNMaxSim,  # not working
         "trans": EmbPageRank,  # not working
         'EdgeCNN': EdgeCNN,  # not working
-        'lr': EmbeddingLR,   # not working
+        'lr': EmbeddingLR,  # not working
         'kernel_pr': KernelGraphWalk,  # not working
-        'highway_knrm': HighwayKCNN,   # not working
+        'highway_knrm': HighwayKCNN,  # not working
         'kcrf': KernelCRF,  # not working
     }
 
@@ -132,15 +148,17 @@ class SalienceModelCenter(Configurable):
         'local_max_rnn': uw_io,  # not working
         "trans": raw_io,  # not working
         'EdgeCNN': raw_io,  # not working
-        'lr': feature_io,   # not working
+        'lr': feature_io,  # not working
         'kernel_pr': raw_io,  # not working
-        'highway_knrm': raw_io,   # not working
+        'highway_knrm': raw_io,  # not working
         'kcrf': raw_io,  # not working
     }
 
     in_field = Unicode(body_field)
     salience_field = Unicode(abstract_field)
     spot_field = Unicode('spot')
+    # A specific field is reserved to mark the salience answer.
+    salience_gold = Unicode(salience_gold)
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
@@ -148,7 +166,7 @@ class SalienceModelCenter(Configurable):
         self.ext_data = ExtData(**kwargs)
         self.ext_data.assert_with_para(self.para)
         h_loss = {
-            "hinge": hinge_loss,    # hinge classification loss does not work
+            "hinge": hinge_loss,  # hinge classification loss does not work
             "pairwise": pairwise_loss,
         }
         self.criterion = h_loss[self.loss_func]
@@ -174,7 +192,15 @@ class SalienceModelCenter(Configurable):
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
-    def train(self, train_in_name, validation_in_name=None, model_out_name=None):
+        if self.h_model_io[self.model_name] == feature_io:
+            if self.event_model:
+                self.h_model_io[self.model_name] = event_feature_io
+
+        if self.event_model:
+            self.spot_field = 'event'
+
+    def train(self, train_in_name, validation_in_name=None,
+              model_out_name=None):
         """
         train using the given data
         will use each doc as the mini-batch for now
@@ -189,7 +215,8 @@ class SalienceModelCenter(Configurable):
             self._init_early_stopper(validation_in_name)
 
         optimizer = torch.optim.Adam(
-            filter(lambda model_para: model_para.requires_grad, self.model.parameters()),
+            filter(lambda model_para: model_para.requires_grad,
+                   self.model.parameters()),
             lr=self.learning_rate
         )
         l_epoch_loss = []
@@ -205,7 +232,8 @@ class SalienceModelCenter(Configurable):
                 data_cnt += 1
                 l_this_batch_line.append(line)
                 if len(l_this_batch_line) >= self.batch_size:
-                    this_loss = self._batch_train(l_this_batch_line, self.criterion, optimizer)
+                    this_loss = self._batch_train(l_this_batch_line,
+                                                  self.criterion, optimizer)
                     p += 1
                     total_loss += this_loss
                     logging.debug('[%d] batch [%f] loss', p, this_loss)
@@ -216,26 +244,34 @@ class SalienceModelCenter(Configurable):
                     l_this_batch_line = []
 
             if l_this_batch_line:
-                this_loss = self._batch_train(l_this_batch_line, self.criterion, optimizer)
+                this_loss = self._batch_train(l_this_batch_line, self.criterion,
+                                              optimizer)
                 p += 1
                 total_loss += this_loss
                 logging.debug('[%d] batch [%f] loss', p, this_loss)
                 assert not math.isnan(this_loss)
                 l_this_batch_line = []
 
-            logging.info('epoch [%d] finished with loss [%f] on [%d] batch [%d] doc',
-                         epoch, total_loss / p, p, data_cnt)
+            logging.info(
+                'epoch [%d] finished with loss [%f] on [%d] batch [%d] doc',
+                epoch, total_loss / p, p, data_cnt)
             l_epoch_loss.append(total_loss / p)
 
             # validation
             if validation_in_name:
+
                 if self._early_stop():
                     logging.info('early stopped at [%d] epoch', epoch)
                     break
 
-        logging.info('[%d] epoch done with loss %s', self.nb_epochs, json.dumps(l_epoch_loss))
+        logging.info('[%d] epoch done with loss %s', self.nb_epochs,
+                     json.dumps(l_epoch_loss))
 
         if model_out_name:
+            model_dir = os.path.dirname(model_out_name)
+            if not os.path.exists(model_dir):
+                os.makedirs(model_dir)
+
             self.model.save_model(model_out_name)
         return
 
@@ -246,7 +282,8 @@ class SalienceModelCenter(Configurable):
         logging.info('loading validation data from [%s]', validation_in_name)
         l_valid_lines = open(validation_in_name).read().splitlines()
         self.ll_valid_line = [l_valid_lines[i:i + self.batch_size]
-                              for i in xrange(0, len(l_valid_lines), self.batch_size)]
+                              for i in
+                              xrange(0, len(l_valid_lines), self.batch_size)]
         logging.info('validation with [%d] doc', len(l_valid_lines))
         self.best_valid_loss = sum([self._batch_test(l_one_batch)
                                     for l_one_batch in self.ll_valid_line]
@@ -263,13 +300,15 @@ class SalienceModelCenter(Configurable):
         elif this_valid_loss > self.best_valid_loss:
             self.patient_cnt += 1
             logging.info('valid loss increased [%.4f -> %.4f][%d]',
-                         self.best_valid_loss, this_valid_loss, self.patient_cnt)
+                         self.best_valid_loss, this_valid_loss,
+                         self.patient_cnt)
             if self.patient_cnt >= self.early_stopping_patient:
                 return True
         else:
             self.patient_cnt = 0
             logging.info('valid loss decreased [%.4f -> %.4f][%d]',
-                         self.best_valid_loss, this_valid_loss, self.patient_cnt)
+                         self.best_valid_loss, this_valid_loss,
+                         self.patient_cnt)
             self.best_valid_loss = this_valid_loss
         return False
 
@@ -291,6 +330,9 @@ class SalienceModelCenter(Configurable):
         :param label_out_name:
         :return:
         """
+        res_dir = os.path.dirname(label_out_name)
+        if not os.path.exists(res_dir):
+            os.makedirs(res_dir)
 
         out = open(label_out_name, 'w')
         logging.info('start predicting for [%s]', test_in_name)
@@ -307,9 +349,11 @@ class SalienceModelCenter(Configurable):
             p += 1
             h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
             if not p % 1000:
-                logging.info('predicted [%d] docs, eva %s', p, json.dumps(h_mean_eva))
+                logging.info('predicted [%d] docs, eva %s', p,
+                             json.dumps(h_mean_eva))
         h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
-        logging.info('finished predicted [%d] docs, eva %s', p, json.dumps(h_mean_eva))
+        logging.info('finished predicted [%d] docs, eva %s', p,
+                     json.dumps(h_mean_eva))
         json.dump(
             h_mean_eva,
             open(label_out_name + '.eval', 'w'),
@@ -354,13 +398,16 @@ class SalienceModelCenter(Configurable):
         h = json.loads(line)
         if self.h_model_io[self.model_name] == raw_io:
             l_e = h[self.spot_field].get(self.in_field, [])
+        elif self.h_model_io[self.model_name] == event_feature_io:
+            l_e = h[self.spot_field].get(self.in_field, {}).get('salience')
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
         return not l_e
 
     def _data_io(self, l_line):
         return self.h_model_io.get(self.model_name, raw_io)(
-            l_line, self.spot_field, self.in_field, self.salience_field, self.max_e_per_doc
+            l_line, self.spot_field, self.in_field, self.salience_gold, self.max_e_per_doc
+
         )
 
 
@@ -371,6 +418,10 @@ if __name__ == '__main__':
         load_py_config,
     )
 
+    set_basic_log(logging.DEBUG)
+
+
+
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
@@ -378,6 +429,7 @@ if __name__ == '__main__':
         valid_in = Unicode(help='validation in').tag(config=True)
         model_out = Unicode(help='model dump out name').tag(config=True)
         log_level = Unicode('INFO', help='log level').tag(config=True)
+
 
     if 2 != len(sys.argv):
         print "unit test model train test"

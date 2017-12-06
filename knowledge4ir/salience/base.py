@@ -23,15 +23,19 @@ use_cuda = torch.cuda.is_available()
 class NNPara(Configurable):
     embedding_dim = Int(help='embedding dimension').tag(config=True)
     entity_vocab_size = Int(help='total number of entities').tag(config=True)
-    nb_hidden_layers = Int(1, help='total number of hidden layers').tag(config=True)
+    nb_hidden_layers = Int(1, help='total number of hidden layers').tag(
+        config=True)
     nb_random_walk_steps = Int(1, help='random walk steps').tag(config=True)
     nb_mu = Int(10, help='number of mu').tag(config=True)
     first_k_mu = Int(help='first k mu to use').tag(config=True)
     sigma = Float(0.1, help='sigma').tag(config=True)
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
-    train_word_emb = Bool(False, help='whether train word embedding').tag(config=True)
+    train_word_emb = Bool(False, help='whether train word embedding').tag(
+        config=True)
     node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
-    l_hidden_dim = List(Int, default_value=[], help='multi layer DNN hidden dim').tag(config=True)
+    l_hidden_dim = List(Int, default_value=[],
+                        help='multi layer DNN hidden dim').tag(config=True)
+
     # word_emb_in = Unicode(
     #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
     # ).tag(config=True)
@@ -56,11 +60,16 @@ class ExtData(Configurable):
     """
     external data config and read
     """
-    entity_emb_in = Unicode(help='hashed numpy entity embedding path').tag(config=True)
-    word_emb_in = Unicode(help='hashed numpy word embedding in').tag(config=True)
+    entity_emb_in = Unicode(help='hashed numpy entity embedding path').tag(
+        config=True)
+    word_emb_in = Unicode(help='hashed numpy word embedding in').tag(
+        config=True)
     entity_desp_in = Unicode(help='hashed desp numpy array').tag(config=True)
-    entity_rdf_in = Unicode(help='hashed rdf triple numpy array').tag(config=True)
-    entity_nlss_in = Unicode(help='hashed entity natural language support sentence array').tag(config=True)
+    entity_rdf_in = Unicode(help='hashed rdf triple numpy array').tag(
+        config=True)
+    entity_nlss_in = Unicode(
+        help='hashed entity natural language support sentence array').tag(
+        config=True)
 
     def __init__(self, **kwargs):
         super(ExtData, self).__init__(**kwargs)
@@ -95,16 +104,20 @@ class ExtData(Configurable):
         logging.info('ext data loaded')
 
     def assert_with_para(self, nn_para):
-        if (not nn_para.embedding_dim) | (not nn_para.entity_vocab_size):
-            nn_para.entity_vocab_size, nn_para.embedding_dim = self.entity_emb.shape
-            logging.info('setting para using  entity emb mtx shape %s',
-                         json.dumps(self.entity_emb.shape))
-        assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
-        assert nn_para.embedding_dim == self.entity_emb.shape[1]
+
+        if self.entity_emb_in:
+            logging.info("Input entity embedding shape is [%d,%d]",
+                         self.entity_emb.shape[0], self.entity_emb.shape[1])
+            assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
+            assert nn_para.embedding_dim == self.entity_emb.shape[1]
+        else:
+            logging.warn("Entity embedding not supplied, not asserting.")
+            logging.info("Defined entity embedding shape is [%d,%d]",
+                         nn_para.entity_vocab_size, nn_para.embedding_dim)
+
 
 
 class SalienceBaseModel(nn.Module):
-
     def __init__(self, para, ext_data=None):
         """
         :param para: NNPara
@@ -137,6 +150,7 @@ class KernelPooling(nn.Module):
     output:
         n-K tensor, K is the v_mu.size(), number of kernels
     """
+
     def __init__(self, l_mu=None, l_sigma=None):
         super(KernelPooling, self).__init__()
         if l_mu is None:
@@ -162,6 +176,7 @@ class KernelPooling(nn.Module):
         mtx_score = mtx_score.unsqueeze(-1).unsqueeze(1)
         mtx_score = mtx_score.expand_as(kernel_value)
         weighted_kernel_value = kernel_value * mtx_score
-        sum_kernel_value = torch.sum(weighted_kernel_value, dim=-2).clamp(min=1e-10)  # add entity freq/weight
+        sum_kernel_value = torch.sum(weighted_kernel_value, dim=-2).clamp(
+            min=1e-10)  # add entity freq/weight
         sum_kernel_value = torch.log(sum_kernel_value)
         return sum_kernel_value
