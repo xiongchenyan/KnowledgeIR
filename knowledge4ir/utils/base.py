@@ -260,7 +260,7 @@ def set_log_with_elastic(log_level, out_dir=ROOT_PATH + '/tmp/log/'):
 def load_py_config(in_name):
     reader = PyFileConfigLoader(in_name)
     reader.load_config()
-    logging.info('load from [%s] conf: %s', in_name, reader.config)
+    # logging.info('load from [%s] conf: %s', in_name, reader.config)
     return reader.config
 
 

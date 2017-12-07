@@ -9,7 +9,7 @@ output:
 
 import json
 import sys
-l_field = ['title', 'bodyText']
+l_field = ['paperAbstract']
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 

@@ -17,13 +17,11 @@ from traitlets import (
 import numpy as np
 from traitlets.config import Configurable
 
-# from knowledge4ir.salience.knrm_vote import use_cuda
 use_cuda = torch.cuda.is_available()
 
 
 class NNPara(Configurable):
     embedding_dim = Int(help='embedding dimension').tag(config=True)
-
     entity_vocab_size = Int(help='total number of entities').tag(config=True)
     event_vocab_size = Int(help='total number of events').tag(config=True)
 
@@ -41,6 +39,13 @@ class NNPara(Configurable):
     evm_feature_dim = Int(help='event feature dimension').tag(config=True)
     l_hidden_dim = List(Int, default_value=[],
                         help='multi layer DNN hidden dim').tag(config=True)
+
+    # word_emb_in = Unicode(
+    #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
+    # ).tag(config=True)
+    desp_sent_len = Int(20, help='the first k words to use in the description').tag(config=True)
+    kernel_size = Int(3, help='sentence CNN kernel size').tag(config=True)
+    l_cnn_length = List(Int, default_value=[1, 2, 3], help='sentence CNN sizes').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
@@ -81,40 +86,50 @@ class ExtData(Configurable):
 
     def __init__(self, **kwargs):
         super(ExtData, self).__init__(**kwargs)
-        self.entity_emb = np.zeros((0, 0))
-        self.word_emb = np.zeros((0, 0))
-        self.entity_desp = np.zeros((0, 0))
-        self.entity_rdf = np.zeros((0, 0, 0))
-        self.entity_nlss = np.zeros((0, 0, 0))
+        self.entity_emb = None
+        self.word_emb = None
+        self.entity_desp = None
+        self.entity_rdf = None
+        self.entity_nlss = None
         self._load()
 
     def _load(self):
         if self.entity_emb_in:
             logging.info('loading entity_emb_in [%s]', self.entity_emb_in)
             self.entity_emb = np.load(self.entity_emb_in)
+            logging.info('shape %s', json.dumps(self.entity_emb.shape))
         if self.event_emb_in:
             logging.info('loading event_emb_in [%s]', self.event_emb_in)
             self.event_emb = np.load(self.event_emb_in)
         if self.word_emb_in:
             logging.info('loading word_emb_in [%s]', self.word_emb_in)
             self.word_emb = np.load(self.word_emb_in)
+            logging.info('shape %s', json.dumps(self.word_emb.shape))
         if self.entity_desp_in:
             logging.info('loading entity_desp_in [%s]', self.entity_desp_in)
             self.entity_desp = np.load(self.entity_desp_in)
+            logging.info('shape %s', json.dumps(self.entity_desp.shape))
         if self.entity_rdf_in:
             logging.info('loading entity_rdf_in [%s]', self.entity_rdf_in)
             self.entity_rdf = np.load(self.entity_rdf_in)
+            logging.info('shape %s', json.dumps(self.entity_rdf.shape))
         if self.entity_nlss_in:
             logging.info('loading entity_nlss_in [%s]', self.entity_nlss_in)
             self.entity_nlss = np.load(self.entity_nlss_in)
+            logging.info('shape %s', json.dumps(self.entity_nlss.shape))
         logging.info('ext data loaded')
 
     def assert_with_para(self, nn_para):
+
         if self.entity_emb_in:
             logging.info("Input entity embedding shape is [%d,%d]",
                          self.entity_emb.shape[0], self.entity_emb.shape[1])
-            assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
-            assert nn_para.embedding_dim == self.entity_emb.shape[1]
+            if not nn_para.entity_vocab_size:
+                nn_para.entity_vocab_size = self.entity_emb.shape[0]
+                nn_para.embedding_dim = self.entity_emb.shape[1]
+            else:
+                assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
+                assert nn_para.embedding_dim == self.entity_emb.shape[1]
         elif self.event_emb_in:
             logging.info("Input event embedding shape is [%d,%d]",
                          self.event_emb.shape[0], self.event_emb.shape[1])
