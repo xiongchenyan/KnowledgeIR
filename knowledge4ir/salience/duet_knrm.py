@@ -256,3 +256,4 @@ class GlossCNNEmbDuet(DuetKNRM):
         )
         logging.debug('max pooled CNN Emb shape %s', json.dumps(cnn_emb.size()))
         return cnn_emb
+    

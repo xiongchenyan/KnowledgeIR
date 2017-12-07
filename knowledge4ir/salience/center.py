@@ -58,11 +58,10 @@ from knowledge4ir.salience.external_semantics import (
     GlossCNNEmbedKNRM,
 )
 from knowledge4ir.salience.external_semantics.description import (
-    DespWordAvgEmbKNRM,
-    DespSentRNNEmbedKNRM,
-    LinearGlossCNNEmbedKNRM,
-    MulGlossCNNKNRM,
+    GlossCNNKNRM,
 )
+from knowledge4ir.salience.external_semantics.depreciated import DespWordAvgEmbKNRM, DespSentRNNEmbedKNRM, \
+    LinearGlossCNNEmbedKNRM
 from knowledge4ir.salience.external_semantics.nlss import (
     NlssCnnKnrm,
 )
@@ -118,7 +117,7 @@ class SalienceModelCenter(Configurable):
         'desp_rnn': DespSentRNNEmbedKNRM,
         'desp_word': DespWordAvgEmbKNRM,
         'gloss_cnn': GlossCNNEmbedKNRM,
-        'mul_gloss_cnn': MulGlossCNNKNRM,
+        'mul_gloss_cnn': GlossCNNKNRM,
         'linear_gloss_cnn': LinearGlossCNNEmbedKNRM,
         'nlss_cnn': NlssCnnKnrm,
         'word_knrm': WordKNRM,
