@@ -284,7 +284,7 @@ class GlossCNNEmbDuet(DuetKNRM):
 
         ts_desp_emb = ts_desp_emb.view(ts_desp.size() + ts_desp_emb.size()[-1:])
         l_e_emb = [e_emb]
-        for cnn, linear in zip(self.l_gloss_cnn, self.l_gloss_linear):
+        for cnn in self.l_gloss_cnn:
             cnn_emb = self._sentence_cnn(ts_desp_emb, mtx_e, cnn)
             l_e_emb.append(cnn_emb)
 
