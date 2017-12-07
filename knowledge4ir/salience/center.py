@@ -67,7 +67,8 @@ from knowledge4ir.salience.external_semantics.nlss import (
     NlssCnnKnrm,
 )
 from knowledge4ir.salience.knrm_vote import KNRM
-from knowledge4ir.salience.duet_knrm import DuetKNRM, DuetGlossCNN, WordKNRM, GlossCNNEmbDuet
+from knowledge4ir.salience.duet_knrm import DuetKNRM, DuetGlossCNN, GlossCNNEmbDuet
+from knowledge4ir.salience.baseline.word_knrm import WordKNRM
 from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, \
     HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
