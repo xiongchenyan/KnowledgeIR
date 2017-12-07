@@ -40,12 +40,12 @@ class NNPara(Configurable):
     l_hidden_dim = List(Int, default_value=[],
                         help='multi layer DNN hidden dim').tag(config=True)
 
-    # word_emb_in = Unicode(
-    #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
-    # ).tag(config=True)
-    desp_sent_len = Int(20, help='the first k words to use in the description').tag(config=True)
+    desp_sent_len = Int(20,
+                        help='the first k words to use in the description').tag(
+        config=True)
     kernel_size = Int(3, help='sentence CNN kernel size').tag(config=True)
-    l_cnn_length = List(Int, default_value=[1, 2, 3], help='sentence CNN sizes').tag(config=True)
+    l_cnn_length = List(Int, default_value=[1, 2, 3],
+                        help='sentence CNN sizes').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]

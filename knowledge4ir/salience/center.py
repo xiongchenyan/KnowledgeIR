@@ -99,7 +99,7 @@ class SalienceModelCenter(Configurable):
     max_e_per_doc = Int(200, help='max e per doc')
     event_model = Bool(False, help='Run event model').tag(config=True)
     joint_model = Bool(False, help='Run joint model').tag(config=True)
-    input_format = Unicode('featured', help='input format: raw | featured').tag(
+    input_format = Unicode(help='overwrite input format: raw | featured').tag(
         config=True)
     h_model = {
         'frequency': FrequencySalience,
@@ -112,7 +112,6 @@ class SalienceModelCenter(Configurable):
         'duet_knrm': DuetKNRM,
         'duet_gloss': DuetGlossCNN,
         'gloss_enriched_duet': GlossCNNEmbDuet,
-
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -141,6 +140,11 @@ class SalienceModelCenter(Configurable):
         'lr': feature_io,  # not working
     }
 
+    h_event_model_io = {
+        'feature_lr': event_feature_io,
+        'knrm': event_feature_io,
+    }
+
     in_field = Unicode(body_field)
     spot_field = Unicode('spot')
     event_spot_field = Unicode('event')
@@ -165,7 +169,21 @@ class SalienceModelCenter(Configurable):
             logging.error("Please specify one mode only.")
             exit(1)
 
-        logging.info("Input format is [%s]" % self.input_format)
+        if self.input_format:
+            logging.info(
+                "Input format is overwritten to [%s]" % self.input_format)
+            if self.input_format == 'raw':
+                self.h_model_io[self.model_name] = raw_io
+            elif self.input_format == 'featured':
+                self.h_model_io[self.model_name] = feature_io
+            else:
+                logging.error("Unknown model type [%s]." % self.input_format)
+
+        else:
+            logging.info("No format overwrite.")
+
+        if self.event_model:
+            self.spot_field = self.event_spot_field
 
         self.evaluator = SalienceEva(**kwargs)
         self.model = None
@@ -423,21 +441,23 @@ class SalienceModelCenter(Configurable):
                 self.salience_gold,
                 self.max_e_per_doc
             )
+        elif self.event_model:
+            return self.h_event_model_io[self.model_name](
+                l_line, self.para.node_feature_dim,
+                self.spot_field, self.in_field,
+                self.abstract_field, self.salience_gold,
+                self.max_e_per_doc
+            )
         else:
-            if self.input_format == "raw":
-                if self.event_model:
-                    raise NotImplementedError(
-                        "Event model does not support raw data format.")
-                return raw_io(l_line, self.spot_field, self.in_field,
-                              self.abstract_field)
-            else:
-                spot_field = self.event_spot_field if self.event_model else \
-                    self.spot_field
-                io_func = event_feature_io if self.event_model else feature_io
-                return io_func(l_line, self.para.node_feature_dim, spot_field,
-                               self.in_field, self.abstract_field,
-                               self.salience_gold, self.max_e_per_doc
-                               )
+            return self.h_model_io[self.model_name](
+                l_line,
+                self.para.node_feature_dim,
+                self.spot_field,
+                self.in_field,
+                self.abstract_field,
+                self.salience_gold,
+                self.max_e_per_doc
+            )
 
 
 if __name__ == '__main__':
@@ -446,6 +466,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
+
 
     # set_basic_log(logging.INFO)
 

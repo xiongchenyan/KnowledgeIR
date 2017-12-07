@@ -34,8 +34,9 @@ def get_top_k_e(l_e, max_e_per_d):
     return l_e, l_w
 
 
-def raw_io(l_line, spot_field=SPOT_FIELD,
-           in_field=body_field, salience_field=abstract_field, max_e_per_d=200):
+def raw_io(l_line, num_features, spot_field=SPOT_FIELD,
+           in_field=body_field, salience_field=abstract_field,
+           salience_gold_field=salience_gold, max_e_per_d=200):
     """
     convert data to the input for the model
     """
@@ -392,7 +393,7 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
     :param spot_field: together with in_field, to get
     :param in_field:
     :param salience_field: to get label
-    :param max_e_per_d:
+    :param max_e_per_d: Number of maximum entities allowed.
     :return:
     """
     sent_len = 10
