@@ -390,7 +390,7 @@ class SalienceModelCenter(Configurable):
 
     def _filter_empty_line(self, line):
         h = json.loads(line)
-        if self.h_model_io[self.model_name] in (raw_io, duet_io):
+        if self.h_model_io[self.model_name] in (raw_io, duet_io, adj_edge_io):
             l_e = h[self.spot_field].get(self.in_field, [])
         elif self.h_model_io[self.model_name] == event_feature_io:
             l_e = h[self.spot_field].get(self.in_field, {}).get('salience')
