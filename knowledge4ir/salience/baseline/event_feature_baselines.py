@@ -30,6 +30,8 @@ class FeatureBasedBaseline(Configurable):
     event_model = Bool(False, help='Run event model').tag(config=True)
     feature_names = Unicode("", help="Comma seperated name of features").tag(
         config=True)
+    reverse_feature = Unicode("", help="List the features that should be "
+                                       "ranked reversely").tag(config=True)
     corpus_in = Unicode(help='input').tag(config=True)
     test_out = Unicode(help='output').tag(config=True)
 
@@ -51,12 +53,20 @@ class FeatureBasedBaseline(Configurable):
         self.evaluator = SalienceEva(**kwargs)
         self.feature_names_split = self.feature_names.split(",")
         self.feature_dim = len(self.feature_names_split)
+
+        reverse_f = set(self.reverse_feature.split(","))
+
+        # Mask to identify which features should be ranked reversely.
+        self.reverse_dim = []
+        for i, n in enumerate(self.feature_names_split):
+            self.reverse_dim.append(n in reverse_f)
+
         if self.feature_dim == 0:
             logging.error("You must provide feature names.")
         else:
             logging.info("Number of features to check: %d" % self.feature_dim)
 
-    def eval_per_dim(self, h_packed_data, m_label):
+    def eval_per_dim(self, h_packed_data, m_label, reverse_dim):
         features = np.squeeze(h_packed_data['ts_feature'].data.numpy(), axis=0)
         labels = np.squeeze(m_label.data.numpy(), axis=0)
 
@@ -64,6 +74,8 @@ class FeatureBasedBaseline(Configurable):
 
         for f_dim in range(features.shape[1]):
             values = features[:, f_dim]
+            if reverse_dim[f_dim]:
+                values = [0 - v for v in values]
             eval_res.append(self.evaluator.evaluate(values, labels))
 
         return eval_res
@@ -83,7 +95,8 @@ class FeatureBasedBaseline(Configurable):
                     [line], self.spot_field, self.in_field, self.salience_gold,
                     None
                 )
-                res = self.eval_per_dim(h_packed_data, m_label)
+                res = self.eval_per_dim(h_packed_data, m_label,
+                                        self.reverse_dim)
 
                 for dim, h_this_eva in enumerate(res):
                     l_h_total_eva[dim] = add_svm_feature(l_h_total_eva[dim],

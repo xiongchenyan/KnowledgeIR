@@ -23,6 +23,8 @@ use_cuda = torch.cuda.is_available()
 class NNPara(Configurable):
     embedding_dim = Int(help='embedding dimension').tag(config=True)
     entity_vocab_size = Int(help='total number of entities').tag(config=True)
+    event_vocab_size = Int(help='total number of events').tag(config=True)
+
     nb_hidden_layers = Int(1, help='total number of hidden layers').tag(
         config=True)
     nb_random_walk_steps = Int(1, help='random walk steps').tag(config=True)
@@ -32,16 +34,18 @@ class NNPara(Configurable):
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
     train_word_emb = Bool(False, help='whether train word embedding').tag(
         config=True)
-    node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
+    node_feature_dim = Int(0, help='node feature dimension').tag(config=True)
+    e_feature_dim = Int(help='entity feature dimension').tag(config=True)
+    evm_feature_dim = Int(help='event feature dimension').tag(config=True)
     l_hidden_dim = List(Int, default_value=[],
                         help='multi layer DNN hidden dim').tag(config=True)
 
-    # word_emb_in = Unicode(
-    #     help='pre trained word embedding, npy format, must be comparable with entity embedding'
-    # ).tag(config=True)
-    desp_sent_len = Int(20, help='the first k words to use in the description').tag(config=True)
+    desp_sent_len = Int(20,
+                        help='the first k words to use in the description').tag(
+        config=True)
     kernel_size = Int(3, help='sentence CNN kernel size').tag(config=True)
-    l_cnn_length = List(Int, default_value=[1, 2, 3], help='sentence CNN sizes').tag(config=True)
+    l_cnn_length = List(Int, default_value=[1, 2, 3],
+                        help='sentence CNN sizes').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
@@ -56,12 +60,20 @@ class NNPara(Configurable):
             l_sigma = l_sigma[:self.first_k_mu]
         return l_mu, l_sigma
 
+    def assert_para(self):
+        if self.e_feature_dim and self.evm_feature_dim:
+            assert self.node_feature_dim == self.e_feature_dim + \
+                                            self.evm_feature_dim
+
 
 class ExtData(Configurable):
     """
     external data config and read
     """
     entity_emb_in = Unicode(help='hashed numpy entity embedding path').tag(
+        config=True)
+    event_emb_in = Unicode(
+        help='hashed numpy event embedding path, only used when joint').tag(
         config=True)
     word_emb_in = Unicode(help='hashed numpy word embedding in').tag(
         config=True)
@@ -86,6 +98,9 @@ class ExtData(Configurable):
             logging.info('loading entity_emb_in [%s]', self.entity_emb_in)
             self.entity_emb = np.load(self.entity_emb_in)
             logging.info('shape %s', json.dumps(self.entity_emb.shape))
+        if self.event_emb_in:
+            logging.info('loading event_emb_in [%s]', self.event_emb_in)
+            self.event_emb = np.load(self.event_emb_in)
         if self.word_emb_in:
             logging.info('loading word_emb_in [%s]', self.word_emb_in)
             self.word_emb = np.load(self.word_emb_in)
@@ -115,6 +130,11 @@ class ExtData(Configurable):
             else:
                 assert nn_para.entity_vocab_size == self.entity_emb.shape[0]
                 assert nn_para.embedding_dim == self.entity_emb.shape[1]
+        elif self.event_emb_in:
+            logging.info("Input event embedding shape is [%d,%d]",
+                         self.event_emb.shape[0], self.event_emb.shape[1])
+            assert nn_para.event_vocab_size == self.event_emb.shape[0]
+            assert nn_para.embedding_dim == self.event_emb.shape[1]
         else:
             logging.warn("Entity embedding not supplied, not asserting.")
             logging.info("Defined entity embedding shape is [%d,%d]",
