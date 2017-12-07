@@ -54,29 +54,17 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
+from knowledge4ir.salience.external_semantics.description import GlossCNNKNRM
+from knowledge4ir.salience.external_semantics.nlss import NlssCnnKnrm
 from knowledge4ir.salience.knrm_vote import KNRM
-from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
-from knowledge4ir.salience.external_semantics import (
-    GlossCNNEmbedKNRM,
-)
-from knowledge4ir.salience.external_semantics.description import (
-    DespWordAvgEmbKNRM,
-    DespSentRNNEmbedKNRM,
-    LinearGlossCNNEmbedKNRM,
-)
-from knowledge4ir.salience.external_semantics.nlss import (
-    NlssCnnKnrm,
-)
-from knowledge4ir.salience.knrm_vote import (
-    KNRM,
-)
-from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, \
-    HighwayKCNN
+from knowledge4ir.salience.duet_knrm import DuetKNRM, GlossCNNEmbDuet
+from knowledge4ir.salience.deprecated.duet import DuetGlossCNN
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
     uw_io,
-    event_feature_io
+    event_feature_io,
+    duet_io,
 )
 from knowledge4ir.salience.utils.evaluation import SalienceEva
 from knowledge4ir.salience.utils.ranking_loss import (
@@ -115,11 +103,13 @@ class SalienceModelCenter(Configurable):
         'feature_lr': FeatureLR,
         'knrm': KNRM,
         'linear_kcrf': LinearKernelCRF,
-        'desp_rnn': DespSentRNNEmbedKNRM,
-        'desp_word': DespWordAvgEmbKNRM,
-        'gloss_cnn': GlossCNNEmbedKNRM,
-        'linear_gloss_cnn': LinearGlossCNNEmbedKNRM,
+
+        'gloss_cnn': GlossCNNKNRM,
         'nlss_cnn': NlssCnnKnrm,
+        'duet_knrm': DuetKNRM,
+        'duet_gloss': DuetGlossCNN,
+        'gloss_enriched_duet': GlossCNNEmbDuet,
+
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -127,9 +117,13 @@ class SalienceModelCenter(Configurable):
         "trans": EmbPageRank,  # not working
         'EdgeCNN': EdgeCNN,  # not working
         'lr': EmbeddingLR,  # not working
-        'kernel_pr': KernelGraphWalk,  # not working
-        'highway_knrm': HighwayKCNN,  # not working
         'kcrf': KernelCRF,  # not working
+        # 'desp_rnn': DespSentRNNEmbedKNRM,
+        # 'desp_word': DespWordAvgEmbKNRM,
+        # 'kernel_pr': KernelGraphWalk,  # not working
+        # 'highway_knrm': HighwayKCNN,  # not working
+        # 'linear_gloss_cnn': LinearGlossCNNEmbedKNRM,
+        # 'word_knrm': WordKNRM,
     }
 
     h_model_io = {
@@ -137,21 +131,17 @@ class SalienceModelCenter(Configurable):
         'feature_lr': feature_io,
         'knrm': raw_io,
         'linear_kcrf': feature_io,
-        'desp_rnn': raw_io,
-        'desp_word': raw_io,
         'gloss_cnn': raw_io,
-        'linear_gloss_cnn': raw_io,
         'nlss_cnn': raw_io,
+        'word_knrm': duet_io,
+        'duet_knrm': duet_io,
+        'duet_gloss': duet_io,
+        'gloss_enriched_duet': duet_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
         'local_max_rnn': uw_io,  # not working
-        "trans": raw_io,  # not working
-        'EdgeCNN': raw_io,  # not working
         'lr': feature_io,  # not working
-        'kernel_pr': raw_io,  # not working
-        'highway_knrm': raw_io,  # not working
-        'kcrf': raw_io,  # not working
     }
 
     in_field = Unicode(body_field)
@@ -396,7 +386,7 @@ class SalienceModelCenter(Configurable):
 
     def _filter_empty_line(self, line):
         h = json.loads(line)
-        if self.h_model_io[self.model_name] == raw_io:
+        if self.h_model_io[self.model_name] in (raw_io, duet_io):
             l_e = h[self.spot_field].get(self.in_field, [])
         elif self.h_model_io[self.model_name] == event_feature_io:
             l_e = h[self.spot_field].get(self.in_field, {}).get('salience')
@@ -418,9 +408,7 @@ if __name__ == '__main__':
         load_py_config,
     )
 
-    set_basic_log(logging.DEBUG)
-
-
+    # set_basic_log(logging.INFO)
 
     class Main(Configurable):
         train_in = Unicode(help='training data').tag(config=True)

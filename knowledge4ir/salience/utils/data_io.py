@@ -15,8 +15,8 @@ from knowledge4ir.utils import (
     salience_gold
 )
 
-# use_cuda = torch.cuda.is_available()
-use_cuda = False
+use_cuda = torch.cuda.is_available()
+# use_cuda = False   # ?????
 
 
 def padding(ll, filler):
@@ -274,6 +274,62 @@ def _form_local_context(l_loc, l_words, sent_len):
         sent += [0] * (sent_len - len(sent))
         l_sent.append(sent)
     return l_sent
+
+
+def duet_io(l_line, spot_field=SPOT_FIELD,
+            in_field=body_field, salience_field=abstract_field,
+            max_e_per_d=200, max_w_per_d=500):
+    """
+    add the whole document's word sequence as mtx_w
+    :param l_line:
+    :param spot_field:
+    :param in_field:
+    :param salience_field:
+    :param max_e_per_d:
+    :param max_w_per_d:
+    :return:
+    """
+    ll_e = []
+    ll_score = []
+    ll_words = []
+    ll_word_score = []
+    ll_label = []
+    for line in l_line:
+        h = json.loads(line)
+        l_e = h[spot_field].get(in_field, [])
+        l_e, l_score = get_top_k_e(l_e, max_e_per_d)
+        s_salient_e = set(h[spot_field].get(salience_field, []))
+        l_label = [1 if e in s_salient_e else -1 for e in l_e]
+        ll_e.append(l_e)
+        ll_score.append(l_score)
+        ll_label.append(l_label)
+        l_word = h.get(in_field, [])
+        l_word, l_word_score = get_top_k_e(l_word, max_w_per_d)
+        ll_words.append(l_word)
+        ll_word_score.append(l_word_score)
+
+    ll_e = padding(ll_e, 0)
+    ll_score = padding(ll_score, 0)
+    ll_label = padding(ll_label, 0)
+    ll_words = padding(ll_words, 0)
+    ll_word_score = padding(ll_word_score, 0)
+    m_e = Variable(torch.LongTensor(ll_e)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_e))
+    m_w = Variable(torch.FloatTensor(ll_score)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_score))
+    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_label))
+    m_word = Variable(torch.LongTensor(ll_words)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_words))
+    m_word_score = Variable(torch.FloatTensor(ll_word_score)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_word_score))
+    h_packed_data = {
+        "mtx_e": m_e,
+        "mtx_score": m_w,
+        "mtx_w": m_word,
+        "mtx_w_score": m_word_score,
+    }
+    return h_packed_data, m_label
 
 
 if __name__ == '__main__':

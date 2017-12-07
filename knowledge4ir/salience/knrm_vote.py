@@ -6,9 +6,13 @@ import logging
 import numpy as np
 import torch
 import torch.nn as nn
+import json
 
-from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling, \
-    use_cuda
+from torch import nn as nn
+
+from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
+
+use_cuda = torch.cuda.is_available()
 
 
 class KNRM(SalienceBaseModel):
@@ -25,7 +29,7 @@ class KNRM(SalienceBaseModel):
             self.embedding.weight.data.copy_(
                 torch.from_numpy(ext_data.entity_emb))
         if use_cuda:
-            logging.info('copying parameter to cuda')
+            logging.info('copying knrm parameter to cuda')
             self.embedding.cuda()
             self.kp.cuda()
             self.linear.cuda()
@@ -39,7 +43,6 @@ class KNRM(SalienceBaseModel):
         mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         return self._knrm_opt(mtx_embedding, mtx_score)
-
 
     def save_model(self, output_name):
         logging.info('saving knrm embedding and linear weights to [%s]',
@@ -56,9 +59,13 @@ class KNRM(SalienceBaseModel):
         return output
 
     def _kernel_scores(self, mtx_embedding, mtx_score):
-        mtx_embedding = mtx_embedding.div(
-            torch.norm(mtx_embedding, p=2, dim=-1, keepdim=True).expand_as(mtx_embedding) + 1e-8
-        )
-        trans_mtx = torch.matmul(mtx_embedding, mtx_embedding.transpose(-2, -1))
+        return self._kernel_vote(mtx_embedding, mtx_embedding, mtx_score)
+
+    def _kernel_vote(self, target_emb, voter_emb, voter_score):
+        target_emb = nn.functional.normalize(target_emb, p=2, dim=-1)
+        voter_emb = nn.functional.normalize(voter_emb, p=2, dim=-1)
+
+        trans_mtx = torch.matmul(target_emb, voter_emb.transpose(-2, -1))
         trans_mtx = self.dropout(trans_mtx)
-        return self.kp(trans_mtx, mtx_score)
+        return self.kp(trans_mtx, voter_score)
+
