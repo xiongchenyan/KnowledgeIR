@@ -66,8 +66,6 @@ from knowledge4ir.salience.utils.data_io import (
     uw_io,
     event_feature_io,
     joint_feature_io,
-    event_raw_io,
-    joint_raw_io
 )
 from knowledge4ir.salience.utils.evaluation import SalienceEva
 from knowledge4ir.salience.utils.ranking_loss import (

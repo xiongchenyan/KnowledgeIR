@@ -36,7 +36,7 @@ class NNPara(Configurable):
     dropout_rate = Float(0, help='dropout rate').tag(config=True)
     train_word_emb = Bool(False, help='whether train word embedding').tag(
         config=True)
-    node_feature_dim = Int(10, help='node feature dimension').tag(config=True)
+    node_feature_dim = Int(0, help='node feature dimension').tag(config=True)
     e_feature_dim = Int(help='entity feature dimension').tag(config=True)
     evm_feature_dim = Int(help='event feature dimension').tag(config=True)
     l_hidden_dim = List(Int, default_value=[],

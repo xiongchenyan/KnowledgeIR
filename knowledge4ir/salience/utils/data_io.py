@@ -51,6 +51,9 @@ def raw_io(l_line, spot_field=SPOT_FIELD,
         ll_e.append(l_e)
         ll_w.append(l_w)
         ll_label.append(l_label)
+        print(l_w)
+        import sys
+        sys.stdin.readline()
 
     ll_e = padding(ll_e, 0)
     ll_w = padding(ll_w, 0)
@@ -112,6 +115,10 @@ def _get_entity_info(entity_spots, abstract_spots, salience_gold_field,
         ll_feature = [s_features[e][:num_features] for e in l_e]
         return l_e, l_label, ll_feature
     else:
+        # Mention count is appended to the first position in feature array.
+        l_e_tf = [s_features[e][0] for e in l_e]
+        z = float(sum(l_e_tf))
+        l_w = [tf / z for tf in l_e_tf]
         return l_e, l_label, l_w
 
 
@@ -153,124 +160,8 @@ def _get_event_info(event_spots, salience_gold_field, max_e_per_d,
         return l_h, l_label, l_w
 
 
-def event_raw_io(l_line, spot_field=EVENT_SPOT_FIELD,
-                 in_field=body_field, salience_gold_field=salience_gold,
-                 max_e_per_d=200):
-    """
-    Convert data to the input for the model, this one does not take features.
-    :param l_line:
-    :param spot_field:
-    :param in_field:
-    :param salience_gold_field:
-    :param max_e_per_d:
-    :return:
-    """
-    ll_h = []
-    ll_w = []
-    ll_label = []
-
-    for line in l_line:
-        h = json.loads(line)
-        event_spots = h[spot_field].get(in_field, {})
-        l_h, l_label, l_w = _get_event_info(event_spots, salience_gold_field,
-                                            max_e_per_d, 0)
-
-        if not l_h:
-            continue
-
-        ll_h.append(l_h)
-        ll_w.append(l_w)
-        ll_label.append(l_label)
-
-    ll_h = padding(ll_h, 0)
-    ll_w = padding(ll_w, 0)
-    ll_label = padding(ll_label, 0)
-    m_e = Variable(torch.LongTensor(ll_h)).cuda() \
-        if use_cuda else Variable(torch.LongTensor(ll_h))
-    m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
-        if use_cuda else Variable(torch.FloatTensor(ll_w))
-    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
-        if use_cuda else Variable(torch.FloatTensor(ll_label))
-
-    h_packed_data = {
-        "mtx_e": m_e,
-        "mtx_score": m_w
-    }
-    return h_packed_data, m_label
-
-
 def _offset_hash(l_e, offset):
     return [e + offset for e in l_e]
-
-
-def joint_raw_io(l_line,
-                 e_feature_dim,
-                 evm_feature_dim,
-                 evm_offset,
-                 entity_spot_field=SPOT_FIELD,
-                 event_spot_field=EVENT_SPOT_FIELD,
-                 in_field=body_field,
-                 salience_field=abstract_field,
-                 salience_gold_field=salience_gold,
-                 max_e_per_d=200):
-    """
-    Convert data to the input for the model, this one take both events and
-    entities, but not their features.
-
-    :param l_line:
-    :param evm_offset:
-    :param entity_spot_field:
-    :param event_spot_field:
-    :param in_field:
-    :param salience_field:
-    :param salience_gold_field:
-    :param max_e_per_d:
-    :return:
-    """
-    ll_h = []
-    ll_w = []
-    ll_label = []
-
-    for line in l_line:
-        h = json.loads(line)
-        entity_spots = h[entity_spot_field].get(in_field, {})
-        abstract_spots = h[entity_spot_field].get(salience_field, {})
-        evm_spots = h[event_spot_field].get(in_field, {})
-
-        l_e, l_e_label, l_e_w = _get_entity_info(entity_spots, abstract_spots,
-                                                 salience_gold_field,
-                                                 max_e_per_d, 0)
-
-        l_evm_h, l_evm_label, l_evm_w = _get_event_info(evm_spots,
-                                                        salience_gold_field,
-                                                        max_e_per_d, 0)
-
-        l_e_all = l_e + _offset_hash(l_evm_h, evm_offset)
-        l_label_all = l_e_label + l_evm_label
-        l_w = l_e_w + l_evm_w
-
-        if not l_e_all:
-            continue
-
-        ll_h.append(l_e_all)
-        ll_w.append(l_w)
-        ll_label.append(l_label_all)
-
-    ll_h = padding(ll_h, 0)
-    ll_w = padding(ll_w, 0)
-    ll_label = padding(ll_label, 0)
-    m_e = Variable(torch.LongTensor(ll_h)).cuda() \
-        if use_cuda else Variable(torch.LongTensor(ll_h))
-    m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
-        if use_cuda else Variable(torch.FloatTensor(ll_w))
-    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
-        if use_cuda else Variable(torch.FloatTensor(ll_label))
-
-    h_packed_data = {
-        "mtx_e": m_e,
-        "mtx_score": m_w
-    }
-    return h_packed_data, m_label
 
 
 def _combine_features(ll_feature_e, ll_feature_evm, e_dim, evm_dim, filler=0):
@@ -358,10 +249,16 @@ def joint_feature_io(l_line,
     ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(lll_feature))
 
-    h_packed_data = {
-        "mtx_e": m_h,
-        "ts_feature": ts_feature
-    }
+    if f_dim:
+        h_packed_data = {
+            "mtx_e": m_h,
+            "ts_feature": ts_feature
+        }
+    else:
+        h_packed_data = {
+            "mtx_e": m_h,
+            "mtx_score": ts_feature
+        }
     return h_packed_data, m_label
 
 
@@ -394,14 +291,20 @@ def event_feature_io(l_line, num_features,
         if not l_h:
             continue
 
-        f_dim = max(f_dim, len(ll_feature[0]))
+        if num_features and ll_feature:
+            f_dim = max(f_dim, len(ll_feature[0]))
+
         ll_label.append(l_label)
         ll_h.append(l_h)
         lll_feature.append(ll_feature)
 
     ll_h = padding(ll_h, 0)
     ll_label = padding(ll_label, 0)
-    lll_feature = padding(lll_feature, [0] * f_dim)
+
+    if num_features:
+        lll_feature = padding(lll_feature, [0] * f_dim)
+    else:
+        lll_feature = padding(lll_feature, 0)
 
     # We use event head word in place of entity id.
     m_h = Variable(torch.LongTensor(ll_h)).cuda() \
@@ -411,10 +314,16 @@ def event_feature_io(l_line, num_features,
     ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(lll_feature))
 
-    h_packed_data = {
-        "mtx_e": m_h,
-        "ts_feature": ts_feature
-    }
+    if num_features:
+        h_packed_data = {
+            "mtx_e": m_h,
+            "ts_feature": ts_feature
+        }
+    else:
+        h_packed_data = {
+            "mtx_e": m_h,
+            "mtx_score": ts_feature
+        }
     return h_packed_data, m_label
 
 
@@ -422,7 +331,8 @@ def feature_io(l_line, num_features, spot_field=SPOT_FIELD, in_field=body_field,
                salience_field=abstract_field, salience_gold_field=salience_gold,
                max_e_per_d=200):
     """
-    io with pre-filtered entity list and feature matrices
+    io with pre-filtered entity list and feature matrices.
+    fall back to raw io output if num_features = 0
     """
     ll_e = []
     lll_feature = []
@@ -431,17 +341,18 @@ def feature_io(l_line, num_features, spot_field=SPOT_FIELD, in_field=body_field,
 
     for line in l_line:
         h = json.loads(line)
-        packed = h[spot_field].get(in_field, {})
+        entity_spots = h[spot_field].get(in_field, {})
         abstract_spots = h[spot_field].get(salience_field, {})
 
-        l_e, l_label, ll_feature = _get_entity_info(packed, abstract_spots,
+        l_e, l_label, ll_feature = _get_entity_info(entity_spots,
+                                                    abstract_spots,
                                                     salience_gold_field,
                                                     max_e_per_d, num_features)
 
         if not l_e:
             continue
 
-        if ll_feature:
+        if num_features and ll_feature:
             f_dim = max(f_dim, len(ll_feature[0]))
 
         ll_e.append(l_e)
@@ -450,7 +361,11 @@ def feature_io(l_line, num_features, spot_field=SPOT_FIELD, in_field=body_field,
 
     ll_e = padding(ll_e, 0)
     ll_label = padding(ll_label, 0)
-    lll_feature = padding(lll_feature, [0] * f_dim)
+
+    if num_features:
+        lll_feature = padding(lll_feature, [0] * f_dim)
+    else:
+        lll_feature = padding(lll_feature, 0)
 
     m_e = Variable(torch.LongTensor(ll_e)).cuda() \
         if use_cuda else Variable(torch.LongTensor(ll_e))
@@ -459,10 +374,16 @@ def feature_io(l_line, num_features, spot_field=SPOT_FIELD, in_field=body_field,
     ts_feature = Variable(torch.FloatTensor(lll_feature)).cuda() \
         if use_cuda else Variable(torch.FloatTensor(lll_feature))
 
-    h_packed_data = {
-        "mtx_e": m_e,
-        "ts_feature": ts_feature
-    }
+    if num_features:
+        h_packed_data = {
+            "mtx_e": m_e,
+            "ts_feature": ts_feature
+        }
+    else:
+        h_packed_data = {
+            "mtx_e": m_e,
+            "mtx_score": ts_feature
+        }
     return h_packed_data, m_label
 
 
