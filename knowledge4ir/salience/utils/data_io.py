@@ -393,7 +393,7 @@ def adj_edge_io(
 
 
 def _form_distance_mtx(l_seq_e, l_e):
-    h_e_p = dict(zip(l_e, range(l_e)))
+    h_e_p = dict(zip(l_e, range(len(l_e))))
     ll_distance = []
     for i in xrange(len(l_e)):
         ll_distance.append([-1] * len(l_e))
