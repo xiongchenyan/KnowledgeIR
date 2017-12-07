@@ -54,7 +54,6 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
-from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, HighwayKCNN
 from knowledge4ir.salience.external_semantics import (
     GlossCNNEmbedKNRM,
 )
@@ -68,7 +67,7 @@ from knowledge4ir.salience.external_semantics.nlss import (
     NlssCnnKnrm,
 )
 from knowledge4ir.salience.knrm_vote import KNRM
-from knowledge4ir.salience.duet_knrm import DuetKNRM, DuetGlossCNN, WordKNRM
+from knowledge4ir.salience.duet_knrm import DuetKNRM, DuetGlossCNN, WordKNRM, GlossCNNEmbDuet
 from knowledge4ir.salience.not_working.kernel_graph_cnn import KernelGraphWalk, \
     HighwayKCNN
 from knowledge4ir.salience.utils.data_io import (
@@ -124,6 +123,7 @@ class SalienceModelCenter(Configurable):
         'word_knrm': WordKNRM,
         'duet_knrm': DuetKNRM,
         'duet_gloss': DuetGlossCNN,
+        'gloss_enriched_duet': GlossCNNEmbDuet,
 
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
@@ -151,6 +151,7 @@ class SalienceModelCenter(Configurable):
         'word_knrm': duet_io,
         'duet_knrm': duet_io,
         'duet_gloss': duet_io,
+        'gloss_enriched_duet': duet_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
