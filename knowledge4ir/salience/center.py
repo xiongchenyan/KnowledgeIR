@@ -59,12 +59,14 @@ from knowledge4ir.salience.external_semantics.nlss import NlssCnnKnrm
 from knowledge4ir.salience.knrm_vote import KNRM
 from knowledge4ir.salience.duet_knrm import DuetKNRM, GlossCNNEmbDuet
 from knowledge4ir.salience.deprecated.duet import DuetGlossCNN
+from knowledge4ir.salience.entity_edge.adj_knrm import AdjKNRM
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
     uw_io,
     event_feature_io,
     duet_io,
+    adj_edge_io,
 )
 from knowledge4ir.salience.utils.evaluation import SalienceEva
 from knowledge4ir.salience.utils.ranking_loss import (
@@ -109,6 +111,7 @@ class SalienceModelCenter(Configurable):
         'duet_knrm': DuetKNRM,
         'duet_gloss': DuetGlossCNN,
         'gloss_enriched_duet': GlossCNNEmbDuet,
+        'adj_knrm': AdjKNRM,
 
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
@@ -137,6 +140,7 @@ class SalienceModelCenter(Configurable):
         'duet_knrm': duet_io,
         'duet_gloss': duet_io,
         'gloss_enriched_duet': duet_io,
+        'adj_knrm': adj_edge_io,
 
         "avg_local_vote": uw_io,  # not working
         'local_rnn': uw_io,  # not working
