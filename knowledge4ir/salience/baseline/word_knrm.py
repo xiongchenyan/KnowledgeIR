@@ -55,10 +55,10 @@ class WordKNRM(KNRM):
         output = self.duet_linear(word_vote_kernels).squeeze(-1)
         return output
 
-    def _kernel_vote(self, e_emb, w_emb, w_score):
-        e_emb = nn.functional.normalize(e_emb, p=2, dim=-1)
-        w_emb = nn.functional.normalize(w_emb, p=2, dim=-1)
+    def _kernel_vote(self, target_emb, voter_emb, voter_score):
+        target_emb = nn.functional.normalize(target_emb, p=2, dim=-1)
+        voter_emb = nn.functional.normalize(voter_emb, p=2, dim=-1)
 
-        trans_mtx = torch.matmul(e_emb, w_emb.transpose(-2, -1))
+        trans_mtx = torch.matmul(target_emb, voter_emb.transpose(-2, -1))
         trans_mtx = self.dropout(trans_mtx)
-        return self.kp(trans_mtx, w_score)
+        return self.kp(trans_mtx, voter_score)

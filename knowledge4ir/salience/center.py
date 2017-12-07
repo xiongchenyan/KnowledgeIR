@@ -57,7 +57,8 @@ from knowledge4ir.salience.crf_model import (
 from knowledge4ir.salience.external_semantics.description import GlossCNNKNRM
 from knowledge4ir.salience.external_semantics.nlss import NlssCnnKnrm
 from knowledge4ir.salience.knrm_vote import KNRM
-from knowledge4ir.salience.duet_knrm import DuetKNRM, DuetGlossCNN, GlossCNNEmbDuet
+from knowledge4ir.salience.duet_knrm import DuetKNRM, GlossCNNEmbDuet
+from knowledge4ir.salience.deprecated.duet import DuetGlossCNN
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
