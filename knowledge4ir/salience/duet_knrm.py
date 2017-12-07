@@ -236,7 +236,6 @@ class GlossCNNEmbDuet(DuetKNRM):
         assert ext_data.entity_desp is not None
         assert para.desp_sent_len
         self.e_desp_mtx = Variable(torch.LongTensor(ext_data.entity_desp[:, :para.desp_sent_len]))
-        # self.e_desp_mtx = self.e_desp_mtx[:, :para.desp_sent_len]
         self.word_emb = nn.Embedding(ext_data.word_emb.shape[0],
                                      ext_data.word_emb.shape[1], padding_idx=0)
         self.word_emb.weight.data.copy_(torch.from_numpy(ext_data.word_emb))
@@ -257,7 +256,6 @@ class GlossCNNEmbDuet(DuetKNRM):
         if use_cuda:
             for i in xrange(len(self.l_gloss_cnn)):
                 self.l_gloss_cnn[i].cuda()
-                self.l_gloss_linear[i].cuda()
             self.word_emb.cuda()
             self.e_desp_mtx = self.e_desp_mtx.cuda()
             self.emb_merge.cuda()
