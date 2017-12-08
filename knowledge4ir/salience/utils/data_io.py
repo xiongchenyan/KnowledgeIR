@@ -61,6 +61,7 @@ class DataIO(Configurable):
             self.config_target_group()
 
     def config_target_group(self):
+        logging.info('io configing via group [%s]', self.group_name)
         if self.group_name == 'event':
             logging.error('event group io not specified')
             raise NotImplementedError
@@ -69,7 +70,8 @@ class DataIO(Configurable):
 
     def parse_data(self, l_line):
         h_parsed_data = dict(zip(self.l_target_data, [] * len(self.l_target_data)))
-        logging.debug('target keys %s', json.dumps(h_parsed_data))
+        logging.debug('target keys %s', json.dumps(self.l_target_data))
+        logging.debug('data dict init %s', json.dumps(h_parsed_data))
         for line in l_line:
             h_info = json.loads(line)
             h_this_data = self._parse_entity(h_info)
