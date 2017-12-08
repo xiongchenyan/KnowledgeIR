@@ -14,6 +14,7 @@ from knowledge4ir.utils import (
     abstract_field,
     salience_gold
 )
+import numpy as np
 
 use_cuda = torch.cuda.is_available()
 
@@ -23,6 +24,20 @@ def padding(ll, filler):
     for i in xrange(len(ll)):
         ll[i] += [filler] * (n - len(ll[i]))
     return ll
+
+
+def three_d_padding(lll, filler):
+    l_dim = [len(lll), 0, 0]
+    for ll in lll:
+        l_dim[1] = max(l_dim[1], len(ll))
+        for l in ll:
+            l_dim[2] = max(l_dim[2], len(l))
+    for i in xrange(len(lll)):
+        for j in xrange(len(lll[i])):
+            lll[i][j] += [filler] * (l_dim[2] - len(lll[i][j]))
+        while len(lll[i]) < l_dim[1]:
+            lll[i].append([filler] * l_dim[2])
+    return lll
 
 
 def get_top_k_e(l_e, max_e_per_d):
@@ -520,6 +535,71 @@ def duet_io(l_line, spot_field=SPOT_FIELD,
         "mtx_w_score": m_word_score,
     }
     return h_packed_data, m_label
+
+
+def adj_edge_io(
+        l_line, spot_field=SPOT_FIELD,
+        in_field=body_field, salience_field=abstract_field,
+        max_e_per_d=200
+        ):
+    """
+    convert data to the input for the model
+    """
+    ll_e = []
+    ll_w = []
+    ll_label = []
+    lll_e_distance = []
+    for line in l_line:
+        h = json.loads(line)
+        l_seq_e = h[spot_field].get(in_field, [])
+        l_e, l_w = get_top_k_e(l_seq_e, max_e_per_d)
+        ll_e_distance = _form_distance_mtx(l_seq_e, l_e)
+        s_salient_e = set(h[spot_field].get(salience_field, []))
+        l_label = [1 if e in s_salient_e else -1 for e in l_e]
+        ll_e.append(l_e)
+        ll_w.append(l_w)
+        ll_label.append(l_label)
+        lll_e_distance.append(ll_e_distance)
+
+    ll_e = padding(ll_e, 0)
+    ll_w = padding(ll_w, 0)
+    ll_label = padding(ll_label, 0)
+    lll_e_distance = three_d_padding(lll_e_distance, -1)
+    m_e = Variable(torch.LongTensor(ll_e)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_e))
+    m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_w))
+    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_label))
+    ts_e_distance = Variable(
+        torch.LongTensor(lll_e_distance)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(lll_e_distance))
+    h_packed_data = {
+        "mtx_e": m_e,
+        "mtx_score": m_w,
+        'ts_distance': ts_e_distance,
+    }
+    return h_packed_data, m_label
+
+
+def _form_distance_mtx(l_seq_e, l_e):
+    h_e_p = dict(zip(l_e, range(len(l_e))))
+    ll_distance = []
+    for i in xrange(len(l_e)):
+        ll_distance.append([-1] * len(l_e))
+        ll_distance[i][i] = 0
+
+    for i in xrange(len(l_seq_e)):
+        if l_seq_e[i] not in h_e_p:
+            continue
+        p_i = h_e_p[l_seq_e[i]]
+        for j in xrange(i + 1, len(l_seq_e)):
+            if l_seq_e[j] not in h_e_p:
+                continue
+            p_j = h_e_p[l_seq_e[j]]
+            ll_distance[p_i][p_j] = min(j - i, ll_distance[p_i][p_j]) if ll_distance[p_i][p_j] != -1 \
+                else j - i
+    return ll_distance
 
 
 if __name__ == '__main__':

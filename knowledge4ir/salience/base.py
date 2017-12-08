@@ -44,8 +44,12 @@ class NNPara(Configurable):
                         help='the first k words to use in the description').tag(
         config=True)
     kernel_size = Int(3, help='sentence CNN kernel size').tag(config=True)
-    l_cnn_length = List(Int, default_value=[1, 2, 3],
-                        help='sentence CNN sizes').tag(config=True)
+
+    l_cnn_length = List(Int, default_value=[1, 2, 3], help='sentence CNN sizes').tag(config=True)
+    min_loc_distance = Int(10,
+                           help='the minimum distance between two entities to receive vote in edge sparse knrm'
+                           ).tag(config=True)
+
 
     def form_kernels(self):
         l_mu = [1.0]
