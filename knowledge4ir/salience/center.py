@@ -412,10 +412,6 @@ class SalienceModelCenter(Configurable):
     def _batch_test(self, l_lines):
         h_packed_data, m_label = self._data_io(l_lines)
         output = self.model(h_packed_data)
-
-        if self.joint_model:
-            self._joint_loss(output, m_label)
-
         loss = self.criterion(output, m_label)
         return loss.data[0]
 
