@@ -38,7 +38,7 @@ class DataIO(Configurable):
         Unicode,
         default_value=[]
     ).tag(config=True)
-    group_name = Unicode('raw', help='hot key for l_target_data').tag(config=True)
+    group_name = Unicode(help='hot key for l_target_data').tag(config=True)
 
     def __init__(self, **kwargs):
         super(DataIO, self).__init__(**kwargs)
@@ -58,7 +58,8 @@ class DataIO(Configurable):
             'ts_feature': {'dim': 3, 'd_type': 'Float'},
         }
         if not self.l_target_data:
-            self.config_target_group()
+            if self.group_name:
+                self.config_target_group()
 
     def config_target_group(self):
         logging.info('io configing via group [%s]', self.group_name)
