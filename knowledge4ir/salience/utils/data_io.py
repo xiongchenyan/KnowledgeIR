@@ -191,7 +191,9 @@ def joint_feature_io(l_line,
                      salience_gold_field=salience_gold,
                      max_e_per_d=200):
     """
-    io with events and entities with their corresponding feature matrices
+    io with events and entities with their corresponding feature matrices.
+    When e_feature_dim + evm_feature_dim = 0, it will fall back to raw io,
+    a tf matrix will be computed instead.
     :param l_line:
     :param e_feature_dim:
     :param evm_feature_dim:
@@ -229,15 +231,24 @@ def joint_feature_io(l_line,
             continue
 
         l_label_all = l_e_label + l_evm_label
-        ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat, e_feature_dim,
-                                        evm_feature_dim)
+
+        if f_dim:
+            ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat,
+                                            e_feature_dim, evm_feature_dim)
+        else:
+            ll_feat_all = ll_e_feat + ll_evm_feat
+
         ll_label.append(l_label_all)
         ll_h.append(l_e_all)
         lll_feature.append(ll_feat_all)
 
     ll_h = padding(ll_h, 0)
     ll_label = padding(ll_label, 0)
-    lll_feature = padding(lll_feature, [0] * f_dim)
+
+    if f_dim:
+        lll_feature = padding(lll_feature, [0] * f_dim)
+    else:
+        lll_feature = padding(lll_feature, 0)
 
     # We use event head word in place of entity id.
     m_h = Variable(torch.LongTensor(ll_h)).cuda() \
