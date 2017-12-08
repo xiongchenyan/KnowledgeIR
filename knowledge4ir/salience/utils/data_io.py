@@ -69,6 +69,7 @@ class DataIO(Configurable):
 
     def parse_data(self, l_line):
         h_parsed_data = dict(zip(self.l_target_data, [] * len(self.l_target_data)))
+        logging.debug('target keys %s', json.dumps(h_parsed_data))
         for line in l_line:
             h_info = json.loads(line)
             h_this_data = self._parse_entity(h_info)
