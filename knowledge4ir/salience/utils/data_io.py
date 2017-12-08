@@ -25,7 +25,7 @@ from traitlets import (
 use_cuda = torch.cuda.is_available()
 
 
-class IOPara(Configurable):
+class DataIO(Configurable):
     nb_features = Int(help='number of features').tag(config=True)
     spot_field = Unicode(SPOT_FIELD, help='spot field').tag(config=True)
     salience_label_field = Unicode(salience_gold, help='salience label').tag(config=True)
@@ -41,7 +41,7 @@ class IOPara(Configurable):
     group_name = Unicode('raw', help='hot key for l_target_data').tag(config=True)
 
     def __init__(self, **kwargs):
-        super(IOPara, self).__init__(**kwargs)
+        super(DataIO, self).__init__(**kwargs)
 
         self.h_target_group = {
             'raw': ['mtx_e', 'mtx_score'],
@@ -103,14 +103,14 @@ class IOPara(Configurable):
 
     def _parse_entity(self, h_info):
         entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
-        l_e = entity_spots.get('entities', [])
-        # Take label from salience field.
-        if self.salience_label_field in entity_spots:
-            test_label = entity_spots[self.salience_label_field]
-        else:
+        if type(entity_spots) is list:
             # backward compatibility
+            l_e = entity_spots
             s_e = set(h_info[self.spot_field].get(self.salience_field, []))
             test_label = [1 if e in s_e else -1 for e in l_e]
+        else:
+            l_e = entity_spots.get('entities', [])
+            test_label = entity_spots[self.salience_label_field]
 
         l_label_org = [1 if label == 1 else -1 for label in test_label]
         # Associate label with eid.

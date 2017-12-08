@@ -17,6 +17,8 @@ from traitlets import (
 import numpy as np
 from traitlets.config import Configurable
 
+from knowledge4ir.salience.utils.data_io import DataIO
+
 use_cuda = torch.cuda.is_available()
 
 
@@ -146,6 +148,8 @@ class ExtData(Configurable):
 
 
 class SalienceBaseModel(nn.Module):
+    io_group = 'raw'
+
     def __init__(self, para, ext_data=None):
         """
         :param para: NNPara
@@ -164,6 +168,16 @@ class SalienceBaseModel(nn.Module):
 
     def save_model(self, output_name):
         return
+
+    def data_io(self, l_lines, io_parser=None):
+        if io_parser:
+            parser = io_parser
+        else:
+            parser = DataIO()
+        if not parser.l_target_data:
+            parser.group_name = self.io_group
+            parser.config_target_group()
+        return parser.parse_data(l_lines)
 
 
 class KernelPooling(nn.Module):
