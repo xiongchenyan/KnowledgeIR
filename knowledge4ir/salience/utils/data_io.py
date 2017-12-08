@@ -69,7 +69,6 @@ class DataIO(Configurable):
 
     def parse_data(self, l_line):
         h_parsed_data = dict(zip(self.l_target_data, [] * len(self.l_target_data)))
-
         for line in l_line:
             h_info = json.loads(line)
             h_this_data = self._parse_entity(h_info)
@@ -87,7 +86,7 @@ class DataIO(Configurable):
                 self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
                 data_type=self.h_data_meta[key]['d_type']
             )
-        logging.DEBUG('packed data contains keys %s', json.dumps(h_parsed_data.keys()))
+        logging.debug('packed data contains keys %s', json.dumps(h_parsed_data.keys()))
         return h_parsed_data, h_parsed_data['label']
 
     def _data_to_variable(self, list_data, data_type='Float'):
