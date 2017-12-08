@@ -187,7 +187,7 @@ class SalienceModelCenter(Configurable):
                 logging.error("Unknown model type [%s]." % self.input_format)
 
         else:
-            logging.info("No format overwrite.")
+            logging.debug("No format overwrite.")
 
         if self.event_model:
             self.spot_field = self.event_spot_field
