@@ -435,7 +435,10 @@ class SalienceModelCenter(Configurable):
     def _data_io(self, l_line):
         if self.use_new_io:
             return self.model.data_io(l_line, self.io_parser)
+        else:
+            return self._old_io(l_line)
 
+    def _old_io(self, l_line):
         if self.joint_model:
             return joint_feature_io(
                 l_line,

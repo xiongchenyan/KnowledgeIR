@@ -44,14 +44,15 @@ class DataIO(Configurable):
         super(DataIO, self).__init__(**kwargs)
 
         self.h_target_group = {
-            'raw': ['mtx_e', 'mtx_score'],
-            'feature': ['mtx_e', 'mtx_score', 'ts_feature'],
-            'duet': ['mtx_e', 'mtx_score', 'mtx_w', 'mtx_w_score'],
+            'raw': ['mtx_e', 'mtx_score', 'label'],
+            'feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
+            'duet': ['mtx_e', 'mtx_score', 'mtx_w', 'mtx_w_score', 'label'],
             'event': ['TODO']    # TODO
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
             'mtx_score': {'dim': 2, 'd_type': 'Float'},
+            'label': {'dim': 2, 'd_type': 'Float'},
             'mtx_w': {'dim': 2, 'd_type': 'Int'},
             'mtx_w_score': {'dim': 2, 'd_type': 'Float'},
             'ts_feature': {'dim': 3, 'd_type': 'Float'},
@@ -86,7 +87,7 @@ class DataIO(Configurable):
                 self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
                 data_type=self.h_data_meta[key]['d_type']
             )
-        return h_parsed_data
+        return h_parsed_data, h_parsed_data['label']
 
     def _data_to_variable(self, list_data, data_type='Float'):
         v = None
