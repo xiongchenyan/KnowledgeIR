@@ -65,6 +65,8 @@ from knowledge4ir.salience.utils.data_io import (
     feature_io,
     uw_io,
     event_feature_io,
+    joint_feature_io,
+    event_feature_io,
     duet_io,
     adj_edge_io,
 )
@@ -98,8 +100,9 @@ class SalienceModelCenter(Configurable):
         config=True)
     max_e_per_doc = Int(200, help='max e per doc')
     event_model = Bool(False, help='Run event model').tag(config=True)
-    # input_format = Unicode('raw', help='input format: raw | featured').tag(
-    #     config=True)
+    joint_model = Bool(False, help='Run joint model').tag(config=True)
+    input_format = Unicode(help='overwrite input format: raw | featured').tag(
+        config=True)
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
@@ -113,7 +116,6 @@ class SalienceModelCenter(Configurable):
         'gloss_enriched_duet': GlossCNNEmbDuet,
         'adj_knrm': AdjKNRM,
 
-
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
         'local_max_rnn': LocalRNNMaxSim,  # not working
@@ -121,12 +123,6 @@ class SalienceModelCenter(Configurable):
         'EdgeCNN': EdgeCNN,  # not working
         'lr': EmbeddingLR,  # not working
         'kcrf': KernelCRF,  # not working
-        # 'desp_rnn': DespSentRNNEmbedKNRM,
-        # 'desp_word': DespWordAvgEmbKNRM,
-        # 'kernel_pr': KernelGraphWalk,  # not working
-        # 'highway_knrm': HighwayKCNN,  # not working
-        # 'linear_gloss_cnn': LinearGlossCNNEmbedKNRM,
-        # 'word_knrm': WordKNRM,
     }
 
     h_model_io = {
@@ -148,15 +144,22 @@ class SalienceModelCenter(Configurable):
         'lr': feature_io,  # not working
     }
 
+    h_event_model_io = {
+        'feature_lr': event_feature_io,
+        'knrm': event_feature_io,
+    }
+
     in_field = Unicode(body_field)
-    salience_field = Unicode(abstract_field)
     spot_field = Unicode('spot')
+    event_spot_field = Unicode('event')
+    abstract_field = Unicode('abstract')
     # A specific field is reserved to mark the salience answer.
-    # salience_gold = Unicode(salience_gold)
+    salience_gold = Unicode(salience_gold)
 
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
         self.para = NNPara(**kwargs)
+        self.para.assert_para()
         self.ext_data = ExtData(**kwargs)
         self.ext_data.assert_with_para(self.para)
         h_loss = {
@@ -165,6 +168,26 @@ class SalienceModelCenter(Configurable):
         }
         self.criterion = h_loss[self.loss_func]
         self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
+
+        if self.event_model and self.joint_model:
+            logging.error("Please specify one mode only.")
+            exit(1)
+
+        if self.input_format:
+            logging.info(
+                "Input format is overwritten to [%s]" % self.input_format)
+            if self.input_format == 'raw':
+                self.h_model_io[self.model_name] = raw_io
+            elif self.input_format == 'featured':
+                self.h_model_io[self.model_name] = feature_io
+            else:
+                logging.error("Unknown model type [%s]." % self.input_format)
+
+        else:
+            logging.info("No format overwrite.")
+
+        if self.event_model:
+            self.spot_field = self.event_spot_field
 
         self.evaluator = SalienceEva(**kwargs)
         self.model = None
@@ -183,15 +206,25 @@ class SalienceModelCenter(Configurable):
 
     def _init_model(self):
         if self.model_name:
+            if self.joint_model:
+                self._merge_para()
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
-        if self.h_model_io[self.model_name] == feature_io:
-            if self.event_model:
-                self.h_model_io[self.model_name] = event_feature_io
+    def _merge_para(self):
+        """
+        Merge the parameter of entity and event embedding, including the vocab
+        size.
+        :return:
+        """
+        self.ext_data.entity_emb = np.concatenate((self.ext_data.entity_emb,
+                                                   self.ext_data.event_emb))
+        self.para.entity_vocab_size = self.para.entity_vocab_size + \
+                                      self.para.event_vocab_size
 
-        if self.event_model:
-            self.spot_field = 'event'
+        logging.info("Embedding matrix merged into shape [%d,%d]" % (
+            self.ext_data.entity_emb.shape[0],
+            self.ext_data.entity_emb.shape[1]))
 
     def train(self, train_in_name, validation_in_name=None,
               model_out_name=None):
@@ -253,7 +286,6 @@ class SalienceModelCenter(Configurable):
 
             # validation
             if validation_in_name:
-
                 if self._early_stop():
                     logging.info('early stopped at [%d] epoch', epoch)
                     break
@@ -392,17 +424,44 @@ class SalienceModelCenter(Configurable):
         h = json.loads(line)
         if self.h_model_io[self.model_name] in (raw_io, duet_io, adj_edge_io):
             l_e = h[self.spot_field].get(self.in_field, [])
-        elif self.h_model_io[self.model_name] == event_feature_io:
-            l_e = h[self.spot_field].get(self.in_field, {}).get('salience')
+        elif self.event_model:
+            l_e = h[self.event_spot_field].get(self.in_field, {}).get(
+                'salience')
         else:
             l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
         return not l_e
 
     def _data_io(self, l_line):
-        return self.h_model_io.get(self.model_name, raw_io)(
-            l_line, self.spot_field, self.in_field, self.salience_field, self.max_e_per_doc
-
-        )
+        if self.joint_model:
+            return joint_feature_io(
+                l_line,
+                self.para.e_feature_dim,
+                self.para.evm_feature_dim,
+                self.para.entity_vocab_size - self.para.event_vocab_size,
+                self.spot_field,
+                self.event_spot_field,
+                self.in_field,
+                self.abstract_field,
+                self.salience_gold,
+                self.max_e_per_doc
+            )
+        elif self.event_model:
+            return self.h_event_model_io[self.model_name](
+                l_line, self.para.node_feature_dim,
+                self.spot_field, self.in_field,
+                self.abstract_field, self.salience_gold,
+                self.max_e_per_doc
+            )
+        else:
+            return self.h_model_io[self.model_name](
+                l_line,
+                self.para.node_feature_dim,
+                self.spot_field,
+                self.in_field,
+                self.abstract_field,
+                self.salience_gold,
+                self.max_e_per_doc
+            )
 
 
 if __name__ == '__main__':
@@ -411,6 +470,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
+
 
     # set_basic_log(logging.INFO)
 
