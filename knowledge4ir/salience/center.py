@@ -102,7 +102,7 @@ class SalienceModelCenter(Configurable):
     joint_model = Bool(False, help='Run joint model').tag(config=True)
     input_format = Unicode(help='overwrite input format: raw | featured').tag(
         config=True)
-    use_new_io = Bool(False, help='whether use the new IO format').tag(
+    use_new_io = Bool(True, help='whether use the new IO format').tag(
         config=True
     )
     h_model = {
