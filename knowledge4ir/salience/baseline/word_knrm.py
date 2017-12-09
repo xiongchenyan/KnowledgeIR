@@ -8,6 +8,8 @@ from knowledge4ir.salience.knrm_vote import KNRM
 
 
 class WordKNRM(KNRM):
+    io_group = 'duet'
+
     def __init__(self, para, ext_data=None):
         super(WordKNRM, self).__init__(para, ext_data)
         assert ext_data.word_emb is not None
@@ -35,8 +37,6 @@ class WordKNRM(KNRM):
         :param h_packed_data:
         :return:
         """
-        assert 'mtx_e' in h_packed_data
-        # assert 'mtx_score' in h_packed_data
         assert 'mtx_w' in h_packed_data   # has word sequence in it
         assert 'mtx_w_score' in h_packed_data
 

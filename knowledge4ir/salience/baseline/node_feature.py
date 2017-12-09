@@ -15,7 +15,7 @@ use_cuda = torch.cuda.is_available()
 
 
 class FeatureLR(SalienceBaseModel):
-
+    io_group = 'feature'
     def __init__(self, para, ext_data=None):
         super(FeatureLR, self).__init__(para, ext_data)
         self.node_feature_dim = para.node_feature_dim
@@ -58,8 +58,6 @@ class FrequencySalience(SalienceBaseModel):
         return
 
     def forward(self, h_packed_data,):
-        assert 'mtx_e' in h_packed_data
-        assert 'mtx_score' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         output = mtx_score.unsqueeze(-1)

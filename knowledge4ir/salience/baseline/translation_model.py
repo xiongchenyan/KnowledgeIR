@@ -35,8 +35,6 @@ class EmbPageRank(SalienceBaseModel):
         return
 
     def forward(self, h_packed_data,):
-        assert 'mtx_e' in h_packed_data
-        assert 'mtx_score' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
@@ -84,8 +82,6 @@ class EdgeCNN(SalienceBaseModel):
         return
 
     def forward(self, h_packed_data,):
-        assert 'mtx_e' in h_packed_data
-        assert 'mtx_score' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)

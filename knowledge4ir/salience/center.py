@@ -22,10 +22,9 @@ hyper-parameters:
 import json
 import logging
 import math
-
 import os
-import numpy as np
 
+import numpy as np
 import torch
 from traitlets import (
     Unicode,
@@ -35,16 +34,11 @@ from traitlets import (
     Bool
 )
 from traitlets.config import Configurable
+
 from knowledge4ir.salience.base import NNPara, ExtData
 from knowledge4ir.salience.baseline.node_feature import (
     FrequencySalience,
     FeatureLR,
-)
-from knowledge4ir.salience.deprecated.node_feature import EmbeddingLR
-from knowledge4ir.salience.baseline.local_context import (
-    LocalAvgWordVotes,
-    LocalRNNVotes,
-    LocalRNNMaxSim,
 )
 from knowledge4ir.salience.baseline.translation_model import (
     EmbPageRank,
@@ -54,17 +48,23 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
+from knowledge4ir.salience.utils.data_io import DataIO
+from knowledge4ir.salience.deprecated.adj_knrm import AdjKNRM
+from knowledge4ir.salience.deprecated.duet import DuetGlossCNN
+from knowledge4ir.salience.deprecated.local_context import (
+    LocalAvgWordVotes,
+    LocalRNNVotes,
+    LocalRNNMaxSim,
+)
+from knowledge4ir.salience.deprecated.node_feature import EmbeddingLR
+from knowledge4ir.salience.duet_knrm import DuetKNRM, GlossCNNEmbDuet
 from knowledge4ir.salience.external_semantics.description import GlossCNNKNRM
 from knowledge4ir.salience.external_semantics.nlss import NlssCnnKnrm
 from knowledge4ir.salience.knrm_vote import KNRM
-from knowledge4ir.salience.duet_knrm import DuetKNRM, GlossCNNEmbDuet
-from knowledge4ir.salience.deprecated.duet import DuetGlossCNN
-from knowledge4ir.salience.entity_edge.adj_knrm import AdjKNRM
 from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
     uw_io,
-    event_feature_io,
     joint_feature_io,
     event_feature_io,
     duet_io,
@@ -77,7 +77,6 @@ from knowledge4ir.salience.utils.ranking_loss import (
 )
 from knowledge4ir.utils import (
     body_field,
-    abstract_field,
     add_svm_feature,
     mutiply_svm_feature,
     salience_gold
@@ -103,6 +102,9 @@ class SalienceModelCenter(Configurable):
     joint_model = Bool(False, help='Run joint model').tag(config=True)
     input_format = Unicode(help='overwrite input format: raw | featured').tag(
         config=True)
+    use_new_io = Bool(True, help='whether use the new IO format').tag(
+        config=True
+    )
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
@@ -162,6 +164,7 @@ class SalienceModelCenter(Configurable):
         self.para.assert_para()
         self.ext_data = ExtData(**kwargs)
         self.ext_data.assert_with_para(self.para)
+        self.io_parser = DataIO(**kwargs)
         h_loss = {
             "hinge": hinge_loss,  # hinge classification loss does not work
             "pairwise": pairwise_loss,
@@ -184,7 +187,7 @@ class SalienceModelCenter(Configurable):
                 logging.error("Unknown model type [%s]." % self.input_format)
 
         else:
-            logging.info("No format overwrite.")
+            logging.debug("No format overwrite.")
 
         if self.event_model:
             self.spot_field = self.event_spot_field
@@ -422,16 +425,20 @@ class SalienceModelCenter(Configurable):
 
     def _filter_empty_line(self, line):
         h = json.loads(line)
-        if self.h_model_io[self.model_name] in (raw_io, duet_io, adj_edge_io):
-            l_e = h[self.spot_field].get(self.in_field, [])
-        elif self.event_model:
+        if self.event_model:
             l_e = h[self.event_spot_field].get(self.in_field, {}).get(
                 'salience')
         else:
-            l_e = h[self.spot_field].get(self.in_field, {}).get('entities')
+            l_e = h[self.spot_field].get(self.in_field)
         return not l_e
 
     def _data_io(self, l_line):
+        if self.use_new_io:
+            return self.model.data_io(l_line, self.io_parser)
+        else:
+            return self._old_io(l_line)
+
+    def _old_io(self, l_line):
         if self.joint_model:
             return joint_feature_io(
                 l_line,
