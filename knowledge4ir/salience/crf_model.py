@@ -21,6 +21,8 @@ use_cuda = torch.cuda.is_available()
 
 
 class KernelCRF(KNRM):
+    io_group = 'feature'
+
     def __init__(self, para, ext_data=None):
         super(KernelCRF, self).__init__(para, ext_data)
         self.node_feature_dim = para.node_feature_dim
@@ -30,8 +32,6 @@ class KernelCRF(KNRM):
         return
 
     def forward(self, h_packed_data):
-        assert 'mtx_e' in h_packed_data
-        assert 'ts_feature' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
 
@@ -62,6 +62,8 @@ class KernelCRF(KNRM):
 
 
 class LinearKernelCRF(KNRM):
+    io_group = 'feature'
+
     def __init__(self, para, ext_data=None):
         super(LinearKernelCRF, self).__init__(para, ext_data)
         self.node_feature_dim = para.node_feature_dim
@@ -74,8 +76,6 @@ class LinearKernelCRF(KNRM):
         return
 
     def forward(self, h_packed_data):
-        assert 'mtx_e' in h_packed_data
-        assert 'ts_feature' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         ts_feature = h_packed_data['ts_feature']
 

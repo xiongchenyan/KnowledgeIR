@@ -17,6 +17,8 @@ from traitlets import (
 import numpy as np
 from traitlets.config import Configurable
 
+from knowledge4ir.salience.utils.data_io import DataIO
+
 use_cuda = torch.cuda.is_available()
 
 
@@ -44,8 +46,12 @@ class NNPara(Configurable):
                         help='the first k words to use in the description').tag(
         config=True)
     kernel_size = Int(3, help='sentence CNN kernel size').tag(config=True)
-    l_cnn_length = List(Int, default_value=[1, 2, 3],
-                        help='sentence CNN sizes').tag(config=True)
+
+    l_cnn_length = List(Int, default_value=[1, 2, 3], help='sentence CNN sizes').tag(config=True)
+    min_loc_distance = Int(10,
+                           help='the minimum distance between two entities to receive vote in edge sparse knrm'
+                           ).tag(config=True)
+
 
     def form_kernels(self):
         l_mu = [1.0]
@@ -142,6 +148,8 @@ class ExtData(Configurable):
 
 
 class SalienceBaseModel(nn.Module):
+    io_group = 'raw'
+
     def __init__(self, para, ext_data=None):
         """
         :param para: NNPara
@@ -160,6 +168,16 @@ class SalienceBaseModel(nn.Module):
 
     def save_model(self, output_name):
         return
+
+    def data_io(self, l_lines, io_parser=None):
+        if io_parser:
+            parser = io_parser
+        else:
+            parser = DataIO()
+        if not parser.l_target_data:
+            parser.group_name = self.io_group
+            parser.config_target_group()
+        return parser.parse_data(l_lines)
 
 
 class KernelPooling(nn.Module):

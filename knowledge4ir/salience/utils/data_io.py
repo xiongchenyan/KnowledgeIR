@@ -14,8 +14,181 @@ from knowledge4ir.utils import (
     abstract_field,
     salience_gold
 )
-
+import numpy as np
+import logging
+from traitlets.config import Configurable
+from traitlets import (
+    Int,
+    Unicode,
+    List,
+)
 use_cuda = torch.cuda.is_available()
+
+
+class DataIO(Configurable):
+    nb_features = Int(help='number of features').tag(config=True)
+    spot_field = Unicode(SPOT_FIELD, help='spot field').tag(config=True)
+    salience_label_field = Unicode(salience_gold, help='salience label').tag(config=True)
+    salience_field = Unicode(abstract_field, help='salience field').tag(config=True)
+    max_e_per_d = Int(200, help='max entity per doc').tag(config=True)
+    content_field = Unicode(body_field, help='content field').tag(config=True)
+    max_w_per_d = Int(500, help='maximum words per doc').tag(config=True)
+    nb_features = Int(help='first k features to use').tag(config=True)
+    l_target_data = List(
+        Unicode,
+        default_value=[]
+    ).tag(config=True)
+    group_name = Unicode(help='hot key for l_target_data').tag(config=True)
+
+    def __init__(self, **kwargs):
+        super(DataIO, self).__init__(**kwargs)
+
+        self.h_target_group = {
+            'raw': ['mtx_e', 'mtx_score', 'label'],
+            'feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
+            'duet': ['mtx_e', 'mtx_score', 'mtx_w', 'mtx_w_score', 'label'],
+            'event': ['TODO']    # TODO
+        }
+        self.h_data_meta = {
+            'mtx_e': {'dim': 2, 'd_type': 'Int'},
+            'mtx_score': {'dim': 2, 'd_type': 'Float'},
+            'label': {'dim': 2, 'd_type': 'Float'},
+            'mtx_w': {'dim': 2, 'd_type': 'Int'},
+            'mtx_w_score': {'dim': 2, 'd_type': 'Float'},
+            'ts_feature': {'dim': 3, 'd_type': 'Float'},
+        }
+        if not self.l_target_data:
+            if self.group_name:
+                self.config_target_group()
+
+    def config_target_group(self):
+        logging.info('io configing via group [%s]', self.group_name)
+        if self.group_name == 'event':
+            logging.error('event group io not specified')
+            raise NotImplementedError
+        self.l_target_data = self.h_target_group[self.group_name]
+        logging.info('io targets %s', json.dumps(self.l_target_data))
+
+    def parse_data(self, l_line):
+        l_data = []
+        while len(l_data) < len(self.l_target_data):
+            l_data.append([])
+        h_parsed_data = dict(zip(self.l_target_data, l_data))
+        # logging.debug('target keys %s, [%d]', json.dumps(self.l_target_data), len(self.l_target_data))
+        # logging.debug('data dict %s init %s', json.dumps(l_data), json.dumps(h_parsed_data))
+        for line in l_line:
+            h_info = json.loads(line)
+            h_this_data = self._parse_entity(h_info)
+            if 'mtx_w' in h_parsed_data:
+                h_this_data.update(self._parse_word(h_info))
+            if 'mtx_event' in h_parsed_data:
+                logging.error('event parsing io not implemented')
+                raise NotImplementedError
+            for key in h_parsed_data.keys():
+                assert key in h_this_data
+                h_parsed_data[key].append(h_this_data[key])
+
+        for key in h_parsed_data:
+            h_parsed_data[key] = self._data_to_variable(
+                self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
+                data_type=self.h_data_meta[key]['d_type']
+            )
+        # logging.debug('packed data contains keys %s', json.dumps(h_parsed_data.keys()))
+        return h_parsed_data, h_parsed_data['label']
+
+    def _data_to_variable(self, list_data, data_type='Float'):
+        v = None
+        if data_type == 'Int':
+            v = Variable(torch.LongTensor(list_data))
+        elif data_type == 'Float':
+            v = Variable(torch.FloatTensor(list_data))
+        else:
+            logging.error('convert to variable with data_type [%s] not implemented', data_type)
+            raise NotImplementedError
+        if use_cuda:
+            v = v.cuda()
+        return v
+
+    def _parse_entity(self, h_info):
+        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
+        if type(entity_spots) is list:
+            # backward compatibility
+            l_e = entity_spots
+            s_e = set(h_info[self.spot_field].get(self.salience_field, []))
+            test_label = [1 if e in s_e else -1 for e in l_e]
+        else:
+            l_e = entity_spots.get('entities', [])
+            test_label = entity_spots[self.salience_label_field]
+
+        l_label_org = [1 if label == 1 else -1 for label in test_label]
+        # Associate label with eid.
+        s_labels = dict(zip(l_e, l_label_org))
+        l_kept_e, l_e_tf = self.get_top_k_e(l_e, self.max_e_per_d)
+        ll_kept_feature = []
+        if 'features' in entity_spots:
+            # Associate features with eid.
+            ll_feature = entity_spots.get('features', [[]] * len(l_e))
+            h_e_feature = dict(zip(l_e, ll_feature))
+            ll_kept_feature = [h_e_feature[e] for e in l_kept_e]
+
+        l_label = [s_labels[e] for e in l_kept_e]
+        h_res = {
+            'mtx_e': l_kept_e,
+            'mtx_score': l_e_tf,
+            'ts_feature': ll_kept_feature,
+            'label': l_label
+        }
+        return h_res
+
+    def _parse_word(self, h_info):
+        l_words = h_info.get(self.content_field, [])
+        l_words, l_score = self.get_top_k_e(l_words, self.max_w_per_d)
+        h_res = {
+            'mtx_w': l_words,
+            'mtx_w_score': l_score,
+        }
+        return h_res
+
+    def _padding(self, data, dim=2, default_value=0):
+        if dim == 2:
+            return self.two_d_padding(data, default_value)
+        if dim == 3:
+            return self.three_d_padding(data, default_value)
+        raise NotImplementedError
+
+    @classmethod
+    def two_d_padding(cls, ll, default_value):
+        n = max([len(l) for l in ll])
+        for i in xrange(len(ll)):
+            ll[i] += [default_value] * (n - len(ll[i]))
+        return ll
+
+    @classmethod
+    def three_d_padding(cls, lll, default_value):
+        l_dim = [len(lll), 0, 0]
+        for ll in lll:
+            l_dim[1] = max(l_dim[1], len(ll))
+            for l in ll:
+                l_dim[2] = max(l_dim[2], len(l))
+        for i in xrange(len(lll)):
+            for j in xrange(len(lll[i])):
+                lll[i][j] += [default_value] * (l_dim[2] - len(lll[i][j]))
+            while len(lll[i]) < l_dim[1]:
+                lll[i].append([default_value] * l_dim[2])
+        return lll
+
+    @classmethod
+    def get_top_k_e(cls, l_term, max_number):
+        h_e_tf = term2lm(l_term)
+        l_e_tf = sorted(h_e_tf.items(), key=lambda item: -item[1])[:max_number]
+        l_term = [item[0] for item in l_e_tf]
+        z = float(sum([item[1] for item in l_e_tf]))
+        l_w = [item[1] / z for item in l_e_tf]
+        return l_term, l_w
+
+"""
+=============To be deprecated data i/o functions=============
+"""
 
 
 def padding(ll, filler):
@@ -23,6 +196,20 @@ def padding(ll, filler):
     for i in xrange(len(ll)):
         ll[i] += [filler] * (n - len(ll[i]))
     return ll
+
+
+def three_d_padding(lll, filler):
+    l_dim = [len(lll), 0, 0]
+    for ll in lll:
+        l_dim[1] = max(l_dim[1], len(ll))
+        for l in ll:
+            l_dim[2] = max(l_dim[2], len(l))
+    for i in xrange(len(lll)):
+        for j in xrange(len(lll[i])):
+            lll[i][j] += [filler] * (l_dim[2] - len(lll[i][j]))
+        while len(lll[i]) < l_dim[1]:
+            lll[i].append([filler] * l_dim[2])
+    return lll
 
 
 def get_top_k_e(l_e, max_e_per_d):
@@ -531,6 +718,71 @@ def duet_io(l_line, spot_field=SPOT_FIELD,
         "mtx_w_score": m_word_score,
     }
     return h_packed_data, m_label
+
+
+def adj_edge_io(
+        l_line, spot_field=SPOT_FIELD,
+        in_field=body_field, salience_field=abstract_field,
+        max_e_per_d=200
+        ):
+    """
+    convert data to the input for the model
+    """
+    ll_e = []
+    ll_w = []
+    ll_label = []
+    lll_e_distance = []
+    for line in l_line:
+        h = json.loads(line)
+        l_seq_e = h[spot_field].get(in_field, [])
+        l_e, l_w = get_top_k_e(l_seq_e, max_e_per_d)
+        ll_e_distance = _form_distance_mtx(l_seq_e, l_e)
+        s_salient_e = set(h[spot_field].get(salience_field, []))
+        l_label = [1 if e in s_salient_e else -1 for e in l_e]
+        ll_e.append(l_e)
+        ll_w.append(l_w)
+        ll_label.append(l_label)
+        lll_e_distance.append(ll_e_distance)
+
+    ll_e = padding(ll_e, 0)
+    ll_w = padding(ll_w, 0)
+    ll_label = padding(ll_label, 0)
+    lll_e_distance = three_d_padding(lll_e_distance, -1)
+    m_e = Variable(torch.LongTensor(ll_e)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(ll_e))
+    m_w = Variable(torch.FloatTensor(ll_w)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_w))
+    m_label = Variable(torch.FloatTensor(ll_label)).cuda() \
+        if use_cuda else Variable(torch.FloatTensor(ll_label))
+    ts_e_distance = Variable(
+        torch.LongTensor(lll_e_distance)).cuda() \
+        if use_cuda else Variable(torch.LongTensor(lll_e_distance))
+    h_packed_data = {
+        "mtx_e": m_e,
+        "mtx_score": m_w,
+        'ts_distance': ts_e_distance,
+    }
+    return h_packed_data, m_label
+
+
+def _form_distance_mtx(l_seq_e, l_e):
+    h_e_p = dict(zip(l_e, range(len(l_e))))
+    ll_distance = []
+    for i in xrange(len(l_e)):
+        ll_distance.append([-1] * len(l_e))
+        ll_distance[i][i] = 0
+
+    for i in xrange(len(l_seq_e)):
+        if l_seq_e[i] not in h_e_p:
+            continue
+        p_i = h_e_p[l_seq_e[i]]
+        for j in xrange(i + 1, len(l_seq_e)):
+            if l_seq_e[j] not in h_e_p:
+                continue
+            p_j = h_e_p[l_seq_e[j]]
+            ll_distance[p_i][p_j] = min(j - i, ll_distance[p_i][p_j]) if ll_distance[p_i][p_j] != -1 \
+                else j - i
+    return ll_distance
 
 
 if __name__ == '__main__':

@@ -20,6 +20,8 @@ use_cuda = torch.cuda.is_available()
 
 
 class DuetKNRM(KNRM):
+    io_group = 'duet'
+
     def __init__(self, para, ext_data=None):
         super(DuetKNRM, self).__init__(para, ext_data)
         assert ext_data.word_emb is not None
@@ -69,9 +71,10 @@ class DuetKNRM(KNRM):
 
 
 class GlossCNNEmbDuet(DuetKNRM):
+    io_group = 'duet'
+
     def __init__(self, para, ext_data=None):
         super(GlossCNNEmbDuet, self).__init__(para, ext_data)
-
         assert ext_data.word_emb is not None
         assert ext_data.entity_desp is not None
         assert para.desp_sent_len

@@ -3,11 +3,9 @@ kernel based votes from other entities
 """
 
 import logging
+
 import numpy as np
 import torch
-import torch.nn as nn
-import json
-
 from torch import nn as nn
 
 from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
@@ -37,14 +35,17 @@ class KNRM(SalienceBaseModel):
         return
 
     def forward(self, h_packed_data):
-        assert 'mtx_e' in h_packed_data
-        assert 'mtx_score' in h_packed_data
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         mtx_embedding = self.embedding(mtx_e)
         return self._knrm_opt(mtx_embedding, mtx_score)
 
     def save_model(self, output_name):
+        """
+        to be deprecated, will use Torch's general model save/load API
+        :param output_name:
+        :return:
+        """
         logging.info('saving knrm embedding and linear weights to [%s]',
                      output_name)
         emb_mtx = self.embedding.weight.data.cpu().numpy()
