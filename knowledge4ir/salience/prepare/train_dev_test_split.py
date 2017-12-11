@@ -32,6 +32,8 @@ test_out = open(sys.argv[5] + '.test', 'w')
 train_cnt, dev_cnt, test_cnt = 0, 0, 0
 
 for p, line in enumerate(open(sys.argv[1])):
+    if not p % 10000:
+        print 'processed [%d] doc has [%d/%d/%d]' % (p, train_cnt, dev_cnt, test_cnt)
     line = line.strip()
     docno = json.loads(line)['docno']
     if docno in s_dev_docno:
