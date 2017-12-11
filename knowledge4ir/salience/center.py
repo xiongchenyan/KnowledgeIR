@@ -185,7 +185,6 @@ class SalienceModelCenter(Configurable):
                 self.h_model_io[self.model_name] = feature_io
             else:
                 logging.error("Unknown model type [%s]." % self.input_format)
-
         else:
             logging.debug("No format overwrite.")
 
