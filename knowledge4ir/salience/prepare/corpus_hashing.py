@@ -81,7 +81,9 @@ class CorpusHasher(Configurable):
     def _hash_spots(self, h_info, h_hashed):
         h_hashed['spot'] = dict()
         for field, l_ana in h_info['spot'].items():
-            l_ana_id = [self.h_entity_id.get(ana['id'], 0) for ana in l_ana]
+            l_e_id = self._get_e_id_from_ana(l_ana)
+            l_ana_id = [self.h_entity_id.get(e_id, 0) for e_id in l_e_id]
+            # l_ana_id = [self.h_entity_id.get(ana['id'], 0) for ana in l_ana]
             if not l_ana_id:
                 this_field_data = {
                     "entities": [],
@@ -244,13 +246,18 @@ class CorpusHasher(Configurable):
         raw_salience = [
             ana.get('salience', 0) for ana in l_ana
         ]
-        l_ana_id = [self.h_entity_id.get(ana['id'], 0) for ana in l_ana]
+        l_e_id = self._get_e_id_from_ana(l_ana)
+        l_ana_id = [self.h_entity_id.get(e_id, 0) for e_id in l_e_id]
         h_salience = dict(zip(l_ana_id, raw_salience))
 
         l_salience = [0] * len(valid_ids)
         for p, e_id in enumerate(valid_ids):
             l_salience[p] = h_salience[e_id]
         return l_salience
+
+    def _get_e_id_from_ana(self, l_ana):
+        l_e_id = [ana['entities']['id'] for ana in l_ana]
+        return l_e_id
 
     def _get_event_salience(self, l_ana):
         return [ana.get('salience', 0) for ana in l_ana]
@@ -271,7 +278,9 @@ class CorpusHasher(Configurable):
         return ll_feature
 
     def _add_entity_loc(self, l_ana, valid_ids):
-        l_ana_id = [self.h_entity_id.get(ana['id'], 0) for ana in l_ana]
+        l_e_id = self._get_e_id_from_ana(l_ana)
+        l_ana_id = [self.h_entity_id.get(e_id, 0) for e_id in l_e_id]
+        # l_ana_id = [self.h_entity_id.get(ana['id'], 0) for ana in l_ana]
         l_ana_loc = [ana['loc'] for ana in l_ana]
         h_id_loc = {}
 
