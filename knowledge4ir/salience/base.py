@@ -167,6 +167,7 @@ class SalienceBaseModel(nn.Module):
         """
 
     def save_model(self, output_name):
+        logging.warn('deprecated, would use the build-in save api of torch')
         return
 
     def data_io(self, l_lines, io_parser=None):

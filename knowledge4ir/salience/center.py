@@ -243,6 +243,11 @@ class SalienceModelCenter(Configurable):
 
         if validation_in_name:
             self._init_early_stopper(validation_in_name)
+        if model_out_name is None:
+            model_out_name = train_in_name + '.model_%s' % self.model_name
+        model_dir = os.path.dirname(model_out_name)
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
 
         optimizer = torch.optim.Adam(
             filter(lambda model_para: model_para.requires_grad,
@@ -289,7 +294,7 @@ class SalienceModelCenter(Configurable):
 
             # validation
             if validation_in_name:
-                if self._early_stop():
+                if self._early_stop(model_out_name):
                     logging.info('early stopped at [%d] epoch', epoch)
                     break
 
@@ -297,11 +302,8 @@ class SalienceModelCenter(Configurable):
                      json.dumps(l_epoch_loss))
 
         if model_out_name:
-            model_dir = os.path.dirname(model_out_name)
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir)
-
             self.model.save_model(model_out_name)
+            torch.save(self.model, model_out_name)
         return
 
     def _init_early_stopper(self, validation_in_name):
@@ -319,25 +321,39 @@ class SalienceModelCenter(Configurable):
                                    ) / float(len(self.ll_valid_line))
         logging.info('initial validation loss [%.4f]', self.best_valid_loss)
 
-    def _early_stop(self):
+    def _early_stop(self, model_out_name):
         this_valid_loss = sum([self._batch_test(l_one_batch)
                                for l_one_batch in self.ll_valid_line]
                               ) / float(len(self.ll_valid_line))
         logging.info('valid loss [%f]', this_valid_loss)
         if self.best_valid_loss is None:
             self.best_valid_loss = this_valid_loss
+            logging.info('init valid loss with [%f]', this_valid_loss)
+            if model_out_name:
+                logging.info('save init model to [%s]', model_out_name)
+                torch.save(self.model, model_out_name)
+                logging.info('model kept')
         elif this_valid_loss > self.best_valid_loss:
             self.patient_cnt += 1
             logging.info('valid loss increased [%.4f -> %.4f][%d]',
                          self.best_valid_loss, this_valid_loss,
                          self.patient_cnt)
             if self.patient_cnt >= self.early_stopping_patient:
+                logging.info('early stopped after patient [%d]', self.patient_cnt)
+                logging.info('loading best model [%s] with loss [%f]',
+                             model_out_name, self.best_valid_loss)
+                self.model = torch.load(model_out_name)
                 return True
         else:
             self.patient_cnt = 0
             logging.info('valid loss decreased [%.4f -> %.4f][%d]',
                          self.best_valid_loss, this_valid_loss,
                          self.patient_cnt)
+            if model_out_name:
+                logging.info('update best model at [%s]', model_out_name)
+                torch.save(self.model, model_out_name)
+                logging.info('model kept')
+
             self.best_valid_loss = this_valid_loss
         return False
 
