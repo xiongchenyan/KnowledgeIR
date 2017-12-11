@@ -120,7 +120,7 @@ class DataIO(Configurable):
             l_e = entity_spots.get('entities', [])
             test_label = entity_spots[self.salience_label_field]
 
-        l_label_org = [1 if label == 1 else -1 for label in test_label]
+        l_label_org = [1 if label > 0 else -1 for label in test_label]
         # Associate label with eid.
         s_labels = dict(zip(l_e, l_label_org))
         l_kept_e, l_e_tf = self.get_top_k_e(l_e, self.max_e_per_d)
