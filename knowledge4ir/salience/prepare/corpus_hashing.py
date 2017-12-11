@@ -327,10 +327,16 @@ if __name__ == '__main__':
     )
 
     set_basic_log(logging.INFO)
-    if 2 != len(sys.argv):
-        print "hashing corpus, 1 para, config:"
+    if 2 > len(sys.argv):
+        print "hashing corpus, 1+ para, config + input (opt, can be in conf)+ output (opt, can be in conf)"
         CorpusHasher.class_print_help()
         sys.exit(-1)
 
     hasher = CorpusHasher(config=load_py_config(sys.argv[1]))
+    if len(sys.argv) >= 3:
+        hasher.corpus_in = sys.argv[2]
+        logging.info('corpus in set to [%s]', sys.argv[2])
+    if len(sys.argv) >= 4:
+        hasher.out_name = sys.argv[3]
+        logging.info('output set to [%s]', sys.argv[3])
     hasher.process()
