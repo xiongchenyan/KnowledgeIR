@@ -256,7 +256,7 @@ class CorpusHasher(Configurable):
         return l_salience
 
     def _get_e_id_from_ana(self, l_ana):
-        l_e_id = [ana['entities']['id'] for ana in l_ana]
+        l_e_id = [ana['entities'][0]['id'] for ana in l_ana]
         return l_e_id
 
     def _get_event_salience(self, l_ana):
