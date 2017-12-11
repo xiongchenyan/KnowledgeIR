@@ -61,7 +61,7 @@ class CorpusHasher(Configurable):
     frame_name_file = Unicode(help="file containing possible frame names").tag(
         config=True)
 
-    content_field = Unicode(body_field, help='the main content field').tag(config=True)
+    content_field = Unicode(help='the main content field').tag(config=True)
     salience_field = Unicode(help='the salience field').tag(config=True)
 
     lookups = {}
@@ -220,8 +220,9 @@ class CorpusHasher(Configurable):
         with open_func(self.corpus_in) as in_f:
             for p, line in enumerate(in_f):
                 h_hashed = self.hash_per_info(json.loads(line))
-                if not h_hashed['spot'][self.content_field]['entities']:
-                    continue
+                if self.content_field:
+                    if not h_hashed['spot'][self.content_field]['entities']:
+                        continue
                 print >> out, json.dumps(h_hashed)
                 if not p % 1000:
                     logging.info('processing [%d] lines', p)
