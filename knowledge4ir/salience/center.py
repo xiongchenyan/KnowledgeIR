@@ -154,7 +154,7 @@ class SalienceModelCenter(Configurable):
         'knrm': event_feature_io,
     }
 
-    in_field = Unicode(body_field)
+    # in_field = Unicode(body_field)
     spot_field = Unicode('spot')
     event_spot_field = Unicode('event')
     abstract_field = Unicode('abstract')
@@ -459,10 +459,10 @@ class SalienceModelCenter(Configurable):
     def _filter_empty_line(self, line):
         h = json.loads(line)
         if self.event_model:
-            l_e = h[self.event_spot_field].get(self.in_field, {}).get(
+            l_e = h[self.event_spot_field].get(self.io_parser.content_field, {}).get(
                 'salience')
         else:
-            l_e = h[self.spot_field].get(self.in_field)
+            l_e = h[self.spot_field].get(self.io_parser.content_field)
         return not l_e
 
     def _data_io(self, l_line):
