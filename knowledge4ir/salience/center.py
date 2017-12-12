@@ -97,7 +97,7 @@ class SalienceModelCenter(Configurable):
         config=True)
     early_stopping_patient = Int(5, help='epochs before early stopping').tag(
         config=True)
-    early_stopping_frequency = Int(300000,
+    early_stopping_frequency = Int(100000000,
                                    help='the nb of data points to check dev loss'
                                    ).tag(config=True)
     max_e_per_doc = Int(200, help='max e per doc')
@@ -283,12 +283,13 @@ class SalienceModelCenter(Configurable):
                                      p, data_cnt, total_loss / p)
                     l_this_batch_line = []
                     if es_cnt >= self.early_stopping_patient:
+                        logging.info('checking dev loss at [%d]-[%d]', epoch, es_cnt)
+                        es_cnt = 0
                         if validation_in_name:
                             if self._early_stop(model_out_name):
                                 logging.info('early stopped at [%d] epoch [%d] data',
                                              epoch, data_cnt)
                                 es_flag = True
-                                es_cnt = 0
                                 break
             if es_flag:
                 break
