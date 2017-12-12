@@ -50,12 +50,9 @@ class EmbPageRank(SalienceBaseModel):
         for p in xrange(self.layer):
             output = torch.matmul(trans_mtx, output)
 
-        output = self.linear(torch.cat([mtx_score.unsqueeze(-1), output]))
+        output = self.linear(torch.cat([mtx_score.unsqueeze(-1), output], dim=-1))
         output = output.squeeze(-1)
-        # if use_cuda:
         return output.cuda()
-        # else:
-        #     return output
 
 
 class EdgeCNN(SalienceBaseModel):
