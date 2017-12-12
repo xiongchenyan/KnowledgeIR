@@ -111,6 +111,7 @@ class SalienceModelCenter(Configurable):
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
+        "trans": EmbPageRank,
         'knrm': KNRM,
         'linear_kcrf': LinearKernelCRF,
 
@@ -124,7 +125,6 @@ class SalienceModelCenter(Configurable):
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
         'local_max_rnn': LocalRNNMaxSim,  # not working
-        "trans": EmbPageRank,  # not working
         'EdgeCNN': EdgeCNN,  # not working
         'lr': EmbeddingLR,  # not working
         'kcrf': KernelCRF,  # not working
