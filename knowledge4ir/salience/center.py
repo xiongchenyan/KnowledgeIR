@@ -131,7 +131,7 @@ class SalienceModelCenter(Configurable):
     }
 
     h_model_io = {
-        'frequency': feature_io,
+        'frequency': raw_io,
         'feature_lr': feature_io,
         'knrm': raw_io,
         'linear_kcrf': feature_io,
@@ -284,7 +284,8 @@ class SalienceModelCenter(Configurable):
                                      p, data_cnt, total_loss / p)
                     l_this_batch_line = []
                     if es_cnt >= self.early_stopping_frequency:
-                        logging.info('checking dev loss at [%d]-[%d] vs frequency [%d]', epoch, es_cnt, self.early_stopping_frequency)
+                        logging.info('checking dev loss at [%d]-[%d] vs frequency [%d]', epoch, es_cnt,
+                                     self.early_stopping_frequency)
                         es_cnt = 0
                         if validation_in_name:
                             if self._early_stop(model_out_name):

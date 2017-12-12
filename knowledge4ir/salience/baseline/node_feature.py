@@ -52,17 +52,18 @@ class FrequencySalience(SalienceBaseModel):
 
     def __init__(self, para, ext_data=None):
         super(FrequencySalience, self).__init__(para, ext_data)
-        self.linear = nn.Linear(1, 1)
-        if use_cuda:
-            self.linear.cuda()
+        # self.linear = nn.Linear(1, 1)
+        # if use_cuda:
+        #     self.linear.cuda()
         return
 
     def forward(self, h_packed_data,):
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
-        output = mtx_score.unsqueeze(-1)
-        output = self.linear(output)
-        output = output.squeeze(-1)
+        output = mtx_score
+        # output = mtx_score.unsqueeze(-1)
+        # output = self.linear(output)
+        # output = output.squeeze(-1)
         if use_cuda:
             return output.cuda()
         else:
