@@ -97,6 +97,9 @@ class SalienceModelCenter(Configurable):
         config=True)
     early_stopping_patient = Int(5, help='epochs before early stopping').tag(
         config=True)
+    early_stopping_frequency = Int(100000000,
+                                   help='the nb of data points to check dev loss'
+                                   ).tag(config=True)
     max_e_per_doc = Int(200, help='max e per doc')
     event_model = Bool(False, help='Run event model').tag(config=True)
     joint_model = Bool(False, help='Run joint model').tag(config=True)
@@ -128,7 +131,7 @@ class SalienceModelCenter(Configurable):
     }
 
     h_model_io = {
-        'frequency': feature_io,
+        'frequency': raw_io,
         'feature_lr': feature_io,
         'knrm': raw_io,
         'linear_kcrf': feature_io,
@@ -151,7 +154,7 @@ class SalienceModelCenter(Configurable):
         'knrm': event_feature_io,
     }
 
-    in_field = Unicode(body_field)
+    # in_field = Unicode(body_field)
     spot_field = Unicode('spot')
     event_spot_field = Unicode('event')
     abstract_field = Unicode('abstract')
@@ -205,6 +208,7 @@ class SalienceModelCenter(Configurable):
         NNPara.class_print_help(inst)
         ExtData.class_print_help(inst)
         SalienceEva.class_print_help(inst)
+        DataIO.class_print_help(inst)
 
     def _init_model(self):
         if self.model_name:
@@ -260,10 +264,13 @@ class SalienceModelCenter(Configurable):
             data_cnt = 0
             logging.info('start epoch [%d]', epoch)
             l_this_batch_line = []
+            es_cnt = 0
+            es_flag = False
             for line in open(train_in_name):
                 if self._filter_empty_line(line):
                     continue
                 data_cnt += 1
+                es_cnt += 1
                 l_this_batch_line.append(line)
                 if len(l_this_batch_line) >= self.batch_size:
                     this_loss = self._batch_train(l_this_batch_line,
@@ -276,6 +283,18 @@ class SalienceModelCenter(Configurable):
                         logging.info('batch [%d] [%d] data, average loss [%f]',
                                      p, data_cnt, total_loss / p)
                     l_this_batch_line = []
+                    if es_cnt >= self.early_stopping_frequency:
+                        logging.info('checking dev loss at [%d]-[%d] vs frequency [%d]', epoch, es_cnt,
+                                     self.early_stopping_frequency)
+                        es_cnt = 0
+                        if validation_in_name:
+                            if self._early_stop(model_out_name):
+                                logging.info('early stopped at [%d] epoch [%d] data',
+                                             epoch, data_cnt)
+                                es_flag = True
+                                break
+            if es_flag:
+                break
 
             if l_this_batch_line:
                 this_loss = self._batch_train(l_this_batch_line, self.criterion,
@@ -441,10 +460,10 @@ class SalienceModelCenter(Configurable):
     def _filter_empty_line(self, line):
         h = json.loads(line)
         if self.event_model:
-            l_e = h[self.event_spot_field].get(self.in_field, {}).get(
+            l_e = h[self.event_spot_field].get(self.io_parser.content_field, {}).get(
                 'salience')
         else:
-            l_e = h[self.spot_field].get(self.in_field)
+            l_e = h[self.spot_field].get(self.io_parser.content_field)
         return not l_e
 
     def _data_io(self, l_line):
