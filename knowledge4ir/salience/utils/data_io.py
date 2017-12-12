@@ -113,11 +113,11 @@ class DataIO(Configurable):
         entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
         if type(entity_spots) is list:
             # backward compatibility
-            l_e = entity_spots
+            l_e = entity_spots   # TODO: verify this one works
             s_e = set(h_info[self.spot_field].get(self.salience_field, []))
             test_label = [1 if e in s_e else -1 for e in l_e]
         else:
-            l_e = entity_spots.get('entities', [])
+            l_e = entity_spots.get('entities', [])    # TODO need to check and fix the mtx_score with new io
             test_label = entity_spots[self.salience_label_field]
 
         l_label_org = [1 if label > 0 else -1 for label in test_label]
