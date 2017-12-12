@@ -132,6 +132,10 @@ class DataIO(Configurable):
             ll_kept_feature = [h_e_feature[e] for e in l_kept_e]
 
         l_label = [s_labels[e] for e in l_kept_e]
+
+
+        # hot-fix for S2 IO for now TODO fix this!
+        l_e_tf = [item[0] for item in ll_kept_feature]
         h_res = {
             'mtx_e': l_kept_e,
             'mtx_score': l_e_tf,
