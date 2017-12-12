@@ -282,8 +282,8 @@ class SalienceModelCenter(Configurable):
                         logging.info('batch [%d] [%d] data, average loss [%f]',
                                      p, data_cnt, total_loss / p)
                     l_this_batch_line = []
-                    if es_cnt >= self.early_stopping_patient:
-                        logging.info('checking dev loss at [%d]-[%d]', epoch, es_cnt)
+                    if es_cnt >= self.early_stopping_frequency:
+                        logging.info('checking dev loss at [%d]-[%d] vs frequency [%d]', epoch, es_cnt, self.early_stopping_frequency)
                         es_cnt = 0
                         if validation_in_name:
                             if self._early_stop(model_out_name):
