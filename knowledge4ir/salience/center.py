@@ -208,6 +208,7 @@ class SalienceModelCenter(Configurable):
         NNPara.class_print_help(inst)
         ExtData.class_print_help(inst)
         SalienceEva.class_print_help(inst)
+        DataIO.class_print_help(inst)
 
     def _init_model(self):
         if self.model_name:
