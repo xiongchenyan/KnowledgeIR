@@ -24,7 +24,7 @@ class EmbPageRank(SalienceBaseModel):
         vocab_size = para.entity_vocab_size
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
-        self.linear = nn.Linear(1, 1, bias=True)
+        self.linear = nn.Linear(2, 1, bias=True)
         if ext_data.entity_emb is not None:
             self.embedding.weight.data.copy_(torch.from_numpy(ext_data.entity_emb))
         if use_cuda:
@@ -50,12 +50,12 @@ class EmbPageRank(SalienceBaseModel):
         for p in xrange(self.layer):
             output = torch.matmul(trans_mtx, output)
 
-        output = self.linear(output)
+        output = self.linear(torch.cat([mtx_score.unsqueeze(-1), output]))
         output = output.squeeze(-1)
-        if use_cuda:
-            return output.cuda()
-        else:
-            return output
+        # if use_cuda:
+        return output.cuda()
+        # else:
+        #     return output
 
 
 class EdgeCNN(SalienceBaseModel):
