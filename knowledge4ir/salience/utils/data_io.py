@@ -113,25 +113,52 @@ class DataIO(Configurable):
         entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
         if type(entity_spots) is list:
             # backward compatibility
-            l_e = entity_spots
-            s_e = set(h_info[self.spot_field].get(self.salience_field, []))
-            test_label = [1 if e in s_e else -1 for e in l_e]
-        else:
-            l_e = entity_spots.get('entities', [])
-            test_label = entity_spots[self.salience_label_field]
+            return self._parse_entity_old(h_info)
 
-        l_label_org = [1 if label == 1 else -1 for label in test_label]
+        l_e = entity_spots.get('entities', [])
+        test_label = entity_spots[self.salience_label_field]
+        l_label_org = [1 if label > 0 else -1 for label in test_label]
+        # Associate label with eid.
+        h_labels = dict(zip(l_e, l_label_org))
+        ll_feature = entity_spots.get('features', [[]] * len(l_e))
+        h_e_feature = dict(zip(l_e, ll_feature))
+        l_e_tf = [item[0] for item in ll_feature]
+
+        l_e_with_tf = zip(l_e, l_e_tf)
+        l_e_with_tf.sort(key=lambda item: item[1], reverse=True)
+        l_e_with_tf = l_e_with_tf[:self.max_e_per_d]
+        l_kept_e = [item[0] for item in l_e_with_tf]
+        l_kept_e_tf = [item[1] for item in l_e_with_tf]
+
+        ll_kept_feature = [h_e_feature[e] for e in l_kept_e]
+        l_label = [h_labels[e] for e in l_kept_e]
+
+        h_res = {
+            'mtx_e': l_kept_e,
+            'mtx_score': l_kept_e_tf,
+            'ts_feature': ll_kept_feature,
+            'label': l_label
+        }
+        return h_res
+
+    def _parse_entity_old(self, h_info):
+        # backward compatibility
+        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
+        l_e = entity_spots
+        s_e = set(h_info[self.spot_field].get(self.salience_field, []))
+        test_label = [1 if e in s_e else -1 for e in l_e]
+        l_label_org = [1 if label > 0 else -1 for label in test_label]
         # Associate label with eid.
         s_labels = dict(zip(l_e, l_label_org))
+
         l_kept_e, l_e_tf = self.get_top_k_e(l_e, self.max_e_per_d)
+        l_label = [s_labels[e] for e in l_kept_e]
         ll_kept_feature = []
         if 'features' in entity_spots:
             # Associate features with eid.
             ll_feature = entity_spots.get('features', [[]] * len(l_e))
             h_e_feature = dict(zip(l_e, ll_feature))
             ll_kept_feature = [h_e_feature[e] for e in l_kept_e]
-
-        l_label = [s_labels[e] for e in l_kept_e]
         h_res = {
             'mtx_e': l_kept_e,
             'mtx_score': l_e_tf,
