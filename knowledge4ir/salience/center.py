@@ -418,7 +418,7 @@ class SalienceModelCenter(Configurable):
             if not p % 1000:
                 logging.info('predicted [%d] docs, eva %s', p,
                              json.dumps(h_mean_eva))
-        h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
+        h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / max(p, 1.0))
         logging.info('finished predicted [%d] docs, eva %s', p,
                      json.dumps(h_mean_eva))
         json.dump(
