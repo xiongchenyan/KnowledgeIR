@@ -475,6 +475,8 @@ class SalienceModelCenter(Configurable):
                 'salience')
         else:
             l_e = h[self.spot_field].get(self.io_parser.content_field)
+            if type(l_e) == dict:
+                l_e = l_e.get('entities')
         return not l_e
 
     def _data_io(self, l_line):
