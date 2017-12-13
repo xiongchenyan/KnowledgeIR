@@ -375,6 +375,10 @@ class SalienceModelCenter(Configurable):
             self.best_valid_loss = this_valid_loss
         return False
 
+    def load_model(self, model_out_name):
+        logging.info('loading trained model from [%s]', model_out_name)
+        self.model = torch.load(model_out_name)
+
     def _batch_train(self, l_line, criterion, optimizer):
         h_packed_data, m_label = self._data_io(l_line)
         optimizer.zero_grad()
