@@ -22,14 +22,17 @@ from traitlets import (
     Unicode,
     List,
 )
+
 use_cuda = torch.cuda.is_available()
 
 
 class DataIO(Configurable):
     nb_features = Int(help='number of features').tag(config=True)
     spot_field = Unicode(SPOT_FIELD, help='spot field').tag(config=True)
-    salience_label_field = Unicode(salience_gold, help='salience label').tag(config=True)
-    salience_field = Unicode(abstract_field, help='salience field').tag(config=True)
+    salience_label_field = Unicode(salience_gold, help='salience label').tag(
+        config=True)
+    salience_field = Unicode(abstract_field, help='salience field').tag(
+        config=True)
     max_e_per_d = Int(200, help='max entity per doc').tag(config=True)
     content_field = Unicode(body_field, help='content field').tag(config=True)
     max_w_per_d = Int(500, help='maximum words per doc').tag(config=True)
@@ -47,7 +50,7 @@ class DataIO(Configurable):
             'raw': ['mtx_e', 'mtx_score', 'label'],
             'feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'duet': ['mtx_e', 'mtx_score', 'mtx_w', 'mtx_w_score', 'label'],
-            'event': ['TODO']    # TODO
+            'event': ['mtx_e', 'mtx_score', 'ts_feature', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
@@ -63,9 +66,6 @@ class DataIO(Configurable):
 
     def config_target_group(self):
         logging.info('io configing via group [%s]', self.group_name)
-        if self.group_name == 'event':
-            logging.error('event group io not specified')
-            raise NotImplementedError
         self.l_target_data = self.h_target_group[self.group_name]
         logging.info('io targets %s', json.dumps(self.l_target_data))
 
@@ -74,8 +74,10 @@ class DataIO(Configurable):
         while len(l_data) < len(self.l_target_data):
             l_data.append([])
         h_parsed_data = dict(zip(self.l_target_data, l_data))
-        # logging.debug('target keys %s, [%d]', json.dumps(self.l_target_data), len(self.l_target_data))
-        # logging.debug('data dict %s init %s', json.dumps(l_data), json.dumps(h_parsed_data))
+        # logging.debug('target keys %s, [%d]', json.dumps(self.l_target_data),
+        #               len(self.l_target_data))
+        # logging.debug('data dict %s init %s', json.dumps(l_data),
+        #               json.dumps(h_parsed_data))
         for line in l_line:
             h_info = json.loads(line)
             h_this_data = self._parse_entity(h_info)
@@ -103,14 +105,17 @@ class DataIO(Configurable):
         elif data_type == 'Float':
             v = Variable(torch.FloatTensor(list_data))
         else:
-            logging.error('convert to variable with data_type [%s] not implemented', data_type)
+            logging.error(
+                'convert to variable with data_type [%s] not implemented',
+                data_type)
             raise NotImplementedError
         if use_cuda:
             v = v.cuda()
         return v
 
     def _parse_entity(self, h_info):
-        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
+        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field,
+                                                           {})
         if type(entity_spots) is list:
             # backward compatibility
             return self._parse_entity_old(h_info)
@@ -143,7 +148,8 @@ class DataIO(Configurable):
 
     def _parse_entity_old(self, h_info):
         # backward compatibility
-        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
+        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field,
+                                                           {})
         l_e = entity_spots
         s_e = set(h_info[self.spot_field].get(self.salience_field, []))
         test_label = [1 if e in s_e else -1 for e in l_e]
@@ -212,6 +218,7 @@ class DataIO(Configurable):
         z = float(sum([item[1] for item in l_e_tf]))
         l_w = [item[1] / z for item in l_e_tf]
         return l_term, l_w
+
 
 """
 =============To be deprecated data i/o functions=============
@@ -751,7 +758,7 @@ def adj_edge_io(
         l_line, spot_field=SPOT_FIELD,
         in_field=body_field, salience_field=abstract_field,
         max_e_per_d=200
-        ):
+):
     """
     convert data to the input for the model
     """
@@ -807,7 +814,8 @@ def _form_distance_mtx(l_seq_e, l_e):
             if l_seq_e[j] not in h_e_p:
                 continue
             p_j = h_e_p[l_seq_e[j]]
-            ll_distance[p_i][p_j] = min(j - i, ll_distance[p_i][p_j]) if ll_distance[p_i][p_j] != -1 \
+            ll_distance[p_i][p_j] = min(j - i, ll_distance[p_i][p_j]) if \
+                ll_distance[p_i][p_j] != -1 \
                 else j - i
     return ll_distance
 
