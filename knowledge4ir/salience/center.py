@@ -430,7 +430,12 @@ class SalienceModelCenter(Configurable):
         return
 
     def _per_doc_predict(self, line):
-        docno = json.loads(line)['docno']
+        h_info = json.loads(line)
+        key_name = 'docno'
+        if key_name not in h_info:
+            key_name = 'qid'
+            assert key_name in h_info
+        docno = h_info[key_name]
         h_packed_data, v_label = self._data_io([line])
         v_e = h_packed_data['mtx_e']
         # v_w = h_packed_data['mtx_score']
@@ -445,7 +450,7 @@ class SalienceModelCenter(Configurable):
         l_label = y.numpy().tolist()
 
         h_out = dict()
-        h_out['docno'] = docno
+        h_out[key_name] = docno
 
         l_e = v_e.data.numpy().tolist()
         l_res = pre_label.numpy().tolist()
