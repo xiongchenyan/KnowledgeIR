@@ -43,6 +43,5 @@ if __name__ == '__main__':
     set_basic_log(logging.getLevelName(para.log_level))
 
     model = SalienceModelCenter(config=conf)
-    model.train(para.train_in, para.valid_in, para.model_out)
     model.load_model(para.model_out)
     model.predict(para.test_in, para.test_out)
