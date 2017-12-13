@@ -454,7 +454,9 @@ class SalienceModelCenter(Configurable):
 
         l_e = v_e.data.numpy().tolist()
         l_res = pre_label.numpy().tolist()
-        h_out['predict'] = zip(l_e, zip(l_score, l_res))
+        h_out[self.io_parser.content_field] = {'predict': zip(l_e, l_score)}
+        # h_out['predict'] = zip(l_e, l_score)
+
         h_this_eva = self.evaluator.evaluate(l_score, l_label)
         h_out['eval'] = h_this_eva
         return h_out, h_this_eva
