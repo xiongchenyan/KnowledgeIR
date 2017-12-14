@@ -12,6 +12,8 @@ import gzip
 import json
 from knowledge4ir.utils import add_svm_feature, mutiply_svm_feature
 import logging
+from sklearn.metrics import roc_auc_score
+import numpy as np
 
 
 def open_func(corpus_in):
@@ -126,9 +128,11 @@ class SalienceEva(Configurable):
         super(SalienceEva, self).__init__(**kwargs)
         self.h_eva_metric = {
             "p": self.p_at_k,
-            "precision": self.precision,
-            "recall": self.recall,
-            "accuracy": self.accuracy
+            'r': self.r_at_k,
+            # "precision": self.precision,
+            # "recall": self.recall,
+            # "accuracy": self.accuracy,
+            "auc": self.auc,
         }
 
     def evaluate(self, l_score, l_label):
@@ -152,8 +156,26 @@ class SalienceEva(Configurable):
             depth = p + 1
             if depth in self.l_depth:
                 res = float(correct) / depth
-                h_p['p@%d' % depth] = res
+                h_p['p@%02d' % depth] = res
         return h_p
+
+    def r_at_k(self, l_score, l_label):
+        h_r = {}
+        l_d = zip(l_score, l_label)
+        l_d.sort(key=lambda item: -item[0])
+        correct = 0
+        total_z = max(1, sum([min(label, 1) for label in l_label]))
+        for p in xrange(max(self.l_depth)):
+            label = 0
+            if p < len(l_d):
+                label = l_d[p][1]
+            if label > 0:
+                correct += 1
+            depth = p + 1
+            if depth in self.l_depth:
+                res = float(correct) / total_z
+                h_r['r@%02d' % depth] = res
+        return h_r
 
     def precision(self, l_score, l_label):
         z = 0
@@ -183,6 +205,11 @@ class SalienceEva(Configurable):
                     c += 1
         z = len(l_score)
         return {'accuracy': float(c) / max(z, 1.0)}
+
+    def auc(self, l_score, l_label):
+        l_label = [max(0, item) for item in l_label]   # binary
+        l_label = [min(1, item) for item in l_label]
+        return {'auc': roc_auc_score(l_label, l_score)}
 
 
 if __name__ == '__main__':

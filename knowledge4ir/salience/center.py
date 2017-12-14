@@ -419,10 +419,12 @@ class SalienceModelCenter(Configurable):
                 logging.info('predicted [%d] docs, eva %s', p,
                              json.dumps(h_mean_eva))
         h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / max(p, 1.0))
+        l_mean_eva = h_mean_eva.items()
+        l_mean_eva.sort(key=lambda item: item[0])
         logging.info('finished predicted [%d] docs, eva %s', p,
-                     json.dumps(h_mean_eva))
+                     json.dumps(l_mean_eva))
         json.dump(
-            h_mean_eva,
+            l_mean_eva,
             open(label_out_name + '.eval', 'w'),
             indent=1
         )
