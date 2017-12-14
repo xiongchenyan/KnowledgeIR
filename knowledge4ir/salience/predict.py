@@ -72,10 +72,12 @@ class PredictedConverter(Configurable):
             key = h_info.get('docno')
             if not key:
                 key = h_info.get('qid')
+            logging.debug('aligning [%s]', key)
             if key not in h_key_predicted_info:
                 logging.warn('[%s] predicted res not in [%s]',
                              key, predict_in)
-            h_info = self._align_one_doc(h_info, h_key_predicted_info[key])
+            else:
+                h_info = self._align_one_doc(h_info, h_key_predicted_info[key])
             print >> out, json.dumps(h_info)
         out.close()
         logging.info('aligning [%s] to [%s] finished, res [%s]',
