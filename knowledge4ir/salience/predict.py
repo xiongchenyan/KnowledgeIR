@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     if 2 > len(sys.argv):
         print "unit test model train test"
-        print "1+ para, main config + aligning config (optional, set if want to align to raw corpus)"
+        print "1 para, config with aligning config (optional, set if want to align to raw corpus)"
         SalienceModelCenter.class_print_help()
         Main.class_print_help()
         PredictedConverter.class_print_help()
@@ -130,11 +130,9 @@ if __name__ == '__main__':
     model = SalienceModelCenter(config=conf)
     model.load_model(para.model_out)
     model.predict(para.test_in, para.test_out)
-
-    if len(sys.argv) > 3:
-        logging.info('aligning predicted salience to raw corpus info')
-        align_conf = load_py_config(sys.argv[2])
-        converter = PredictedConverter(config=align_conf)
+    converter = PredictedConverter(config=conf)
+    if converter.entity_id_pickle_in:
+        logging.info('aligning to [%s]', para.raw_corpus_in)
         converter.align_predict_to_corpus(
             para.raw_corpus_in, para.test_out, para.aligned_corpus_out
         )
