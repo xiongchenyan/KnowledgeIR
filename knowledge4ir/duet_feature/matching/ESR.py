@@ -28,6 +28,7 @@ import math
 from knowledge4ir.utils import (
     bin_similarity,
     form_bins,
+    term2lm,
 )
 
 
@@ -62,6 +63,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
     use_entity_salience = Bool(False,
                                help='whether use the salience of doc entities').tag(config=True)
     salience_activation = Unicode(help='activation used on salience scores').tag(config=True)
+    non_tf_salience = Bool(False, help='whether weight salience by tf').tag(config=True)
 
     def __init__(self, **kwargs):
         super(ESRFeatureExtractor, self).__init__(**kwargs)
@@ -110,6 +112,10 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
                     assert self.salience_activation in self.act_func
                     l_doc_e_weight = [self.act_func[self.salience_activation](max(w, 1e-6))
                                       for w in l_doc_e_weight]
+                    if self.non_tf_salience:
+                        h_e_tf = term2lm(l_doc_e)
+                        for p in xrange(len(l_doc_e)):
+                            l_doc_e_weight[p] /= float(h_e_tf[l_doc_e[p]])
 
             l_sim_mtx = []
             m_sim_mtx = self.h_distance_func[self.distance](l_q_e, l_doc_e, emb_model)
