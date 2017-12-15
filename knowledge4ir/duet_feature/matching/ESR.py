@@ -104,7 +104,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
                 l_doc_e_weight = [ana['entities'][0]['score']
                                   for ana in l_ana if ana['entities'][0]['id'] in emb_model]
             elif self.use_entity_salience:
-                l_doc_e_weight = [ana['entities'][0].get('salience', 0)
+                l_doc_e_weight = [ana['entities'][0].get('salience', 1)
                                   for ana in l_ana if ana['entities'][0]['id'] in emb_model]
                 if self.salience_activation:
                     assert self.salience_activation in self.act_func
@@ -121,7 +121,12 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
                 m_sim_mtx = l_sim_mtx[d]
                 for pool_name in self.pool_func:
                     assert pool_name in self.h_pool_func
-                    l_this_bin_score.extend(self.h_pool_func[pool_name](m_sim_mtx, l_doc_e_weight))
+                    l_this_bin_score.extend(self.h_pool_func[pool_name](m_sim_mtx, []))
+                    if l_doc_e_weight:
+                        l_this_bin_score.extend(
+                            [(item[0] + '_weight', item[1])
+                             for item in self.h_pool_func[pool_name](m_sim_mtx, l_doc_e_weight)]
+                        )
                 if len(l_sim_mtx) > 1:
                     l_this_bin_score = [
                         ('D%03d' % d + item[0], item[1]) for item in l_this_bin_score]
