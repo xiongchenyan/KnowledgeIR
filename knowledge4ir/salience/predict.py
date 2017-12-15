@@ -49,14 +49,22 @@ class PredictedConverter(Configurable):
         h_entity_salience = dict(
             zip(l_entity, [item[1] for item in l_eid_salience])
         )
+        l_eid_features = h_prediction[self.content_field].get('predict_features')
+        h_eid_features = {}
+        if l_eid_features:
+            l_entity = [self.h_eid_entity.get(eid, 'na') for eid, __ in l_eid_features]
+            h_eid_features = dict(
+                zip(l_entity, [item[1] for item in l_eid_features])
+            )
+
         l_ana = h_info.get(SPOT_FIELD, {}).get(self.content_field, [])
         for p in xrange(len(l_ana)):
             entity = l_ana[p]['entities'][0]['id']
-            salience = 0
             if entity not in h_entity_salience:
                 logging.warn('e [%s] not in [%s]\'s prediction', entity, h_info[key])
-            salience = h_entity_salience.get(entity, 0)
-            l_ana[p]['entities'][0]['salience'] = salience
+            l_ana[p]['entities'][0]['salience'] = h_entity_salience.get(entity, 0)
+            if l_eid_features:
+                l_ana[p]['entities'][0]['salience_feature'] = h_eid_features.get(entity, [])
         if l_ana:
             h_info[SPOT_FIELD][self.content_field] = l_ana
         return h_info
@@ -83,7 +91,6 @@ class PredictedConverter(Configurable):
         logging.info('aligning [%s] to [%s] finished, res [%s]',
                      predict_in, corpus_in, out_name)
 
-
     def _load_predict(self, predict_in):
         l_h_predict = [json.loads(line) for line in open(predict_in)]
         assert l_h_predict
@@ -96,7 +103,6 @@ class PredictedConverter(Configurable):
             zip(l_keys, l_h_predict)
         )
         return h_key_predicted_info
-
 
 
 if __name__ == '__main__':
