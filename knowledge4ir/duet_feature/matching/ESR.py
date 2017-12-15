@@ -35,7 +35,7 @@ from knowledge4ir.utils import (
 class ESRFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('spot', help='tagger used, as in q info and d info')
     l_target_fields = List(Unicode,
-                           default_value=[TARGET_TEXT_FIELDS],
+                           default_value=TARGET_TEXT_FIELDS,
                            help='doc fields to use'
                            ).tag(config=True)
     embedding_in = Unicode(help='embedding data spot (word2vec format) if only one',
