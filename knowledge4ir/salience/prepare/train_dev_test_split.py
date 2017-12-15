@@ -46,6 +46,10 @@ for p, line in enumerate(open(sys.argv[1])):
         print >> train_out, line
         train_cnt += 1
 
+    if (train_cnt >= len(s_train_docno)) & (test_cnt >= len(s_test_docno)) & (dev_cnt >= len(s_dev_docno)):
+        print "early stop, all got (make sure no duplicates in input file!)"
+        break
+
 train_out.close()
 dev_out.close()
 test_out.close()
