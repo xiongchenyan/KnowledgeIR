@@ -32,6 +32,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     default_feature_value = Float(-20, help='filling for empty feature').tag(config=True)
     feature_dim = Int(22,
                       help='number of features in pre-trained')
+    pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
@@ -44,7 +45,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             for ana in l_ana:
                 e_id = ana['entities'][0]['id']
                 if e_id in h_q_e_feature:
-                    l_feature = ana['entities'][0].get('predict_features', [])
+                    l_feature = ana['entities'][0].get(self.pretrain_feature_field, [])
                     if l_feature:
                         assert len(l_feature) == self.feature_dim
                         h_q_e_feature[e_id] = l_feature
