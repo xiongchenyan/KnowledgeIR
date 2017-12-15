@@ -129,9 +129,9 @@ class SalienceEva(Configurable):
         self.h_eva_metric = {
             "p": self.p_at_k,
             'r': self.r_at_k,
-            # "precision": self.precision,
-            # "recall": self.recall,
-            # "accuracy": self.accuracy,
+            "precision": self.precision,
+            "recall": self.recall,
+            "accuracy": self.accuracy,
             "auc": self.auc,
         }
 
