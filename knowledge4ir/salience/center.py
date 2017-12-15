@@ -108,6 +108,8 @@ class SalienceModelCenter(Configurable):
     use_new_io = Bool(True, help='whether use the new IO format').tag(
         config=True
     )
+    predict_with_intermediate_res = Bool(False, help='whether to kee intermediate results'
+                                         ).tag(config=True)
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
@@ -445,20 +447,23 @@ class SalienceModelCenter(Configurable):
             return None, None
         output = self.model(h_packed_data).cpu()[0]
         v_e = v_e[0].cpu()
-        v_label = v_label[0].cpu()
+
         pre_label = output.data.sign().type(torch.LongTensor)
         l_score = output.data.numpy().tolist()
-        y = v_label.data.view_as(pre_label)
-        l_label = y.numpy().tolist()
-
         h_out = dict()
         h_out[key_name] = docno
-
         l_e = v_e.data.numpy().tolist()
-        l_res = pre_label.numpy().tolist()
         h_out[self.io_parser.content_field] = {'predict': zip(l_e, l_score)}
-        # h_out['predict'] = zip(l_e, l_score)
 
+        if self.predict_with_intermediate_res:
+            middle_output = self.model.forward_intermediate(h_packed_data).cpu()[0]
+            l_middle_features = middle_output.data.numpy().tolist()
+            h_out[self.io_parser.content_field]['predict_features'] = zip(l_e, l_middle_features)
+
+
+        v_label = v_label[0].cpu()
+        y = v_label.data.view_as(pre_label)
+        l_label = y.numpy().tolist()
         h_this_eva = self.evaluator.evaluate(l_score, l_label)
         h_out['eval'] = h_this_eva
         return h_out, h_this_eva
