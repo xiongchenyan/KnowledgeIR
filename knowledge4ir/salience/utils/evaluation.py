@@ -163,7 +163,7 @@ class SalienceEva(Configurable):
         l_d = zip(l_score, l_label)
         l_d.sort(key=lambda item: -item[0])
         correct = 0
-        total_z = max(1, sum([min(label, 1) for label in l_label]))
+        total_z = max(1, sum([max(0, min(label, 1)) for label in l_label]))
         for p in xrange(max(self.l_depth)):
             label = 0
             if p < len(l_d):
