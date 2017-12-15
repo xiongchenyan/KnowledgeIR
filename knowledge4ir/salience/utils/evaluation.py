@@ -121,8 +121,7 @@ def split_joint_list(entity_vocab_size, predictions, s_e_label, s_evm_label):
 
 class SalienceEva(Configurable):
     l_depth = List(Int, default_value=[1, 5, 10, 20]).tag(config=True)
-    l_metrics = List(Unicode, default_value=['p', 'precision', 'recall',
-                                             'accuracy']).tag(config=True)
+    l_metrics = List(Unicode, default_value=['p', 'r', 'auc']).tag(config=True)
 
     def __init__(self, **kwargs):
         super(SalienceEva, self).__init__(**kwargs)
