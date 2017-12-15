@@ -208,7 +208,13 @@ class SalienceEva(Configurable):
     def auc(self, l_score, l_label):
         l_label = [max(0, item) for item in l_label]   # binary
         l_label = [min(1, item) for item in l_label]
-        return {'auc': roc_auc_score(l_label, l_score)}
+        if min(l_label) == 1:
+            auc_score = 1
+        elif max(l_label) == 0:
+            auc_score = 0
+        else:
+            auc_score = roc_auc_score(l_label, l_score)
+        return {'auc': auc_score}
 
 
 if __name__ == '__main__':
