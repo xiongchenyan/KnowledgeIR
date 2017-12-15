@@ -106,7 +106,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             elif self.use_entity_salience:
                 l_doc_e_weight = [ana['entities'][0].get('salience', 0)
                                   for ana in l_ana if ana['entities'][0]['id'] in emb_model]
-                if self.salience_activation is not None:
+                if self.salience_activation:
                     assert self.salience_activation in self.act_func
                     l_doc_e_weight = [self.act_func[self.salience_activation](max(w, 1e-6))
                                       for w in l_doc_e_weight]
