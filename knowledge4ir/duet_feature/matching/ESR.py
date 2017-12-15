@@ -58,7 +58,10 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
                   help="bins to use, if given, will directly use this one"
                   ).tag(config=True)
     log_min = Float(1e-10, help='log of zero bin').tag(config=True)
-    use_entity_weight = Bool(False, help='weight use the scores of doc entities').tag(config=True)
+    use_entity_weight = Bool(False, help='whether use the scores of doc entities').tag(config=True)
+    use_entity_salience = Bool(False,
+                               help='whether use the salience of doc entities').tag(config=True)
+    salience_activation = Unicode(help='activation used on salience scores').tag(config=True)
 
     def __init__(self, **kwargs):
         super(ESRFeatureExtractor, self).__init__(**kwargs)
@@ -80,6 +83,9 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             'cos': self._build_cosine_mtx,
             'l1': self._build_l1_mtx,
         }
+        self.act_func = {
+            'log': math.log,
+        }
         assert self.distance in self.h_distance_func
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
@@ -97,6 +103,13 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             if self.use_entity_weight:
                 l_doc_e_weight = [ana['entities'][0]['score']
                                   for ana in l_ana if ana['entities'][0]['id'] in emb_model]
+            elif self.use_entity_salience:
+                l_doc_e_weight = [ana['entities'][0].get('salience', 0)
+                                  for ana in l_ana if ana['entities'][0]['id'] in emb_model]
+                if self.salience_activation is not None:
+                    assert self.salience_activation in self.act_func
+                    l_doc_e_weight = [self.act_func[self.salience_activation](max(w, 1e-6))
+                                      for w in l_doc_e_weight]
 
             l_sim_mtx = []
             m_sim_mtx = self.h_distance_func[self.distance](l_q_e, l_doc_e, emb_model)
