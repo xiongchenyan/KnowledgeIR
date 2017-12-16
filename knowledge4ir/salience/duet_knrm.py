@@ -54,6 +54,11 @@ class DuetKNRM(KNRM):
         assert 'mtx_w' in h_packed_data   # has word sequence in it
         assert 'mtx_w_score' in h_packed_data
 
+        fuse_vote = self._forward_to_kernels(h_packed_data)
+        output = self.duet_linear(fuse_vote).squeeze(-1)
+        return output
+
+    def _forward_to_kernels(self,h_packed_data):
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         mtx_w = h_packed_data['mtx_w']
@@ -66,8 +71,7 @@ class DuetKNRM(KNRM):
         word_vote_kernels = self._kernel_vote(e_emb, w_emb, mtx_w_score)
 
         fuse_vote = torch.cat([entity_vote_kernels, word_vote_kernels], dim=-1)
-        output = self.duet_linear(fuse_vote).squeeze(-1)
-        return output
+        return fuse_vote
 
 
 class GlossCNNEmbDuet(DuetKNRM):
@@ -103,12 +107,17 @@ class GlossCNNEmbDuet(DuetKNRM):
             self.e_desp_mtx = self.e_desp_mtx.cuda()
             self.emb_merge.cuda()
 
-    def forward(self, h_packed_data):
+    # def forward(self, h_packed_data):
+    #
+    #     assert 'mtx_e' in h_packed_data
+    #     assert 'mtx_score' in h_packed_data
+    #     assert 'mtx_w' in h_packed_data
+    #     assert 'mtx_w_score' in h_packed_data
+    #     fuse_vote = self._forward_to_kernels(h_packed_data)
+    #     output = self.duet_linear(fuse_vote).squeeze(-1)
+    #     return output
 
-        assert 'mtx_e' in h_packed_data
-        assert 'mtx_score' in h_packed_data
-        assert 'mtx_w' in h_packed_data
-        assert 'mtx_w_score' in h_packed_data
+    def _forward_to_kernels(self, h_packed_data):
         mtx_e = h_packed_data['mtx_e']
         mtx_score = h_packed_data['mtx_score']
         mtx_w = h_packed_data['mtx_w']
@@ -139,8 +148,7 @@ class GlossCNNEmbDuet(DuetKNRM):
         word_vote_kernels = self._kernel_vote(enriched_e_emb, w_emb, mtx_w_score)
 
         fuse_vote = torch.cat([entity_vote_kernels, word_vote_kernels], dim=-1)
-        output = self.duet_linear(fuse_vote).squeeze(-1)
-        return output
+        return fuse_vote
 
     @classmethod
     def _sentence_cnn(cls, ts_desp_emb, mtx_e, cnn):

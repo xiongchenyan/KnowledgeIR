@@ -27,6 +27,7 @@ from knowledge4ir.duet_feature.matching.ir_fusion import (
 from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
 from knowledge4ir.duet_feature.matching.q_de_text import LeToRQDocETextFeatureExtractor
 from knowledge4ir.duet_feature.matching.word2vec_histogram import LeToRWord2vecHistFeatureExtractor
+from knowledge4ir.duet_feature.matching.pre_trained import LeToRBOEPreTrainedFeatureExtractor
 from knowledge4ir.utils import load_json_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
@@ -65,6 +66,7 @@ class LeToRFeatureExtractCenter(Configurable):
         "QDocEText": LeToRQDocETextFeatureExtractor,
         "ESR": ESRFeatureExtractor,
         "PageRank": PageRankFeatureExtractor,
+        "Pretrain": LeToRBOEPreTrainedFeatureExtractor,
     }
 
     def __init__(self, **kwargs):
