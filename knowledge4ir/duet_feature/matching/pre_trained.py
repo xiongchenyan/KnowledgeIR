@@ -54,10 +54,11 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             l_q_feature = [item[1] for item in h_q_e_feature.items()]
             l_h_q_feature = []
             for l_feature in l_q_feature:
-                l_name = ['%s_pre_train_%d' % (field, p) for p in range(self.feature_dim)]
+                l_name = ['%s_%s_%d' % (field, self.pretrain_feature_field, p)
+                          for p in range(self.feature_dim)]
                 h_this_f = dict(zip(l_name, l_feature))
-                logging.info('name %s', json.dumps(l_name))
-                logging.info('feature %s', json.dumps(l_feature))
+                # logging.info('name %s', json.dumps(l_name))
+                # logging.info('feature %s', json.dumps(l_feature))
                 l_h_q_feature.append(h_this_f)
 
             # l_h_q_feature = [dict(zip(
