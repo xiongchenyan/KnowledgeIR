@@ -17,6 +17,7 @@ from traitlets import (
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     sum_pool_feature,
+    body_field,
 )
 
 
@@ -24,7 +25,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('spot', help='tagger used, as in q info and d info'
                      ).tag(config=True)
     l_target_fields = List(Unicode,
-                           default_value=TARGET_TEXT_FIELDS,
+                           default_value=[body_field],
                            help='doc fields to use'
                            ).tag(config=True)
 
@@ -36,6 +37,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
+        h_feature = dict()
         for field, l_ana in h_doc_info[self.tagger].items():
             if field not in self.l_target_fields:
                 continue
@@ -49,12 +51,12 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                     if l_feature:
                         assert len(l_feature) == self.feature_dim
                         h_q_e_feature[e_id] = l_feature
-        l_q_feature = h_q_e_feature.items()
-        l_h_q_feature = [dict(zip(
-            ['pre_train_%d' % p for p in range(self.feature_dim)],
-            q_feature) for q_feature in l_q_feature
-        )]
-        h_feature = sum_pool_feature(l_h_q_feature, False)
+            l_q_feature = [item[1] for item in h_q_e_feature.items()]
+            l_h_q_feature = [dict(zip(
+                ['%s_pre_train_%d' % (field, p) for p in range(self.feature_dim)],
+                q_feature) for q_feature in l_q_feature
+            )]
+            h_feature.update(sum_pool_feature(l_h_q_feature, False))
 
         return h_feature
 
