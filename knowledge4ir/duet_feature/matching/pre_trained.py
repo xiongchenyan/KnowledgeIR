@@ -52,10 +52,18 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                         assert len(l_feature) == self.feature_dim
                         h_q_e_feature[e_id] = l_feature
             l_q_feature = [item[1] for item in h_q_e_feature.items()]
-            l_h_q_feature = [dict(zip(
-                ['%s_pre_train_%d' % (field, p) for p in range(self.feature_dim)],
-                q_feature) for q_feature in l_q_feature
-            )]
+            l_h_q_feature = []
+            for l_feature in l_q_feature:
+                l_name = ['%s_pre_train_%d' % (field, p) for p in range(self.feature_dim)]
+                h_this_f = dict(zip(l_name, l_feature))
+                logging.info('name %s', json.dumps(l_name))
+                logging.info('feature %s', json.dumps(l_feature))
+                l_h_q_feature.append(h_this_f)
+
+            # l_h_q_feature = [dict(zip(
+            #     ['%s_pre_train_%d' % (field, p) for p in range(self.feature_dim)],
+            #     q_feature) for q_feature in l_q_feature
+            # )]
             h_feature.update(sum_pool_feature(l_h_q_feature, False))
 
         return h_feature
