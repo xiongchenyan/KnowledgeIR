@@ -124,7 +124,7 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
                 h_update_info = s2_replace(h_update_info)
                 h_total_info = merge_raw_field(h_base_info, h_update_info)
             elif l_key_chain:
-                merge_via_key_chain(h_base_info, h_update_info, l_key_chain)
+                h_total_info = merge_via_key_chain(h_base_info, h_update_info, l_key_chain)
             else:
                 raise NotImplementedError
             print >> out, json.dumps(h_total_info)
