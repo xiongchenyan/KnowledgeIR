@@ -99,7 +99,7 @@ def merge(base_info_in, update_info_in, out_name, merge_format):
     :return:
     """
     l_key_chain = []
-    if "|" in merge_format:
+    if "#" in merge_format:
         l_key_chain = _parse_key_chain(merge_format)
     out = open(out_name, 'w')
     with open(base_info_in) as base_in, open(update_info_in) as update_in:
@@ -154,7 +154,7 @@ if __name__ == '__main__':
         print "update the a using b, if update using spot (default), then only spot field is updated"
         print "if to update all, all fields will be updated at the first level (no recurse)"
         print "make sure both files are ordered the same with docno 1-1 correspondence in each line"
-        print "key chain is the list of keys, separated by |"
+        print "key chain is the list of keys, separated by #"
         sys.exit(-1)
     tag_in_a, tag_in_b = sys.argv[1:3]
     out_name = sys.argv[3]
