@@ -49,7 +49,7 @@ def merge_via_key_chain(h_doc_info_base, h_doc_info_update, l_key_chain):
     return h_doc_info_base
 
 def _parse_key_chain(in_str):
-    return in_str.split("|")
+    return in_str.split("#")
 
 
 def merge_boe(h_doc_info_base, h_doc_info_update):
