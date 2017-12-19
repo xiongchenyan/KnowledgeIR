@@ -9,14 +9,10 @@ from knowledge4ir.duet_feature.attention import (
     calc_query_entity_total_embedding,
     mul_update,
 )
-import json
-import logging
 from traitlets import (
     List,
     Unicode,
-    Int
 )
-import numpy as np
 from scipy.spatial.distance import cosine
 
 
@@ -33,7 +29,6 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
                       help='features: cosine, joint, cosine_q'
                       ).tag(config=True)
 
-
     def __init__(self, **kwargs):
         super(EntityEmbeddingAttentionFeature, self).__init__(**kwargs)
         self.l_embedding = []
@@ -42,7 +37,6 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
             'cosine': self._extract_cosine,
             'joint': self._extract_joint,
             'cosine_q': self._extract_cos_to_q,
-            'raw_diff': self._extract_raw_diff,
         }
 
     def set_external_info(self, external_info):
