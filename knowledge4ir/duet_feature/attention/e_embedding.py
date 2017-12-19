@@ -28,7 +28,7 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
     l_embedding_name = List(Unicode, default_value=[],
                             help="names of corresponding embedding, if more than one"
                             ).tag(config=True)
-    tagger = Unicode('tagme', help='tagger').tag(config=True)
+    tagger = Unicode('spot', help='tagger').tag(config=True)
     l_features = List(Unicode, default_value=['cosine_q'],
                       help='features: cosine, joint, cosine_q'
                       ).tag(config=True)

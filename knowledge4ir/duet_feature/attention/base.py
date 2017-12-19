@@ -26,6 +26,7 @@ class TermAttentionFeature(Configurable):
 
 class EntityAttentionFeature(Configurable):
     feature_name_pre = Unicode('EAtt')
+    tagger = Unicode('spot').tag(config=True)
 
     def set_external_info(self, external_info):
         logging.info('setting external info with shared storeage')
@@ -35,7 +36,7 @@ class EntityAttentionFeature(Configurable):
         yield NotImplementedError
 
     def _find_entity_p(self, h_q_info, e):
-        l_ana = h_q_info['tagme']['query']
+        l_ana = h_q_info[self.tagger]['query']
         for p in xrange(len(l_ana)):
             if l_ana[p][0] == e:
                 return p
