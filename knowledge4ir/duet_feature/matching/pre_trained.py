@@ -36,7 +36,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
     normalize_feature = Unicode(
-        help='whether and how to normalize feature. Currently supports softmax, minmax, doclen').tag(config=True)
+        help='whether and how to normalize feature. Currently supports softmax, minmax, uniq_e').tag(config=True)
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
@@ -93,8 +93,8 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             return self._softmax_feature(ll_feature)
         elif self.normalize_feature == 'minmax':
             return self._minmax_feature(ll_feature)
-        elif self.normalize_feature == 'doclen':
-            return self._doclen_normalize_feature(ll_feature)
+        elif self.normalize_feature == 'uniq_e':
+            return self._uniq_e_normalize_feature(ll_feature)
         else:
             logging.info('normalize via [%s] not implemented', self.normalize_feature)
             raise NotImplementedError
@@ -115,7 +115,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         normalized_feature = (m_feature - min_feature) / z_feature
         return normalized_feature.tolist()
 
-    def _doclen_normalize_feature(self, ll_feature):
+    def _uniq_e_normalize_feature(self, ll_feature):
         m_feature = np.array(ll_feature)
         m_feature /= float(m_feature.shape[0])
         return m_feature.tolist()
