@@ -262,7 +262,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
             l_h_qe_info = []
             l_e = []
             query = h_q_info['query']
-            for tagger in ['tagme', 'cmns']:
+            for tagger in ['tagme', 'spot']:
                 if tagger not in h_q_info:
                     continue
                 l_ana = h_q_info[tagger]['query']
