@@ -20,36 +20,28 @@ output:
 
 import json
 import logging
-import random
 
 import numpy as np
-# from knowledge4ir.duet_feature.attention.t_embedding import TermEmbeddingAttentionFeature
-# from knowledge4ir.duet_feature.attention.t_prf import TermPrfAttentionFeature
-# from knowledge4ir.duet_feature.attention.t_static import TermStaticAttentionFeature
-# from knowledge4ir.duet_feature.depreciated.attention.e_linking import EntityLinkerAttentionFeature
-# from knowledge4ir.duet_feature.depreciated.attention.e_prf import EntityPrfAttentionFeature
-# from knowledge4ir.duet_feature.depreciated.attention.e_static import EntityStaticAttentionFeature
-# from knowledge4ir.duet_feature.depreciated.attention.e_surface import EntitySurfaceFormAttentionFeature
-# from knowledge4ir.duet_feature.depreciated.attention.t_memory import TermMemoryAttentionFeature
 from traitlets import (
     Int, List, Unicode
 )
 from traitlets.config import Configurable
 
-# from knowledge4ir.deprecated.duet_feature.attention.e_text import EntityTextAttentionFeature
 from knowledge4ir.duet_feature import LeToRFeatureExternalInfo
 from knowledge4ir.duet_feature.attention.e_ambiguity import EntityAmbiguityAttentionFeature
 from knowledge4ir.duet_feature.attention.e_embedding import EntityEmbeddingAttentionFeature
 from knowledge4ir.duet_feature.attention.e_memory import EntityMemoryAttentionFeature
-from knowledge4ir.duet_feature.matching.BoeEmb import LeToRBoeEmbFeatureExtractor
+from knowledge4ir.duet_feature.matching.ESR import ESRFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
+from knowledge4ir.duet_feature.matching.pre_trained import LeToRBOEPreTrainedFeatureExtractor
 from knowledge4ir.duet_feature.matching.q_de_text import LeToRQDocETextFeatureExtractor
-from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
     load_trec_labels_dict,
     load_py_config,
+    load_json_info,
+    group_data_to_qid,
 )
 
 
@@ -57,46 +49,45 @@ class AttLeToRFeatureExtractCenter(Configurable):
     """
     The running pipeline class for LeToR
     """
+    h_match_feature_extractor = {
+        "IRFusion": LeToRIRFusionFeatureExtractor,
+        "Les": LeToRLesFeatureExtractor,
+        "QDocEText": LeToRQDocETextFeatureExtractor,
+        "ESR": ESRFeatureExtractor,
+        "Pretrain": LeToRBOEPreTrainedFeatureExtractor,
+    }
+    h_att_feature_extractor = {
+        "Emb": EntityEmbeddingAttentionFeature,
+        "Mem": EntityMemoryAttentionFeature,
+        "Ambi": EntityAmbiguityAttentionFeature,
+    }
+
     qrel_in = Unicode(help="q rel in").tag(config=True)
     q_info_in = Unicode(help="q information in").tag(config=True)
     doc_info_in = Unicode(help="doc information in").tag(config=True)
     q_doc_candidate_in = Unicode(help="q doc candidate in, trec format").tag(config=True)
     rank_top_k = Int(100, help="top k candidate docs to extract features").tag(config=True)
 
-    l_qw_dw_feature = List(Unicode, default_value=['IRFusion'],
-                           help='feature between q bow d bow: IRFUsion',
-                           ).tag(config=True)
-    l_qw_de_feature = List(Unicode, default_value=['QDocEText'],
-                           help='feature between q bow to d boe'
-                           ).tag(config=True)
-    l_qe_dw_feature = List(Unicode, default_value=['Les'],
-                           help='feature between q boe to d bow'
-                           ).tag(config=True)
-    l_qe_de_feature = List(Unicode, default_value=['BoeEmb'],
-                           ).tag(config=True)
-
-    l_qt_att_feature = List(Unicode, default_value=['Emb'],
-                            help='q term attention features: Emb, Static, Prf, Mem'
-                            ).tag(config=True)
-    l_qe_att_feature = List(Unicode, default_value=['Emb',],
+    l_qe_att_feature = List(Unicode, default_value=['Emb'],
                             help='q e attention feature: Emb, Text, Static, Prf, Mem, Surface, Linker, Ambi'
                             ).tag(config=True)
+    l_qw_match_feature = List(Unicode, default_value=['IRFusion', 'QDocEText'],
+                              help='match features from qw: IRFusion',
+                              ).tag(config=True)
+    l_qe_match_feature = List(Unicode, default_value=['ESR', 'Les'],
+                              help='match features from qe: ESR|BoeEmb'
+                              ).tag(config=True)
 
     out_name = Unicode(help='feature out file name').tag(config=True)
-
-    # normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AttLeToRFeatureExtractCenter, self).__init__(**kwargs)
         self._h_qrel = dict()  # q relevance files
         self._h_qid_q_info = dict()
         self._h_q_doc_score = dict()
-        self.l_qw_dw_extractor = []
-        self.l_qw_de_extractor = []
-        self.l_qe_dw_extractor = []
-        self.l_qe_de_extractor = []
-        self.l_qt_att_extractor = []
         self.l_qe_att_extractor = []
+        self.l_qw_match_extractor = []
+        self.l_qe_match_extractor = []
 
         self._load_data()
         self.external_info = LeToRFeatureExternalInfo(**kwargs)
@@ -107,41 +98,16 @@ class AttLeToRFeatureExtractCenter(Configurable):
         super(AttLeToRFeatureExtractCenter, cls).class_print_help(inst)
         print "external info:"
         LeToRFeatureExternalInfo.class_print_help(inst)
-        print "Feature group: IRFusion"
-        LeToRIRFusionFeatureExtractor.class_print_help(inst)
-        print "Feature group: BoeEmb"
-        LeToRBoeEmbFeatureExtractor.class_print_help(inst)
-        print "Feature group: Les"
-        LeToRLesFeatureExtractor.class_print_help(inst)
-        print "Feature group: QDocEText"
-        LeToRQDocETextFeatureExtractor.class_print_help(inst)
 
-        print "term attention feature group: Emb"
-        TermEmbeddingAttentionFeature.class_print_help(inst)
-        print 'term attention feature group: Static'
-        TermStaticAttentionFeature.class_print_help(inst)
-        print 'term attention feature group: Prf'
-        TermPrfAttentionFeature.class_print_help(inst)
-        print 'term attention feature group: Mem'
-        TermMemoryAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Emb"
-        EntityEmbeddingAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Text"
-        EntityTextAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Static"
-        EntityStaticAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Prf"
-        EntityPrfAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Mem"
-        EntityMemoryAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Surface"
-        EntitySurfaceFormAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Linker"
-        EntityLinkerAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Ambi"
-        EntityAmbiguityAttentionFeature.class_print_help(inst)
+        for key, extractor in cls.h_match_feature_extractor.items():
+            print "match extractor: %s" % key
+            extractor.class_print_help()
+        for key, extractor in cls.h_att_feature_extractor.items():
+            print "entity attention extractor: %s" % key
+            extractor.class_print_help()
 
     def update_config(self, config):
+        logging.info("update config")
         super(AttLeToRFeatureExtractCenter, self).update_config(config)
         self._load_data()
         self._init_extractors(config=config)
@@ -153,7 +119,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         :return:
         """
         self._h_qrel = load_trec_labels_dict(self.qrel_in)
-        self._h_qid_q_info = load_query_info(self.q_info_in)
+        self._h_qid_q_info = load_json_info(self.q_info_in, 'qid')
 
         l_q_ranking_score = load_trec_ranking_with_score(self.q_doc_candidate_in)
 
@@ -168,72 +134,23 @@ class AttLeToRFeatureExtractCenter(Configurable):
         initialize extractor based configuration
         :return:
         """
-        if 'IRFusion' in self.l_qw_dw_feature:
-            self.l_qw_dw_extractor.append(LeToRIRFusionFeatureExtractor(**kwargs))
-            self.l_qw_dw_extractor[-1].set_external_info(self.external_info)
-            logging.info('add IRFusion features to qw-dw')
-        if "BoeEmb" in self.l_qe_de_feature:
-            self.l_qe_de_extractor.append(LeToRBoeEmbFeatureExtractor(**kwargs))
-            self.l_qe_de_extractor[-1].set_external_info(self.external_info)
-            logging.info('add BoeEmb features to qe-de')
-        if "Les" in self.l_qe_dw_feature:
-            self.l_qe_dw_extractor.append(LeToRLesFeatureExtractor(**kwargs))
-            self.l_qe_dw_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Les features to qe-dw')
-        if "QDocEText" in self.l_qw_de_feature:
-            self.l_qw_de_extractor.append(LeToRQDocETextFeatureExtractor(**kwargs))
-            self.l_qw_de_extractor[-1].set_external_info(self.external_info)
-            logging.info('add QDocE features to qw-de')
+        for extract_name in self.l_qw_match_feature:
+            extractor = self.h_match_feature_extractor[extract_name](**kwargs)
+            extractor.set_external_info(self.external_info)
+            self.l_qw_match_extractor.append(extractor)
+            logging.info('initialized [%s] extractor', extract_name)
 
-        if "Emb" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermEmbeddingAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Emb features to term attention')
-        if "Static" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermStaticAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to term attention')
-        if "Prf" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermPrfAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to term attention')
-        if "Mem" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermMemoryAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Memory features to term attention')
+        for extract_name in self.l_qe_match_feature:
+            extractor = self.h_match_feature_extractor[extract_name](**kwargs)
+            extractor.set_external_info(self.external_info)
+            self.l_qe_match_extractor.append(extractor)
+            logging.info('initialized [%s] extractor', extract_name)
 
-        if "Emb" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityEmbeddingAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Emb features to entity attention')
-        if "Text" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityTextAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add text features to entity attention')
-        if "Static" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityStaticAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to entity attention')
-        if "Prf" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityPrfAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to entity attention')
-        if "Mem" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityMemoryAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Memory features to entity attention')
-        if "Surface" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntitySurfaceFormAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Surface features to entity attention')
-        if "Linker" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityLinkerAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Linker features to entity attention')
-        if "Ambi" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityAmbiguityAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add ambi features to entity attention')
+        for extract_name in self.l_qe_att_feature:
+            extractor = self.h_att_feature_extractor[extract_name](**kwargs)
+            extractor.set_external_info(self.external_info)
+            self.l_qe_att_extractor.append(extractor)
+            logging.info('initialized [%s] extractor', extract_name)
 
     def pipe_extract(self, doc_info_in=None, out_name=None):
         """
@@ -250,22 +167,17 @@ class AttLeToRFeatureExtractCenter(Configurable):
         l_docno = []
         cnt = 0
         for line in open(doc_info_in):
-            cols = line.strip().split('\t')
-            docno = cols[0]
+            h_doc_info = json.loads(line)
+            docno = h_doc_info['docno']
             if docno not in h_doc_q_score:
-                # not a candidate
                 continue
-            h_doc_info = json.loads(cols[1])
             for qid in h_doc_q_score[docno].keys():
                 h_q_info = self._h_qid_q_info[qid]
-                l_h_qt_feature, l_h_qe_feature, l_h_qt_att_feature, l_h_qe_att_feature = self._extract(
-                    qid, docno, h_q_info, h_doc_info)
+                # l_h_qt_feature, l_h_qe_feature, l_h_qt_att_feature, l_h_qe_att_feature \
+                l_this_q_all_features = self._extract(qid, docno, h_q_info, h_doc_info)
                 l_qid.append(qid)
                 l_docno.append(docno)
-                l_features.append([
-                    l_h_qt_feature, l_h_qe_feature,
-                    l_h_qt_att_feature, l_h_qe_att_feature,
-                ])
+                l_features.append(l_this_q_all_features)
                 cnt += 1
                 if 0 == (cnt % 100):
                     logging.info('extracted [%d] pair', cnt)
@@ -274,23 +186,10 @@ class AttLeToRFeatureExtractCenter(Configurable):
                 logging.info('all candidate docs extracted')
                 break
 
-        # normalize
-        # if self.normalize:
-        #     l_qid, l_docno, l_h_feature = self._normalize(l_qid, l_docno, l_h_feature)
-        # dump results
         logging.info('total [%d] pair extracted, dumping...', len(l_features))
         self._dump_feature(l_qid, l_docno, l_features, out_name)
         logging.info('feature extraction finished, results at [%s]', out_name)
         return
-
-    # def _normalize(self, l_qid, l_docno, l_h_feature):
-    #     l_svm_data = [{'qid': l_qid[i], 'feature': l_h_feature[i], 'comment': l_docno[i]}
-    #                   for i in xrange(len(l_qid))]
-    #     l_svm_data = per_q_normalize(l_svm_data)
-    #     l_qid = [data['qid'] for data in l_svm_data]
-    #     l_h_feature = [data['feature'] for data in l_svm_data]
-    #     l_docno = [data['comment'] for data in l_svm_data]
-    #     return l_qid, l_docno, l_h_feature
 
     def _extract(self, qid, docno, h_q_info, h_doc_info):
         """
@@ -311,22 +210,17 @@ class AttLeToRFeatureExtractCenter(Configurable):
         l_h_qe_feature = []
         for h_qt_info in l_h_qt_info:
             h_feature = {'0_basescore': base_score}
-            for extractor in self.l_qw_dw_extractor + self.l_qw_de_extractor:
+            for extractor in self.l_qw_match_extractor:
                 h_this_feature = extractor.extract(qid, docno, h_qt_info, h_doc_info)
                 h_feature.update(h_this_feature)
-                # logging.info('[%s] feature get [%s]', extractor.feature_name_pre,
-                #              json.dumps(h_this_feature))
             l_h_qt_feature.append(h_feature)
+
         for h_qe_info in l_h_qe_info:
-            # h_feature = dict()
             h_feature = {'bias': 1}
-            for extractor in self.l_qe_de_extractor + self.l_qe_dw_extractor:
+            for extractor in self.l_qe_match_extractor:
+                logging.debug('extracting [%s] qe match feature', extractor.feature_name_pre)
                 h_this_feature = extractor.extract(qid, docno, h_qe_info, h_doc_info)
                 h_feature.update(h_this_feature)
-                # logging.info('[%s] feature get [%s]', extractor.feature_name_pre,
-                #              json.dumps(h_this_feature))
-            # if not h_feature:
-            #     h_feature['bias'] = 0
             l_h_qe_feature.append(h_feature)
 
         l_h_qt_att = []
@@ -336,16 +230,24 @@ class AttLeToRFeatureExtractCenter(Configurable):
         for i in xrange(len(l_h_qe_info)):
             l_h_qe_att.append({'b': 1})
 
-        for extractor in self.l_qt_att_extractor:
-            l_h_feature = extractor.extract(h_q_info, l_t)
-            for i in xrange(len(l_h_feature)):
-                l_h_qt_att[i].update(l_h_feature[i])
+        # for extractor in self.l_qt_att_extractor:
+        #     l_h_feature = extractor.extract(h_q_info, l_t)
+        #     for i in xrange(len(l_h_feature)):
+        #         l_h_qt_att[i].update(l_h_feature[i])
 
         for extractor in self.l_qe_att_extractor:
             l_h_feature = extractor.extract(h_q_info, l_e)
+            logging.debug('extracting [%s] qe att feature', extractor.feature_name_pre)
             for i in xrange(len(l_h_feature)):
                 l_h_qe_att[i].update(l_h_feature[i])
-        return l_h_qt_feature, l_h_qe_feature, l_h_qt_att, l_h_qe_att
+
+        logging.info('[%s-%s] get [%d,%d,%d,%d] feature numbers',
+                     qid, docno,
+                     len(l_h_qt_feature),
+                     len(l_h_qe_feature),
+                     len(l_h_qt_att),
+                     len(l_h_qe_att))
+        return [l_h_qt_feature, l_h_qe_feature, l_h_qt_att, l_h_qe_att]
 
     def _split_q_info(self, h_q_info, target):
         if target == 'bow':
@@ -360,7 +262,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
             l_h_qe_info = []
             l_e = []
             query = h_q_info['query']
-            for tagger in ['tagme', 'cmns']:
+            for tagger in ['tagme', 'spot']:
                 if tagger not in h_q_info:
                     continue
                 l_ana = h_q_info[tagger]['query']
@@ -368,7 +270,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
                     h = {'query': query}
                     h[tagger] = {'query': [ana]}
                     l_h_qe_info.append(h)
-                    l_e.append(ana[0])
+                    e_id = ana['entities']['id']
+                    l_e.append(e_id)
             return l_h_qe_info, l_e
         raise NotImplementedError
 
@@ -386,7 +289,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         logging.info('dumping [%d] feature lines', len(l_qid))
         out = open(out_name, 'w')
         # sort data in order
-        l_qid, l_docno, l_features = self._reduce_data_to_qid(l_qid, l_docno, l_features)
+        l_qid, l_docno, l_features = group_data_to_qid(l_qid, l_docno, l_features)
 
         l_features, h_feature_hash, h_feature_stat = self._pad_att_and_ranking_features(l_features)
 
@@ -397,12 +300,13 @@ class AttLeToRFeatureExtractCenter(Configurable):
             qid = l_qid[i]
             docno = l_docno[i]
             l_feature_mtx = l_features[i]
-            rel_score = self._get_rel(qid, docno)
-            h_data = dict()
-            h_data['q'] = qid
-            h_data['doc'] = docno
-            h_data['rel'] = rel_score
-            h_data['feature'] = l_feature_mtx
+            rel_score = self._h_qrel.get(qid, {}).get(docno, 0)
+            h_data = {
+                'q': qid,
+                'doc': docno,
+                'rel': rel_score,
+                'feature': l_feature_mtx
+            }
             print >> out, json.dumps(h_data)
 
         logging.info('feature dumped')
@@ -472,30 +376,12 @@ class AttLeToRFeatureExtractCenter(Configurable):
         logging.info('total [%d] target pair to extract', pair_cnt)
         return h_doc_q_score
 
-    @staticmethod
-    def _reduce_data_to_qid(l_qid, l_docno, l_features):
-        l_data = zip(l_qid, zip(l_docno, l_features))
-        random.shuffle(l_data)
-        l_data.sort(key=lambda item: int(item[0]))
-        l_qid = [item[0] for item in l_data]
-        l_docno = [item[1][0] for item in l_data]
-        l_features = [item[1][1] for item in l_data]
-
-        return l_qid, l_docno, l_features
-
-    def _get_rel(self, qid, docno):
-        if qid not in self._h_qrel:
-            return 0
-        if docno not in self._h_qrel[qid]:
-            return 0
-        return self._h_qrel[qid][docno]
-
 
 if __name__ == '__main__':
     import sys
     from knowledge4ir.utils import set_basic_log
 
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
     if 2 > len(sys.argv):
         print 'I extract attention letor features for target query doc pairs' \
               'with prepared data for q and doc, ' \

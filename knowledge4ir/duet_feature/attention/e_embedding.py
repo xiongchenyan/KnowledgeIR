@@ -29,15 +29,21 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
                             help="names of corresponding embedding, if more than one"
                             ).tag(config=True)
     tagger = Unicode('tagme', help='tagger').tag(config=True)
-    l_features = List(Unicode, default_value=['cosine', 'joint', 'cosine_q'],
-                     help='features: cosine, joint, raw_diff'
-                     ).tag(config=True)
+    l_features = List(Unicode, default_value=['cosine_q'],
+                      help='features: cosine, joint, cosine_q'
+                      ).tag(config=True)
 
 
     def __init__(self, **kwargs):
         super(EntityEmbeddingAttentionFeature, self).__init__(**kwargs)
         self.l_embedding = []
         self.joint_embedding = None
+        self.h_feature = {
+            'cosine': self._extract_cosine,
+            'joint': self._extract_joint,
+            'cosine_q': self._extract_cos_to_q,
+            'raw_diff': self._extract_raw_diff,
+        }
 
     def set_external_info(self, external_info):
         super(EntityEmbeddingAttentionFeature, self).set_external_info(external_info)
@@ -53,19 +59,9 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
         :return: features for each term: l_h_feature
         """
         l_h_feature = []
-        if 'cosine' in self.l_features:
-            l_h_this_feature = self._extract_cosine(h_q_info, l_e)
+        for f_name in self.l_features:
+            l_h_this_feature = self.h_feature[f_name](h_q_info, l_e)
             l_h_feature = mul_update(l_h_feature, l_h_this_feature)
-
-        if 'joint' in self.l_features:
-            l_this_h_feature = self._extract_joint(h_q_info, l_e)
-            l_h_feature = mul_update(l_h_feature, l_this_h_feature)
-        if 'cosine_q' in self.l_features:
-            l_this_h_feature = self._extract_cos_to_q(h_q_info, l_e)
-            l_h_feature = mul_update(l_h_feature, l_this_h_feature)
-        if 'raw_diff' in self.l_features:
-            l_this_h_feature = self._extract_raw_diff( h_q_info, l_e)
-            l_h_feature = mul_update(l_h_feature, l_this_h_feature)
 
         return l_h_feature
 
@@ -106,14 +102,13 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
             h_feature = {}
             h_joint_feature = self._extract_cosine_per_e(h_q_info, e, q_t_emb, self.joint_embedding)
             h_feature.update(dict(
-                [(item[0] + 'Joint', item[1]) for item in h_joint_feature.items()]
+                [(item[0] + 'cos_q', item[1]) for item in h_joint_feature.items()]
             ))
 
             h_feature = dict([(self.feature_name_pre + key, score)
                               for key, score in h_feature.items()])
             l_h_feature.append(h_feature)
         return l_h_feature
-
 
     def _extract_raw_diff(self, h_q_info, l_e):
         emb = self.l_embedding[0]
