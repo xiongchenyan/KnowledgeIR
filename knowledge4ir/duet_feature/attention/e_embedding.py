@@ -143,6 +143,6 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
         return h_sim
 
     def _calc_e_emb(self, h_q_info, emb):
-        l_e = [ana[0] for ana in h_q_info[self.tagger]['query']]
+        l_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
         qe_emb = form_avg_emb(l_e, emb)
         return qe_emb
