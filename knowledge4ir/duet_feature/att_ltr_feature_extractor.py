@@ -270,7 +270,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
                     h = {'query': query}
                     h[tagger] = {'query': [ana]}
                     l_h_qe_info.append(h)
-                    e_id = ana['entities']['id']
+                    e_id = ana['entities'][0]['id']
                     l_e.append(e_id)
             return l_h_qe_info, l_e
         raise NotImplementedError
