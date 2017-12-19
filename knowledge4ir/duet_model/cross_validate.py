@@ -2,22 +2,14 @@
 cross validate hybrid model
 """
 
-from knowledge4ir.duet_model import (
-    HierarchicalAttLeToR,
-    FlatLeToR,
-    QTermLeToR,
-    QEntityLeToR,
-    MaskHierarchicalAttLeToR,
-    ProbAttLeToR,
-)
+from knowledge4ir.duet_model.variant_hier import MaskHierarchicalAttLeToR, ProbAttLeToR
+from knowledge4ir.duet_model.flat import FlatLeToR, QTermLeToR, QEntityLeToR
 from knowledge4ir.duet_model import (
     AttLeToR,
     dfs_para,
-)
-from knowledge4ir.duet_model import (
     filter_json_lines,
+    HierarchicalAttLeToR,
 )
-from knowledge4ir.utils.model import fix_kfold_partition
 from knowledge4ir.utils import (
     load_py_config,
     dump_trec_ranking_with_score,
@@ -25,6 +17,7 @@ from knowledge4ir.utils import (
     seg_gdeval_out,
     set_basic_log,
 )
+from knowledge4ir.utils.model import fix_kfold_partition
 from traitlets.config import Configurable
 from traitlets import (
     Int,
