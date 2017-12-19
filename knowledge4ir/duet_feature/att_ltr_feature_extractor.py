@@ -45,6 +45,8 @@ from knowledge4ir.duet_feature.matching.BoeEmb import LeToRBoeEmbFeatureExtracto
 from knowledge4ir.duet_feature.matching.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
 from knowledge4ir.duet_feature.matching.q_de_text import LeToRQDocETextFeatureExtractor
+from knowledge4ir.duet_feature.matching.ESR import ESRFeatureExtractor
+from knowledge4ir.duet_feature.matching.pre_trained import LeToRBOEPreTrainedFeatureExtractor
 from knowledge4ir.utils import load_query_info
 from knowledge4ir.utils import (
     load_trec_ranking_with_score,
@@ -57,6 +59,20 @@ class AttLeToRFeatureExtractCenter(Configurable):
     """
     The running pipeline class for LeToR
     """
+    h_match_feature_extractor = {
+        "IRFusion": LeToRIRFusionFeatureExtractor,
+        "BoeEmb": LeToRBoeEmbFeatureExtractor,
+        "Les": LeToRLesFeatureExtractor,
+        "QDocEText": LeToRQDocETextFeatureExtractor,
+        "ESR": ESRFeatureExtractor,
+        "Pretrain": LeToRBOEPreTrainedFeatureExtractor,
+    }
+    h_att_feature_extractor = {
+        "Emb": EntityEmbeddingAttentionFeature,
+        "Mem": EntityMemoryAttentionFeature,
+        "Ambi": EntityAmbiguityAttentionFeature,
+    }
+
     qrel_in = Unicode(help="q rel in").tag(config=True)
     q_info_in = Unicode(help="q information in").tag(config=True)
     doc_info_in = Unicode(help="doc information in").tag(config=True)
@@ -81,8 +97,17 @@ class AttLeToRFeatureExtractCenter(Configurable):
     l_qe_att_feature = List(Unicode, default_value=['Emb',],
                             help='q e attention feature: Emb, Text, Static, Prf, Mem, Surface, Linker, Ambi'
                             ).tag(config=True)
+    l_qw_match_feature = List(Unicode, default_value=['IRFusion'],
+                              help='match features from qw: IRFusion',
+                              ).tag(config=True)
+    l_qe_match_feature = List(Unicode, default_value=['ESR'],
+                              help='match features from qe: ESR|BoeEmb'
+                              ).tag(config=True)
 
     out_name = Unicode(help='feature out file name').tag(config=True)
+
+
+
 
     # normalize = Bool(False, help='normalize or not (per q level normalize)').tag(config=True)
 
@@ -97,6 +122,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
         self.l_qe_de_extractor = []
         self.l_qt_att_extractor = []
         self.l_qe_att_extractor = []
+        self.l_qw_match_extractor = []
+        self.l_qe_match_extractor = []
 
         self._load_data()
         self.external_info = LeToRFeatureExternalInfo(**kwargs)
@@ -116,28 +143,28 @@ class AttLeToRFeatureExtractCenter(Configurable):
         print "Feature group: QDocEText"
         LeToRQDocETextFeatureExtractor.class_print_help(inst)
 
-        print "term attention feature group: Emb"
-        TermEmbeddingAttentionFeature.class_print_help(inst)
-        print 'term attention feature group: Static'
-        TermStaticAttentionFeature.class_print_help(inst)
-        print 'term attention feature group: Prf'
-        TermPrfAttentionFeature.class_print_help(inst)
-        print 'term attention feature group: Mem'
-        TermMemoryAttentionFeature.class_print_help(inst)
+        # print "term attention feature group: Emb"
+        # TermEmbeddingAttentionFeature.class_print_help(inst)
+        # print 'term attention feature group: Static'
+        # TermStaticAttentionFeature.class_print_help(inst)
+        # print 'term attention feature group: Prf'
+        # TermPrfAttentionFeature.class_print_help(inst)
+        # print 'term attention feature group: Mem'
+        # TermMemoryAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Emb"
         EntityEmbeddingAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Text"
-        EntityTextAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Static"
-        EntityStaticAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Prf"
-        EntityPrfAttentionFeature.class_print_help(inst)
+        # print "entity attention feature group: Text"
+        # EntityTextAttentionFeature.class_print_help(inst)
+        # print "entity attention feature group: Static"
+        # EntityStaticAttentionFeature.class_print_help(inst)
+        # print "entity attention feature group: Prf"
+        # EntityPrfAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Mem"
         EntityMemoryAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Surface"
-        EntitySurfaceFormAttentionFeature.class_print_help(inst)
-        print "entity attention feature group: Linker"
-        EntityLinkerAttentionFeature.class_print_help(inst)
+        # print "entity attention feature group: Surface"
+        # EntitySurfaceFormAttentionFeature.class_print_help(inst)
+        # print "entity attention feature group: Linker"
+        # EntityLinkerAttentionFeature.class_print_help(inst)
         print "entity attention feature group: Ambi"
         EntityAmbiguityAttentionFeature.class_print_help(inst)
 
@@ -185,51 +212,51 @@ class AttLeToRFeatureExtractCenter(Configurable):
             self.l_qw_de_extractor[-1].set_external_info(self.external_info)
             logging.info('add QDocE features to qw-de')
 
-        if "Emb" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermEmbeddingAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Emb features to term attention')
-        if "Static" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermStaticAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to term attention')
-        if "Prf" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermPrfAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to term attention')
-        if "Mem" in self.l_qt_att_feature:
-            self.l_qt_att_extractor.append(TermMemoryAttentionFeature(**kwargs))
-            self.l_qt_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Memory features to term attention')
+        # if "Emb" in self.l_qt_att_feature:
+        #     self.l_qt_att_extractor.append(TermEmbeddingAttentionFeature(**kwargs))
+        #     self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Emb features to term attention')
+        # if "Static" in self.l_qt_att_feature:
+        #     self.l_qt_att_extractor.append(TermStaticAttentionFeature(**kwargs))
+        #     self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Static features to term attention')
+        # if "Prf" in self.l_qt_att_feature:
+        #     self.l_qt_att_extractor.append(TermPrfAttentionFeature(**kwargs))
+        #     self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Static features to term attention')
+        # if "Mem" in self.l_qt_att_feature:
+        #     self.l_qt_att_extractor.append(TermMemoryAttentionFeature(**kwargs))
+        #     self.l_qt_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Memory features to term attention')
 
         if "Emb" in self.l_qe_att_feature:
             self.l_qe_att_extractor.append(EntityEmbeddingAttentionFeature(**kwargs))
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Emb features to entity attention')
-        if "Text" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityTextAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add text features to entity attention')
-        if "Static" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityStaticAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to entity attention')
-        if "Prf" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityPrfAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Static features to entity attention')
+        # if "Text" in self.l_qe_att_feature:
+        #     self.l_qe_att_extractor.append(EntityTextAttentionFeature(**kwargs))
+        #     self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add text features to entity attention')
+        # if "Static" in self.l_qe_att_feature:
+        #     self.l_qe_att_extractor.append(EntityStaticAttentionFeature(**kwargs))
+        #     self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Static features to entity attention')
+        # if "Prf" in self.l_qe_att_feature:
+        #     self.l_qe_att_extractor.append(EntityPrfAttentionFeature(**kwargs))
+        #     self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Static features to entity attention')
         if "Mem" in self.l_qe_att_feature:
             self.l_qe_att_extractor.append(EntityMemoryAttentionFeature(**kwargs))
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
             logging.info('add Memory features to entity attention')
-        if "Surface" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntitySurfaceFormAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Surface features to entity attention')
-        if "Linker" in self.l_qe_att_feature:
-            self.l_qe_att_extractor.append(EntityLinkerAttentionFeature(**kwargs))
-            self.l_qe_att_extractor[-1].set_external_info(self.external_info)
-            logging.info('add Linker features to entity attention')
+        # if "Surface" in self.l_qe_att_feature:
+        #     self.l_qe_att_extractor.append(EntitySurfaceFormAttentionFeature(**kwargs))
+        #     self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Surface features to entity attention')
+        # if "Linker" in self.l_qe_att_feature:
+        #     self.l_qe_att_extractor.append(EntityLinkerAttentionFeature(**kwargs))
+        #     self.l_qe_att_extractor[-1].set_external_info(self.external_info)
+        #     logging.info('add Linker features to entity attention')
         if "Ambi" in self.l_qe_att_feature:
             self.l_qe_att_extractor.append(EntityAmbiguityAttentionFeature(**kwargs))
             self.l_qe_att_extractor[-1].set_external_info(self.external_info)
