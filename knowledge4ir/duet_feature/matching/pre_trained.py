@@ -36,7 +36,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
     normalize_feature = Unicode(
-        help='whether and how to normalize feature. Currently supports softmax, minmax').tag(config=True)
+        help='whether and how to normalize feature. Currently supports softmax, minmax, doclen').tag(config=True)
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
@@ -87,17 +87,19 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         :param ll_feature:
         :return:
         """
+        if not ll_feature:
+            return ll_feature
         if self.normalize_feature == 'softmax':
             return self._softmax_feature(ll_feature)
         elif self.normalize_feature == 'minmax':
             return self._minmax_feature(ll_feature)
+        elif self.normalize_feature == 'doclen':
+            return self._doclen_normalize_feature(ll_feature)
         else:
             logging.info('normalize via [%s] not implemented', self.normalize_feature)
             raise NotImplementedError
 
     def _softmax_feature(self, ll_feature):
-        if not ll_feature:
-            return ll_feature
         m_feature = np.array(ll_feature)
         exp_feature = np.exp(m_feature)
         sum_norm = np.sum(exp_feature, axis=0)
@@ -106,8 +108,6 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         return ll_normalized_feature
 
     def _minmax_feature(self, ll_feature):
-        if not ll_feature:
-            return ll_feature
         m_feature = np.array(ll_feature)
         max_feature = np.amax(m_feature, axis=0)
         min_feature = np.amin(m_feature, axis=0)
@@ -115,5 +115,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         normalized_feature = (m_feature - min_feature) / z_feature
         return normalized_feature.tolist()
 
-
-
+    def _doclen_normalize_feature(self, ll_feature):
+        m_feature = np.array(ll_feature)
+        m_feature /= float(m_feature.shape[0])
+        return m_feature.tolist()
