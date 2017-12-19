@@ -36,9 +36,9 @@ from knowledge4ir.utils import (
 class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
     feature_name_pre = Unicode('Ambi')
     prf_d = Int(20).tag(config=True)
-    tagger = Unicode('tagme', help="tagger").tag(config=True)
-    l_feature = List(Unicode, default_value=['surface', 'prf']).tag(config=True)
-    mode = Unicode('full', help='full|lean').tag(config=True)
+    tagger = Unicode('spot', help="tagger").tag(config=True)
+    l_feature = List(Unicode, default_value=['surface']).tag(config=True)
+    # mode = Unicode('full', help='full|lean').tag(config=True)
 
     def __init__(self, **kwargs):
         super(EntityAmbiguityAttentionFeature, self).__init__(**kwargs)
@@ -112,8 +112,7 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
 
         h_feature[self.feature_name_pre + 'IsTop'] = is_top
         h_feature[self.feature_name_pre + 'SfEntropy'] = link_entropy
-        if self.mode == 'full':
-            h_feature[self.feature_name_pre + 'Margin'] = margin
+        h_feature[self.feature_name_pre + 'Margin'] = margin
 
         return h_feature
 
