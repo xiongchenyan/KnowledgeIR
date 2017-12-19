@@ -565,12 +565,9 @@ def load_query_info(in_name):
     :param in_name:
     :return:
     """
-    l_lines = open(in_name).read().splitlines()
-    l_vcol = [line.split('\t') for line in l_lines]
-    l_qid = [vcol[0] for vcol in l_vcol]
-    l_h_q_info = [json.loads(vcol[-1]) for vcol in l_vcol]
-
-    return dict(zip(l_qid, l_h_q_info))
+    l_q_info = [json.loads(line) for line in open(in_name)]
+    l_qid = [h['qid'] for h in l_q_info]
+    return dict(zip(l_qid, l_q_info))
 
 
 def load_doc_info(in_name):
@@ -684,3 +681,14 @@ def add_feature_suffix(h_feature, suffix):
         [(key + suffix, value) for key, value in h_feature.items()]
     )
     return h_new
+
+
+def group_data_to_qid(l_qid, l_docno, l_features):
+    l_data = zip(l_qid, zip(l_docno, l_features))
+    random.shuffle(l_data)
+    l_data.sort(key=lambda item: int(item[0]))
+    l_qid = [item[0] for item in l_data]
+    l_docno = [item[1][0] for item in l_data]
+    l_features = [item[1][1] for item in l_data]
+
+    return l_qid, l_docno, l_features
