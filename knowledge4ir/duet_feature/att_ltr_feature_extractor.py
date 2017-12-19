@@ -218,6 +218,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         for h_qe_info in l_h_qe_info:
             h_feature = {'bias': 1}
             for extractor in self.l_qe_match_extractor:
+                logging.debug('extracting [%s] qe match feature', extractor.feature_name_pre)
                 h_this_feature = extractor.extract(qid, docno, h_qe_info, h_doc_info)
                 h_feature.update(h_this_feature)
             l_h_qe_feature.append(h_feature)
@@ -236,6 +237,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
 
         for extractor in self.l_qe_att_extractor:
             l_h_feature = extractor.extract(h_q_info, l_e)
+            logging.debug('extracting [%s] qe att feature', extractor.feature_name_pre)
             for i in xrange(len(l_h_feature)):
                 l_h_qe_att[i].update(l_h_feature[i])
 
@@ -378,7 +380,7 @@ if __name__ == '__main__':
     import sys
     from knowledge4ir.utils import set_basic_log
 
-    set_basic_log(logging.INFO)
+    set_basic_log(logging.DEBUG)
     if 2 > len(sys.argv):
         print 'I extract attention letor features for target query doc pairs' \
               'with prepared data for q and doc, ' \
