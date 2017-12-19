@@ -84,7 +84,7 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         ana = h_q_info[self.tagger]['query'][p]
         st, ed = ana['loc']
         l_qt = h_q_info['query'].split()
-        sf = l_qt[st:ed]
+        sf = ' '.join(l_qt[st:ed])
 
         if sf not in self.h_surface_info:
             logging.warn('surface [%s] not found in dict', sf)
