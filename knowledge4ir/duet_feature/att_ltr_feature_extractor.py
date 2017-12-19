@@ -107,6 +107,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
             extractor.class_print_help()
 
     def update_config(self, config):
+        logging.info("update config")
         super(AttLeToRFeatureExtractCenter, self).update_config(config)
         self._load_data()
         self._init_extractors(config=config)
@@ -237,7 +238,14 @@ class AttLeToRFeatureExtractCenter(Configurable):
             l_h_feature = extractor.extract(h_q_info, l_e)
             for i in xrange(len(l_h_feature)):
                 l_h_qe_att[i].update(l_h_feature[i])
-        return l_h_qt_feature, l_h_qe_feature, l_h_qt_att, l_h_qe_att
+
+        logging.info('[%s-%s] get [%d,%d,%d,%d] feature numbers',
+                     qid, docno,
+                     len(l_h_qt_feature),
+                     len(l_h_qe_feature),
+                     len(l_h_qt_att),
+                     len(l_h_qe_att))
+        return [l_h_qt_feature, l_h_qe_feature, l_h_qt_att, l_h_qe_att]
 
     def _split_q_info(self, h_q_info, target):
         if target == 'bow':

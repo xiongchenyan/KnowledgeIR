@@ -26,7 +26,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('spot', help='tagger used, as in q info and d info'
                      ).tag(config=True)
     l_target_fields = List(Unicode,
-                           default_value=[body_field],
+                           default_value=TARGET_TEXT_FIELDS,
                            help='doc fields to use'
                            ).tag(config=True)
 
