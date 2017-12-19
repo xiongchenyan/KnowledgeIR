@@ -36,7 +36,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
     normalize_feature = Unicode(
-        help='whether and how to normalize feature. Currently supports softmax, minmax, uniq_e, doc_len').tag(config=True)
+        help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doc_len').tag(config=True)
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
@@ -93,7 +93,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         h_norm = {
             "softmax": self._softmax_feature,
             'minmax': self._minmax_feature,
-            'uniq_e': self._uniq_e_normalize_feature,
+            'uniq': self._uniq_e_normalize_feature,
             'doc_len': self._doc_len_normalize_feature,
         }
         if self.normalize_feature not in h_norm:
