@@ -36,7 +36,8 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
     normalize_feature = Unicode(
-        help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen').tag(config=True)
+        help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
+    ).tag(config=True)
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
@@ -95,6 +96,8 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             'minmax': self._minmax_feature,
             'uniq': self._uniq_e_normalize_feature,
             'doclen': self._doc_len_normalize_feature,
+            'expuniq': self._exp_uniq_e_normalize_feature,
+            'docuniq': self._doc_uniq_normalize_feature,
         }
         if self.normalize_feature not in h_norm:
             logging.info('normalize via [%s] not implemented', self.normalize_feature)
@@ -122,8 +125,20 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         m_feature /= float(m_feature.shape[0])
         return m_feature.tolist()
 
+    def _exp_uniq_e_normalize_feature(self, ll_feature):
+        m_feature = np.array(ll_feature)
+        z = float(m_feature.shape[0])
+        m_feature = np.log(np.exp(m_feature) / float(z))
+        return m_feature.tolist()
+
     def _doc_len_normalize_feature(self, ll_feature):
         m_feature = np.array(ll_feature)
         z = np.sum(np.exp(m_feature[:, 0]))
         m_feature = np.log(np.exp(m_feature) / float(z))
+        return m_feature.tolist()
+
+    def _doc_uniq_normalize_feature(self, ll_feature):
+        m_feature = np.array(ll_feature)
+        z = np.sum(np.exp(m_feature[:, 0]))
+        m_feature = np.log(np.exp(m_feature) / float(z) / float(m_feature.shape[0]))
         return m_feature.tolist()
