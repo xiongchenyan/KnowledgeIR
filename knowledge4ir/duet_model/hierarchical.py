@@ -20,6 +20,7 @@ from keras.models import (
     Model,
     Sequential,
 )
+import keras
 # from keras.callbacks import EarlyStopping
 from knowledge4ir.duet_model import AttLeToR
 from traitlets import (
@@ -86,10 +87,12 @@ class HierarchicalAttLeToR(AttLeToR):
 
     def _align_to_rank_model(self, l_inputs, l_models):
         l_aligned_models = [model(input) for model, input in zip(l_models, l_inputs)]
-        ranker_model = Merge(mode='concat', name='rank_merge')(l_aligned_models[:2])
-        att_model = Merge(mode='concat', name='att_merge')(l_aligned_models[2:])
-        att_ranker = Merge(mode='dot', dot_axes=-1,name='att_rank_dot_merge'
-                           )([ranker_model, att_model])
+        # ranker_model = Merge(mode='concat', name='rank_merge')(l_aligned_models[:2])
+        ranker_model = keras.layers.Concatenate()(l_aligned_models[:2])
+        # att_model = Merge(mode='concat', name='att_merge')(l_aligned_models[2:])
+        att_model = keras.layers.Concatenate()(l_aligned_models[2:])
+        # att_ranker = Merge(mode='dot', dot_axes=-1,name='att_rank_dot_merge')([ranker_model, att_model])
+        att_ranker = keras.layers.Dot(axes=-1)([ranker_model, att_model])
         att_ranker = Model(input=l_inputs, output=att_ranker)
         return att_ranker
 
