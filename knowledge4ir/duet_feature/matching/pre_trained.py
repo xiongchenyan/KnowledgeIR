@@ -7,6 +7,7 @@ sum up for the final feature
 
 import json
 import logging
+import numpy as np
 from knowledge4ir.duet_feature import LeToRFeatureExtractor
 from traitlets import (
     Unicode,
@@ -34,6 +35,8 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     feature_dim = Int(22,
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
+    normalize_feature = Unicode(
+        help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen').tag(config=True)
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
@@ -44,13 +47,22 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             h_q_e_feature = {}
             for q_e in l_q_e:
                 h_q_e_feature[q_e] = [self.default_feature_value] * self.feature_dim
-            for ana in l_ana:
+            h_e_feature = {}
+            for ana in l_ana: # get features for all entities
                 e_id = ana['entities'][0]['id']
-                if e_id in h_q_e_feature:
-                    l_feature = ana['entities'][0].get(self.pretrain_feature_field, [])
-                    if l_feature:
-                        assert len(l_feature) == self.feature_dim
-                        h_q_e_feature[e_id] = l_feature
+                l_feature = ana['entities'][0].get(self.pretrain_feature_field, [])
+                if l_feature:
+                    assert len(l_feature) == self.feature_dim
+                    h_e_feature[e_id] = l_feature
+            if self.normalize_feature:   # normalize feature
+                l_e_ll_feature = h_e_feature.items()
+                ll_feature = [item[1] for item in l_e_ll_feature]
+                l_e = [item[0] for item in l_e_ll_feature]
+                ll_feature = self._normalize_feature(ll_feature)
+                h_e_feature = dict(zip(l_e, ll_feature))
+            for q_e in l_q_e:
+                if q_e in h_e_feature:
+                    h_q_e_feature[q_e] = h_e_feature[q_e]
             l_q_feature = [item[1] for item in h_q_e_feature.items()]
             l_h_q_feature = []
             for l_feature in l_q_feature:
@@ -69,3 +81,49 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
 
         return h_feature
 
+    def _normalize_feature(self, ll_feature):
+        """
+        normalize feature
+        :param ll_feature:
+        :return:
+        """
+        if not ll_feature:
+            return ll_feature
+
+        h_norm = {
+            "softmax": self._softmax_feature,
+            'minmax': self._minmax_feature,
+            'uniq': self._uniq_e_normalize_feature,
+            'doclen': self._doc_len_normalize_feature,
+        }
+        if self.normalize_feature not in h_norm:
+            logging.info('normalize via [%s] not implemented', self.normalize_feature)
+            raise NotImplementedError
+        return h_norm[self.normalize_feature](ll_feature)
+
+    def _softmax_feature(self, ll_feature):
+        m_feature = np.array(ll_feature)
+        exp_feature = np.exp(m_feature)
+        sum_norm = np.sum(exp_feature, axis=0)
+        normalized_e = exp_feature / sum_norm
+        ll_normalized_feature = np.log(normalized_e).tolist()
+        return ll_normalized_feature
+
+    def _minmax_feature(self, ll_feature):
+        m_feature = np.array(ll_feature)
+        max_feature = np.amax(m_feature, axis=0)
+        min_feature = np.amin(m_feature, axis=0)
+        z_feature = np.maximum(max_feature - min_feature, 1e-10)
+        normalized_feature = (m_feature - min_feature) / z_feature
+        return normalized_feature.tolist()
+
+    def _uniq_e_normalize_feature(self, ll_feature):
+        m_feature = np.array(ll_feature)
+        m_feature /= float(m_feature.shape[0])
+        return m_feature.tolist()
+
+    def _doc_len_normalize_feature(self, ll_feature):
+        m_feature = np.array(ll_feature)
+        z = np.sum(np.exp(m_feature[:, 0]))
+        m_feature = np.log(np.exp(m_feature) / float(z))
+        return m_feature.tolist()

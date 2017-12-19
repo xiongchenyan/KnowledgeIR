@@ -27,7 +27,7 @@ class LeToRLesFeatureExtractor(LeToRFeatureExtractor):
     corpus_stat_pre = Unicode(help="the file pre of corpus stats").tag(config=True)
     l_entity_fields = List(Unicode, default_value=['name', 'alias', 'desp']).tag(config=True)
     entity_text_in = Unicode(help="entity texts in").tag(config=True)
-    tagger = Unicode('tagme', help='tagger used, as in q info and d info'
+    tagger = Unicode('spot', help='tagger used, as in q info and d info'
                      ).tag(config=True)
 
     def __init__(self, **kwargs):
