@@ -31,6 +31,7 @@ from knowledge4ir.duet_feature import LeToRFeatureExternalInfo
 from knowledge4ir.duet_feature.attention.e_ambiguity import EntityAmbiguityAttentionFeature
 from knowledge4ir.duet_feature.attention.e_embedding import EntityEmbeddingAttentionFeature
 from knowledge4ir.duet_feature.attention.e_memory import EntityMemoryAttentionFeature
+from knowledge4ir.duet_feature.attention.e_pretrain import EntityPretrainAttentionFeature
 from knowledge4ir.duet_feature.matching.ESR import ESRFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
@@ -60,6 +61,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         "Emb": EntityEmbeddingAttentionFeature,
         "Mem": EntityMemoryAttentionFeature,
         "Ambi": EntityAmbiguityAttentionFeature,
+        'Pretrain': EntityPretrainAttentionFeature,
     }
 
     qrel_in = Unicode(help="q rel in").tag(config=True)
