@@ -81,6 +81,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             for q_e in l_q_e:
                 if q_e in h_e_feature:
                     h_q_e_feature[q_e] = h_e_feature[q_e]
+                    logging.info('q e [%s] has feature %s', q_e, json.dumps(h_q_e_feature[q_e]))
             l_q_feature = [item[1] for item in h_q_e_feature.items()]
             l_h_q_feature = []
             for l_feature in l_q_feature:
