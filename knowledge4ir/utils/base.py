@@ -665,9 +665,14 @@ def log_sum_feature(l_h_feature):
     for h_feature in l_h_feature:
         for key, v in h_feature.items():
             h_res[key + "_LogSum"] = math.log(
-                max(v, math.exp(-20))) + h_res.get(key, 0)
+                max(v, math.exp(-30))) + h_res.get(key, 0)
     return h_res
 
+
+def exp_feature(h_feature):
+    for key in h_feature.keys():
+        h_feature[key] = math.exp(h_feature[key])
+    return h_feature
 
 def add_feature_prefix(h_feature, prefix):
     h_new = dict(

@@ -17,7 +17,10 @@ from traitlets import (
 )
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
-    sum_pool_feature,
+    log_sum_feature,
+    max_pool_feature,
+    mean_pool_feature,
+    exp_feature,
     body_field,
 )
 
@@ -38,6 +41,16 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     normalize_feature = Unicode(
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
+    l_q_level_pooling = List(
+        Unicode,
+        default_feature_value=['log_sum'],help='pooling at query level, log_sum, mean, max'
+    ).tag(config=True)
+
+    h_pool_func = {
+        'log_sum': log_sum_feature,
+        'max': max_pool_feature,
+        'mean': mean_pool_feature,
+    }
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
@@ -72,17 +85,25 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                 l_name = ['%s_%s_%03d' % (field, self.pretrain_feature_field, p)
                           for p in range(self.feature_dim)]
                 h_this_f = dict(zip(l_name, l_feature))
-                # logging.info('name %s', json.dumps(l_name))
-                # logging.info('feature %s', json.dumps(l_feature))
                 l_h_q_feature.append(h_this_f)
 
-            # l_h_q_feature = [dict(zip(
-            #     ['%s_pre_train_%d' % (field, p) for p in range(self.feature_dim)],
-            #     q_feature) for q_feature in l_q_feature
-            # )]
-            h_feature.update(sum_pool_feature(l_h_q_feature, False))
+            h_feature.update(self._pool_feature(l_h_q_feature))
 
         return h_feature
+
+    def _pool_feature(self, l_h_q_feature):
+        """
+        exp the feature first
+        then pool it
+        :param l_h_q_feature:
+        :return:
+        """
+        l_h_q_feature = [exp_feature(h_q_feature) for h_q_feature in l_h_q_feature]
+
+        h_pooled_feature = dict()
+        for pool in self.l_q_level_pooling:
+            h_pooled_feature.update(self.h_pool_func[pool](l_h_q_feature))
+        return h_pooled_feature
 
     def _normalize_feature(self, ll_feature, h_info):
         """
