@@ -105,6 +105,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         logging.debug('pooling with %s', json.dumps(l_h_q_feature))
         h_pooled_feature = dict()
         for pool in self.l_q_level_pooling:
+            logging.debug('[%s] pooling', pool)
             h_pooled_feature.update(self.h_pool_func[pool](l_h_q_feature))
         logging.info('pooled to %s', json.dumps(h_pooled_feature))
         return h_pooled_feature
