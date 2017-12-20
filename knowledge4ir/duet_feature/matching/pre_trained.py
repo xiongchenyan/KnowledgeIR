@@ -34,7 +34,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                            ).tag(config=True)
 
     feature_name_pre = Unicode('Pretrain')
-    default_feature_value = Float(-20, help='filling for empty feature').tag(config=True)
+    default_feature_value = Float(-30, help='filling for empty feature').tag(config=True)
     feature_dim = Int(22,
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
