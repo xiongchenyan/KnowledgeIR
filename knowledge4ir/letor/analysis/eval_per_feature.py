@@ -62,10 +62,13 @@ def main(svm_in, feature_name_in, out_name, depth):
     out = open(out_name, 'w')
     l_feature_d = h_feature.items()
     l_feature_d.sort(key=lambda item: item[0])
-    for name, w in zip(['', '_R'], [1.0, -1.0]):
-        for feature, d in l_feature_d:
+    for feature, d in l_feature_d:
+        l_ndcg, l_err = [], []
+        for name, w in zip(['', '_R'], [1.0, -1.0]):
             __, ndcg, err = eva_feature(svm_in, d, out_name, depth, w)
-            print >> out, '%s:%f,%f' % (feature + name, ndcg, err)
+            l_ndcg.append(ndcg)
+            l_err.append(err)
+        print >> out, '%s:%f,%f' % (feature, max(l_ndcg), max(l_err))
     out.close()
     logging.info('finished')
 
