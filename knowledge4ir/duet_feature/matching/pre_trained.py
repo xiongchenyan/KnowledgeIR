@@ -81,7 +81,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             for q_e in l_q_e:
                 if q_e in h_e_feature:
                     h_q_e_feature[q_e] = h_e_feature[q_e]
-                    logging.info('q e [%s] has feature %s', q_e, json.dumps(h_q_e_feature[q_e]))
+                    logging.debug('q e [%s] has feature %s', q_e, json.dumps(h_q_e_feature[q_e]))
             l_q_feature = [item[1] for item in h_q_e_feature.items()]
             l_h_q_feature = []
             for l_feature in l_q_feature:
@@ -102,10 +102,11 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         :return:
         """
         # l_h_q_feature = [exp_feature(h_q_feature) for h_q_feature in l_h_q_feature]
-
+        logging.debug('pooling with %s', json.dumps(l_h_q_feature))
         h_pooled_feature = dict()
         for pool in self.l_q_level_pooling:
             h_pooled_feature.update(self.h_pool_func[pool](l_h_q_feature))
+        logging.info('pooled to %s', json.dumps(h_pooled_feature))
         return h_pooled_feature
 
     def _normalize_feature(self, ll_feature, h_info):
@@ -180,7 +181,6 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
 
     def _log_boe_len_normalize_feature(self, ll_feature, h_info):
         m_feature = np.array(ll_feature)
-        logging.info('log boelen normalize feature shape %s', json.dumps(m_feature.shape))
         z = h_info.get('boe_len', 1.0)
         m_feature /= float(z)
         return m_feature.tolist()
