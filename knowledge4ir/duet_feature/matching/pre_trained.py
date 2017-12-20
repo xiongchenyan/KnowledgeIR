@@ -19,6 +19,7 @@ from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
     log_sum_feature,
     max_pool_feature,
+    sum_pool_feature,
     mean_pool_feature,
     exp_feature,
     body_field,
@@ -43,13 +44,14 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     ).tag(config=True)
     l_q_level_pooling = List(
         Unicode,
-        default_feature_value=['log_sum'],help='pooling at query level, log_sum, mean, max'
+        default_feature_value=['sum'], help='pooling at query level, sum, max, mean'
     ).tag(config=True)
 
     h_pool_func = {
         'log_sum': log_sum_feature,
         'max': max_pool_feature,
         'mean': mean_pool_feature,
+        'sum': sum_pool_feature,
     }
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
@@ -98,7 +100,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         :param l_h_q_feature:
         :return:
         """
-        l_h_q_feature = [exp_feature(h_q_feature) for h_q_feature in l_h_q_feature]
+        # l_h_q_feature = [exp_feature(h_q_feature) for h_q_feature in l_h_q_feature]
 
         h_pooled_feature = dict()
         for pool in self.l_q_level_pooling:
