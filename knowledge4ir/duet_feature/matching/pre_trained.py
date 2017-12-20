@@ -123,6 +123,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             'expuniq': self._exp_uniq_e_normalize_feature,
             'docuniq': self._doc_uniq_normalize_feature,
             'boelen': self._boe_len_normalize_feature,
+            'log_boelen': self._log_boe_len_normalize_feature,
         }
         if self.normalize_feature not in h_norm:
             logging.info('normalize via [%s] not implemented', self.normalize_feature)
@@ -172,4 +173,10 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         m_feature = np.array(ll_feature)
         z = h_info.get('boe_len', 1.0)
         m_feature = np.log(np.exp(m_feature) / float(z))
+        return m_feature.tolist()
+
+    def _log_boe_len_normalize_feature(self, ll_feature, h_info):
+        m_feature = np.array(ll_feature)
+        z = h_info.get('boe_len', 1.0)
+        m_feature /= float(z)
         return m_feature.tolist()
