@@ -9,14 +9,10 @@ from knowledge4ir.duet_feature.attention import (
     calc_query_entity_total_embedding,
     mul_update,
 )
-import json
-import logging
 from traitlets import (
     List,
     Unicode,
-    Int
 )
-import numpy as np
 from scipy.spatial.distance import cosine
 
 
@@ -28,11 +24,10 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
     l_embedding_name = List(Unicode, default_value=[],
                             help="names of corresponding embedding, if more than one"
                             ).tag(config=True)
-    tagger = Unicode('tagme', help='tagger').tag(config=True)
+    tagger = Unicode('spot', help='tagger').tag(config=True)
     l_features = List(Unicode, default_value=['cosine_q'],
                       help='features: cosine, joint, cosine_q'
                       ).tag(config=True)
-
 
     def __init__(self, **kwargs):
         super(EntityEmbeddingAttentionFeature, self).__init__(**kwargs)
@@ -42,7 +37,6 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
             'cosine': self._extract_cosine,
             'joint': self._extract_joint,
             'cosine_q': self._extract_cos_to_q,
-            'raw_diff': self._extract_raw_diff,
         }
 
     def set_external_info(self, external_info):
@@ -143,6 +137,6 @@ class EntityEmbeddingAttentionFeature(EntityAttentionFeature):
         return h_sim
 
     def _calc_e_emb(self, h_q_info, emb):
-        l_e = [ana[0] for ana in h_q_info[self.tagger]['query']]
+        l_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
         qe_emb = form_avg_emb(l_e, emb)
         return qe_emb

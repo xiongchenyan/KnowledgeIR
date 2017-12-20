@@ -26,6 +26,7 @@ class TermAttentionFeature(Configurable):
 
 class EntityAttentionFeature(Configurable):
     feature_name_pre = Unicode('EAtt')
+    tagger = Unicode('spot').tag(config=True)
 
     def set_external_info(self, external_info):
         logging.info('setting external info with shared storeage')
@@ -35,9 +36,9 @@ class EntityAttentionFeature(Configurable):
         yield NotImplementedError
 
     def _find_entity_p(self, h_q_info, e):
-        l_ana = h_q_info['tagme']['query']
+        l_ana = h_q_info[self.tagger]['query']
         for p in xrange(len(l_ana)):
-            if l_ana[p][0] == e:
+            if l_ana[p]['entities'][0]['id'] == e:
                 return p
         return -1
 
@@ -54,7 +55,7 @@ def calc_query_entity_total_embedding(h_q_info, emb):
     l_e = []
     for tagger in ['tagme', 'cmns']:
         if tagger in h_q_info:
-            l_e.extend([ana[0] for ana in h_q_info[tagger]['query']])
+            l_e.extend([ana['entities'][0]['id'] for ana in h_q_info[tagger]['query']])
     l_total = l_t + l_e
     return form_avg_emb(l_total, emb)
 

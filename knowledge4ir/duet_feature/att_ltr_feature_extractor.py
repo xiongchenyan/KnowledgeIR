@@ -27,10 +27,11 @@ from traitlets import (
 )
 from traitlets.config import Configurable
 
-from knowledge4ir.duet_feature import LeToRFeatureExternalInfo
+from knowledge4ir.duet_feature import LeToRFeatureExternalInfo, split_q_info
 from knowledge4ir.duet_feature.attention.e_ambiguity import EntityAmbiguityAttentionFeature
 from knowledge4ir.duet_feature.attention.e_embedding import EntityEmbeddingAttentionFeature
 from knowledge4ir.duet_feature.attention.e_memory import EntityMemoryAttentionFeature
+from knowledge4ir.duet_feature.attention.e_pretrain import EntityPretrainAttentionFeature
 from knowledge4ir.duet_feature.matching.ESR import ESRFeatureExtractor
 from knowledge4ir.duet_feature.matching.ir_fusion import LeToRIRFusionFeatureExtractor
 from knowledge4ir.duet_feature.matching.les import LeToRLesFeatureExtractor
@@ -60,6 +61,7 @@ class AttLeToRFeatureExtractCenter(Configurable):
         "Emb": EntityEmbeddingAttentionFeature,
         "Mem": EntityMemoryAttentionFeature,
         "Ambi": EntityAmbiguityAttentionFeature,
+        'Pretrain': EntityPretrainAttentionFeature,
     }
 
     qrel_in = Unicode(help="q rel in").tag(config=True)
@@ -203,8 +205,8 @@ class AttLeToRFeatureExtractCenter(Configurable):
         base_score = self._h_q_doc_score[qid][docno]
         h_q_info['qid'] = qid
 
-        l_h_qt_info, l_t = self._split_q_info(h_q_info, target='bow')
-        l_h_qe_info, l_e = self._split_q_info(h_q_info, target='boe')
+        l_h_qt_info, l_t = split_q_info(h_q_info, target='bow')
+        l_h_qe_info, l_e = split_q_info(h_q_info, target='boe')
 
         l_h_qt_feature = []
         l_h_qe_feature = []
@@ -248,32 +250,6 @@ class AttLeToRFeatureExtractCenter(Configurable):
                      len(l_h_qt_att),
                      len(l_h_qe_att))
         return [l_h_qt_feature, l_h_qe_feature, l_h_qt_att, l_h_qe_att]
-
-    def _split_q_info(self, h_q_info, target):
-        if target == 'bow':
-            l_t = []
-            l_h_qt_info = []
-            for t in h_q_info['query'].split():
-                h = {'query': t}
-                l_h_qt_info.append(h)
-                l_t.append(t)
-            return l_h_qt_info, l_t
-        if target == 'boe':
-            l_h_qe_info = []
-            l_e = []
-            query = h_q_info['query']
-            for tagger in ['tagme', 'spot']:
-                if tagger not in h_q_info:
-                    continue
-                l_ana = h_q_info[tagger]['query']
-                for ana in l_ana:
-                    h = {'query': query}
-                    h[tagger] = {'query': [ana]}
-                    l_h_qe_info.append(h)
-                    e_id = ana['entities']['id']
-                    l_e.append(e_id)
-            return l_h_qe_info, l_e
-        raise NotImplementedError
 
     def _dump_feature(self, l_qid, l_docno, l_features, out_name=None):
         """

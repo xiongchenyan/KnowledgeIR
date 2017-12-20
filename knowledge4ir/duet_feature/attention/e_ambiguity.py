@@ -82,8 +82,9 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         h_feature = dict()
         p = self._find_entity_p(h_q_info, e)
         ana = h_q_info[self.tagger]['query'][p]
-
-        sf = h_q_info['query'][ana[1]:ana[2]]
+        st, ed = ana['loc']
+        l_qt = h_q_info['query'].split()
+        sf = ' '.join(l_qt[st:ed])
 
         if sf not in self.h_surface_info:
             logging.warn('surface [%s] not found in dict', sf)
@@ -127,7 +128,9 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         p = self._find_entity_p(h_q_info, e)
         ana = h_q_info[self.tagger]['query'][p]
 
-        sf = h_q_info['query'][ana[1]:ana[2]]
+        st, ed = ana['loc']
+        l_qt = h_q_info['query'].split()
+        sf = l_qt[st:ed]
 
         if sf not in self.h_surface_info:
             logging.warn('surface [%s] not found in dict', sf)
@@ -142,7 +145,7 @@ class EntityAmbiguityAttentionFeature(EntityAttentionFeature):
         l_rank_info = self.h_q_rank_info.get(h_q_info['qid'], [])
         for doc, score, h_info in l_rank_info[:self.prf_d]:
             l_ana = h_info.get(self.tagger, {}).get(body_field, [])
-            l_e = [ana[0] for ana in l_ana]
+            l_e = [ana['entities'][0]['id'] for ana in l_ana]
             for this_e in l_e:
                 if this_e == e:
                     e_cnt += 1
