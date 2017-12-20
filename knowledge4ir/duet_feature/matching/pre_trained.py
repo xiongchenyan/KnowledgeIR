@@ -44,7 +44,8 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     ).tag(config=True)
     l_q_level_pooling = List(
         Unicode,
-        default_feature_value=['sum'], help='pooling at query level, sum, max, mean'
+        default_value=['sum'],
+        help='pooling at query level, sum, max, mean'
     ).tag(config=True)
 
     h_pool_func = {
