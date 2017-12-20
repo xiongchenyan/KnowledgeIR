@@ -174,11 +174,12 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     def _boe_len_normalize_feature(self, ll_feature, h_info):
         m_feature = np.array(ll_feature)
         z = h_info.get('boe_len', 1.0)
-        m_feature = np.log(np.exp(m_feature) / float(z))
+        m_feature -= np.log(float(z))
         return m_feature.tolist()
 
     def _log_boe_len_normalize_feature(self, ll_feature, h_info):
         m_feature = np.array(ll_feature)
+        logging.info('log boelen normalize feature shape %s', json.dumps(m_feature.shape))
         z = h_info.get('boe_len', 1.0)
         m_feature /= float(z)
         return m_feature.tolist()
