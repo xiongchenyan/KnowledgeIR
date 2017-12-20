@@ -21,6 +21,7 @@ import subprocess
 import json
 import logging
 import os
+from random import shuffle
 
 
 def form_rank(svm_in, feature_d, w):
@@ -41,7 +42,8 @@ def form_rank(svm_in, feature_d, w):
     logging.info('f [%d] ranking formed', feature_d)
     l_q_ranking = h_q_ranking.items()
     for i in xrange(len(l_q_ranking)):
-        l_q_ranking[i][1].sort(key=lambda item: (-item[1], item[0]))
+        shuffle(l_q_ranking[i][1])
+        l_q_ranking[i][1].sort(key=lambda item: -item[1])
     return l_q_ranking
 
 
