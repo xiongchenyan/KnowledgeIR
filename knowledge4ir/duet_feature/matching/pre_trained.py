@@ -42,7 +42,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     normalize_feature = Unicode(
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
-    with_stat_feature = Unicode(
+    with_stat_feature = Bool(
         False,
         help='whether add stats as a feature'
     ).tag(config=True)
