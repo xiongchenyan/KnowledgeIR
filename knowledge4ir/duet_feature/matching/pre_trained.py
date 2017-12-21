@@ -13,6 +13,7 @@ from traitlets import (
     Unicode,
     Int,
     List,
+    Bool,
     Float,
 )
 from knowledge4ir.utils import (
@@ -40,8 +41,18 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
     normalize_feature = Unicode(
+        'na',
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
+    l_normalize_field = List(
+        Unicode,
+        default_value=TARGET_TEXT_FIELDS,
+    ).tag(config=True)
+    with_stat_feature = Bool(
+        False,
+        help='whether add stats as a feature'
+    ).tag(config=True)
+
     l_q_level_pooling = List(
         Unicode,
         default_value=['sum'],
@@ -58,12 +69,14 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
         h_feature = dict()
+        h_stat_feature = {}
         for field, l_ana in h_doc_info[self.tagger].items():
             if field not in self.l_target_fields:
                 continue
             h_q_e_feature = {}
             h_info = dict()
             h_info['boe_len'] = len(l_ana)
+            h_stat_feature['%s_BoeLen' % field.title()] = len(l_ana)
             for q_e in l_q_e:
                 h_q_e_feature[q_e] = [self.default_feature_value] * self.feature_dim
             h_e_feature = {}
@@ -73,7 +86,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                 if l_feature:
                     assert len(l_feature) == self.feature_dim
                     h_e_feature[e_id] = l_feature
-            if self.normalize_feature:   # normalize feature
+            if (self.normalize_feature != 'na') & (field in self.l_normalize_field):   # normalize feature
                 l_e_ll_feature = h_e_feature.items()
                 ll_feature = [item[1] for item in l_e_ll_feature]
                 l_e = [item[0] for item in l_e_ll_feature]
@@ -92,7 +105,8 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                 l_h_q_feature.append(h_this_f)
 
             h_feature.update(self._pool_feature(l_h_q_feature))
-
+        if self.with_stat_feature:
+            h_feature.update(h_stat_feature)
         return h_feature
 
     def _pool_feature(self, l_h_q_feature):
@@ -108,7 +122,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         for pool in self.l_q_level_pooling:
             logging.debug('[%s] pooling', pool)
             h_pooled_feature.update(self.h_pool_func[pool](l_h_q_feature))
-        logging.info('pooled to %s', json.dumps(h_pooled_feature))
+        logging.debug('pooled to %s', json.dumps(h_pooled_feature))
         return h_pooled_feature
 
     def _normalize_feature(self, ll_feature, h_info):
