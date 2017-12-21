@@ -42,9 +42,9 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     normalize_feature = Unicode(
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
-    with_boe_len = Unicode(
+    with_stat_feature = Unicode(
         False,
-        help='whether add boe len as a feature'
+        help='whether add stats as a feature'
     ).tag(config=True)
 
     l_q_level_pooling = List(
@@ -63,14 +63,14 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
         h_feature = dict()
-        h_field_boe_len = {}
+        h_stat_feature = {}
         for field, l_ana in h_doc_info[self.tagger].items():
             if field not in self.l_target_fields:
                 continue
             h_q_e_feature = {}
             h_info = dict()
             h_info['boe_len'] = len(l_ana)
-            h_field_boe_len['%s_BoeLen' % field.title()] = len(l_ana)
+            h_stat_feature['%s_BoeLen' % field.title()] = len(l_ana)
             for q_e in l_q_e:
                 h_q_e_feature[q_e] = [self.default_feature_value] * self.feature_dim
             h_e_feature = {}
@@ -99,8 +99,8 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                 l_h_q_feature.append(h_this_f)
 
             h_feature.update(self._pool_feature(l_h_q_feature))
-        if self.with_boe_len:
-            h_feature.update(h_field_boe_len)
+        if self.with_stat_feature:
+            h_feature.update(h_stat_feature)
         return h_feature
 
     def _pool_feature(self, l_h_q_feature):
