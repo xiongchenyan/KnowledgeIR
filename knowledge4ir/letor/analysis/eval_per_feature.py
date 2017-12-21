@@ -21,6 +21,7 @@ import subprocess
 import json
 import logging
 import os
+from random import shuffle
 
 
 def form_rank(svm_in, feature_d, w):
@@ -41,7 +42,8 @@ def form_rank(svm_in, feature_d, w):
     logging.info('f [%d] ranking formed', feature_d)
     l_q_ranking = h_q_ranking.items()
     for i in xrange(len(l_q_ranking)):
-        l_q_ranking[i][1].sort(key=lambda item: (-item[1], item[0]))
+        shuffle(l_q_ranking[i][1])
+        l_q_ranking[i][1].sort(key=lambda item: -item[1])
     return l_q_ranking
 
 
@@ -61,9 +63,12 @@ def main(svm_in, feature_name_in, out_name, depth):
     l_feature_d = h_feature.items()
     l_feature_d.sort(key=lambda item: item[0])
     for feature, d in l_feature_d:
-        for name, w in zip(['', 'reverse_'], [1.0, -1.0]):
+        l_ndcg, l_err = [], []
+        for name, w in zip(['', '_R'], [1.0, -1.0]):
             __, ndcg, err = eva_feature(svm_in, d, out_name, depth, w)
-            print >> out, '%s:%f,%f' % (name + feature, ndcg, err)
+            l_ndcg.append(ndcg)
+            l_err.append(err)
+        print >> out, '%s:%f,%f' % (feature, max(l_ndcg), max(l_err))
     out.close()
     logging.info('finished')
 

@@ -239,7 +239,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             z = float(sum(l_bin_nb))
             if z:
                 l_bin_nb = [score / z for score in l_bin_nb]
-        l_names = ['bin_%d' % i for i in xrange(len(l_bins))]
+        l_names = ['bin_%03d' % i for i in xrange(len(l_bins))]
         return zip(l_names, l_bin_nb)
 
     # def _form_bins(self):

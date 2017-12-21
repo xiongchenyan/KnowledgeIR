@@ -13,13 +13,19 @@ from traitlets import (
     Unicode,
     Int,
     List,
+    Bool,
     Float,
 )
 from knowledge4ir.utils import (
     TARGET_TEXT_FIELDS,
+    log_sum_feature,
+    max_pool_feature,
     sum_pool_feature,
+    mean_pool_feature,
+    exp_feature,
     body_field,
 )
+from copy import deepcopy
 
 
 class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
@@ -31,60 +37,115 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                            ).tag(config=True)
 
     feature_name_pre = Unicode('Pretrain')
-    default_feature_value = Float(-20, help='filling for empty feature').tag(config=True)
+    default_feature_value = Float(-30, help='filling for empty feature').tag(config=True)
     feature_dim = Int(22,
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
-    normalize_feature = Unicode(
+    l_normalize_feature = List(
+        Unicode,
+        default_value=[''],
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
+    l_normalize_field = List(
+        Unicode,
+        default_value=TARGET_TEXT_FIELDS,
+    ).tag(config=True)
+
+    with_stat_feature = Bool(
+        False,
+        help='whether add stats as a feature'
+    ).tag(config=True)
+
+    l_q_level_pooling = List(
+        Unicode,
+        default_value=['sum'],
+        help='pooling at query level, sum, max, mean'
+    ).tag(config=True)
+
+    h_pool_func = {
+        'log_sum': log_sum_feature,
+        'max': max_pool_feature,
+        'mean': mean_pool_feature,
+        'sum': sum_pool_feature,
+    }
+
+    def __init__(self, **kwargs):
+        super(LeToRBOEPreTrainedFeatureExtractor, self).__init__(**kwargs)
+        self.h_norm = {
+            '': self._no_norm,
+            "softmax": self._softmax_feature,
+            'minmax': self._minmax_feature,
+            'uniq': self._uniq_e_normalize_feature,
+            'doclen': self._doc_len_normalize_feature,
+            'expuniq': self._exp_uniq_e_normalize_feature,
+            'docuniq': self._doc_uniq_normalize_feature,
+            'boelen': self._boe_len_normalize_feature,
+            'log_boelen': self._log_boe_len_normalize_feature,
+        }
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
         h_feature = dict()
+        h_stat_feature = {}
         for field, l_ana in h_doc_info[self.tagger].items():
             if field not in self.l_target_fields:
                 continue
             h_q_e_feature = {}
             h_info = dict()
             h_info['boe_len'] = len(l_ana)
+            h_stat_feature['%s_BoeLen' % field.title()] = len(l_ana)
             for q_e in l_q_e:
                 h_q_e_feature[q_e] = [self.default_feature_value] * self.feature_dim
-            h_e_feature = {}
+            h_e_feature = dict()
             for ana in l_ana:  # get features for all entities
                 e_id = ana['entities'][0]['id']
                 l_feature = ana['entities'][0].get(self.pretrain_feature_field, [])
                 if l_feature:
                     assert len(l_feature) == self.feature_dim
                     h_e_feature[e_id] = l_feature
-            if self.normalize_feature:   # normalize feature
+            l_norm_names = ['']
+            if field in self.l_normalize_field:
+                l_norm_names = self.l_normalize_feature
+            for norm_name in l_norm_names:
                 l_e_ll_feature = h_e_feature.items()
-                ll_feature = [item[1] for item in l_e_ll_feature]
+                ll_feature = deepcopy([item[1] for item in l_e_ll_feature])
                 l_e = [item[0] for item in l_e_ll_feature]
-                ll_feature = self._normalize_feature(ll_feature, h_info)
+                ll_feature = self._normalize_feature(ll_feature, h_info, norm_name)
                 h_e_feature = dict(zip(l_e, ll_feature))
-            for q_e in l_q_e:
-                if q_e in h_e_feature:
-                    h_q_e_feature[q_e] = h_e_feature[q_e]
-            l_q_feature = [item[1] for item in h_q_e_feature.items()]
-            l_h_q_feature = []
-            for l_feature in l_q_feature:
-                l_name = ['%s_%s_%03d' % (field, self.pretrain_feature_field, p)
+                for q_e in l_q_e:
+                    if q_e in h_e_feature:
+                        h_q_e_feature[q_e] = h_e_feature[q_e]
+                        logging.debug('q e [%s] has feature %s', q_e, json.dumps(h_q_e_feature[q_e]))
+                l_q_feature = [item[1] for item in h_q_e_feature.items()]
+                l_name = ['%s_%s%s_%03d' % (field, self.pretrain_feature_field, norm_name.title(), p)
                           for p in range(self.feature_dim)]
-                h_this_f = dict(zip(l_name, l_feature))
-                # logging.info('name %s', json.dumps(l_name))
-                # logging.info('feature %s', json.dumps(l_feature))
-                l_h_q_feature.append(h_this_f)
+                l_h_q_feature = []
+                for l_feature in l_q_feature:
+                    h_this_f = dict(zip(l_name, l_feature))
+                    l_h_q_feature.append(h_this_f)
+                h_feature.update(self._pool_feature(l_h_q_feature))
 
-            # l_h_q_feature = [dict(zip(
-            #     ['%s_pre_train_%d' % (field, p) for p in range(self.feature_dim)],
-            #     q_feature) for q_feature in l_q_feature
-            # )]
-            h_feature.update(sum_pool_feature(l_h_q_feature, False))
-
+        if self.with_stat_feature:
+            h_feature.update(h_stat_feature)
         return h_feature
 
-    def _normalize_feature(self, ll_feature, h_info):
+    def _pool_feature(self, l_h_q_feature):
+        """
+        exp the feature first
+        then pool it
+        :param l_h_q_feature:
+        :return:
+        """
+        # l_h_q_feature = [exp_feature(h_q_feature) for h_q_feature in l_h_q_feature]
+        logging.debug('pooling with %s', json.dumps(l_h_q_feature))
+        h_pooled_feature = dict()
+        for pool in self.l_q_level_pooling:
+            logging.debug('[%s] pooling', pool)
+            h_pooled_feature.update(self.h_pool_func[pool](l_h_q_feature))
+        logging.debug('pooled to %s', json.dumps(h_pooled_feature))
+        return h_pooled_feature
+
+    def _normalize_feature(self, ll_feature, h_info, norm_name):
         """
         normalize feature
         :param ll_feature: features to normalize. e * feature
@@ -93,20 +154,13 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         """
         if not ll_feature:
             return ll_feature
-
-        h_norm = {
-            "softmax": self._softmax_feature,
-            'minmax': self._minmax_feature,
-            'uniq': self._uniq_e_normalize_feature,
-            'doclen': self._doc_len_normalize_feature,
-            'expuniq': self._exp_uniq_e_normalize_feature,
-            'docuniq': self._doc_uniq_normalize_feature,
-            'boelen': self._boe_len_normalize_feature,
-        }
-        if self.normalize_feature not in h_norm:
-            logging.info('normalize via [%s] not implemented', self.normalize_feature)
+        if norm_name not in self.h_norm:
+            logging.info('normalize via [%s] not implemented', norm_name)
             raise NotImplementedError
-        return h_norm[self.normalize_feature](ll_feature, h_info)
+        return self.h_norm[norm_name](ll_feature, h_info)
+
+    def _no_norm(self, ll_feature, h_info=None):
+        return ll_feature
 
     def _softmax_feature(self, ll_feature, h_info=None):
         m_feature = np.array(ll_feature)
@@ -150,5 +204,11 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     def _boe_len_normalize_feature(self, ll_feature, h_info):
         m_feature = np.array(ll_feature)
         z = h_info.get('boe_len', 1.0)
-        m_feature = np.log(np.exp(m_feature) / float(z))
+        m_feature -= np.log(float(z))
+        return m_feature.tolist()
+
+    def _log_boe_len_normalize_feature(self, ll_feature, h_info):
+        m_feature = np.array(ll_feature)
+        z = h_info.get('boe_len', 1.0)
+        m_feature /= float(z)
         return m_feature.tolist()
