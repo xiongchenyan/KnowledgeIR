@@ -43,6 +43,10 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
     normalize_feature = Unicode(
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
+    l_normalize_field = List(
+        Unicode,
+        default_value=TARGET_TEXT_FIELDS,
+    ).tag(config=True)
     with_stat_feature = Bool(
         False,
         help='whether add stats as a feature'
@@ -81,7 +85,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                 if l_feature:
                     assert len(l_feature) == self.feature_dim
                     h_e_feature[e_id] = l_feature
-            if self.normalize_feature:   # normalize feature
+            if (self.normalize_feature) & (field in self.l_normalize_field):   # normalize feature
                 l_e_ll_feature = h_e_feature.items()
                 ll_feature = [item[1] for item in l_e_ll_feature]
                 l_e = [item[0] for item in l_e_ll_feature]
