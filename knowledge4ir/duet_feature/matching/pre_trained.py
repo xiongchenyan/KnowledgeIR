@@ -117,7 +117,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         for pool in self.l_q_level_pooling:
             logging.debug('[%s] pooling', pool)
             h_pooled_feature.update(self.h_pool_func[pool](l_h_q_feature))
-        logging.info('pooled to %s', json.dumps(h_pooled_feature))
+        logging.debug('pooled to %s', json.dumps(h_pooled_feature))
         return h_pooled_feature
 
     def _normalize_feature(self, ll_feature, h_info):
