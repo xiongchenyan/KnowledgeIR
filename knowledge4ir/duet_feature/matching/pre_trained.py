@@ -41,6 +41,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                       help='number of features in pre-trained').tag(config=True)
     pretrain_feature_field = Unicode('salience_feature', help='field of trained features').tag(config=True)
     normalize_feature = Unicode(
+        'na',
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
     l_normalize_field = List(
@@ -85,7 +86,7 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
                 if l_feature:
                     assert len(l_feature) == self.feature_dim
                     h_e_feature[e_id] = l_feature
-            if (self.normalize_feature) & (field in self.l_normalize_field):   # normalize feature
+            if (self.normalize_feature != 'na') & (field in self.l_normalize_field):   # normalize feature
                 l_e_ll_feature = h_e_feature.items()
                 ll_feature = [item[1] for item in l_e_ll_feature]
                 l_e = [item[0] for item in l_e_ll_feature]
