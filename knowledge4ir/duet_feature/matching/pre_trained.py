@@ -13,6 +13,7 @@ from traitlets import (
     Unicode,
     Int,
     List,
+    Bool,
     Float,
 )
 from knowledge4ir.utils import (
