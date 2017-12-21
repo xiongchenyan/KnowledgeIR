@@ -46,6 +46,9 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
         default_value=[''],
         help='whether and how to normalize feature. Currently supports softmax, minmax, uniq, doclen, expuniq, docuniq'
     ).tag(config=True)
+    normalize_feature = Unicode(
+        help='back-supporting'
+    ).tag(config=True)
     l_normalize_field = List(
         Unicode,
         default_value=TARGET_TEXT_FIELDS,
@@ -82,6 +85,9 @@ class LeToRBOEPreTrainedFeatureExtractor(LeToRFeatureExtractor):
             'boelen': self._boe_len_normalize_feature,
             'log_boelen': self._log_boe_len_normalize_feature,
         }
+        if self.normalize_feature:
+            logging.warn('overide l_normalize_feature by [%s]', self.normalize_feature)
+            self.l_normalize_feature = [self.normalize_feature]
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
         l_q_e = [ana['entities'][0]['id'] for ana in h_q_info[self.tagger]['query']]
