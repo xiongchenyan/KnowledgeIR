@@ -77,6 +77,7 @@ class RankingPerformanceCollector(Configurable):
         self.h_base_eval_per_q, self.h_base_eval = self._load_per_run_results(self.baseline_name)
         for run_name in self.l_run_name:
             h_eval_per_q, h_eval = self._load_per_run_results(run_name)
+            logging.info('[%s] loaded overall res [%s]', run_name, json.dumps(h_eval))
             self.l_run_h_eval_per_q.append(h_eval_per_q)
             self.l_run_h_eval.append(h_eval)
 
