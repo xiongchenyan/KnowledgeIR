@@ -125,7 +125,7 @@ class RankingPerformanceCollector(Configurable):
                 logging.warn('%s has no eval field', line)
                 continue
             h_this_eval = h['eval']
-            l_key_h_eval.append(key, h_this_eval)
+            l_key_h_eval.append([key, h_this_eval])
         l_key_h_eval.sort(key=lambda item: item[0])
         l_h_eval = [item[1] for item in l_key_h_eval]
         for metric in self.l_target_metric:
