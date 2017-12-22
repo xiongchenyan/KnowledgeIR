@@ -150,7 +150,7 @@ class RankingPerformanceCollector(Configurable):
         header = "\\bf{Method}"
         for eva_metric in self.l_target_metric:
             for d in self.l_target_depth:
-                metric = eva_metric.upper() + '@%2d' % d if d else ''
+                metric = eva_metric.upper() + ('@%2d' % d if d else '')
                 header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
 
         # for metric in [self.target_metric.upper() + '@%2d' % d for d in self.l_target_depth]:
@@ -181,7 +181,7 @@ class RankingPerformanceCollector(Configurable):
         wtl_str = ' & --/--/--'
         for d in self.l_target_depth:
             for eva_metric in self.l_target_metric:
-                metric = eva_metric + '@%2d' % d if d else ''
+                metric = eva_metric + ('@%2d' % d if d else '')
                 score = h_eval[metric]
                 if run_name == self.baseline_name:
                     res_str += ' & $%.4f$ & -- ' % score
