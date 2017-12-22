@@ -214,7 +214,7 @@ class RankingPerformanceCollector(Configurable):
 
     def _calc_sig_mark(self, l_q_score, metric):
         sig_mark = ""
-        logging.info('"significant testing for [%s] [%d] data points" % (metric, len(l_q_score))')
+        logging.info("significant testing for [%s] [%d] data points", metric, len(l_q_score))
         assert len(self.l_to_comp_run_p) <= len(self.l_sig_symbol)
 
         for i in xrange(len(self.l_to_comp_run_p)):
