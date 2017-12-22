@@ -158,7 +158,9 @@ class RankingPerformanceCollector(Configurable):
         #     header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
         print >> out, header + '\\\\ \\hline'
         print header + '\\\\ \\hline'
+        logging.info('header made')
         for run_name in self.l_run_name:
+            logging.info("geneerating row for [%s]", run_name)
             print >> out, self._overall_performance_per_run(run_name) + '\\\\'
             print self._overall_performance_per_run(run_name) + '\\\\'
         out.close()
@@ -192,8 +194,6 @@ class RankingPerformanceCollector(Configurable):
                 l_q_score = h_eval_per_q[metric]
                 rel = float(score) / base_score - 1
 
-                w, t, l = win_tie_loss(l_q_score, l_base_q_score)
-
                 sig_mark = self._calc_sig_mark(l_q_score, metric)
                 if sig_mark:
                     score_str = '${%.4f}^%s$' % (score, sig_mark)
@@ -205,6 +205,7 @@ class RankingPerformanceCollector(Configurable):
                 ]) + '\n\n'
                 if eva_metric == self.main_metric:
                     if (d != 0) & (d == self.main_depth):
+                        w, t, l = win_tie_loss(l_q_score, l_base_q_score)
                         wtl_str = '& %02d/%02d/%02d\n\n' % (w, t, l)
 
         res_str += wtl_str
@@ -213,7 +214,7 @@ class RankingPerformanceCollector(Configurable):
 
     def _calc_sig_mark(self, l_q_score, metric):
         sig_mark = ""
-
+        logging.info('"significant testing for [%s] [%d] data points" % (metric, len(l_q_score))')
         assert len(self.l_to_comp_run_p) <= len(self.l_sig_symbol)
 
         for i in xrange(len(self.l_to_comp_run_p)):
