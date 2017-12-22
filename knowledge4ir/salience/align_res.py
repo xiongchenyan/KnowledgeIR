@@ -24,10 +24,13 @@ class AlignPredicted(Configurable):
 
     def __init__(self, **kwargs):
         super(AlignPredicted, self).__init__(**kwargs)
-        h_entity_id = pickle.load(open(self.entity_id_pickle_in))
-        self.h_eid_entity = dict(
-            [(item[1], item[0]) for item in h_entity_id.items()]
-        )
+        self.h_eid_entity = {}
+        self.h_eid_entity = {}
+        if self.entity_id_pickle_in:
+            h_entity_id = pickle.load(open(self.entity_id_pickle_in))
+            self.h_eid_entity = dict(
+                [(item[1], item[0]) for item in h_entity_id.items()]
+            )
         self.h_align_func = {
             'raw': self._align_predict_doc_to_raw_doc,
             'hashed': self._align_predict_to_hashed_doc,
