@@ -152,7 +152,8 @@ class RankingPerformanceCollector(Configurable):
         for eva_metric in self.l_target_metric:
             for d in self.l_target_depth:
                 metric = eva_metric.upper() + ('@%2d' % d if d else '')
-                header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
+                header += '& \\multicolumn{2}{c}{\\bf{%s}}' % metric
+        header += '&\\bf{W/T/L}'
 
         # for metric in [self.target_metric.upper() + '@%2d' % d for d in self.l_target_depth]:
         #     header += '& \\bf{%s}' % metric + '& &\\bf{W/T/L}'
@@ -160,7 +161,7 @@ class RankingPerformanceCollector(Configurable):
         print header + '\\\\ \\hline'
         logging.info('header made')
         for run_name in self.l_run_name:
-            logging.info("geneerating row for [%s]", run_name)
+            logging.info("generating row for [%s]", run_name)
             print >> out, self._overall_performance_per_run(run_name) + '\\\\'
             print self._overall_performance_per_run(run_name) + '\\\\'
         out.close()
@@ -203,14 +204,19 @@ class RankingPerformanceCollector(Configurable):
                     score_str,
                     "$ {0:+.2f}\\%  $ ".format(rel * 100),
                 ]) + '\n\n'
-                if eva_metric == self.main_metric:
-                    if (d != 0) & (d == self.main_depth):
-                        w, t, l = win_tie_loss(l_q_score, l_base_q_score)
-                        wtl_str = '& %02d/%02d/%02d\n\n' % (w, t, l)
+                if self._is_main_metric(eva_metric, d):
+                    w, t, l = win_tie_loss(l_q_score, l_base_q_score)
+                    wtl_str = '& %02d/%02d/%02d\n\n' % (w, t, l)
 
         res_str += wtl_str
 
         return res_str
+
+    def _is_main_metric(self, metric, d):
+        if metric == self.main_metric:
+            if (d == 0) | (d == self.main_depth):
+                return True
+        return False
 
     def _calc_sig_mark(self, l_q_score, metric):
         sig_mark = ""
