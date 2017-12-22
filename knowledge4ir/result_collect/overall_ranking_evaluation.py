@@ -112,7 +112,7 @@ class RankingPerformanceCollector(Configurable):
     def _load_json_eval_results(self, eval_fname):
         per_data_eval_name = eval_fname + '.json'
         final_eval_name = per_data_eval_name + '.eval'
-        h_eval = dict(
+        h_final_eval = dict(
             [item for item in json.load(open(final_eval_name))
              if item[0] in self.l_target_metric]
         )
@@ -132,7 +132,7 @@ class RankingPerformanceCollector(Configurable):
         for metric in self.l_target_metric:
             l_score = [h_eval.get(metric, 0) for h_eval in l_h_eval]
             h_eval_per_data[metric] = l_score
-        return h_eval_per_data, h_eval
+        return h_eval_per_data, h_final_eval
 
     def _get_data_key(self, h_data):
         l_key_name = ['qid', 'docno']
