@@ -20,7 +20,7 @@ class AlignPredicted(Configurable):
     entity_id_pickle_in = Unicode(help='pickle of entity id').tag(config=True)
     content_field = Unicode(body_field, help='content field with salience').tag(config=True)
     predict_field = Unicode('predict', help='the field with prediced e salience').tag(config=True)
-    corpus_type = Unicode('raw', help='raw or hashed corpus').tag(config=True)
+    corpus_type = Unicode('hashed', help='raw or hashed corpus').tag(config=True)
 
     def __init__(self, **kwargs):
         super(AlignPredicted, self).__init__(**kwargs)
