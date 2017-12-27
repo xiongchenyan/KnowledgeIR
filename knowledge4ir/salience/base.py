@@ -180,6 +180,8 @@ class SalienceBaseModel(nn.Module):
             parser.config_target_group()
         return parser.parse_data(l_lines)
 
+    def forward_intermediate(self, h_packed_data):
+        return self.forward(h_packed_data)
 
 class KernelPooling(nn.Module):
     """

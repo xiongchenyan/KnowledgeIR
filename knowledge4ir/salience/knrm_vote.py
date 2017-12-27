@@ -35,23 +35,23 @@ class KNRM(SalienceBaseModel):
         return
 
     def forward(self, h_packed_data):
-        mtx_e = h_packed_data['mtx_e']
-        mtx_score = h_packed_data['mtx_score']
-        mtx_embedding = self.embedding(mtx_e)
-        return self._knrm_opt(mtx_embedding, mtx_score)
+        kp_mtx = self._forward_to_kernels(h_packed_data)
+        output = self.linear(kp_mtx)
+        output = output.squeeze(-1)
+        return output
 
-    def save_model(self, output_name):
-        """
-        to be deprecated, will use Torch's general model save/load API
-        :param output_name:
-        :return:
-        """
-        logging.info('saving knrm embedding and linear weights to [%s]',
-                     output_name)
-        emb_mtx = self.embedding.weight.data.cpu().numpy()
-        np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
-        np.save(open(output_name + '.linear.npy', 'w'),
-                self.linear.weight.data.cpu().numpy())
+    # def save_model(self, output_name):
+    #     """
+    #     to be deprecated, will use Torch's general model save/load API
+    #     :param output_name:
+    #     :return:
+    #     """
+    #     logging.info('saving knrm embedding and linear weights to [%s]',
+    #                  output_name)
+    #     emb_mtx = self.embedding.weight.data.cpu().numpy()
+    #     np.save(open(output_name + '.emb.npy', 'w'), emb_mtx)
+    #     np.save(open(output_name + '.linear.npy', 'w'),
+    #             self.linear.weight.data.cpu().numpy())
 
     def _knrm_opt(self, mtx_embedding, mtx_score):
         kp_mtx = self._kernel_scores(mtx_embedding, mtx_score)
@@ -69,4 +69,15 @@ class KNRM(SalienceBaseModel):
         trans_mtx = torch.matmul(target_emb, voter_emb.transpose(-2, -1))
         trans_mtx = self.dropout(trans_mtx)
         return self.kp(trans_mtx, voter_score)
+
+    def _forward_to_kernels(self, h_packed_data):
+        mtx_e = h_packed_data['mtx_e']
+        mtx_score = h_packed_data['mtx_score']
+        mtx_embedding = self.embedding(mtx_e)
+        kp_mtx = self._kernel_scores(mtx_embedding, mtx_score)
+        return kp_mtx
+
+    def forward_intermediate(self, h_packed_data):
+        return self._forward_to_kernels(h_packed_data)
+
 

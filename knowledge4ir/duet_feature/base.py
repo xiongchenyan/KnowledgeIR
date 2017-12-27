@@ -528,3 +528,30 @@ def hash_feature(h_feature, h_feature_name):
         f_id = h_feature_name[name]
         m[f_id] = score
     return m, h_feature_name
+
+
+def split_q_info(h_q_info, target):
+    if target == 'bow':
+        l_t = []
+        l_h_qt_info = []
+        for t in h_q_info['query'].split():
+            h = {'query': t}
+            l_h_qt_info.append(h)
+            l_t.append(t)
+        return l_h_qt_info, l_t
+    if target == 'boe':
+        l_h_qe_info = []
+        l_e = []
+        query = h_q_info['query']
+        for tagger in ['tagme', 'spot']:
+            if tagger not in h_q_info:
+                continue
+            l_ana = h_q_info[tagger]['query']
+            for ana in l_ana:
+                h = {'query': query}
+                h[tagger] = {'query': [ana]}
+                l_h_qe_info.append(h)
+                e_id = ana['entities'][0]['id']
+                l_e.append(e_id)
+        return l_h_qe_info, l_e
+    raise NotImplementedError

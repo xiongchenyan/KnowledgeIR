@@ -108,6 +108,8 @@ class SalienceModelCenter(Configurable):
     use_new_io = Bool(True, help='whether use the new IO format').tag(
         config=True
     )
+    predict_with_intermediate_res = Bool(False, help='whether to kee intermediate results'
+                                         ).tag(config=True)
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
@@ -375,6 +377,10 @@ class SalienceModelCenter(Configurable):
             self.best_valid_loss = this_valid_loss
         return False
 
+    def load_model(self, model_out_name):
+        logging.info('loading trained model from [%s]', model_out_name)
+        self.model = torch.load(model_out_name)
+
     def _batch_train(self, l_line, criterion, optimizer):
         h_packed_data, m_label = self._data_io(l_line)
         optimizer.zero_grad()
@@ -414,11 +420,13 @@ class SalienceModelCenter(Configurable):
             if not p % 1000:
                 logging.info('predicted [%d] docs, eva %s', p,
                              json.dumps(h_mean_eva))
-        h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
+        h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / max(p, 1.0))
+        l_mean_eva = h_mean_eva.items()
+        l_mean_eva.sort(key=lambda item: item[0])
         logging.info('finished predicted [%d] docs, eva %s', p,
-                     json.dumps(h_mean_eva))
+                     json.dumps(l_mean_eva))
         json.dump(
-            h_mean_eva,
+            l_mean_eva,
             open(label_out_name + '.eval', 'w'),
             indent=1
         )
@@ -426,7 +434,12 @@ class SalienceModelCenter(Configurable):
         return
 
     def _per_doc_predict(self, line):
-        docno = json.loads(line)['docno']
+        h_info = json.loads(line)
+        key_name = 'docno'
+        if key_name not in h_info:
+            key_name = 'qid'
+            assert key_name in h_info
+        docno = h_info[key_name]
         h_packed_data, v_label = self._data_io([line])
         v_e = h_packed_data['mtx_e']
         # v_w = h_packed_data['mtx_score']
@@ -434,18 +447,23 @@ class SalienceModelCenter(Configurable):
             return None, None
         output = self.model(h_packed_data).cpu()[0]
         v_e = v_e[0].cpu()
-        v_label = v_label[0].cpu()
+
         pre_label = output.data.sign().type(torch.LongTensor)
         l_score = output.data.numpy().tolist()
+        h_out = dict()
+        h_out[key_name] = docno
+        l_e = v_e.data.numpy().tolist()
+        h_out[self.io_parser.content_field] = {'predict': zip(l_e, l_score)}
+
+        if self.predict_with_intermediate_res:
+            middle_output = self.model.forward_intermediate(h_packed_data).cpu()[0]
+            l_middle_features = middle_output.data.numpy().tolist()
+            h_out[self.io_parser.content_field]['predict_features'] = zip(l_e, l_middle_features)
+
+
+        v_label = v_label[0].cpu()
         y = v_label.data.view_as(pre_label)
         l_label = y.numpy().tolist()
-
-        h_out = dict()
-        h_out['docno'] = docno
-
-        l_e = v_e.data.numpy().tolist()
-        l_res = pre_label.numpy().tolist()
-        h_out['predict'] = zip(l_e, zip(l_score, l_res))
         h_this_eva = self.evaluator.evaluate(l_score, l_label)
         h_out['eval'] = h_this_eva
         return h_out, h_this_eva
@@ -473,6 +491,8 @@ class SalienceModelCenter(Configurable):
                 'salience')
         else:
             l_e = h[self.spot_field].get(self.io_parser.content_field)
+            if type(l_e) == dict:
+                l_e = l_e.get('entities')
         return not l_e
 
     def _data_io(self, l_line):

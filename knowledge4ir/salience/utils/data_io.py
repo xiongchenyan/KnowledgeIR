@@ -91,6 +91,8 @@ class DataIO(Configurable):
                 h_parsed_data[key].append(h_this_data[key])
 
         for key in h_parsed_data:
+            logging.debug('line [%s]', l_line[0])
+            logging.debug('converting [%s] to torch variable', key)
             h_parsed_data[key] = self._data_to_variable(
                 self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
                 data_type=self.h_data_meta[key]['d_type']

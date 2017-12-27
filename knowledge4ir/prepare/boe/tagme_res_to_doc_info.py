@@ -62,15 +62,19 @@ def wrap_doc(line, h_wiki_fb, tagged_field):
     h = dict()
     if tagged_field == 'query':
         h['qid'] = data_id
-        # h[QUERY_FIELD] = doc_cols[1]
+        h[QUERY_FIELD] = doc_cols[1]
     else:
         h['docno'] = data_id
+        if tagged_field == title_field:
+            h[tagged_field] = doc_cols[1]
+        else:
+            h[tagged_field] = doc_cols[2]
         # h[title_field] = doc_cols[1]
         # if tagged_field == abstract_field:
         #     h[abstract_field] = doc_cols[2]
         # else:
         #     h[body_field] = doc_cols[2]
-    h[tagged_field] = doc_cols[1]
+    # h[tagged_field] = doc_cols[1]
     h['spot'] = dict()
     h[SPOT_FIELD][tagged_field] = l_ana
     h = convert_offset(h)

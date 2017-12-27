@@ -28,13 +28,14 @@ import math
 from knowledge4ir.utils import (
     bin_similarity,
     form_bins,
+    term2lm,
 )
 
 
 class ESRFeatureExtractor(LeToRFeatureExtractor):
     tagger = Unicode('spot', help='tagger used, as in q info and d info')
     l_target_fields = List(Unicode,
-                           default_value=[TARGET_TEXT_FIELDS],
+                           default_value=TARGET_TEXT_FIELDS,
                            help='doc fields to use'
                            ).tag(config=True)
     embedding_in = Unicode(help='embedding data spot (word2vec format) if only one',
@@ -58,7 +59,11 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
                   help="bins to use, if given, will directly use this one"
                   ).tag(config=True)
     log_min = Float(1e-10, help='log of zero bin').tag(config=True)
-    use_entity_weight = Bool(False, help='weight use the scores of doc entities').tag(config=True)
+    use_entity_weight = Bool(False, help='whether use the scores of doc entities').tag(config=True)
+    use_entity_salience = Bool(False,
+                               help='whether use the salience of doc entities').tag(config=True)
+    salience_activation = Unicode(help='activation used on salience scores').tag(config=True)
+    non_tf_salience = Bool(False, help='whether weight salience by tf').tag(config=True)
 
     def __init__(self, **kwargs):
         super(ESRFeatureExtractor, self).__init__(**kwargs)
@@ -80,6 +85,9 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             'cos': self._build_cosine_mtx,
             'l1': self._build_l1_mtx,
         }
+        self.act_func = {
+            'log': math.log,
+        }
         assert self.distance in self.h_distance_func
 
     def extract(self, qid, docno, h_q_info, h_doc_info):
@@ -97,6 +105,17 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             if self.use_entity_weight:
                 l_doc_e_weight = [ana['entities'][0]['score']
                                   for ana in l_ana if ana['entities'][0]['id'] in emb_model]
+            elif self.use_entity_salience:
+                l_doc_e_weight = [ana['entities'][0].get('salience', 1)
+                                  for ana in l_ana if ana['entities'][0]['id'] in emb_model]
+                if self.salience_activation:
+                    assert self.salience_activation in self.act_func
+                    l_doc_e_weight = [self.act_func[self.salience_activation](max(w, 1e-6))
+                                      for w in l_doc_e_weight]
+                    if self.non_tf_salience:
+                        h_e_tf = term2lm(l_doc_e)
+                        for p in xrange(len(l_doc_e)):
+                            l_doc_e_weight[p] /= float(h_e_tf[l_doc_e[p]])
 
             l_sim_mtx = []
             m_sim_mtx = self.h_distance_func[self.distance](l_q_e, l_doc_e, emb_model)
@@ -108,7 +127,12 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
                 m_sim_mtx = l_sim_mtx[d]
                 for pool_name in self.pool_func:
                     assert pool_name in self.h_pool_func
-                    l_this_bin_score.extend(self.h_pool_func[pool_name](m_sim_mtx, l_doc_e_weight))
+                    l_this_bin_score.extend(self.h_pool_func[pool_name](m_sim_mtx, []))
+                    if l_doc_e_weight:
+                        l_this_bin_score.extend(
+                            [(item[0] + '_weight', item[1])
+                             for item in self.h_pool_func[pool_name](m_sim_mtx, l_doc_e_weight)]
+                        )
                 if len(l_sim_mtx) > 1:
                     l_this_bin_score = [
                         ('D%03d' % d + item[0], item[1]) for item in l_this_bin_score]
@@ -215,7 +239,7 @@ class ESRFeatureExtractor(LeToRFeatureExtractor):
             z = float(sum(l_bin_nb))
             if z:
                 l_bin_nb = [score / z for score in l_bin_nb]
-        l_names = ['bin_%d' % i for i in xrange(len(l_bins))]
+        l_names = ['bin_%03d' % i for i in xrange(len(l_bins))]
         return zip(l_names, l_bin_nb)
 
     # def _form_bins(self):
