@@ -29,6 +29,8 @@ use_cuda = torch.cuda.is_available()
 class DataIO(Configurable):
     nb_features = Int(help='number of features').tag(config=True)
     spot_field = Unicode(SPOT_FIELD, help='spot field').tag(config=True)
+    event_spot_field = Unicode(EVENT_SPOT_FIELD, help='event spot field').tag(
+        config=True)
     salience_label_field = Unicode(salience_gold, help='salience label').tag(
         config=True)
     salience_field = Unicode(abstract_field, help='salience field').tag(
@@ -80,18 +82,19 @@ class DataIO(Configurable):
         #               json.dumps(h_parsed_data))
         for line in l_line:
             h_info = json.loads(line)
-            h_this_data = self._parse_entity(h_info)
+            if self.group_name == 'event':
+                h_this_data = self._parse_event(h_info)
+            else:
+                h_this_data = self._parse_entity(h_info)
+
             if 'mtx_w' in h_parsed_data:
                 h_this_data.update(self._parse_word(h_info))
-            if 'mtx_event' in h_parsed_data:
-                logging.error('event parsing io not implemented')
-                raise NotImplementedError
             for key in h_parsed_data.keys():
                 assert key in h_this_data
                 h_parsed_data[key].append(h_this_data[key])
 
         for key in h_parsed_data:
-            logging.debug('line [%s]', l_line[0])
+            # logging.debug('line [%s]', l_line[0])
             logging.debug('converting [%s] to torch variable', key)
             h_parsed_data[key] = self._data_to_variable(
                 self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
@@ -114,6 +117,42 @@ class DataIO(Configurable):
         if use_cuda:
             v = v.cuda()
         return v
+
+    def _parse_event(self, h_info):
+        event_spots = h_info.get(self.event_spot_field, {}).get(
+            self.content_field, {})
+
+        l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
+        ll_feature = event_spots.get('features', [])
+        # Take label from salience field.
+        test_label = event_spots.get(self.salience_label_field, [0] * len(l_h))
+        l_label = [1 if label == 1 else -1 for label in test_label]
+
+        # Take a subset of event features only (others doesn't work).
+        # We put -2 to the first position because it is frequency.
+        # The reorganized features are respectively:
+        # headcount, sentence loc, event voting, entity voting,
+        # ss entity vote aver, ss entity vote max, ss entity vote min
+        ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
+
+        z = float(sum([item[0] for item in ll_feature]))
+        l_w = [item[0] / z for item in ll_feature]
+
+        # Now take the most frequent events based on the feature. Here we
+        # assume the first element in the feature is the frequency count.
+        most_freq_indices = get_frequency_mask(ll_feature, self.max_e_per_d)
+        l_h = apply_mask(l_h, most_freq_indices)
+        ll_feature = apply_mask(ll_feature, most_freq_indices)
+        l_label = apply_mask(l_label, most_freq_indices)
+        l_w = apply_mask(l_w, most_freq_indices)
+
+        h_res = {
+            'mtx_e': l_h,
+            'mtx_score': l_w,
+            'ts_feature': ll_feature,
+            'label': l_label
+        }
+        return h_res
 
     def _parse_entity(self, h_info):
         entity_spots = h_info.get(self.spot_field, {}).get(self.content_field,
