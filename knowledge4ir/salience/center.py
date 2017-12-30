@@ -87,7 +87,6 @@ use_cuda = torch.cuda.is_available()
 
 class SalienceModelCenter(Configurable):
     learning_rate = Float(1e-3, help='learning rate').tag(config=True)
-    # pre_trained_emb_in = Unicode(help='pre-trained embedding').tag(config=True)
     model_name = Unicode(help="model name: trans").tag(config=True)
     nb_epochs = Int(2, help='nb of epochs').tag(config=True)
     l_class_weights = List(Float, default_value=[1, 10]).tag(config=True)
@@ -101,15 +100,20 @@ class SalienceModelCenter(Configurable):
                                    help='the nb of data points to check dev loss'
                                    ).tag(config=True)
     max_e_per_doc = Int(200, help='max e per doc')
+
+    # The following 3 configs should be deprecated with the old io.
     event_model = Bool(False, help='Run event model').tag(config=True)
     joint_model = Bool(False, help='Run joint model').tag(config=True)
-    input_format = Unicode(help='overwrite input format: raw | featured').tag(
-        config=True)
+    # input_format = Unicode(help='overwrite input format: raw | featured').tag(
+    #     config=True)
+    # The above 3 configs should be deprecated with the old io.
+
     use_new_io = Bool(True, help='whether use the new IO format').tag(
         config=True
     )
-    predict_with_intermediate_res = Bool(False, help='whether to kee intermediate results'
-                                         ).tag(config=True)
+    predict_with_intermediate_res = Bool(
+        False, help='whether to kee intermediate results').tag(config=True)
+
     h_model = {
         'frequency': FrequencySalience,
         'feature_lr': FeatureLR,
@@ -181,20 +185,17 @@ class SalienceModelCenter(Configurable):
             logging.error("Please specify one mode only.")
             exit(1)
 
-        if self.input_format:
-            logging.info(
-                "Input format is overwritten to [%s]" % self.input_format)
-            if self.input_format == 'raw':
-                self.h_model_io[self.model_name] = raw_io
-            elif self.input_format == 'featured':
-                self.h_model_io[self.model_name] = feature_io
-            else:
-                logging.error("Unknown model type [%s]." % self.input_format)
-        else:
-            logging.debug("No format overwrite.")
-
-        if self.event_model:
-            self.spot_field = self.event_spot_field
+        # if self.input_format:
+        #     logging.info(
+        #         "Input format is overwritten to [%s]" % self.input_format)
+        #     if self.input_format == 'raw':
+        #         self.h_model_io[self.model_name] = raw_io
+        #     elif self.input_format == 'featured':
+        #         self.h_model_io[self.model_name] = feature_io
+        #     else:
+        #         logging.error("Unknown model type [%s]." % self.input_format)
+        # else:
+        #     logging.debug("No format overwrite.")
 
         self.evaluator = SalienceEva(**kwargs)
         self.model = None
@@ -269,7 +270,7 @@ class SalienceModelCenter(Configurable):
             es_cnt = 0
             es_flag = False
             for line in open(train_in_name):
-                if self._filter_empty_line(line):
+                if self.io_parser.filter_empty_line(line):
                     continue
                 data_cnt += 1
                 es_cnt += 1
@@ -286,13 +287,16 @@ class SalienceModelCenter(Configurable):
                                      p, data_cnt, total_loss / p)
                     l_this_batch_line = []
                     if es_cnt >= self.early_stopping_frequency:
-                        logging.info('checking dev loss at [%d]-[%d] vs frequency [%d]', epoch, es_cnt,
-                                     self.early_stopping_frequency)
+                        logging.info(
+                            'checking dev loss at [%d]-[%d] vs frequency [%d]',
+                            epoch, es_cnt,
+                            self.early_stopping_frequency)
                         es_cnt = 0
                         if validation_in_name:
                             if self._early_stop(model_out_name):
-                                logging.info('early stopped at [%d] epoch [%d] data',
-                                             epoch, data_cnt)
+                                logging.info(
+                                    'early stopped at [%d] epoch [%d] data',
+                                    epoch, data_cnt)
                                 es_flag = True
                                 break
             if es_flag:
@@ -359,7 +363,8 @@ class SalienceModelCenter(Configurable):
                          self.best_valid_loss, this_valid_loss,
                          self.patient_cnt)
             if self.patient_cnt >= self.early_stopping_patient:
-                logging.info('early stopped after patient [%d]', self.patient_cnt)
+                logging.info('early stopped after patient [%d]',
+                             self.patient_cnt)
                 logging.info('loading best model [%s] with loss [%f]',
                              model_out_name, self.best_valid_loss)
                 self.model = torch.load(model_out_name)
@@ -408,7 +413,7 @@ class SalienceModelCenter(Configurable):
         p = 0
         h_total_eva = dict()
         for line in open(test_in_name):
-            if self._filter_empty_line(line):
+            if self.io_parser.filter_empty_line(line):
                 continue
             h_out, h_this_eva = self._per_doc_predict(line)
             if h_out is None:
@@ -456,10 +461,11 @@ class SalienceModelCenter(Configurable):
         h_out[self.io_parser.content_field] = {'predict': zip(l_e, l_score)}
 
         if self.predict_with_intermediate_res:
-            middle_output = self.model.forward_intermediate(h_packed_data).cpu()[0]
+            middle_output = \
+                self.model.forward_intermediate(h_packed_data).cpu()[0]
             l_middle_features = middle_output.data.numpy().tolist()
-            h_out[self.io_parser.content_field]['predict_features'] = zip(l_e, l_middle_features)
-
+            h_out[self.io_parser.content_field]['predict_features'] = zip(l_e,
+                                                                          l_middle_features)
 
         v_label = v_label[0].cpu()
         y = v_label.data.view_as(pre_label)
@@ -484,17 +490,6 @@ class SalienceModelCenter(Configurable):
         loss = self.criterion(output, m_label)
         return loss.data[0]
 
-    def _filter_empty_line(self, line):
-        h = json.loads(line)
-        if self.event_model:
-            l_e = h[self.event_spot_field].get(self.io_parser.content_field, {}).get(
-                'salience')
-        else:
-            l_e = h[self.spot_field].get(self.io_parser.content_field)
-            if type(l_e) == dict:
-                l_e = l_e.get('entities')
-        return not l_e
-
     def _data_io(self, l_line):
         if self.use_new_io:
             return self.model.data_io(l_line, self.io_parser)
@@ -518,7 +513,7 @@ class SalienceModelCenter(Configurable):
         elif self.event_model:
             return self.h_event_model_io[self.model_name](
                 l_line, self.para.node_feature_dim,
-                self.spot_field, self.in_field,
+                self.event_spot_field, self.in_field,
                 self.abstract_field, self.salience_gold,
                 self.max_e_per_doc
             )

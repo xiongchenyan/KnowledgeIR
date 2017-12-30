@@ -71,6 +71,18 @@ class DataIO(Configurable):
         self.l_target_data = self.h_target_group[self.group_name]
         logging.info('io targets %s', json.dumps(self.l_target_data))
 
+    def filter_empty_line(self, line):
+        h = json.loads(line)
+        if self.group_name == 'event':
+            l_s = h[self.event_spot_field].get(self.content_field, {}).get(
+                'salience')
+            return not l_s
+        else:
+            l_e = h[self.spot_field].get(self.content_field)
+            if type(l_e) == dict:
+                l_e = l_e.get('entities')
+            return not l_e
+
     def parse_data(self, l_line):
         l_data = []
         while len(l_data) < len(self.l_target_data):
@@ -145,6 +157,14 @@ class DataIO(Configurable):
         ll_feature = apply_mask(ll_feature, most_freq_indices)
         l_label = apply_mask(l_label, most_freq_indices)
         l_w = apply_mask(l_w, most_freq_indices)
+
+        print(l_h)
+        print(ll_feature)
+        print(l_label)
+        print(l_w)
+
+        import sys
+        sys.stdin.readline()
 
         h_res = {
             'mtx_e': l_h,
