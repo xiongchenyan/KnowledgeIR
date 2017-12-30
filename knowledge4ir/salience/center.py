@@ -247,13 +247,17 @@ class SalienceModelCenter(Configurable):
         """
         logging.info('training with data in [%s]', train_in_name)
 
-        if validation_in_name:
-            self._init_early_stopper(validation_in_name)
-        if model_out_name is None:
+        if not model_out_name:
             model_out_name = train_in_name + '.model_%s' % self.model_name
+
+        logging.info('Model out name is [%s]', model_out_name)
+
         model_dir = os.path.dirname(model_out_name)
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
+
+        if validation_in_name:
+            self._init_early_stopper(validation_in_name)
 
         optimizer = torch.optim.Adam(
             filter(lambda model_para: model_para.requires_grad,
@@ -270,7 +274,7 @@ class SalienceModelCenter(Configurable):
             es_cnt = 0
             es_flag = False
             for line in open(train_in_name):
-                if self.io_parser.filter_empty_line(line):
+                if self.io_parser.is_empty_line(line):
                     continue
                 data_cnt += 1
                 es_cnt += 1
@@ -335,7 +339,8 @@ class SalienceModelCenter(Configurable):
         self.best_valid_loss = None
         self.ll_valid_line = []
         logging.info('loading validation data from [%s]', validation_in_name)
-        l_valid_lines = open(validation_in_name).read().splitlines()
+        l_valid_lines = [l for l in open(validation_in_name).read().splitlines()
+                         if not self.io_parser.is_empty_line(l)]
         self.ll_valid_line = [l_valid_lines[i:i + self.batch_size]
                               for i in
                               xrange(0, len(l_valid_lines), self.batch_size)]
@@ -413,7 +418,7 @@ class SalienceModelCenter(Configurable):
         p = 0
         h_total_eva = dict()
         for line in open(test_in_name):
-            if self.io_parser.filter_empty_line(line):
+            if self.io_parser.is_empty_line(line):
                 continue
             h_out, h_this_eva = self._per_doc_predict(line)
             if h_out is None:
@@ -535,7 +540,6 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
-
 
     # set_basic_log(logging.INFO)
 

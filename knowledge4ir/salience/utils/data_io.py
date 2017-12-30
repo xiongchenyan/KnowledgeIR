@@ -52,7 +52,8 @@ class DataIO(Configurable):
             'raw': ['mtx_e', 'mtx_score', 'label'],
             'feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'duet': ['mtx_e', 'mtx_score', 'mtx_w', 'mtx_w_score', 'label'],
-            'event': ['mtx_e', 'mtx_score', 'ts_feature', 'label']
+            'event_raw': ['mtx_e', 'mtx_score', 'label'],
+            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
@@ -71,9 +72,9 @@ class DataIO(Configurable):
         self.l_target_data = self.h_target_group[self.group_name]
         logging.info('io targets %s', json.dumps(self.l_target_data))
 
-    def filter_empty_line(self, line):
+    def is_empty_line(self, line):
         h = json.loads(line)
-        if self.group_name == 'event':
+        if self.group_name.startswith('event'):
             l_s = h[self.event_spot_field].get(self.content_field, {}).get(
                 'salience')
             return not l_s
@@ -94,7 +95,7 @@ class DataIO(Configurable):
         #               json.dumps(h_parsed_data))
         for line in l_line:
             h_info = json.loads(line)
-            if self.group_name == 'event':
+            if self.group_name.startswith('event'):
                 h_this_data = self._parse_event(h_info)
             else:
                 h_this_data = self._parse_entity(h_info)
@@ -157,14 +158,6 @@ class DataIO(Configurable):
         ll_feature = apply_mask(ll_feature, most_freq_indices)
         l_label = apply_mask(l_label, most_freq_indices)
         l_w = apply_mask(l_w, most_freq_indices)
-
-        print(l_h)
-        print(ll_feature)
-        print(l_label)
-        print(l_w)
-
-        import sys
-        sys.stdin.readline()
 
         h_res = {
             'mtx_e': l_h,
@@ -281,6 +274,22 @@ class DataIO(Configurable):
         return l_term, l_w
 
 
+def get_frequency_mask(ll_feature, max_e_per_d):
+    if max_e_per_d is None:
+        return range(len(ll_feature))
+    sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0],
+                             reverse=True)
+    return set(zip(*sorted_features[:max_e_per_d])[0])
+
+
+def apply_mask(l, mask):
+    masked = []
+    for i, e in enumerate(l):
+        if i in mask:
+            masked.append(e)
+    return masked
+
+
 """
 =============To be deprecated data i/o functions=============
 """
@@ -350,22 +359,6 @@ def raw_io(l_line, num_features, spot_field=SPOT_FIELD,
         "mtx_score": m_w
     }
     return h_packed_data, m_label
-
-
-def get_frequency_mask(ll_feature, max_e_per_d):
-    if max_e_per_d is None:
-        return range(len(ll_feature))
-    sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0],
-                             reverse=True)
-    return set(zip(*sorted_features[:max_e_per_d])[0])
-
-
-def apply_mask(l, mask):
-    masked = []
-    for i, e in enumerate(l):
-        if i in mask:
-            masked.append(e)
-    return masked
 
 
 def _get_entity_info(entity_spots, abstract_spots, salience_gold_field,
