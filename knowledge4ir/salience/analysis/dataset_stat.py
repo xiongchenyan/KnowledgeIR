@@ -117,7 +117,7 @@ if __name__ == '__main__':
     processor = DatasetStat(config=load_py_config(sys.argv[1]))
     in_name, out_name = (None, None) if len(sys.argv) < 4 else (sys.argv[2], sys.argv[3])
     processor.process(in_name, out_name)
-    
+
 
 
 
