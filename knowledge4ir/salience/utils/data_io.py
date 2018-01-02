@@ -22,14 +22,19 @@ from traitlets import (
     Unicode,
     List,
 )
+
 use_cuda = torch.cuda.is_available()
 
 
 class DataIO(Configurable):
     nb_features = Int(help='number of features').tag(config=True)
     spot_field = Unicode(SPOT_FIELD, help='spot field').tag(config=True)
-    salience_label_field = Unicode(salience_gold, help='salience label').tag(config=True)
-    salience_field = Unicode(abstract_field, help='salience field').tag(config=True)
+    event_spot_field = Unicode(EVENT_SPOT_FIELD, help='event spot field').tag(
+        config=True)
+    salience_label_field = Unicode(salience_gold, help='salience label').tag(
+        config=True)
+    salience_field = Unicode(abstract_field, help='salience field').tag(
+        config=True)
     max_e_per_d = Int(200, help='max entity per doc').tag(config=True)
     content_field = Unicode(body_field, help='content field').tag(config=True)
     max_w_per_d = Int(500, help='maximum words per doc').tag(config=True)
@@ -47,7 +52,8 @@ class DataIO(Configurable):
             'raw': ['mtx_e', 'mtx_score', 'label'],
             'feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'duet': ['mtx_e', 'mtx_score', 'mtx_w', 'mtx_w_score', 'label'],
-            'event': ['TODO']    # TODO
+            'event_raw': ['mtx_e', 'mtx_score', 'label'],
+            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
@@ -63,33 +69,45 @@ class DataIO(Configurable):
 
     def config_target_group(self):
         logging.info('io configing via group [%s]', self.group_name)
-        if self.group_name == 'event':
-            logging.error('event group io not specified')
-            raise NotImplementedError
         self.l_target_data = self.h_target_group[self.group_name]
         logging.info('io targets %s', json.dumps(self.l_target_data))
+
+    def is_empty_line(self, line):
+        h = json.loads(line)
+        if self.group_name.startswith('event'):
+            l_s = h[self.event_spot_field].get(self.content_field, {}).get(
+                'salience')
+            return not l_s
+        else:
+            l_e = h[self.spot_field].get(self.content_field)
+            if type(l_e) == dict:
+                l_e = l_e.get('entities')
+            return not l_e
 
     def parse_data(self, l_line):
         l_data = []
         while len(l_data) < len(self.l_target_data):
             l_data.append([])
         h_parsed_data = dict(zip(self.l_target_data, l_data))
-        # logging.debug('target keys %s, [%d]', json.dumps(self.l_target_data), len(self.l_target_data))
-        # logging.debug('data dict %s init %s', json.dumps(l_data), json.dumps(h_parsed_data))
+        # logging.debug('target keys %s, [%d]', json.dumps(self.l_target_data),
+        #               len(self.l_target_data))
+        # logging.debug('data dict %s init %s', json.dumps(l_data),
+        #               json.dumps(h_parsed_data))
         for line in l_line:
             h_info = json.loads(line)
-            h_this_data = self._parse_entity(h_info)
+            if self.group_name.startswith('event'):
+                h_this_data = self._parse_event(h_info)
+            else:
+                h_this_data = self._parse_entity(h_info)
+
             if 'mtx_w' in h_parsed_data:
                 h_this_data.update(self._parse_word(h_info))
-            if 'mtx_event' in h_parsed_data:
-                logging.error('event parsing io not implemented')
-                raise NotImplementedError
             for key in h_parsed_data.keys():
                 assert key in h_this_data
                 h_parsed_data[key].append(h_this_data[key])
 
         for key in h_parsed_data:
-            logging.debug('line [%s]', l_line[0])
+            # logging.debug('line [%s]', l_line[0])
             logging.debug('converting [%s] to torch variable', key)
             h_parsed_data[key] = self._data_to_variable(
                 self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
@@ -105,14 +123,53 @@ class DataIO(Configurable):
         elif data_type == 'Float':
             v = Variable(torch.FloatTensor(list_data))
         else:
-            logging.error('convert to variable with data_type [%s] not implemented', data_type)
+            logging.error(
+                'convert to variable with data_type [%s] not implemented',
+                data_type)
             raise NotImplementedError
         if use_cuda:
             v = v.cuda()
         return v
 
+    def _parse_event(self, h_info):
+        event_spots = h_info.get(self.event_spot_field, {}).get(
+            self.content_field, {})
+
+        l_h = event_spots.get('sparse_features', {}).get('LexicalHead', [])
+        ll_feature = event_spots.get('features', [])
+        # Take label from salience field.
+        test_label = event_spots.get(self.salience_label_field, [0] * len(l_h))
+        l_label = [1 if label == 1 else -1 for label in test_label]
+
+        # Take a subset of event features only (others doesn't work).
+        # We put -2 to the first position because it is frequency.
+        # The reorganized features are respectively:
+        # headcount, sentence loc, event voting, entity voting,
+        # ss entity vote aver, ss entity vote max, ss entity vote min
+        ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
+
+        z = float(sum([item[0] for item in ll_feature]))
+        l_w = [item[0] / z for item in ll_feature]
+
+        # Now take the most frequent events based on the feature. Here we
+        # assume the first element in the feature is the frequency count.
+        most_freq_indices = get_frequency_mask(ll_feature, self.max_e_per_d)
+        l_h = apply_mask(l_h, most_freq_indices)
+        ll_feature = apply_mask(ll_feature, most_freq_indices)
+        l_label = apply_mask(l_label, most_freq_indices)
+        l_w = apply_mask(l_w, most_freq_indices)
+
+        h_res = {
+            'mtx_e': l_h,
+            'mtx_score': l_w,
+            'ts_feature': ll_feature,
+            'label': l_label
+        }
+        return h_res
+
     def _parse_entity(self, h_info):
-        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
+        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field,
+                                                           {})
         if type(entity_spots) is list:
             # backward compatibility
             return self._parse_entity_old(h_info)
@@ -145,7 +202,8 @@ class DataIO(Configurable):
 
     def _parse_entity_old(self, h_info):
         # backward compatibility
-        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field, {})
+        entity_spots = h_info.get(self.spot_field, {}).get(self.content_field,
+                                                           {})
         l_e = entity_spots
         s_e = set(h_info[self.spot_field].get(self.salience_field, []))
         test_label = [1 if e in s_e else -1 for e in l_e]
@@ -214,6 +272,23 @@ class DataIO(Configurable):
         z = float(sum([item[1] for item in l_e_tf]))
         l_w = [item[1] / z for item in l_e_tf]
         return l_term, l_w
+
+
+def get_frequency_mask(ll_feature, max_e_per_d):
+    if max_e_per_d is None:
+        return range(len(ll_feature))
+    sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0],
+                             reverse=True)
+    return set(zip(*sorted_features[:max_e_per_d])[0])
+
+
+def apply_mask(l, mask):
+    masked = []
+    for i, e in enumerate(l):
+        if i in mask:
+            masked.append(e)
+    return masked
+
 
 """
 =============To be deprecated data i/o functions=============
@@ -284,22 +359,6 @@ def raw_io(l_line, num_features, spot_field=SPOT_FIELD,
         "mtx_score": m_w
     }
     return h_packed_data, m_label
-
-
-def get_frequency_mask(ll_feature, max_e_per_d):
-    if max_e_per_d is None:
-        return range(len(ll_feature))
-    sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0],
-                             reverse=True)
-    return set(zip(*sorted_features[:max_e_per_d])[0])
-
-
-def apply_mask(l, mask):
-    masked = []
-    for i, e in enumerate(l):
-        if i in mask:
-            masked.append(e)
-    return masked
 
 
 def _get_entity_info(entity_spots, abstract_spots, salience_gold_field,
@@ -407,7 +466,9 @@ def joint_feature_io(l_line,
                      salience_gold_field=salience_gold,
                      max_e_per_d=200):
     """
-    io with events and entities with their corresponding feature matrices
+    io with events and entities with their corresponding feature matrices.
+    When e_feature_dim + evm_feature_dim = 0, it will fall back to raw io,
+    a tf matrix will be computed instead.
     :param l_line:
     :param e_feature_dim:
     :param evm_feature_dim:
@@ -445,15 +506,24 @@ def joint_feature_io(l_line,
             continue
 
         l_label_all = l_e_label + l_evm_label
-        ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat, e_feature_dim,
-                                        evm_feature_dim)
+
+        if f_dim:
+            ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat,
+                                            e_feature_dim, evm_feature_dim)
+        else:
+            ll_feat_all = ll_e_feat + ll_evm_feat
+
         ll_label.append(l_label_all)
         ll_h.append(l_e_all)
         lll_feature.append(ll_feat_all)
 
     ll_h = padding(ll_h, 0)
     ll_label = padding(ll_label, 0)
-    lll_feature = padding(lll_feature, [0] * f_dim)
+
+    if f_dim:
+        lll_feature = padding(lll_feature, [0] * f_dim)
+    else:
+        lll_feature = padding(lll_feature, 0)
 
     # We use event head word in place of entity id.
     m_h = Variable(torch.LongTensor(ll_h)).cuda() \
@@ -742,7 +812,7 @@ def adj_edge_io(
         l_line, spot_field=SPOT_FIELD,
         in_field=body_field, salience_field=abstract_field,
         max_e_per_d=200
-        ):
+):
     """
     convert data to the input for the model
     """
@@ -798,7 +868,8 @@ def _form_distance_mtx(l_seq_e, l_e):
             if l_seq_e[j] not in h_e_p:
                 continue
             p_j = h_e_p[l_seq_e[j]]
-            ll_distance[p_i][p_j] = min(j - i, ll_distance[p_i][p_j]) if ll_distance[p_i][p_j] != -1 \
+            ll_distance[p_i][p_j] = min(j - i, ll_distance[p_i][p_j]) if \
+                ll_distance[p_i][p_j] != -1 \
                 else j - i
     return ll_distance
 
