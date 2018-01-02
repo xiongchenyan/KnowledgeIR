@@ -46,7 +46,7 @@ class EvaVsStat(Configurable):
         l_bin_range = []
         while st <= len(l_sorted_score):
             l_this_bin = l_sorted_score[st: ed]
-            b_st, b_ed = l_item[st][0], l_item[min(ed, len(l_item))][0]
+            b_st, b_ed = l_item[st][0], l_item[min(ed, len(l_item)-1)][0]
             logging.info('bin range %f, %f', b_st, b_ed)
             l_bin_range.append((b_st, b_ed))
             score = sum(l_this_bin) / float(len(l_this_bin))
