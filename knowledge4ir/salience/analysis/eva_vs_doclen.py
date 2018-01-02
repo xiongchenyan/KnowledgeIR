@@ -43,13 +43,17 @@ class EvaVsStat(Configurable):
         l_bin_res = []
         st = 0
         ed = bin_width
+        l_bin_range = []
         while st <= len(l_sorted_score):
             l_this_bin = l_sorted_score[st: ed]
+            b_st, b_ed = l_item[st][0], l_item[min(ed, len(l_item))][0]
+            logging.info('bin range %f, %f', b_st, b_ed)
+            l_bin_range.append((b_st, b_ed))
             score = sum(l_this_bin) / float(len(l_this_bin))
             st = ed
             ed += bin_width
             l_bin_res.append(score)
-        return l_bin_res
+        return l_bin_res, l_bin_range
 
     def process(self, in_name, out_name):
         logging.info('compare eva res vs %s', json.dumps(self.l_target_stat))
@@ -67,10 +71,13 @@ class EvaVsStat(Configurable):
         logging.info('all results loaded, start binning')
         h_stat_bin = dict()
         for stat in self.l_target_stat:
+            logging.info('binning [%s]', stat)
             l_stat = [h_stat[stat] for h_stat in l_h_stat]
-            l_bin_res = self._bin_score(l_stat, list(l_score))
+            l_bin_res, l_bin_range = self._bin_score(l_stat, list(l_score))
             h_stat_bin[stat] = l_bin_res
+            h_stat_bin[stat + '_range'] = l_bin_range
             logging.info('[%s] bin %s', stat, json.dumps(l_bin_res))
+
         json.dump(h_stat_bin, open(out_name, 'w'), indent=1)
         logging.info('finished')
 
