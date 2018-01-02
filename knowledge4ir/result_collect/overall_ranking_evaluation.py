@@ -97,7 +97,7 @@ class RankingPerformanceCollector(Configurable):
             l_ndcg = [item[1][0] for item in l_q_eva]
             l_err = [item[1][1] for item in l_q_eva]
             for metric in self.l_target_metric:
-                name = metric + '%02d' % depth
+                name = metric + '@%02d' % depth
                 if metric == 'ndcg':
                     h_eval_per_q[name] = l_ndcg
                     h_eval[name] = ndcg
