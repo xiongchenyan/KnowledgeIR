@@ -3,18 +3,19 @@ performance at different document length
 """
 
 import json
-from traitlets.config import Configurable
+import logging
+
 from traitlets import (
     Unicode,
     Int,
     List,
 )
-import logging
+from traitlets.config import Configurable
+
+from knowledge4ir.result_collect.analysis.base import bin_score
 from knowledge4ir.utils import (
     body_field,
-    paper_abstract_field,
 )
-import math
 
 
 class EvaVsStat(Configurable):
@@ -35,26 +36,6 @@ class EvaVsStat(Configurable):
         }
         return h_stat
 
-    def _bin_score(self, l_stat, l_score):
-        l_item = zip(l_stat, l_score)
-        l_item.sort(key=lambda item: item[0])
-        l_sorted_score = [item[1] for item in l_item]
-        bin_width = int(math.ceil(len(l_stat) / float(self.nb_bin)))
-        l_bin_res = []
-        st = 0
-        ed = bin_width
-        l_bin_range = []
-        while st <= len(l_sorted_score):
-            l_this_bin = l_sorted_score[st: ed]
-            b_st, b_ed = l_item[st][0], l_item[min(ed, len(l_item)-1)][0]
-            logging.info('bin range %f, %f', b_st, b_ed)
-            l_bin_range.append((b_st, b_ed))
-            score = sum(l_this_bin) / float(len(l_this_bin))
-            st = ed
-            ed += bin_width
-            l_bin_res.append(score)
-        return l_bin_res, l_bin_range
-
     def process(self, in_name, out_name):
         logging.info('compare eva res vs %s', json.dumps(self.l_target_stat))
 
@@ -73,7 +54,7 @@ class EvaVsStat(Configurable):
         for stat in self.l_target_stat:
             logging.info('binning [%s]', stat)
             l_stat = [h_stat[stat] for h_stat in l_h_stat]
-            l_bin_res, l_bin_range = self._bin_score(l_stat, list(l_score))
+            l_bin_res, l_bin_range = bin_score(l_stat, list(l_score), self.nb_bin)
             h_stat_bin[stat] = l_bin_res
             h_stat_bin[stat + '_range'] = l_bin_range
             logging.info('[%s] bin %s', stat, json.dumps(l_bin_res))
