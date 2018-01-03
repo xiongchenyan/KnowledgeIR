@@ -44,7 +44,7 @@ class EntityDistVSMeta(Configurable):
 
     def _bin_e_by_value(self, h_e_value):
         l_item = h_e_value.items()
-        l_item.sort(key=lambda item: item[1])
+        l_item.sort(key=lambda item: item[1], reverse=True)
         l_e = [item[0] for item in l_item]
         bin_width = int(math.ceil(len(l_item) / float(self.nb_bin)))
         st, ed = 0, bin_width
@@ -119,10 +119,10 @@ class EntityDistVSMeta(Configurable):
         l_pre_prob = l_pre_prob.tolist()
 
         h_res = {
-            'gold_df': list(reversed(l_gold_df_bin)),
-            'pre_df': list(reversed(l_pre_df_bin)),
-            'gold_prob': list(reversed(l_gold_prob)),
-            'pre_prob': list(reversed(l_pre_prob)),
+            'gold_df': list(l_gold_df_bin),
+            'pre_df': list(l_pre_df_bin),
+            'gold_prob': list(l_gold_prob),
+            'pre_prob': list(l_pre_prob),
         }
         json.dump(h_res, open(out_name, 'w'), indent=1)
         logging.info('finished')
