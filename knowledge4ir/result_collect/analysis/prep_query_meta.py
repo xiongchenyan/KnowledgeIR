@@ -30,6 +30,7 @@ class QueryMetaPrep(Configurable):
     q_info = Unicode(help='q info in').tag(config=True)
     trec_rank = Unicode(help='q trec rank candidate doc in').tag(config=True)
     out_name = Unicode(help='output location for the q stat').tag(config=True)
+    doc_per_q = Int(100, help='nb of d per q to consider').tag(config=True)
 
     def __init__(self, **kwargs):
         super(QueryMetaPrep, self).__init__(**kwargs)
@@ -41,7 +42,8 @@ class QueryMetaPrep(Configurable):
             self._load_candidate_doc()
 
     def _load_candidate_doc(self):
-        l_q_rank = load_trec_ranking_with_score(self.trec_rank)
+        l_q_rank = [[q, rank[:self.doc_per_q]]
+                    for q, rank in load_trec_ranking_with_score(self.trec_rank)]
         self.h_q_rank = dict(l_q_rank)
         for q, rank in l_q_rank:
             self.h_q_meta[q] = {
