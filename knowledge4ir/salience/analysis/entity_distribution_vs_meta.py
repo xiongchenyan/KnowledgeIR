@@ -102,10 +102,10 @@ class EntityDistVSMeta(Configurable):
         l_pre_prob = l_pre_prob.tolist()
 
         h_res = {
-            'gold_df': l_gold_df_bin,
-            'pre_df': l_pre_df_bin,
-            'gold_prob': l_gold_prob,
-            'pre_prob': l_pre_prob,
+            'gold_df': list(reversed(l_gold_df_bin)),
+            'pre_df': list(reversed(l_pre_df_bin)),
+            'gold_prob': list(reversed(l_gold_prob)),
+            'pre_prob': list(reversed(l_pre_prob)),
         }
         json.dump(h_res, open(out_name, 'w'), indent=1)
         logging.info('finished')
