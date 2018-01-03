@@ -44,7 +44,7 @@ class EntityDistVSMeta(Configurable):
         l_item = h_e_value.items()
         l_item.sort(key=lambda item: item[1])
         l_e = [item[0] for item in l_item]
-        bin_width = math.ceil(len(l_item) / float(self.nb_bin))
+        bin_width = int(math.ceil(len(l_item) / float(self.nb_bin)))
         st, ed = 0, bin_width
         h_e_bin = dict()
         bin_number = 0
