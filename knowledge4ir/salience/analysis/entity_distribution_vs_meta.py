@@ -60,6 +60,8 @@ class EntityDistVSMeta(Configurable):
                 bin_number += 1
                 if st >= len(l_e):
                     break
+            ed = bin_width
+            logging.info('st moved to [%d], ed [%d]', st, ed)
 
         while st < len(l_e):
             l_this_e = list([int(e) for e in l_e[st: ed]])
@@ -110,8 +112,8 @@ class EntityDistVSMeta(Configurable):
         pre_z = np.sum(l_pre_df_bin)
         l_gold_prob = l_gold_df_bin / float(gold_z)
         l_pre_prob = l_pre_df_bin / float(pre_z)
-        l_gold_df_bin = np.log(l_gold_df_bin).tolist()
-        l_pre_df_bin = np.log(l_pre_df_bin).tolist()
+        l_gold_df_bin = l_gold_df_bin.tolist()
+        l_pre_df_bin = l_pre_df_bin.tolist()
         l_gold_prob = l_gold_prob.tolist()
         l_pre_prob = l_pre_prob.tolist()
 
