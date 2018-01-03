@@ -7,6 +7,7 @@ def bin_score(l_stat, l_score, nb_bin):
     l_item.sort(key=lambda item: item[0])
     l_sorted_score = [item[1] for item in l_item]
     bin_width = int(math.ceil(len(l_stat) / float(nb_bin)))
+    logging.info('binning [%d] data to [%d] size [%d] bin', len(l_item), nb_bin, bin_width)
     l_bin_res = []
     st = 0
     ed = bin_width
