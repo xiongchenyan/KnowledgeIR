@@ -92,12 +92,20 @@ class EntityDistVSMeta(Configurable):
             l_gold_df_bin += np.array(l_this_df_gold_bin)
             l_pre_df_bin += np.array(l_this_df_top_bin)
         logging.info('document processed')
+        gold_z = np.sum(l_gold_df_bin)
+        pre_z = np.sum(l_pre_df_bin)
+        l_gold_prob = l_gold_df_bin / float(gold_z)
+        l_pre_prob = l_pre_df_bin / float(pre_z)
         l_gold_df_bin = l_gold_df_bin.tolist()
         l_pre_df_bin = l_pre_df_bin.tolist()
+        l_gold_prob = l_gold_prob.tolist()
+        l_pre_prob = l_pre_prob.tolist()
 
         h_res = {
             'gold_df': l_gold_df_bin,
             'pre_df': l_pre_df_bin,
+            'gold_prob': l_gold_prob,
+            'pre_prob': l_pre_prob,
         }
         json.dump(h_res, open(out_name, 'w'), indent=1)
         logging.info('finished')
