@@ -55,6 +55,7 @@ class EntityDistVSMeta(Configurable):
             for frac in self.l_first_bin_range:
                 ed = int(math.ceil(len(l_e) * frac))
                 l_this_e = list([int(e) for e in l_e[st: ed]])
+                logging.info('bin [%d] has [%d] e', bin_number, len(l_this_e))
                 h_e_bin.update(dict(zip(l_this_e, [bin_number] * len(l_this_e))))
                 st = ed
                 bin_number += 1
