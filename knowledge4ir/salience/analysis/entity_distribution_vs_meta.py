@@ -113,6 +113,7 @@ if __name__ == '__main__':
     if 4 != len(sys.argv):
         print "study the entity distributions in labels and predictions"
         print "3 para: config + predicted json + out name"
+        EntityDistVSMeta.class_print_help()
         sys.exit(-1)
 
     ana = EntityDistVSMeta(config=load_py_config(sys.argv[1]))
