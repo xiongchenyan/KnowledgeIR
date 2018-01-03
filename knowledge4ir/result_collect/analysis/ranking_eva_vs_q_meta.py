@@ -33,7 +33,7 @@ class RankEvaAtQMeta(Configurable):
         self.h_q_meta = load_json_info(self.q_meta_in, key_field='qid')
 
     def process(self, eva_in, out_name):
-        l_q_eva = load_gdeval_res(eva_in)
+        l_q_eva = load_gdeval_res(eva_in, with_mean=False)
         l_avg_doc_len = []
         l_ndcg = []
         for q, eva in l_q_eva:
