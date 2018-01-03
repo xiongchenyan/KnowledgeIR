@@ -27,7 +27,7 @@ use_cuda = torch.cuda.is_available()
 
 
 class DataIO(Configurable):
-    nb_features = Int(help='number of features').tag(config=True)
+    nb_features = Int(help='number of features to use').tag(config=True)
     spot_field = Unicode(SPOT_FIELD, help='spot field').tag(config=True)
     event_spot_field = Unicode(EVENT_SPOT_FIELD, help='event spot field').tag(
         config=True)
@@ -38,12 +38,12 @@ class DataIO(Configurable):
     max_e_per_d = Int(200, help='max entity per doc').tag(config=True)
     content_field = Unicode(body_field, help='content field').tag(config=True)
     max_w_per_d = Int(500, help='maximum words per doc').tag(config=True)
-    nb_features = Int(help='first k features to use').tag(config=True)
     l_target_data = List(
         Unicode,
         default_value=[]
     ).tag(config=True)
     group_name = Unicode(help='hot key for l_target_data').tag(config=True)
+    entity_vocab_size = Int(help='vocabulary size of entity').tag(config=True)
 
     def __init__(self, **kwargs):
         super(DataIO, self).__init__(**kwargs)
@@ -53,7 +53,9 @@ class DataIO(Configurable):
             'feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'duet': ['mtx_e', 'mtx_score', 'mtx_w', 'mtx_w_score', 'label'],
             'event_raw': ['mtx_e', 'mtx_score', 'label'],
-            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label']
+            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
+            'joint_raw': ['mtx_e', 'mtx_score', 'label'],
+            'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
@@ -97,6 +99,8 @@ class DataIO(Configurable):
             h_info = json.loads(line)
             if self.group_name.startswith('event'):
                 h_this_data = self._parse_event(h_info)
+            elif self.group_name.startswith('joint'):
+                h_this_data = self._parse_joint(h_info)
             else:
                 h_this_data = self._parse_entity(h_info)
 
@@ -131,6 +135,38 @@ class DataIO(Configurable):
             v = v.cuda()
         return v
 
+    def _parse_joint(self, h_info):
+        """
+        io with events and entities with their corresponding feature matrices.
+        When e_feature_dim + evm_feature_dim = 0, it will fall back to raw io,
+        a tf matrix will be computed instead.
+        """
+        h_entity_res = self._parse_entity(h_info)
+        l_e = h_entity_res['mtx_e']
+        l_e_tf = h_entity_res['mtx_score']
+        l_e_label = h_entity_res['label']
+        ll_e_feat = h_entity_res['ts_feature']
+
+        h_event_res = self._parse_event(h_info)
+        l_evm = h_event_res['mtx_e']
+        l_evm_tf = h_entity_res['mtx_score']
+        l_evm_label = h_event_res['label']
+        ll_evm_feat = h_event_res['ts_feature']
+
+        # shift the event id by an offset so entity and event use different ids.
+        l_e_all = l_e + [e + self.entity_vocab_size for e in l_evm]
+        l_tf_all = l_e_tf + l_evm_tf
+        l_label_all = l_e_label + l_evm_label
+        ll_feat_all = _merge_features(ll_e_feat, ll_evm_feat)
+
+        h_res = {
+            'mtx_e': l_e_all,
+            'mtx_score': l_tf_all,
+            'ts_feature': ll_feat_all,
+            'label': l_label_all
+        }
+        return h_res
+
     def _parse_event(self, h_info):
         event_spots = h_info.get(self.event_spot_field, {}).get(
             self.content_field, {})
@@ -149,7 +185,7 @@ class DataIO(Configurable):
         ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
 
         z = float(sum([item[0] for item in ll_feature]))
-        l_w = [item[0] / z for item in ll_feature]
+        l_tf = [item[0] / z for item in ll_feature]
 
         # Now take the most frequent events based on the feature. Here we
         # assume the first element in the feature is the frequency count.
@@ -157,11 +193,11 @@ class DataIO(Configurable):
         l_h = apply_mask(l_h, most_freq_indices)
         ll_feature = apply_mask(ll_feature, most_freq_indices)
         l_label = apply_mask(l_label, most_freq_indices)
-        l_w = apply_mask(l_w, most_freq_indices)
+        l_tf = apply_mask(l_tf, most_freq_indices)
 
         h_res = {
             'mtx_e': l_h,
-            'mtx_score': l_w,
+            'mtx_score': l_tf,
             'ts_feature': ll_feature,
             'label': l_label
         }
@@ -272,6 +308,27 @@ class DataIO(Configurable):
         z = float(sum([item[1] for item in l_e_tf]))
         l_w = [item[1] / z for item in l_e_tf]
         return l_term, l_w
+
+
+def _merge_features(ll_feature_e, ll_feature_evm, filler=0):
+    e_dim = len(ll_feature_e[0])
+    evm_dim = len(ll_feature_evm[0])
+
+    e_pads = [filler] * evm_dim
+    evm_pads = [filler] * e_dim
+
+    for i in xrange(len(ll_feature_e)):
+        if ll_feature_e[i]:
+            ll_feature_e[i] = ll_feature_e[i] + e_pads
+        else:
+            ll_feature_e[i] = e_pads + evm_pads
+    for i in xrange(len(ll_feature_evm)):
+        if ll_feature_evm[i]:
+            ll_feature_evm[i] = evm_pads + ll_feature_evm[i]
+        else:
+            ll_feature_evm[i] = e_pads + evm_pads
+
+    return ll_feature_e + ll_feature_evm
 
 
 def get_frequency_mask(ll_feature, max_e_per_d):

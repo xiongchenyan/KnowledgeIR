@@ -185,18 +185,6 @@ class SalienceModelCenter(Configurable):
             logging.error("Please specify one mode only.")
             exit(1)
 
-        # if self.input_format:
-        #     logging.info(
-        #         "Input format is overwritten to [%s]" % self.input_format)
-        #     if self.input_format == 'raw':
-        #         self.h_model_io[self.model_name] = raw_io
-        #     elif self.input_format == 'featured':
-        #         self.h_model_io[self.model_name] = feature_io
-        #     else:
-        #         logging.error("Unknown model type [%s]." % self.input_format)
-        # else:
-        #     logging.debug("No format overwrite.")
-
         self.evaluator = SalienceEva(**kwargs)
         self.model = None
         self._init_model()
@@ -540,6 +528,7 @@ if __name__ == '__main__':
         set_basic_log,
         load_py_config,
     )
+
 
     # set_basic_log(logging.INFO)
 
