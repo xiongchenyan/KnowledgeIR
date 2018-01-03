@@ -117,6 +117,6 @@ if __name__ == '__main__':
         sys.exit(-1)
 
     ana = EntityDistVSMeta(config=load_py_config(sys.argv[1]))
-    ana.process(*sys.argv[1:])
+    ana.process(*sys.argv[2:])
 
 
