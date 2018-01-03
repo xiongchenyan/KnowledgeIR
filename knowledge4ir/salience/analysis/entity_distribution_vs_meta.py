@@ -67,6 +67,7 @@ class EntityDistVSMeta(Configurable):
             st = ed
             ed += bin_width
             bin_number += 1
+        self.nb_bin = bin_number
         return h_e_bin
 
     def _culminate_one_doc(self, h_doc_info, h_e_bin):
