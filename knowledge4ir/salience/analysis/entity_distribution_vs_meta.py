@@ -66,7 +66,7 @@ class EntityDistVSMeta(Configurable):
         l_label = h_ana['salience']
 
         l_gold_e = [e for e, label in zip(l_e, l_label) if label > 0]
-        l_top_e = [item[0] for item in sorted(zip(l_e, l_score), key=lambda item: -item[1])[:self.top_k]]
+        l_top_e = [item[0] for item in sorted(zip(l_e, l_score), key=lambda item: -item[1])[:len(l_gold_e)]]
 
         for e in l_gold_e:
             b = h_e_bin[e]
@@ -96,8 +96,8 @@ class EntityDistVSMeta(Configurable):
         pre_z = np.sum(l_pre_df_bin)
         l_gold_prob = l_gold_df_bin / float(gold_z)
         l_pre_prob = l_pre_df_bin / float(pre_z)
-        l_gold_df_bin = l_gold_df_bin.tolist()
-        l_pre_df_bin = l_pre_df_bin.tolist()
+        l_gold_df_bin = np.log(l_gold_df_bin).tolist()
+        l_pre_df_bin = np.log(l_pre_df_bin).tolist()
         l_gold_prob = l_gold_prob.tolist()
         l_pre_prob = l_pre_prob.tolist()
 
