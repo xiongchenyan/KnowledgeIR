@@ -19,6 +19,7 @@ from traitlets import (
     Int,
     Unicode,
     List,
+    Float,
 )
 import logging
 import numpy as np
@@ -28,8 +29,9 @@ import math
 class EntityDistVSMeta(Configurable):
     df_meta_in = Unicode().tag(config=True)
     nb_bin = Int(5).tag(config=True)
+    l_first_bin_range = List(Float, default_value=[0.0001, 0.001]).tag(config=True)
     content_field = Unicode('bodyText').tag(config=True)
-    top_k = Int(5).tag(config=True)
+    # top_k = Int(5).tag(config=True)
 
     def __init__(self, **kwargs):
         super(EntityDistVSMeta, self).__init__(**kwargs)
@@ -48,6 +50,17 @@ class EntityDistVSMeta(Configurable):
         st, ed = 0, bin_width
         h_e_bin = dict()
         bin_number = 0
+
+        if self.l_first_bin_range:
+            for frac in self.l_first_bin_range:
+                ed = int(math.ceil(len(l_e) * frac))
+                l_this_e = list([int(e) for e in l_e[st: ed]])
+                h_e_bin.update(dict(zip(l_this_e, [bin_number] * len(l_this_e))))
+                st = ed
+                bin_number += 1
+                if st >= len(l_e):
+                    break
+
         while st < len(l_e):
             l_this_e = list([int(e) for e in l_e[st: ed]])
             h_e_bin.update(dict(zip(l_this_e, [bin_number] * len(l_this_e))))
