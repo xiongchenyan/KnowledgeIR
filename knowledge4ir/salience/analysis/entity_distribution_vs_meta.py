@@ -49,7 +49,7 @@ class EntityDistVSMeta(Configurable):
         h_e_bin = dict()
         bin_number = 0
         while st < len(l_e):
-            l_this_e = list(l_e[st: ed])
+            l_this_e = list([int(e) for e in l_e[st: ed]])
             h_e_bin.update(dict(zip(l_this_e, [bin_number] * len(l_this_e))))
             st = ed
             ed += bin_width
@@ -102,7 +102,6 @@ class EntityDistVSMeta(Configurable):
         json.dump(h_res, open(out_name, 'w'), indent=1)
         logging.info('finished')
         return
-
 
 
 if __name__ == '__main__':
