@@ -29,7 +29,7 @@ import math
 class EntityDistVSMeta(Configurable):
     df_meta_in = Unicode().tag(config=True)
     nb_bin = Int(5).tag(config=True)
-    l_first_bin_range = List(Float, default_value=[0.0001, 0.001]).tag(config=True)
+    l_first_bin_range = List(Float, default_value=[0.001, 0.005]).tag(config=True)
     content_field = Unicode('bodyText').tag(config=True)
     # top_k = Int(5).tag(config=True)
 
