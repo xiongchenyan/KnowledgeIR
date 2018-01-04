@@ -44,6 +44,8 @@ class DataIO(Configurable):
     ).tag(config=True)
     group_name = Unicode(help='hot key for l_target_data').tag(config=True)
     entity_vocab_size = Int(help='vocabulary size of entity').tag(config=True)
+    e_feature_dim = Int(help='entity feature dimension').tag(config=True)
+    evm_feature_dim = Int(help='event feature dimension').tag(config=True)
 
     def __init__(self, **kwargs):
         super(DataIO, self).__init__(**kwargs)
@@ -157,7 +159,13 @@ class DataIO(Configurable):
         l_e_all = l_e + [e + self.entity_vocab_size for e in l_evm]
         l_tf_all = l_e_tf + l_evm_tf
         l_label_all = l_e_label + l_evm_label
-        ll_feat_all = _merge_features(ll_e_feat, ll_evm_feat)
+
+        if self.e_feature_dim and self.evm_feature_dim:
+            ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat,
+                                            self.e_feature_dim,
+                                            self.evm_feature_dim)
+        else:
+            ll_feat_all = []
 
         h_res = {
             'mtx_e': l_e_all,
@@ -310,10 +318,7 @@ class DataIO(Configurable):
         return l_term, l_w
 
 
-def _merge_features(ll_feature_e, ll_feature_evm, filler=0):
-    e_dim = len(ll_feature_e[0])
-    evm_dim = len(ll_feature_evm[0])
-
+def _combine_features(ll_feature_e, ll_feature_evm, e_dim, evm_dim, filler=0):
     e_pads = [filler] * evm_dim
     evm_pads = [filler] * e_dim
 
@@ -334,6 +339,9 @@ def _merge_features(ll_feature_e, ll_feature_evm, filler=0):
 def get_frequency_mask(ll_feature, max_e_per_d):
     if max_e_per_d is None:
         return range(len(ll_feature))
+    if not ll_feature:
+        return set()
+
     sorted_features = sorted(enumerate(ll_feature), key=lambda x: x[1][0],
                              reverse=True)
     return set(zip(*sorted_features[:max_e_per_d])[0])
@@ -492,24 +500,6 @@ def _get_event_info(event_spots, salience_gold_field, max_e_per_d,
 
 def _offset_hash(l_e, offset):
     return [e + offset for e in l_e]
-
-
-def _combine_features(ll_feature_e, ll_feature_evm, e_dim, evm_dim, filler=0):
-    e_pads = [filler] * evm_dim
-    evm_pads = [filler] * e_dim
-
-    for i in xrange(len(ll_feature_e)):
-        if ll_feature_e[i]:
-            ll_feature_e[i] = ll_feature_e[i] + e_pads
-        else:
-            ll_feature_e[i] = e_pads + evm_pads
-    for i in xrange(len(ll_feature_evm)):
-        if ll_feature_evm[i]:
-            ll_feature_evm[i] = evm_pads + ll_feature_evm[i]
-        else:
-            ll_feature_evm[i] = e_pads + evm_pads
-
-    return ll_feature_e + ll_feature_evm
 
 
 def joint_feature_io(l_line,

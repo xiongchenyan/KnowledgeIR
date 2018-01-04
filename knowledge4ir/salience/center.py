@@ -170,7 +170,6 @@ class SalienceModelCenter(Configurable):
     def __init__(self, **kwargs):
         super(SalienceModelCenter, self).__init__(**kwargs)
         self.para = NNPara(**kwargs)
-        self.para.assert_para()
         self.ext_data = ExtData(**kwargs)
         self.ext_data.assert_with_para(self.para)
         self.io_parser = DataIO(**kwargs)
@@ -186,7 +185,6 @@ class SalienceModelCenter(Configurable):
             exit(1)
 
         self.evaluator = SalienceEva(**kwargs)
-        self.model = None
         self._init_model()
 
         self.patient_cnt = 0
@@ -218,6 +216,9 @@ class SalienceModelCenter(Configurable):
                                                    self.ext_data.event_emb))
         self.para.entity_vocab_size = self.para.entity_vocab_size + \
                                       self.para.event_vocab_size
+
+        assert self.para.node_feature_dim == self.io_parser.e_feature_dim + \
+                                             self.io_parser.evm_feature_dim
 
         logging.info("Embedding matrix merged into shape [%d,%d]" % (
             self.ext_data.entity_emb.shape[0],
