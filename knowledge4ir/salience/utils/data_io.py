@@ -114,12 +114,12 @@ class DataIO(Configurable):
 
         for key in h_parsed_data:
             # logging.debug('line [%s]', l_line[0])
-            logging.debug('converting [%s] to torch variable', key)
+            # logging.info('converting [%s] to torch variable', key)
+
             h_parsed_data[key] = self._data_to_variable(
                 self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
                 data_type=self.h_data_meta[key]['d_type']
             )
-        # logging.debug('packed data contains keys %s', json.dumps(h_parsed_data.keys()))
         return h_parsed_data, h_parsed_data['label']
 
     def _data_to_variable(self, list_data, data_type='Float'):
@@ -143,6 +143,8 @@ class DataIO(Configurable):
         When e_feature_dim + evm_feature_dim = 0, it will fall back to raw io,
         a tf matrix will be computed instead.
         """
+        # Note that we didn't pad entity and event separately.
+        # This is currently fine using the kernel models.
         h_entity_res = self._parse_entity(h_info)
         l_e = h_entity_res['mtx_e']
         l_e_tf = h_entity_res['mtx_score']
@@ -151,7 +153,7 @@ class DataIO(Configurable):
 
         h_event_res = self._parse_event(h_info)
         l_evm = h_event_res['mtx_e']
-        l_evm_tf = h_entity_res['mtx_score']
+        l_evm_tf = h_event_res['mtx_score']
         l_evm_label = h_event_res['label']
         ll_evm_feat = h_event_res['ts_feature']
 
@@ -299,6 +301,7 @@ class DataIO(Configurable):
         l_dim = [len(lll), 0, 0]
         for ll in lll:
             l_dim[1] = max(l_dim[1], len(ll))
+
             for l in ll:
                 l_dim[2] = max(l_dim[2], len(l))
         for i in xrange(len(lll)):

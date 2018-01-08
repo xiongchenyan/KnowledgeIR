@@ -458,8 +458,8 @@ class SalienceModelCenter(Configurable):
             middle_output = \
                 self.model.forward_intermediate(h_packed_data).cpu()[0]
             l_middle_features = middle_output.data.numpy().tolist()
-            h_out[self.io_parser.content_field]['predict_features'] = zip(l_e,
-                                                                          l_middle_features)
+            h_out[self.io_parser.content_field][
+                'predict_features'] = zip(l_e, l_middle_features)
 
         v_label = v_label[0].cpu()
         y = v_label.data.view_as(pre_label)

@@ -61,7 +61,7 @@ def evaluate_normal(docs, f_predict, entity_vocab_size,
 
     for res in load_pairs(docs, f_predict, content_field):
         p += 1
-        if res:
+        if not res:
             e_p += 1
         else:
             skip += 1
@@ -73,14 +73,14 @@ def evaluate_normal(docs, f_predict, entity_vocab_size,
 
         if l_e_pack:
             h_e = evaluator.evaluate(l_e_pack[0], l_e_pack[1])
-            e_p += 1
             h_e_total_eva = add_svm_feature(h_e_total_eva, h_e)
 
-        h_e_mean_eva = mutiply_svm_feature(h_e_total_eva, 1.0 / e_p)
-
-        sys.stdout.write(
-            '\rEvaluated %d files, %d with entities,'
-            ' %d line skipped. P@1: %s.' % (p, e_p, skip, h_e_mean_eva['p@01']))
+        if not e_p == 0:
+            h_e_mean_eva = mutiply_svm_feature(h_e_total_eva, 1.0 / e_p)
+            sys.stdout.write(
+                '\rEvaluated %d files, %d with entities,'
+                ' %d line skipped. P@1: %s.' % (
+                    p, e_p, skip, h_e_mean_eva['p@01']))
 
     print('')
 
@@ -104,6 +104,8 @@ def evaluate_json_joint(docs, f_predict, entity_vocab_size,
 
     h_e_total_eva = dict()
     h_evm_total_eva = dict()
+    h_e_mean_eva = dict()
+    h_evm_mean_eva = dict()
 
     e_p = 0
     evm_p = 0
@@ -116,11 +118,6 @@ def evaluate_json_joint(docs, f_predict, entity_vocab_size,
             continue
 
         predictions, s_e_label, s_evm_label = res
-
-        if s_e_label:
-            e_p += 1
-        if s_evm_label:
-            evm_p += 1
 
         l_e_pack = get_e_labels(predictions, s_e_label, entity_vocab_size)
         l_evm_pack = get_evm_labels(predictions, s_evm_label, entity_vocab_size)
@@ -135,12 +132,15 @@ def evaluate_json_joint(docs, f_predict, entity_vocab_size,
             evm_p += 1
             h_evm_total_eva = add_svm_feature(h_evm_total_eva, h_evm)
 
-        h_e_mean_eva = mutiply_svm_feature(h_e_total_eva, 1.0 / e_p)
-        h_evm_mean_eva = mutiply_svm_feature(h_evm_total_eva,
-                                             1.0 / evm_p)
+        if not e_p == 0:
+            h_e_mean_eva = mutiply_svm_feature(h_e_total_eva, 1.0 / e_p)
+        if not evm_p == 0:
+            h_evm_mean_eva = mutiply_svm_feature(h_evm_total_eva,
+                                                 1.0 / evm_p)
 
-        ep1 = h_e_mean_eva['p@01'] if 'p@01' in h_e_mean_eva else 'N/A'
-        evmp1 = h_evm_mean_eva['p@01'] if 'p@01' in h_evm_mean_eva else 'N/A'
+        ep1 = '%.4f' % h_e_mean_eva['p@01'] if 'p@01' in h_e_mean_eva else 'N/A'
+        evmp1 = '%.4f' % h_evm_mean_eva[
+            'p@01'] if 'p@01' in h_evm_mean_eva else 'N/A'
 
         sys.stdout.write(
             '\rEvaluated %d files, %d with entities and %d with events,'
