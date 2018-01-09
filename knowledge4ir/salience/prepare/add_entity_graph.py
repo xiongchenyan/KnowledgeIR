@@ -1,13 +1,12 @@
 """
-Align json file according to existing order.
+Add entity-event graph to docs.
 """
-from __future__ import print_function
 import sys
 import json
 import gzip
 
 if not len(sys.argv) == 4:
-    print("Usage: json_align.py [ordered file] [input file] [output file]")
+    print("Usage: json_align.py [original file] [adjacent file] [output file]")
 
 
 def zopen(fname):
@@ -18,9 +17,9 @@ def zopen(fname):
 
 
 loaded_lines = {}
-with zopen(sys.argv[2]) as input_file:
+with zopen(sys.argv[2]) as adj_file:
     line_num = 0
-    for line in input_file:
+    for line in adj_file:
         doc = json.loads(line)
         docno = doc['docno']
         loaded_lines[docno] = line
@@ -28,23 +27,28 @@ with zopen(sys.argv[2]) as input_file:
         sys.stdout.write("Loaded %d input lines.\r" % line_num)
 print("\nDone loading input files.")
 
-with zopen(sys.argv[1]) as order_file, open(sys.argv[3], 'w') as output_file:
+with zopen(sys.argv[1]) as ee_file, open(sys.argv[3], 'w') as output_file:
     line_num = 0
     missed = 0
 
-    for line in order_file:
+    for line in ee_file:
+        line_num += 1
         doc = json.loads(line)
         docno = doc['docno']
-        line_num += 1
+
+        adj_line = None
+
         try:
-            line = loaded_lines[docno]
-            output_file.write(line)
+            adj_line = loaded_lines[docno]
         except KeyError as e:
-            empty_doc = {'docno': docno}
-            output_file.write(json.dumps(empty_doc))
-            output_file.write("\n")
             missed += 1
+
+        if adj_line:
+            adj_info = json.loads(adj_line)
+            doc['adjacentList'] = adj_info['adjacentList']
+
+        output_file.write(json.dumps(doc))
+        output_file.write("\n")
 
         sys.stdout.write("Processed %d ordered lines, missed %d lines.\r" % (
             line_num, missed))
-print("\nDone reorderings.")

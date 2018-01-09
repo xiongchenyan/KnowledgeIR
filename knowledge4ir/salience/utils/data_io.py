@@ -57,7 +57,8 @@ class DataIO(Configurable):
             'event_raw': ['mtx_e', 'mtx_score', 'label'],
             'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
-            'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label']
+            'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
+            'joint_graph': ['mtx_e', 'mtx_score', 'mtx_graph', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
@@ -108,6 +109,7 @@ class DataIO(Configurable):
 
             if 'mtx_w' in h_parsed_data:
                 h_this_data.update(self._parse_word(h_info))
+
             for key in h_parsed_data.keys():
                 assert key in h_this_data
                 h_parsed_data[key].append(h_this_data[key])
