@@ -11,7 +11,8 @@ from traitlets import (
     Unicode,
     Bool,
 )
-from knowledge4ir.utils import term2lm, body_field, title_field, abstract_field, salience_gold
+from knowledge4ir.utils import term2lm, body_field, title_field, abstract_field, \
+    salience_gold
 import pickle
 import numpy as np
 import gzip
@@ -56,7 +57,9 @@ class CorpusHasher(Configurable):
         config=True)
     with_position = Bool(False, help='whether add position').tag(config=True)
     max_position_per_e = Int(20, help='max loc per e to keep').tag(config=True)
-    hash_events = Bool(False, help="whether to hash evnet information").tag(
+    hash_events = Bool(False, help="whether to hash event information").tag(
+        config=True)
+    hash_graph = Bool(False, help="whether to add event entity graph info").tag(
         config=True)
     frame_name_file = Unicode(help="file containing possible frame names").tag(
         config=True)
@@ -99,18 +102,23 @@ class CorpusHasher(Configurable):
                 h_hashed['spot'][field] = this_field_data
                 continue
 
-            l_hashed_id_tf = term2lm([eid for eid in l_hashed_e_id if eid != 0]).items()
+            l_hashed_id_tf = term2lm(
+                [eid for eid in l_hashed_e_id if eid != 0]).items()
             l_hashed_id_tf.sort(key=lambda item: -item[1])
             l_hashed_id_tf = l_hashed_id_tf[:self.max_e_per_d]
             l_kepted_hashed_e_id = [item[0] for item in l_hashed_id_tf]
 
             ll_feature = [[tf] for eid, tf in l_hashed_id_tf]
             if self.with_feature:
-                ll_feature = self._add_node_features(l_ana, l_kepted_hashed_e_id, ll_feature)
+                ll_feature = self._add_node_features(l_ana,
+                                                     l_kepted_hashed_e_id,
+                                                     ll_feature)
 
             l_salience = self._get_given_salience(l_ana, l_kepted_hashed_e_id)
-            l_field_salience = self._get_field_salience(l_kepted_hashed_e_id, h_salience_e)
-            l_salience = [max(item) for item in zip(l_salience, l_field_salience)]
+            l_field_salience = self._get_field_salience(l_kepted_hashed_e_id,
+                                                        h_salience_e)
+            l_salience = [max(item) for item in
+                          zip(l_salience, l_field_salience)]
 
             this_field_data = {
                 "entities": l_kepted_hashed_e_id,
@@ -195,10 +203,22 @@ class CorpusHasher(Configurable):
                 this_field_data['loc'] = ll_loc
             h_hashed['event'][field] = this_field_data
 
+    def _hash_graph(self, h_info, h_hashed):
+        h_adjacent = {}
+        for adjacences in h_info['adjacentList']:
+            l_hashed_e_id = [self.h_entity_id.get(entity['id'], 0) for entity in
+                             adjacences['entities']]
+            h_adjacent[adjacences['id']] = l_hashed_e_id
+
+        # Only graphs in the body text are annotated.
+        evm_ids = [info['id'] for info in h_info['event']['bodyText']]
+        h_hashed['adjacent'] = [h_adjacent.get(eid, []) for eid in evm_ids]
+
     def hash_per_info(self, h_info):
         h_hashed = dict()
         l_field = [field for field in h_info.keys() if
-                   field not in {'qid', 'docno', 'spot', 'event'}]
+                   field not in {'qid', 'docno', 'spot', 'event',
+                                 'adjacentList'}]
         for field in l_field:
             text = h_info[field]
             l_w = text.lower().split()
@@ -211,6 +231,8 @@ class CorpusHasher(Configurable):
         self._hash_spots(h_info, h_hashed)
         if self.hash_events:
             self._hash_events(h_info, h_hashed)
+        if self.hash_graph:
+            self._hash_graph(h_info, h_hashed)
 
         return h_hashed
 
