@@ -12,7 +12,8 @@ from knowledge4ir.utils import (
     body_field,
     title_field,
     abstract_field,
-    salience_gold
+    salience_gold,
+    adjacent_field
 )
 import numpy as np
 import logging
@@ -34,6 +35,8 @@ class DataIO(Configurable):
     salience_label_field = Unicode(salience_gold, help='salience label').tag(
         config=True)
     salience_field = Unicode(abstract_field, help='salience field').tag(
+        config=True)
+    adjacent_field = Unicode(adjacent_field, help='adjacent field').tag(
         config=True)
     max_e_per_d = Int(200, help='max entity per doc').tag(config=True)
     content_field = Unicode(body_field, help='content field').tag(config=True)
@@ -101,7 +104,7 @@ class DataIO(Configurable):
         for line in l_line:
             h_info = json.loads(line)
             if self.group_name.startswith('event'):
-                h_this_data = self._parse_event(h_info)
+                h_this_data, _ = self._parse_event(h_info)
             elif self.group_name.startswith('joint'):
                 h_this_data = self._parse_joint(h_info)
             else:
@@ -109,6 +112,9 @@ class DataIO(Configurable):
 
             if 'mtx_w' in h_parsed_data:
                 h_this_data.update(self._parse_word(h_info))
+
+            if 'mtx_graph' in h_parsed_data:
+                h_this_data.update(self._parse_graph(h_info))
 
             for key in h_parsed_data.keys():
                 assert key in h_this_data
@@ -153,7 +159,7 @@ class DataIO(Configurable):
         l_e_label = h_entity_res['label']
         ll_e_feat = h_entity_res['ts_feature']
 
-        h_event_res = self._parse_event(h_info)
+        h_event_res, freq_mask = self._parse_event(h_info)
         l_evm = h_event_res['mtx_e']
         l_evm_tf = h_event_res['mtx_score']
         l_evm_label = h_event_res['label']
@@ -171,11 +177,15 @@ class DataIO(Configurable):
         else:
             ll_feat_all = []
 
+        m_adj = h_info.get(self.adjacent_field, [])
+        m_adj_masked = apply_mask(m_adj, freq_mask)
+
         h_res = {
             'mtx_e': l_e_all,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
-            'label': l_label_all
+            'label': l_label_all,
+            'mtx_graph': m_adj_masked
         }
         return h_res
 
@@ -213,7 +223,7 @@ class DataIO(Configurable):
             'ts_feature': ll_feature,
             'label': l_label
         }
-        return h_res
+        return h_res, most_freq_indices
 
     def _parse_entity(self, h_info):
         entity_spots = h_info.get(self.spot_field, {}).get(self.content_field,
@@ -281,6 +291,13 @@ class DataIO(Configurable):
         h_res = {
             'mtx_w': l_words,
             'mtx_w_score': l_score,
+        }
+        return h_res
+
+    def _parse_graph(self, h_info):
+        m_adj = h_info.get(self.adjacent_field, [])
+        h_res = {
+            'mtx_graph': m_adj
         }
         return h_res
 

@@ -16,6 +16,7 @@ DATA_PATH = "/bos/usr0/cx/tmp/knowledge4ir/data/"
 body_field = 'bodyText'
 paper_abstract_field = 'paperAbstract'
 abstract_field = 'abstract'
+adjacent_field = 'adjacent'
 salience_gold = 'salience'
 title_field = 'title'
 E_GRID_FIELD = 'e_grid'
