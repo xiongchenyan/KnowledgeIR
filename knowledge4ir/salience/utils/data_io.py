@@ -61,16 +61,22 @@ class DataIO(Configurable):
             'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
-            'joint_graph': ['mtx_e', 'mtx_score', 'label']
+            'joint_graph': ['mtx_e', 'ts_evm', 'v_evm_length',
+                            'mtx_score', 'ts_feature', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
             'mtx_score': {'dim': 2, 'd_type': 'Float'},
+            'ts_evm': {'dim': 3, 'd_type': 'Int'},
+            'v_evm_length': {'dim': 2, 'd_type': 'Int'},
+            'mtx_evm_score': {'dim': 2, 'd_type': 'Float'},
+            'mtx_e_score': {'dim': 2, 'd_type': 'Float'},
             'label': {'dim': 2, 'd_type': 'Float'},
             'mtx_w': {'dim': 2, 'd_type': 'Int'},
             'mtx_w_score': {'dim': 2, 'd_type': 'Float'},
             'ts_feature': {'dim': 3, 'd_type': 'Float'},
         }
+
         if not self.l_target_data:
             if self.group_name:
                 self.config_target_group()
@@ -169,7 +175,10 @@ class DataIO(Configurable):
         ll_evm = [[evm + self.entity_vocab_size] + args for evm, args in
                   zip(l_evm, mtx_graph)]
 
+        l_evm_length = [len(l) for l in ll_evm]
+
         l_label_all = l_e_label + l_evm_label
+        l_tf_all = l_e_tf + l_evm_tf
 
         if self.e_feature_dim and self.evm_feature_dim:
             ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat,
@@ -180,9 +189,9 @@ class DataIO(Configurable):
 
         h_res = {
             'mtx_e': l_e,
-            'mtx_e_score': l_e_tf,
             'ts_evm': ll_evm,
-            'mtx_evm_score': l_evm_tf,
+            'v_evm_length': l_evm_length,
+            'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
         }
@@ -337,13 +346,6 @@ class DataIO(Configurable):
         }
         return h_res
 
-    def _parse_graph(self, h_info):
-        m_adj = h_info.get(self.adjacent_field, [])
-        h_res = {
-            'mtx_graph': m_adj
-        }
-        return h_res
-
     def _padding(self, data, dim=2, default_value=0):
         if dim == 2:
             return self.two_d_padding(data, default_value)
@@ -366,6 +368,7 @@ class DataIO(Configurable):
 
             for l in ll:
                 l_dim[2] = max(l_dim[2], len(l))
+
         for i in xrange(len(lll)):
             for j in xrange(len(lll[i])):
                 lll[i][j] += [default_value] * (l_dim[2] - len(lll[i][j]))

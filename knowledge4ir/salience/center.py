@@ -48,6 +48,9 @@ from knowledge4ir.salience.crf_model import (
     KernelCRF,
     LinearKernelCRF,
 )
+from knowledge4ir.salience.graph_model import (
+    StructEventKernelCRF, AverageEventKernelCRF
+)
 from knowledge4ir.salience.utils.data_io import DataIO
 from knowledge4ir.salience.deprecated.adj_knrm import AdjKNRM
 from knowledge4ir.salience.deprecated.duet import DuetGlossCNN
@@ -127,6 +130,8 @@ class SalienceModelCenter(Configurable):
         'duet_gloss': DuetGlossCNN,
         'gloss_enriched_duet': GlossCNNEmbDuet,
         'adj_knrm': AdjKNRM,
+
+        'kcrf_event_average': AverageEventKernelCRF,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
