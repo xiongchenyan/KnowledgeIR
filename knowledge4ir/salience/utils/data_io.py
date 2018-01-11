@@ -61,7 +61,7 @@ class DataIO(Configurable):
             'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
-            'joint_graph': ['mtx_e', 'mtx_score', 'mtx_graph', 'label']
+            'joint_graph': ['mtx_e', 'mtx_score', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
@@ -106,15 +106,15 @@ class DataIO(Configurable):
             if self.group_name.startswith('event'):
                 h_this_data, _ = self._parse_event(h_info)
             elif self.group_name.startswith('joint'):
-                h_this_data = self._parse_joint(h_info)
+                if self.group_name == 'joint_graph':
+                    h_this_data = self._parse_graph(h_info)
+                else:
+                    h_this_data = self._parse_joint(h_info)
             else:
                 h_this_data = self._parse_entity(h_info)
 
             if 'mtx_w' in h_parsed_data:
                 h_this_data.update(self._parse_word(h_info))
-
-            if 'mtx_graph' in h_parsed_data:
-                h_this_data.update(self._parse_graph(h_info))
 
             for key in h_parsed_data.keys():
                 assert key in h_this_data
@@ -144,6 +144,49 @@ class DataIO(Configurable):
         if use_cuda:
             v = v.cuda()
         return v
+
+    def _parse_graph(self, h_info):
+        """
+        io with events and entities with their corresponding feature matrices.
+        This will combine the event and entity embedding
+        """
+        # Note that we didn't pad entity and event separately.
+        # This is currently fine using the kernel models.
+        h_entity_res = self._parse_entity(h_info)
+        l_e = h_entity_res['mtx_e']
+        l_e_tf = h_entity_res['mtx_score']
+        l_e_label = h_entity_res['label']
+        ll_e_feat = h_entity_res['ts_feature']
+
+        h_event_res, freq_mask = self._parse_event(h_info)
+        l_evm = h_event_res['mtx_e']
+        l_evm_tf = h_event_res['mtx_score']
+        l_evm_label = h_event_res['label']
+        ll_evm_feat = h_event_res['ts_feature']
+        mtx_graph = h_event_res['mtx_graph']
+
+        # shift the event id by an offset so entity and event use different ids.
+        ll_evm = [[evm + self.entity_vocab_size] + args for evm, args in
+                  zip(l_evm, mtx_graph)]
+
+        l_label_all = l_e_label + l_evm_label
+
+        if self.e_feature_dim and self.evm_feature_dim:
+            ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat,
+                                            self.e_feature_dim,
+                                            self.evm_feature_dim)
+        else:
+            ll_feat_all = []
+
+        h_res = {
+            'mtx_e': l_e,
+            'mtx_e_score': l_e_tf,
+            'ts_evm': ll_evm,
+            'mtx_evm_score': l_evm_tf,
+            'ts_feature': ll_feat_all,
+            'label': l_label_all,
+        }
+        return h_res
 
     def _parse_joint(self, h_info):
         """
@@ -177,15 +220,11 @@ class DataIO(Configurable):
         else:
             ll_feat_all = []
 
-        m_adj = h_info.get(self.adjacent_field, [])
-        m_adj_masked = apply_mask(m_adj, freq_mask)
-
         h_res = {
             'mtx_e': l_e_all,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
-            'mtx_graph': m_adj_masked
         }
         return h_res
 
@@ -217,11 +256,15 @@ class DataIO(Configurable):
         l_label = apply_mask(l_label, most_freq_indices)
         l_tf = apply_mask(l_tf, most_freq_indices)
 
+        m_adj = h_info.get(self.adjacent_field, [])
+        m_adj_masked = apply_mask(m_adj, most_freq_indices)
+
         h_res = {
             'mtx_e': l_h,
             'mtx_score': l_tf,
             'ts_feature': ll_feature,
-            'label': l_label
+            'label': l_label,
+            'mtx_graph': m_adj_masked
         }
         return h_res, most_freq_indices
 
