@@ -27,9 +27,10 @@ class StructEventKernelCRF(KNRM):
 
         print mtx_e.size()
 
-        mtx_evm = self.event_embedding(ts_evm, mtx_evm_length)
+        mtx_evm_embedding = self.event_embedding(ts_evm, mtx_evm_length)
+        mtx_e_embedding = self.embedding(mtx_e)
 
-        combined_mtx_e = mtx_e + mtx_evm
+        combined_mtx_e = mtx_e_embedding + mtx_evm_embedding
 
         if ts_feature_all.size()[-1] != self.node_feature_dim:
             logging.error('feature shape: %s != feature dim [%d]',
@@ -78,4 +79,5 @@ class AverageEventKernelCRF(StructEventKernelCRF):
         super(StructEventKernelCRF, self).__init__(para, ext_data)
 
     def event_embedding(self, ts_evm, v_evm_length):
+
         pass
