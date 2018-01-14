@@ -15,7 +15,7 @@ class StructEventKernelCRF(KNRM):
     def forward(self, h_packed_data):
         mtx_e = h_packed_data['mtx_e']
         ts_evm = h_packed_data['ts_evm']
-        v_evm_length = h_packed_data['v_evm_length']
+        mtx_evm_length = h_packed_data['mtx_evm_length']
 
         ts_feature_all = h_packed_data['ts_feature']
 
@@ -23,16 +23,11 @@ class StructEventKernelCRF(KNRM):
 
         print ts_evm.size()
 
-        print v_evm_length
+        print mtx_evm_length.size()
 
-        print mtx_e.size()[:2]
+        print mtx_e.size()
 
-        print ts_feature_all.size()[:2]
-
-        import sys
-        sys.stdin.readline()
-
-        mtx_evm = self.event_embedding(ts_evm, v_evm_length)
+        mtx_evm = self.event_embedding(ts_evm, mtx_evm_length)
 
         combined_mtx_e = mtx_e + mtx_evm
 

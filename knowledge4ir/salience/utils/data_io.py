@@ -61,14 +61,14 @@ class DataIO(Configurable):
             'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
-            'joint_graph': ['mtx_e', 'ts_evm', 'v_evm_length',
+            'joint_graph': ['mtx_e', 'ts_evm', 'mtx_evm_length',
                             'mtx_score', 'ts_feature', 'label']
         }
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
             'mtx_score': {'dim': 2, 'd_type': 'Float'},
             'ts_evm': {'dim': 3, 'd_type': 'Int'},
-            'v_evm_length': {'dim': 2, 'd_type': 'Int'},
+            'mtx_evm_length': {'dim': 2, 'd_type': 'Int'},
             'mtx_evm_score': {'dim': 2, 'd_type': 'Float'},
             'mtx_e_score': {'dim': 2, 'd_type': 'Float'},
             'label': {'dim': 2, 'd_type': 'Float'},
@@ -190,7 +190,7 @@ class DataIO(Configurable):
         h_res = {
             'mtx_e': l_e,
             'ts_evm': ll_evm,
-            'v_evm_length': l_evm_length,
+            'mtx_evm_length': l_evm_length,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
