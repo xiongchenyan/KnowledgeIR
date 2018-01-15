@@ -61,16 +61,16 @@ class DataIO(Configurable):
             'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
-            'joint_graph': ['mtx_e', 'ts_evm', 'mtx_evm_length',
+            'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
                             'mtx_score', 'ts_feature', 'label']
         }
+
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
+            'mtx_evm': {'dim': 2, 'd_type': 'Int'},
             'mtx_score': {'dim': 2, 'd_type': 'Float'},
-            'ts_evm': {'dim': 3, 'd_type': 'Int'},
-            'mtx_evm_length': {'dim': 2, 'd_type': 'Int'},
-            'mtx_evm_score': {'dim': 2, 'd_type': 'Float'},
-            'mtx_e_score': {'dim': 2, 'd_type': 'Float'},
+            'ts_args': {'dim': 3, 'd_type': 'Int'},
+            'mtx_arg_length': {'dim': 2, 'd_type': 'Int'},
             'label': {'dim': 2, 'd_type': 'Float'},
             'mtx_w': {'dim': 2, 'd_type': 'Int'},
             'mtx_w_score': {'dim': 2, 'd_type': 'Float'},
@@ -130,10 +130,18 @@ class DataIO(Configurable):
             # logging.debug('line [%s]', l_line[0])
             # logging.info('converting [%s] to torch variable', key)
 
-            h_parsed_data[key] = self._data_to_variable(
-                self._padding(h_parsed_data[key], self.h_data_meta[key]['dim']),
-                data_type=self.h_data_meta[key]['d_type']
-            )
+            if key == 'mtx_arg_length':
+                h_parsed_data[key] = self._data_to_variable(
+                    self._padding(h_parsed_data[key],
+                                  self.h_data_meta[key]['dim'], 1),
+                    data_type=self.h_data_meta[key]['d_type']
+                )
+            else:
+                h_parsed_data[key] = self._data_to_variable(
+                    self._padding(h_parsed_data[key],
+                                  self.h_data_meta[key]['dim']),
+                    data_type=self.h_data_meta[key]['d_type']
+                )
         return h_parsed_data, h_parsed_data['label']
 
     def _data_to_variable(self, list_data, data_type='Float'):
@@ -169,13 +177,14 @@ class DataIO(Configurable):
         l_evm_tf = h_event_res['mtx_score']
         l_evm_label = h_event_res['label']
         ll_evm_feat = h_event_res['ts_feature']
-        mtx_graph = h_event_res['mtx_graph']
+        ll_args = h_event_res['mtx_args']
 
-        # shift the event id by an offset so entity and event use different ids.
-        ll_evm = [[evm + self.entity_vocab_size] + args for evm, args in
-                  zip(l_evm, mtx_graph)]
+        l_evm_shifted = [e + self.entity_vocab_size for e in l_evm]
 
-        l_evm_length = [len(l) for l in ll_evm]
+        # Make sure argument length is at least 1. So division won't cause a
+        # problem. The division is fine when there are actually no arguments
+        # because the padding make them all zero.
+        l_arg_length = [len(l) if len(l) > 0 else 1 for l in ll_args]
 
         l_label_all = l_e_label + l_evm_label
         l_tf_all = l_e_tf + l_evm_tf
@@ -189,8 +198,9 @@ class DataIO(Configurable):
 
         h_res = {
             'mtx_e': l_e,
-            'ts_evm': ll_evm,
-            'mtx_evm_length': l_evm_length,
+            'mtx_evm': l_evm_shifted,
+            'ts_args': ll_args,
+            'mtx_arg_length': l_arg_length,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
@@ -273,7 +283,7 @@ class DataIO(Configurable):
             'mtx_score': l_tf,
             'ts_feature': ll_feature,
             'label': l_label,
-            'mtx_graph': m_adj_masked
+            'mtx_args': m_adj_masked
         }
         return h_res, most_freq_indices
 

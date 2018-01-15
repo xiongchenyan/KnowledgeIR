@@ -89,6 +89,11 @@ class LinearKernelCRF(KNRM):
                 json.dumps(mtx_e.size()), json.dumps(ts_feature.size()))
         assert mtx_e.size()[:2] == ts_feature.size()[:2]
 
+        print ts_feature
+        print self.node_lr(ts_feature)
+        import sys
+        sys.stdin.readline()
+
         node_score = F.tanh(self.node_lr(ts_feature))
         mtx_score = ts_feature.narrow(-1, 0, 1).squeeze(
             -1)  # frequency is the first dim of feature, always
