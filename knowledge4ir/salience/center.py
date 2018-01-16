@@ -49,7 +49,8 @@ from knowledge4ir.salience.crf_model import (
     LinearKernelCRF,
 )
 from knowledge4ir.salience.graph_model import (
-    StructEventKernelCRF, AverageEventKernelCRF
+    AverageEventKernelCRF,
+    AverageArgumentKernelCRF,
 )
 from knowledge4ir.salience.utils.data_io import DataIO
 from knowledge4ir.salience.deprecated.adj_knrm import AdjKNRM
@@ -132,6 +133,7 @@ class SalienceModelCenter(Configurable):
         'adj_knrm': AdjKNRM,
 
         'kcrf_event_average': AverageEventKernelCRF,
+        'kcrf_args_average': AverageArgumentKernelCRF,
 
         "avg_local_vote": LocalAvgWordVotes,  # not working
         'local_rnn': LocalRNNVotes,  # not working
@@ -324,7 +326,8 @@ class SalienceModelCenter(Configurable):
                      json.dumps(l_epoch_loss))
 
         if model_out_name:
-            self.model.save_model(model_out_name)
+            # self.model.save_model(model_out_name)
+            logging.info('Torch saving model to [%s]', model_out_name)
             torch.save(self.model, model_out_name)
         return
 

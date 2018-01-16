@@ -79,5 +79,3 @@ class KNRM(SalienceBaseModel):
 
     def forward_intermediate(self, h_packed_data):
         return self._forward_to_kernels(h_packed_data)
-
-

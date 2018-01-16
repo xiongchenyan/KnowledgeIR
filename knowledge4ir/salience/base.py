@@ -50,7 +50,8 @@ class NNPara(Configurable):
     l_cnn_length = List(Int, default_value=[1, 2, 3],
                         help='sentence CNN sizes').tag(config=True)
     min_loc_distance = Int(10,
-                           help='the minimum distance between two entities to receive vote in edge sparse knrm'
+                           help='the minimum distance between two entities '
+                                'to receive vote in edge sparse knrm'
                            ).tag(config=True)
 
     def form_kernels(self):

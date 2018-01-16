@@ -129,19 +129,14 @@ class DataIO(Configurable):
         for key in h_parsed_data:
             # logging.debug('line [%s]', l_line[0])
             # logging.info('converting [%s] to torch variable', key)
-
-            if key == 'mtx_arg_length':
+            dim = self.h_data_meta[key]['dim']
+            if not self._is_empty(h_parsed_data[key], dim):
                 h_parsed_data[key] = self._data_to_variable(
-                    self._padding(h_parsed_data[key],
-                                  self.h_data_meta[key]['dim'], 1),
+                    self._padding(h_parsed_data[key], dim),
                     data_type=self.h_data_meta[key]['d_type']
                 )
             else:
-                h_parsed_data[key] = self._data_to_variable(
-                    self._padding(h_parsed_data[key],
-                                  self.h_data_meta[key]['dim']),
-                    data_type=self.h_data_meta[key]['d_type']
-                )
+                h_parsed_data[key] = None
         return h_parsed_data, h_parsed_data['label']
 
     def _data_to_variable(self, list_data, data_type='Float'):
@@ -179,12 +174,14 @@ class DataIO(Configurable):
         ll_evm_feat = h_event_res['ts_feature']
         ll_args = h_event_res['mtx_args']
 
-        l_evm_shifted = [e + self.entity_vocab_size for e in l_evm]
+        # Shift event index after entities.
+        l_evm = [e + self.entity_vocab_size for e in l_evm]
 
-        # Make sure argument length is at least 1. So division won't cause a
-        # problem. The division is fine when there are actually no arguments
-        # because the padding make them all zero.
-        l_arg_length = [len(l) if len(l) > 0 else 1 for l in ll_args]
+        # Add offset for the empty entity.
+        l_e = [e + 1 for e in l_e]
+        l_evm = [e + 1 for e in l_evm]
+
+        l_arg_length = [len(l) for l in ll_args]
 
         l_label_all = l_e_label + l_evm_label
         l_tf_all = l_e_tf + l_evm_tf
@@ -198,7 +195,7 @@ class DataIO(Configurable):
 
         h_res = {
             'mtx_e': l_e,
-            'mtx_evm': l_evm_shifted,
+            'mtx_evm': l_evm,
             'ts_args': ll_args,
             'mtx_arg_length': l_arg_length,
             'mtx_score': l_tf_all,
@@ -275,8 +272,12 @@ class DataIO(Configurable):
         l_label = apply_mask(l_label, most_freq_indices)
         l_tf = apply_mask(l_tf, most_freq_indices)
 
-        m_adj = h_info.get(self.adjacent_field, [])
+        m_adj = h_info.get(self.adjacent_field, [[]])
         m_adj_masked = apply_mask(m_adj, most_freq_indices)
+
+        # Ensure adj is 2d, even empty.
+        if len(m_adj) == 0:
+            m_adj_masked = [[]]
 
         h_res = {
             'mtx_e': l_h,
@@ -355,6 +356,12 @@ class DataIO(Configurable):
             'mtx_w_score': l_score,
         }
         return h_res
+
+    def _is_empty(self, data, dim=2):
+        if dim == 2:
+            return len(data[0]) == 0
+        if dim == 3:
+            return len(data[0][0]) == 0
 
     def _padding(self, data, dim=2, default_value=0):
         if dim == 2:
