@@ -49,8 +49,15 @@ class KNRM(SalienceBaseModel):
         output = output.squeeze(-1)
         return output
 
-    def _kernel_scores(self, mtx_embedding, mtx_score):
-        return self._kernel_vote(mtx_embedding, mtx_embedding, mtx_score)
+    def _masked_kernel_scores(self, mask, mtx_embedding, mtx_score):
+        masked_embedding = mtx_embedding * mask
+        return self._kernel_vote(masked_embedding, masked_embedding, mtx_score)
+
+    def _masked_kernel_vote(self, target_emb, target_mask, voter_emb,
+                            voter_mask, voter_score):
+        masked_target = target_emb * target_mask
+        masked_voter = voter_emb * voter_mask
+        return self._kernel_vote(masked_target, masked_voter, voter_score)
 
     def _kernel_vote(self, target_emb, voter_emb, voter_score):
         target_emb = nn.functional.normalize(target_emb, p=2, dim=-1)
@@ -59,6 +66,12 @@ class KNRM(SalienceBaseModel):
         trans_mtx = torch.matmul(target_emb, voter_emb.transpose(-2, -1))
         trans_mtx = self.dropout(trans_mtx)
         return self.kp(trans_mtx, voter_score)
+
+    def forward_kernel_with_embedding(self, mtx_embedding, mtx_score):
+        kp_mtx = self._kernel_scores(mtx_embedding, mtx_score)
+        output = self.linear(kp_mtx)
+        output = output.squeeze(-1)
+        return output
 
     def _forward_to_kernels(self, h_packed_data):
         mtx_e = h_packed_data['mtx_e']

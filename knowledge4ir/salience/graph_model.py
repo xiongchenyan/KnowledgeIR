@@ -25,6 +25,20 @@ class StructEventKernelCRF(KNRM):
             self.node_lr.cuda()
             self.linear_combine.cuda()
 
+    # If you load this, we add one in the input to shift the vocab.
+    # def _load_embedding(self, para, ext_data):
+    #     # Add one additional row to allow empty entity.
+    #     self.embedding = nn.Embedding(para.entity_vocab_size + 1,
+    #                                   para.embedding_dim)
+    #     if ext_data.entity_emb is not None:
+    #         zero = torch.zeros(1, para.embedding_dim).double()
+    #         emb = torch.from_numpy(ext_data.entity_emb)
+    #         weights = torch.cat([zero, emb], dim=0)
+    #         self.embedding.weight.data.copy_(weights)
+    #     logging.info('Additional row added at [0] for empty embedding.')
+    #     if use_cuda:
+    #         self.embedding.cuda()
+
     def forward(self, h_packed_data):
         mtx_e = h_packed_data['mtx_e']
         mtx_evm = h_packed_data['mtx_evm']

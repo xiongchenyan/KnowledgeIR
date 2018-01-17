@@ -482,16 +482,6 @@ class SalienceModelCenter(Configurable):
         loss = self.criterion(output, m_label)
         return loss.data[0]
 
-    def _joint_loss(self, output, m_label):
-        # Split output.
-        print output
-
-        import sys
-        sys.stdin.readline()
-
-        loss = self.criterion(output, m_label)
-        return loss.data[0]
-
     def _data_io(self, l_line):
         if self.use_new_io:
             return self.model.data_io(l_line, self.io_parser)

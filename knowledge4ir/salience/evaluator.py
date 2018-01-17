@@ -97,7 +97,7 @@ def evaluate_normal(docs, f_predict, entity_vocab_size,
 
 
 def evaluate_json_joint(docs, f_predict, entity_vocab_size,
-                        content_field='bodyText'):
+                        content_field='bodyText', shift=0):
     print("Evaluating joint predictions [%s] from [%s]." % (f_predict, docs))
 
     evaluator = SalienceEva()  # evaluator with default values.
@@ -118,6 +118,9 @@ def evaluate_json_joint(docs, f_predict, entity_vocab_size,
             continue
 
         predictions, s_e_label, s_evm_label = res
+
+        if shift:
+            predictions = [(e - shift, s) for e, s in predictions]
 
         l_e_pack = get_e_labels(predictions, s_e_label, entity_vocab_size)
         l_evm_pack = get_evm_labels(predictions, s_evm_label, entity_vocab_size)
@@ -217,9 +220,9 @@ if __name__ == '__main__':
     root.addHandler(ch)
 
     args = sys.argv
-    if not len(args) == 5:
+    if len(args) < 5:
         print(
-            "Usage: [this script] [joint|normal] [gold standard] [prediction]"
+            "Usage: [this script] [joint|normal] [gold standard] [prediction] "
             "[entity vocab size]")
         exit(1)
 
