@@ -67,8 +67,8 @@ class KNRM(SalienceBaseModel):
         trans_mtx = self.dropout(trans_mtx)
         return self.kp(trans_mtx, voter_score)
 
-    def forward_kernel_with_embedding(self, mtx_embedding, mtx_score):
-        kp_mtx = self._kernel_scores(mtx_embedding, mtx_score)
+    def forward_kernel_with_embedding(self, mask, mtx_embedding, mtx_score):
+        kp_mtx = self._masked_kernel_scores(mask, mtx_embedding, mtx_score)
         output = self.linear(kp_mtx)
         output = output.squeeze(-1)
         return output
