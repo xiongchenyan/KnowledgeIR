@@ -19,13 +19,9 @@ class KNRM(SalienceBaseModel):
         l_mu, l_sigma = para.form_kernels()
         self.K = len(l_mu)
         self.kp = KernelPooling(l_mu, l_sigma)
-        self.embedding = nn.Embedding(para.entity_vocab_size,
-                                      para.embedding_dim, padding_idx=0)
         self.dropout = nn.Dropout(p=para.dropout_rate)
         self.linear = nn.Linear(self.K, 1, bias=True)
-        if ext_data.entity_emb is not None:
-            self.embedding.weight.data.copy_(
-                torch.from_numpy(ext_data.entity_emb))
+        self._load_embedding(para, ext_data)
         if use_cuda:
             logging.info('copying knrm parameter to cuda')
             self.embedding.cuda()
@@ -33,6 +29,13 @@ class KNRM(SalienceBaseModel):
             self.linear.cuda()
         self.layer = para.nb_hidden_layers
         return
+
+    def _load_embedding(self, para, ext_data):
+        self.embedding = nn.Embedding(para.entity_vocab_size,
+                                      para.embedding_dim, padding_idx=0)
+        if ext_data.entity_emb is not None:
+            self.embedding.weight.data.copy_(
+                torch.from_numpy(ext_data.entity_emb))
 
     def forward(self, h_packed_data):
         kp_mtx = self._forward_to_kernels(h_packed_data)

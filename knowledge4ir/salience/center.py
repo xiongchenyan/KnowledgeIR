@@ -225,7 +225,7 @@ class SalienceModelCenter(Configurable):
                                       self.para.event_vocab_size
 
         assert self.para.node_feature_dim == self.io_parser.e_feature_dim + \
-                                             self.io_parser.evm_feature_dim
+               self.io_parser.evm_feature_dim
 
         logging.info("Embedding matrix merged into shape [%d,%d]" % (
             self.ext_data.entity_emb.shape[0],

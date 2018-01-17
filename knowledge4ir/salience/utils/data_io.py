@@ -136,7 +136,9 @@ class DataIO(Configurable):
                     data_type=self.h_data_meta[key]['d_type']
                 )
             else:
+                # Cannot convert empty lists to variable.
                 h_parsed_data[key] = None
+
         return h_parsed_data, h_parsed_data['label']
 
     def _data_to_variable(self, list_data, data_type='Float'):
@@ -177,7 +179,8 @@ class DataIO(Configurable):
         # Shift event index after entities.
         l_evm = [e + self.entity_vocab_size for e in l_evm]
 
-        # Add offset for the empty entity.
+        # Add 1 offset in embedding lookup because we reserve the first
+        # embedding for UNK entity.
         l_e = [e + 1 for e in l_e]
         l_evm = [e + 1 for e in l_evm]
 
@@ -187,6 +190,8 @@ class DataIO(Configurable):
         l_tf_all = l_e_tf + l_evm_tf
 
         if self.e_feature_dim and self.evm_feature_dim:
+            # print 'Combining %d e feat and %d evm feat for %d events' % (
+            #     len(ll_e_feat), len(ll_evm_feat), len(l_evm))
             ll_feat_all = _combine_features(ll_e_feat, ll_evm_feat,
                                             self.e_feature_dim,
                                             self.evm_feature_dim)
@@ -279,6 +284,10 @@ class DataIO(Configurable):
         if len(m_adj) == 0:
             m_adj_masked = [[]]
 
+        assert len(ll_feature) == len(l_h)
+        assert len(l_h) == len(l_tf)
+        assert len(l_h) == len(l_label)
+
         h_res = {
             'mtx_e': l_h,
             'mtx_score': l_tf,
@@ -359,9 +368,9 @@ class DataIO(Configurable):
 
     def _is_empty(self, data, dim=2):
         if dim == 2:
-            return len(data[0]) == 0
+            return all([len(d) == 0 for d in data])
         if dim == 3:
-            return len(data[0][0]) == 0
+            return all([len(d) == 0 for row in data for d in row])
 
     def _padding(self, data, dim=2, default_value=0):
         if dim == 2:
@@ -404,17 +413,17 @@ class DataIO(Configurable):
 
 
 def _combine_features(ll_feature_e, ll_feature_evm, e_dim, evm_dim, filler=0):
-    e_pads = [filler] * evm_dim
-    evm_pads = [filler] * e_dim
+    e_pads = [filler] * e_dim
+    evm_pads = [filler] * evm_dim
 
     for i in xrange(len(ll_feature_e)):
         if ll_feature_e[i]:
-            ll_feature_e[i] = ll_feature_e[i] + e_pads
+            ll_feature_e[i] = ll_feature_e[i] + evm_pads
         else:
             ll_feature_e[i] = e_pads + evm_pads
     for i in xrange(len(ll_feature_evm)):
         if ll_feature_evm[i]:
-            ll_feature_evm[i] = evm_pads + ll_feature_evm[i]
+            ll_feature_evm[i] = e_pads + ll_feature_evm[i]
         else:
             ll_feature_evm[i] = e_pads + evm_pads
 
@@ -845,7 +854,7 @@ def uw_io(l_line, spot_field=SPOT_FIELD,
     for d_p in xrange(len(lll_sent)):
         for e_p in xrange(len(lll_sent[d_p])):
             lll_sent[d_p][e_p] += [[0] * sent_len] * (
-                max_sent_cnt - len(lll_sent[d_p][e_p]))
+                    max_sent_cnt - len(lll_sent[d_p][e_p]))
 
     ll_e = padding(ll_e, 0)
     ll_label = padding(ll_label, 0)
