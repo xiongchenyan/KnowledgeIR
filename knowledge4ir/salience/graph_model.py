@@ -25,24 +25,12 @@ class StructEventKernelCRF(KNRM):
             self.node_lr.cuda()
             self.linear_combine.cuda()
 
-    def _load_embedding(self, para, ext_data):
-        # Add one additional row to allow empty entity.
-        self.embedding = nn.Embedding(para.entity_vocab_size + 1,
-                                      para.embedding_dim)
-        if ext_data.entity_emb is not None:
-            zero = torch.zeros(1, para.embedding_dim).double()
-            emb = torch.from_numpy(ext_data.entity_emb)
-            weights = torch.cat([zero, emb], dim=0)
-            self.embedding.weight.data.copy_(weights)
-        logging.info('Additional row added at [0] for empty embedding.')
-        if use_cuda:
-            self.embedding.cuda()
-
     def forward(self, h_packed_data):
         mtx_e = h_packed_data['mtx_e']
         mtx_evm = h_packed_data['mtx_evm']
         ts_args = h_packed_data['ts_args']
         mtx_arg_length = h_packed_data['mtx_arg_length']
+        ts_arg_mask = h_packed_data['ts_arg_mask']
 
         ts_feature = h_packed_data['ts_feature']
         mtx_score = h_packed_data['mtx_score']
@@ -54,7 +42,8 @@ class StructEventKernelCRF(KNRM):
             combined_mtx_e = mtx_e_embedding
         else:
             mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
-                                                     mtx_arg_length)
+                                                     mtx_arg_length,
+                                                     ts_arg_mask)
             combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
 
         if ts_feature.size()[-1] != self.node_feature_dim:
@@ -78,8 +67,19 @@ class StructEventKernelCRF(KNRM):
         output = self.linear_combine(mixed_knrm).squeeze(-1)
         return output
 
-    def event_embedding(self, mtx_evm, ts_args, mtx_arg_length):
+    def event_embedding(self, mtx_evm, ts_args, mtx_arg_length, ts_arg_mask):
         raise NotImplementedError
+
+    def _argument_sum(self, ts_args, ts_arg_mask):
+        l_evm_embedding = []
+
+        for mtx_args, mask in zip(ts_args, ts_arg_mask):
+            mtx_args_embedding = self.embedding(mtx_args)
+            masked_embedding = mtx_args_embedding * mask.unsqueeze(2)
+            arg_embedding_sum = masked_embedding.sum(1)
+            l_evm_embedding.append(arg_embedding_sum)
+
+        return torch.stack(l_evm_embedding)
 
     def forward_kernel_with_embedding(self, mtx_embedding, mtx_score):
         kp_mtx = self._kernel_scores(mtx_embedding, mtx_score)
@@ -103,26 +103,20 @@ class AverageEventKernelCRF(StructEventKernelCRF):
     def __init__(self, para, ext_data=None):
         super(AverageEventKernelCRF, self).__init__(para, ext_data)
 
-    def event_embedding(self, mtx_evm, ts_args, mtx_arg_length):
+    def event_embedding(self, mtx_evm, ts_args, mtx_arg_length, ts_arg_mask):
         mtx_p_embedding = self.embedding(mtx_evm)
 
-        l_evm_embedding = []
-        for mtx_args in ts_args:
-            mtx_args_embedding = self.embedding(mtx_args)
-            arg_embedding_sum = mtx_args_embedding.sum(1)
-            l_evm_embedding.append(arg_embedding_sum)
+        if ts_args is None:
+            # When there are no arguments, the embedding is just the predicate.
+            mtx_evm_embedding_aver = mtx_p_embedding
+        else:
+            mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)
+            mtx_evm_embedding_sum = mtx_p_embedding + mtx_arg_embedding_sum
 
-        mtx_arg_embedding_sum = torch.stack(l_evm_embedding)
-        mtx_evm_embedding_sum = mtx_p_embedding + mtx_arg_embedding_sum
-
-        # Add event predicate to the length and unsqueeze length for
-        # broadcasting.
-        # aver = (embedding sum) / (1 + arg length)
-        mtx_full_length = (mtx_arg_length + 1).type_as(
-            mtx_evm_embedding_sum).unsqueeze(2)
-
-        mtx_evm_embedding_aver = mtx_evm_embedding_sum / mtx_full_length
-
+            # aver = (embedding sum) / (1 + arg length)
+            mtx_full_length = (mtx_arg_length + 1).type_as(
+                mtx_evm_embedding_sum).unsqueeze(2)
+            mtx_evm_embedding_aver = mtx_evm_embedding_sum / mtx_full_length
         return mtx_evm_embedding_aver
 
 
@@ -139,7 +133,7 @@ class AverageArgumentKernelCRF(StructEventKernelCRF):
             self.args_linear.cuda()
             self.evm_arg_linear.cuda()
 
-    def event_embedding(self, mtx_evm, ts_args, mtx_arg_length):
+    def event_embedding(self, mtx_evm, ts_args, mtx_arg_length, ts_arg_mask):
         mtx_p_embedding = self.embedding(mtx_evm)
 
         if ts_args is None:
@@ -147,13 +141,7 @@ class AverageArgumentKernelCRF(StructEventKernelCRF):
             if use_cuda:
                 mtx_arg = mtx_arg.cuda()
         else:
-            l_evm_embedding = []
-            for mtx_args in ts_args:
-                mtx_args_embedding = self.embedding(mtx_args)
-                arg_embedding_sum = mtx_args_embedding.sum(1)
-                l_evm_embedding.append(arg_embedding_sum)
-
-            mtx_arg_embedding_sum = torch.stack(l_evm_embedding)
+            mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)
 
             # Remove zero lengths.
             mtx_arg_length[mtx_arg_length == 0] = 1

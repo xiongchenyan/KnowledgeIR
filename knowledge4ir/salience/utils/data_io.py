@@ -62,14 +62,16 @@ class DataIO(Configurable):
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
-                            'mtx_score', 'ts_feature', 'label']
+                            'ts_arg_mask', 'mtx_score', 'ts_feature', 'label']
         }
 
         self.h_data_meta = {
             'mtx_e': {'dim': 2, 'd_type': 'Int'},
-            'mtx_evm': {'dim': 2, 'd_type': 'Int'},
+            'mtx_evm': {'dim': 2, 'd_type': 'Int',
+                        'padding': self.entity_vocab_size},
             'mtx_score': {'dim': 2, 'd_type': 'Float'},
             'ts_args': {'dim': 3, 'd_type': 'Int'},
+            'ts_arg_mask': {'dim': 3, 'd_type': 'Float'},
             'mtx_arg_length': {'dim': 2, 'd_type': 'Int'},
             'label': {'dim': 2, 'd_type': 'Float'},
             'mtx_w': {'dim': 2, 'd_type': 'Int'},
@@ -130,9 +132,11 @@ class DataIO(Configurable):
             # logging.debug('line [%s]', l_line[0])
             # logging.info('converting [%s] to torch variable', key)
             dim = self.h_data_meta[key]['dim']
+            padding = self.h_data_meta[key].get('padding', 0)
             if not self._is_empty(h_parsed_data[key], dim):
                 h_parsed_data[key] = self._data_to_variable(
-                    self._padding(h_parsed_data[key], dim),
+                    self._padding(h_parsed_data[key], dim,
+                                  default_value=padding),
                     data_type=self.h_data_meta[key]['d_type']
                 )
             else:
@@ -179,12 +183,8 @@ class DataIO(Configurable):
         # Shift event index after entities.
         l_evm = [e + self.entity_vocab_size for e in l_evm]
 
-        # Add 1 offset in embedding lookup because we reserve the first
-        # embedding for UNK entity.
-        l_e = [e + 1 for e in l_e]
-        l_evm = [e + 1 for e in l_evm]
-
         l_arg_length = [len(l) for l in ll_args]
+        ll_arg_mask = [[1] * len(l) for l in ll_args]
 
         l_label_all = l_e_label + l_evm_label
         l_tf_all = l_e_tf + l_evm_tf
@@ -202,6 +202,7 @@ class DataIO(Configurable):
             'mtx_e': l_e,
             'mtx_evm': l_evm,
             'ts_args': ll_args,
+            'ts_arg_mask': ll_arg_mask,
             'mtx_arg_length': l_arg_length,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
