@@ -132,8 +132,10 @@ class DataIO(Configurable):
             # logging.info('converting [%s] to torch variable', key)
             dim = self.h_data_meta[key]['dim']
             if not self._is_empty(h_parsed_data[key], dim):
+                padded, mask = self._padding(h_parsed_data[key], dim)
+                # TODO: do not send all masks, conserve some memory.
                 h_parsed_data[key] = self._data_to_variable(
-                    self._padding(h_parsed_data[key], dim),
+                    padded,
                     data_type=self.h_data_meta[key]['d_type']
                 )
             else:
@@ -383,13 +385,18 @@ class DataIO(Configurable):
 
     @classmethod
     def two_d_padding(cls, ll, default_value):
+        mask = [] * len(ll)
         n = max([len(l) for l in ll])
         for i in xrange(len(ll)):
-            ll[i] += [default_value] * (n - len(ll[i]))
-        return ll
+            num_pad = n - len(ll[i])
+            ll[i] += [default_value] * num_pad
+            mask[i] += [1] * len(ll[i]) + [0] * num_pad
+        return ll, mask
 
     @classmethod
     def three_d_padding(cls, lll, default_value):
+        # TODO: Finish 3d masking.
+        mask = []
         l_dim = [len(lll), 0, 0]
         for ll in lll:
             l_dim[1] = max(l_dim[1], len(ll))
@@ -402,7 +409,7 @@ class DataIO(Configurable):
                 lll[i][j] += [default_value] * (l_dim[2] - len(lll[i][j]))
             while len(lll[i]) < l_dim[1]:
                 lll[i].append([default_value] * l_dim[2])
-        return lll
+        return lll, mask
 
     @classmethod
     def get_top_k_e(cls, l_term, max_number):

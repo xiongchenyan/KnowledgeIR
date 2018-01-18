@@ -55,23 +55,23 @@ class JointSalienceModelCenter(SalienceModelCenter):
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
-    def _merge_para(self):
-        """
-        Merge the parameter of entity and event embedding, including the vocab
-        size.
-        :return:
-        """
-        self.ext_data.entity_emb = np.concatenate((self.ext_data.entity_emb,
-                                                   self.ext_data.event_emb))
-        self.para.entity_vocab_size = self.para.entity_vocab_size + \
-                                      self.para.event_vocab_size
-
-        assert self.para.node_feature_dim == self.io_parser.e_feature_dim + \
-               self.io_parser.evm_feature_dim
-
-        logging.info("Embedding matrix merged into shape [%d,%d]" % (
-            self.ext_data.entity_emb.shape[0],
-            self.ext_data.entity_emb.shape[1]))
+    # def _merge_para(self):
+    #     """
+    #     Merge the parameter of entity and event embedding, including the vocab
+    #     size.
+    #     :return:
+    #     """
+    #     self.ext_data.entity_emb = np.concatenate((self.ext_data.entity_emb,
+    #                                                self.ext_data.event_emb))
+    #     self.para.entity_vocab_size = self.para.entity_vocab_size + \
+    #                                   self.para.event_vocab_size
+    #
+    #     assert self.para.node_feature_dim == self.io_parser.e_feature_dim + \
+    #            self.io_parser.evm_feature_dim
+    #
+    #     logging.info("Embedding matrix merged into shape [%d,%d]" % (
+    #         self.ext_data.entity_emb.shape[0],
+    #         self.ext_data.entity_emb.shape[1]))
 
     def predict(self, test_in_name, label_out_name):
         """

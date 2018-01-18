@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
 from knowledge4ir.salience.knrm_vote import KNRM
+from knowledge4ir.salience.masked_knrm_vote import MaskKNRM
 import logging
 import json
 import torch.nn.functional as F
@@ -11,7 +12,7 @@ import numpy as np
 use_cuda = torch.cuda.is_available()
 
 
-class StructEventKernelCRF(KNRM):
+class StructEventKernelCRF(MaskKNRM):
     def __init__(self, para, ext_data=None):
         super(StructEventKernelCRF, self).__init__(para, ext_data)
 
@@ -25,7 +26,7 @@ class StructEventKernelCRF(KNRM):
             self.node_lr.cuda()
             self.linear_combine.cuda()
 
-    # If you load this, we add one in the input to shift the vocab.
+    # # If you load this, we add one in the input to shift the vocab.
     # def _load_embedding(self, para, ext_data):
     #     # Add one additional row to allow empty entity.
     #     self.embedding = nn.Embedding(para.entity_vocab_size + 1,
@@ -75,7 +76,8 @@ class StructEventKernelCRF(KNRM):
 
         node_score = F.tanh(self.node_lr(ts_feature))
 
-        knrm_res = self.forward_kernel_with_embedding(combined_mtx_e, mtx_score)
+        knrm_res = self._forward_kernel_with_embedding(mask, combined_mtx_e,
+                                                       mtx_score)
 
         mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), node_score), -1)
         output = self.linear_combine(mixed_knrm).squeeze(-1)
@@ -94,12 +96,6 @@ class StructEventKernelCRF(KNRM):
             l_evm_embedding.append(arg_embedding_sum)
 
         return torch.stack(l_evm_embedding)
-
-    def forward_kernel_with_embedding(self, mtx_embedding, mtx_score):
-        kp_mtx = self._kernel_scores(mtx_embedding, mtx_score)
-        output = self.linear(kp_mtx)
-        output = output.squeeze(-1)
-        return output
 
     def save_model(self, output_name):
         logging.info('saving knrm embedding and linear weights to [%s]',
