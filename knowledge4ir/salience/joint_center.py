@@ -36,6 +36,7 @@ from traitlets import (
 from traitlets.config import Configurable
 
 from knowledge4ir.salience.center import SalienceModelCenter
+from knowledge4ir.salience.utils.joint_data_io import EventDataIO
 
 from knowledge4ir.utils import (
     add_svm_feature,
@@ -49,29 +50,14 @@ class JointSalienceModelCenter(SalienceModelCenter):
     def __init__(self, **kwargs):
         super(JointSalienceModelCenter, self).__init__(**kwargs)
 
+    def _setup_io(self, **kwargs):
+        self.io_parser = EventDataIO(**kwargs)
+
     def _init_model(self):
         if self.model_name:
             self._merge_para()
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
-
-    # def _merge_para(self):
-    #     """
-    #     Merge the parameter of entity and event embedding, including the vocab
-    #     size.
-    #     :return:
-    #     """
-    #     self.ext_data.entity_emb = np.concatenate((self.ext_data.entity_emb,
-    #                                                self.ext_data.event_emb))
-    #     self.para.entity_vocab_size = self.para.entity_vocab_size + \
-    #                                   self.para.event_vocab_size
-    #
-    #     assert self.para.node_feature_dim == self.io_parser.e_feature_dim + \
-    #            self.io_parser.evm_feature_dim
-    #
-    #     logging.info("Embedding matrix merged into shape [%d,%d]" % (
-    #         self.ext_data.entity_emb.shape[0],
-    #         self.ext_data.entity_emb.shape[1]))
 
     def predict(self, test_in_name, label_out_name):
         """
@@ -196,11 +182,16 @@ if __name__ == '__main__':
     set_basic_log(logging.getLevelName(para.log_level))
 
     model = JointSalienceModelCenter(config=conf)
+
+    model_loaded = False
     if para.skip_train:
-        print 'Running testing.'
-        model.load_model(para.model_out)
-    else:
-        print 'Running training and testing.'
+        print 'Trying to load existing model.'
+        if os.path.exists(para.model_out):
+            model.load_model(para.model_out)
+            model_loaded = True
+
+    if not model_loaded:
+        print 'Start to run training.'
         model.train(para.train_in, para.valid_in, para.model_out)
 
     model.predict(para.test_in, para.test_out)

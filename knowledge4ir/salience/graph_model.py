@@ -45,7 +45,12 @@ class StructEventKernelCRF(MaskKNRM):
         mtx_evm = h_packed_data['mtx_evm']
         ts_args = h_packed_data['ts_args']
         mtx_arg_length = h_packed_data['mtx_arg_length']
-        ts_arg_mask = h_packed_data['ts_arg_mask']
+
+        masks = h_packed_data['masks']
+
+        ts_arg_mask = masks['ts_args']
+        mtx_e_mask = masks['mtx_e']
+        mtx_evm_mask = masks['mtx_evm']
 
         ts_feature = h_packed_data['ts_feature']
         mtx_score = h_packed_data['mtx_score']
@@ -55,11 +60,13 @@ class StructEventKernelCRF(MaskKNRM):
         if mtx_evm is None:
             # For documents without events.
             combined_mtx_e = mtx_e_embedding
+            combined_mtx_e_mask = mtx_e_mask
         else:
             mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
                                                      mtx_arg_length,
                                                      ts_arg_mask)
             combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
+            combined_mtx_e_mask = torch.cat((mtx_e_mask, mtx_evm_mask), 1)
 
         if ts_feature.size()[-1] != self.node_feature_dim:
             logging.error('feature shape: %s != feature dim [%d]',
@@ -76,7 +83,8 @@ class StructEventKernelCRF(MaskKNRM):
 
         node_score = F.tanh(self.node_lr(ts_feature))
 
-        knrm_res = self._forward_kernel_with_embedding(mask, combined_mtx_e,
+        knrm_res = self._forward_kernel_with_embedding(combined_mtx_e_mask,
+                                                       combined_mtx_e,
                                                        mtx_score)
 
         mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), node_score), -1)

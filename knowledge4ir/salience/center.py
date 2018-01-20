@@ -69,8 +69,6 @@ from knowledge4ir.salience.utils.data_io import (
     raw_io,
     feature_io,
     uw_io,
-    joint_feature_io,
-    event_feature_io,
     duet_io,
     adj_edge_io,
 )
@@ -162,11 +160,6 @@ class SalienceModelCenter(Configurable):
         'lr': feature_io,  # not working
     }
 
-    h_event_model_io = {
-        'feature_lr': event_feature_io,
-        'knrm': event_feature_io,
-    }
-
     # in_field = Unicode(body_field)
     spot_field = Unicode('spot')
     event_spot_field = Unicode('event')
@@ -179,7 +172,7 @@ class SalienceModelCenter(Configurable):
         self.para = NNPara(**kwargs)
         self.ext_data = ExtData(**kwargs)
         self.ext_data.assert_with_para(self.para)
-        self.io_parser = DataIO(**kwargs)
+        self._setup_io(**kwargs)
         h_loss = {
             "hinge": hinge_loss,  # hinge classification loss does not work
             "pairwise": pairwise_loss,
@@ -197,6 +190,9 @@ class SalienceModelCenter(Configurable):
         self.patient_cnt = 0
         self.best_valid_loss = 0
         self.ll_valid_line = []
+
+    def _setup_io(self, **kwargs):
+        self.io_parser = DataIO(**kwargs)
 
     @classmethod
     def class_print_help(cls, inst=None):
@@ -489,36 +485,15 @@ class SalienceModelCenter(Configurable):
             return self._old_io(l_line)
 
     def _old_io(self, l_line):
-        if self.joint_model:
-            return joint_feature_io(
-                l_line,
-                self.para.e_feature_dim,
-                self.para.evm_feature_dim,
-                self.para.entity_vocab_size - self.para.event_vocab_size,
-                self.spot_field,
-                self.event_spot_field,
-                self.in_field,
-                self.abstract_field,
-                self.salience_gold,
-                self.max_e_per_doc
-            )
-        elif self.event_model:
-            return self.h_event_model_io[self.model_name](
-                l_line, self.para.node_feature_dim,
-                self.event_spot_field, self.in_field,
-                self.abstract_field, self.salience_gold,
-                self.max_e_per_doc
-            )
-        else:
-            return self.h_model_io[self.model_name](
-                l_line,
-                self.para.node_feature_dim,
-                self.spot_field,
-                self.in_field,
-                self.abstract_field,
-                self.salience_gold,
-                self.max_e_per_doc
-            )
+        return self.h_model_io[self.model_name](
+            l_line,
+            self.para.node_feature_dim,
+            self.spot_field,
+            self.in_field,
+            self.abstract_field,
+            self.salience_gold,
+            self.max_e_per_doc
+        )
 
 
 if __name__ == '__main__':
