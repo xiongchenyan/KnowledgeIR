@@ -4,6 +4,7 @@ data io
 import json
 
 import torch
+from torch.autograd import Variable
 from knowledge4ir.utils import (
     term2lm,
     SPOT_FIELD,
@@ -22,6 +23,7 @@ from traitlets import (
     Unicode,
     List,
 )
+import math
 
 use_cuda = torch.cuda.is_available()
 
@@ -46,7 +48,7 @@ class EventDataIO(DataIO):
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
-                            'mtx_score', 'ts_feature', 'label']
+                            'mtx_score', 'ts_feature', 'label', 'ts_laplacian']
         }
         self.h_target_group.update(h_joint_target_group)
 
@@ -55,6 +57,7 @@ class EventDataIO(DataIO):
             'ts_args': {'dim': 3, 'd_type': 'Int'},
             'ts_arg_mask': {'dim': 3, 'd_type': 'Float'},
             'mtx_arg_length': {'dim': 2, 'd_type': 'Int'},
+            'ts_laplacian': {'dim': 3, 'd_type': 'Float'},
         }
         self.h_data_meta.update(h_joint_data_meta)
 
@@ -62,6 +65,11 @@ class EventDataIO(DataIO):
             'joint_raw': ['mtx_e'],
             'joint_feature': ['mtx_e'],
             'joint_graph': ['ts_args', 'mtx_e', 'mtx_evm'],
+        }
+
+        # Natural NP data. Different padding; Different conversion.
+        self.h_np_data = {
+            'ts_laplacian': {'dim': 2}
         }
 
     def is_empty_line(self, line):
@@ -108,39 +116,76 @@ class EventDataIO(DataIO):
 
     def _canonicalize_data(self, h_parsed_data):
         for key in h_parsed_data:
-            dim = self.h_data_meta[key]['dim']
-            padded = self._padding(h_parsed_data[key], dim)
+            if key in self.h_np_data:
+                dim = self.h_np_data[key]['dim']
+                padded = self._pad_np(h_parsed_data[key], dim)
+            else:
+                dim = self.h_data_meta[key]['dim']
+                padded = self._padding(h_parsed_data[key], dim)
+
             h_parsed_data[key] = padded
 
-            # if not self._is_empty(h_parsed_data[key], dim):
-            # else:
-            #     # Cannot convert empty lists to variable.
-            #     h_parsed_data[key] = None
-
+        # Compute masks from the padded value.
         mask_data = {}
         for key in self.h_data_mask[self.group_name]:
-            logging.info("Getting pad mask for " + key)
             data = h_parsed_data[key]
             mask = self._pad_mask(data, key)
-            mask_data[key] = self._data_to_variable(mask, data_type='Int')
-            print mask_data[key]
-            import sys
-            sys.stdin.readline()
+            mask_data[key] = self._data_to_variable(mask, data_type='Float')
 
         for key in h_parsed_data:
-            dim = self.h_data_meta[key]['dim']
-            data = h_parsed_data[key]
-            if not self._is_empty(data, dim):
-                h_parsed_data[key] = self._data_to_variable(
-                    h_parsed_data[key],
-                    data_type=self.h_data_meta[key]['d_type']
+            if key in self.h_np_data:
+                h_parsed_data[key] = self._np_data_to_variable(
+                    h_parsed_data[key]
                 )
             else:
-                h_parsed_data[key] = None
+                dim = self.h_data_meta[key]['dim']
+                data = h_parsed_data[key]
+
+                if not self._is_empty(data, dim):
+                    h_parsed_data[key] = self._data_to_variable(
+                        h_parsed_data[key],
+                        data_type=self.h_data_meta[key]['d_type']
+                    )
+                else:
+                    h_parsed_data[key] = None
 
         h_parsed_data['masks'] = mask_data
 
         return h_parsed_data
+
+    def _np_data_to_variable(self, list_data):
+        v = Variable(torch.from_numpy(np.stack(list_data)))
+        if use_cuda:
+            v = v.cuda()
+        return v
+
+    def _pad_np(self, data, dim=2, default_value=0):
+        if dim == 2:
+            return self.two_d_np_padding(data, default_value)
+        else:
+            raise NotImplementedError
+
+    @classmethod
+    def two_d_np_padding(cls, data, default_value):
+        max_row = 0
+        max_col = 0
+        for mtx in data:
+            row, col = mtx.shape
+            if row > max_row:
+                max_row = row
+            if col > max_col:
+                max_col = col
+
+        padded_data = []
+        for mtx in data:
+            row, col = mtx.shape
+            row_pad = max_row - row
+            col_pad = max_col - col
+            padded = np.lib.pad(mtx, ((0, row_pad), (0, col_pad)), 'constant',
+                                constant_values=default_value)
+            padded_data.append(padded)
+
+        return padded_data
 
     def _pad_mask(self, padded_data, key):
         if self.h_data_meta[key]['dim'] == 2:
@@ -208,16 +253,40 @@ class EventDataIO(DataIO):
         else:
             ll_feat_all = []
 
+        mtx_adjacent = self._compute_laplacian(ll_args, l_e)
+
         h_res = {
             'mtx_e': l_e,
             'mtx_evm': l_evm,
             'ts_args': ll_args,
+            'ts_laplacian': mtx_adjacent,
             'mtx_arg_length': l_arg_length,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
         }
         return h_res
+
+    def _compute_laplacian(self, ll_args, l_e):
+        h_e = dict([(e, i) for i, e in enumerate(l_e)])
+        dim = len(l_e) + len(ll_args)
+
+        # Initialize with self loop graph.
+        adjacent = np.eye(dim)
+
+        # Only add self link to entities.
+        ds = [1] * len(l_e)
+        for index, l_args in enumerate(ll_args):
+            row = index + len(l_e)
+            for arg in l_args:
+                # Some error in data processing cause this.
+                if arg in h_e:
+                    adjacent[row, h_e[arg]] = 1
+            recipro_sqrt_d = 1.0 / math.sqrt(len(l_args) + 1)
+            ds.append(recipro_sqrt_d)
+
+        rcpr_sqrt_degree = np.diag(ds)
+        return rcpr_sqrt_degree * adjacent * rcpr_sqrt_degree
 
     def _parse_joint(self, h_info):
         """
@@ -288,12 +357,12 @@ class EventDataIO(DataIO):
         l_label = self._apply_mask(l_label, most_freq_indices)
         l_tf = self._apply_mask(l_tf, most_freq_indices)
 
-        m_adj = h_info.get(self.adjacent_field, [[]])
-        m_adj_masked = self._apply_mask(m_adj, most_freq_indices)
+        m_args = h_info.get(self.adjacent_field, [[]])
+        m_args_masked = self._apply_mask(m_args, most_freq_indices)
 
         # Ensure adj is 2d, even empty.
-        if len(m_adj) == 0:
-            m_adj_masked = [[]]
+        if len(m_args) == 0:
+            m_args_masked = [[]]
 
         assert len(ll_feature) == len(l_h)
         assert len(l_h) == len(l_tf)
@@ -304,7 +373,7 @@ class EventDataIO(DataIO):
             'mtx_score': l_tf,
             'ts_feature': ll_feature,
             'label': l_label,
-            'mtx_args': m_adj_masked
+            'mtx_args': m_args_masked
         }
         return h_res, most_freq_indices
 

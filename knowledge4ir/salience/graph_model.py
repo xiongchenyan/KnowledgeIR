@@ -20,11 +20,9 @@ class StructEventKernelCRF(MaskKNRM):
         self.node_feature_dim = para.node_feature_dim
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
         logging.info('node feature dim %d', self.node_feature_dim)
-        self.linear_combine = nn.Linear(2, 1)
 
         if use_cuda:
             self.node_lr.cuda()
-            self.linear_combine.cuda()
 
     # # If you load this, we add one in the input to shift the vocab.
     # def _load_embedding(self, para, ext_data):
@@ -41,65 +39,58 @@ class StructEventKernelCRF(MaskKNRM):
     #         self.embedding.cuda()
 
     def forward(self, h_packed_data):
-        mtx_e = h_packed_data['mtx_e']
-        mtx_evm = h_packed_data['mtx_evm']
-        ts_args = h_packed_data['ts_args']
-        mtx_arg_length = h_packed_data['mtx_arg_length']
-
-        masks = h_packed_data['masks']
-
-        ts_arg_mask = masks['ts_args']
-        mtx_e_mask = masks['mtx_e']
-        mtx_evm_mask = masks['mtx_evm']
-
         ts_feature = h_packed_data['ts_feature']
-        mtx_score = h_packed_data['mtx_score']
-
-        mtx_e_embedding = self.embedding(mtx_e)
-
-        if mtx_evm is None:
-            # For documents without events.
-            combined_mtx_e = mtx_e_embedding
-            combined_mtx_e_mask = mtx_e_mask
-        else:
-            mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
-                                                     mtx_arg_length,
-                                                     ts_arg_mask)
-            combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
-            combined_mtx_e_mask = torch.cat((mtx_e_mask, mtx_evm_mask), 1)
 
         if ts_feature.size()[-1] != self.node_feature_dim:
             logging.error('feature shape: %s != feature dim [%d]',
                           json.dumps(ts_feature.size()), self.node_feature_dim)
         assert ts_feature.size()[-1] == self.node_feature_dim
 
-        if combined_mtx_e.size()[:2] != ts_feature.size()[:2]:
-            logging.error(
-                'First 2 dimension of e mtx and feature tensor do not '
-                'match: %s != %s',
-                json.dumps(combined_mtx_e.size()),
-                json.dumps(ts_feature.size()))
-        assert combined_mtx_e.size()[:2] == ts_feature.size()[:2]
-
-        node_score = F.tanh(self.node_lr(ts_feature))
-
-        knrm_res = self._forward_kernel_with_embedding(combined_mtx_e_mask,
-                                                       combined_mtx_e,
-                                                       mtx_score)
-
-        mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), node_score), -1)
-        output = self.linear_combine(mixed_knrm).squeeze(-1)
+        output = self.compute_score(h_packed_data)
         return output
 
     def event_embedding(self, mtx_evm, ts_args, mtx_arg_length, ts_arg_mask):
-        raise NotImplementedError
+        return self.embedding(mtx_evm)
+
+    def compute_score(self, h_packed_data):
+        ts_feature = h_packed_data['ts_feature']
+        mtx_e = h_packed_data['mtx_e']
+        mtx_evm = h_packed_data['mtx_evm']
+
+        masks = h_packed_data['masks']
+        mtx_e_mask = masks['mtx_e']
+        mtx_evm_mask = masks['mtx_evm']
+
+        mtx_e_embedding = self.embedding(mtx_e)
+        if mtx_evm is None:
+            # For documents without events.
+            combined_mtx_e = mtx_e_embedding
+            combined_mtx_e_mask = mtx_e_mask
+        else:
+            ts_args = h_packed_data['ts_args']
+            mtx_arg_length = h_packed_data['mtx_arg_length']
+            ts_arg_mask = masks['ts_args']
+            mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
+                                                     mtx_arg_length,
+                                                     ts_arg_mask)
+
+            combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
+            combined_mtx_e_mask = torch.cat((mtx_e_mask, mtx_evm_mask), 1)
+
+        node_score = F.tanh(self.node_lr(ts_feature))
+        mtx_score = h_packed_data['mtx_score']
+
+        knrm_res = self._forward_kernel_with_features(combined_mtx_e_mask,
+                                                      combined_mtx_e,
+                                                      mtx_score, node_score)
+        return knrm_res
 
     def _argument_sum(self, ts_args, ts_arg_mask):
         l_evm_embedding = []
 
         for mtx_args, mask in zip(ts_args, ts_arg_mask):
             mtx_args_embedding = self.embedding(mtx_args)
-            masked_embedding = mtx_args_embedding * mask.unsqueeze(2)
+            masked_embedding = mtx_args_embedding * mask.unsqueeze(-1)
             arg_embedding_sum = masked_embedding.sum(1)
             l_evm_embedding.append(arg_embedding_sum)
 
@@ -109,10 +100,6 @@ class StructEventKernelCRF(MaskKNRM):
         logging.info('saving knrm embedding and linear weights to [%s]',
                      output_name)
         super(StructEventKernelCRF, self).save_model(output_name)
-        np.save(open(output_name + '.node_lr.npy', 'w'),
-                self.node_lr.weight.data.cpu().numpy())
-        np.save(open(output_name + '.linear_combine.npy', 'w'),
-                self.linear_combine.weight.data.cpu().numpy())
 
 
 class AverageEventKernelCRF(StructEventKernelCRF):
@@ -176,3 +163,43 @@ class AverageArgumentKernelCRF(StructEventKernelCRF):
 
         # Non linearly combine event and argument embeddings.
         return F.tanh(self.evm_arg_linear(mtx_evm_args_cat))
+
+
+class GraphCNNKernelCRF(StructEventKernelCRF):
+    def __init__(self, para, ext_data=None):
+        super(GraphCNNKernelCRF, self).__init__(para, ext_data)
+
+    def compute_score(self, h_packed_data):
+        ts_feature = h_packed_data['ts_feature']
+        mtx_e = h_packed_data['mtx_e']
+        mtx_evm = h_packed_data['mtx_evm']
+
+        ts_args = h_packed_data['ts_args']
+        mtx_arg_length = h_packed_data['mtx_arg_length']
+
+        laplacian = h_packed_data['ts_laplacian']
+
+        masks = h_packed_data['masks']
+        mtx_e_mask = masks['mtx_e']
+        mtx_evm_mask = masks['mtx_evm']
+        ts_arg_mask = masks['ts_args']
+
+        mtx_e_embedding = self.embedding(mtx_e)
+        if mtx_evm is None:
+            # For documents without events.
+            combined_mtx_e = mtx_e_embedding
+            combined_mtx_e_mask = mtx_e_mask
+        else:
+            mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
+                                                     mtx_arg_length,
+                                                     ts_arg_mask)
+
+            combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
+            combined_mtx_e_mask = torch.cat((mtx_e_mask, mtx_evm_mask), 1)
+
+        mtx_score = h_packed_data['mtx_score']
+        node_score = F.tanh(self.node_lr(ts_feature))
+        score = self._forward_with_gcnn(combined_mtx_e_mask,
+                                        combined_mtx_e,
+                                        mtx_score, node_score, laplacian)
+        return score

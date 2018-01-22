@@ -36,6 +36,11 @@ from traitlets import (
 from traitlets.config import Configurable
 
 from knowledge4ir.salience.center import SalienceModelCenter
+from knowledge4ir.salience.graph_model import (
+    AverageEventKernelCRF,
+    AverageArgumentKernelCRF,
+    GraphCNNKernelCRF,
+)
 from knowledge4ir.salience.utils.joint_data_io import EventDataIO
 
 from knowledge4ir.utils import (
@@ -48,6 +53,13 @@ use_cuda = torch.cuda.is_available()
 
 class JointSalienceModelCenter(SalienceModelCenter):
     def __init__(self, **kwargs):
+        graph_models = {
+            'kcrf_event_average': AverageEventKernelCRF,
+            'kcrf_args_average': AverageArgumentKernelCRF,
+
+            'kcrf_event_gcnn': GraphCNNKernelCRF,
+        }
+        self.h_model.update(graph_models)
         super(JointSalienceModelCenter, self).__init__(**kwargs)
 
     def _setup_io(self, **kwargs):
