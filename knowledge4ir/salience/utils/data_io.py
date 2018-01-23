@@ -214,7 +214,8 @@ class DataIO(Configurable):
         if dim == 2:
             return all([len(d) == 0 for d in data])
         if dim == 3:
-            return all([len(d) == 0 for row in data for d in row])
+            return all([len(d) == 0 for d in data]) \
+                   or all([len(d) == 0 for row in data for d in row])
 
     def _padding(self, data, dim=2, default_value=0):
         if dim == 2:

@@ -37,9 +37,13 @@ from traitlets.config import Configurable
 
 from knowledge4ir.salience.center import SalienceModelCenter
 from knowledge4ir.salience.graph_model import (
+    MaskKernelCrf,
+
     AverageEventKernelCRF,
     AverageArgumentKernelCRF,
+
     GraphCNNKernelCRF,
+    ConcatGraphCNNKernelCRF,
 )
 from knowledge4ir.salience.utils.joint_data_io import EventDataIO
 
@@ -52,14 +56,18 @@ use_cuda = torch.cuda.is_available()
 
 
 class JointSalienceModelCenter(SalienceModelCenter):
+
     def __init__(self, **kwargs):
-        graph_models = {
+        joint_models = {
+            'masked_linear_kcrf': MaskKernelCrf,
+
             'kcrf_event_average': AverageEventKernelCRF,
             'kcrf_args_average': AverageArgumentKernelCRF,
 
             'kcrf_event_gcnn': GraphCNNKernelCRF,
+            'kcrf_event_gcnn_concat': ConcatGraphCNNKernelCRF,
         }
-        self.h_model.update(graph_models)
+        self.h_model.update(joint_models)
         super(JointSalienceModelCenter, self).__init__(**kwargs)
 
     def _setup_io(self, **kwargs):
@@ -146,12 +154,12 @@ class JointSalienceModelCenter(SalienceModelCenter):
         # l_e = [e - 1 for e in l_e]
         h_out[self.io_parser.content_field] = {'predict': zip(l_e, l_score)}
 
-        if self.predict_with_intermediate_res:
-            middle_output = \
-                self.model.forward_intermediate(h_packed_data).cpu()[0]
-            l_middle_features = middle_output.data.numpy().tolist()
-            h_out[self.io_parser.content_field][
-                'predict_features'] = zip(l_e, l_middle_features)
+        # if self.predict_with_intermediate_res:
+        #     middle_output = \
+        #         self.model.forward_intermediate(h_packed_data).cpu()[0]
+        #     l_middle_features = middle_output.data.numpy().tolist()
+        #     h_out[self.io_parser.content_field][
+        #         'predict_features'] = zip(l_e, l_middle_features)
 
         y = v_label.data.view_as(pre_label)
         l_label = y.numpy().tolist()

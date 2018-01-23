@@ -129,8 +129,12 @@ class EventDataIO(DataIO):
         mask_data = {}
         for key in self.h_data_mask[self.group_name]:
             data = h_parsed_data[key]
-            mask = self._pad_mask(data, key)
-            mask_data[key] = self._data_to_variable(mask, data_type='Float')
+            if not self._is_empty(data, self.h_data_meta[key]['dim']):
+                mask = self._pad_mask(data, key)
+                mask_data[key] = self._data_to_variable(mask, data_type='Float')
+            else:
+                # Empty data will have empty mask.
+                mask_data[key] = None
 
         for key in h_parsed_data:
             if key in self.h_np_data:
@@ -154,7 +158,7 @@ class EventDataIO(DataIO):
         return h_parsed_data
 
     def _np_data_to_variable(self, list_data):
-        v = Variable(torch.from_numpy(np.stack(list_data)))
+        v = Variable(torch.from_numpy(np.stack(list_data)).float())
         if use_cuda:
             v = v.cuda()
         return v
@@ -275,15 +279,14 @@ class EventDataIO(DataIO):
         adjacent = np.eye(dim)
 
         # Only add self link to entities.
-        ds = [1] * len(l_e)
+        ds = [1.0] * len(l_e)
         for index, l_args in enumerate(ll_args):
             row = index + len(l_e)
             for arg in l_args:
                 # Some error in data processing cause this.
                 if arg in h_e:
                     adjacent[row, h_e[arg]] = 1
-            recipro_sqrt_d = 1.0 / math.sqrt(len(l_args) + 1)
-            ds.append(recipro_sqrt_d)
+            ds.append(1.0 / math.sqrt(len(l_args) + 1))
 
         rcpr_sqrt_degree = np.diag(ds)
         return rcpr_sqrt_degree * adjacent * rcpr_sqrt_degree
@@ -357,12 +360,8 @@ class EventDataIO(DataIO):
         l_label = self._apply_mask(l_label, most_freq_indices)
         l_tf = self._apply_mask(l_tf, most_freq_indices)
 
-        m_args = h_info.get(self.adjacent_field, [[]])
+        m_args = h_info.get(self.adjacent_field, [])
         m_args_masked = self._apply_mask(m_args, most_freq_indices)
-
-        # Ensure adj is 2d, even empty.
-        if len(m_args) == 0:
-            m_args_masked = [[]]
 
         assert len(ll_feature) == len(l_h)
         assert len(l_h) == len(l_tf)

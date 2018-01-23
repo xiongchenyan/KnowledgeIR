@@ -39,6 +39,8 @@ class NNPara(Configurable):
     node_feature_dim = Int(0, help='node feature dimension').tag(config=True)
     e_feature_dim = Int(help='entity feature dimension').tag(config=True)
     evm_feature_dim = Int(help='event feature dimension').tag(config=True)
+    use_mask = Bool(False, help='whether to use mask').tag(config=True)
+
     l_hidden_dim = List(Int, default_value=[],
                         help='multi layer DNN hidden dim').tag(config=True)
 

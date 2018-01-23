@@ -3,13 +3,66 @@ import torch.nn as nn
 from torch.autograd import Variable
 from knowledge4ir.salience.base import SalienceBaseModel, KernelPooling
 from knowledge4ir.salience.knrm_vote import KNRM
-from knowledge4ir.salience.masked_knrm_vote import MaskKNRM
+from knowledge4ir.salience.crf_model import (
+    LinearKernelCRF,
+)
+from knowledge4ir.salience.masked_knrm_vote import (
+    MaskKNRM,
+)
 import logging
 import json
 import torch.nn.functional as F
 import numpy as np
 
 use_cuda = torch.cuda.is_available()
+
+
+class MaskKernelCrf(LinearKernelCRF):
+    def __init__(self, para, ext_data=None):
+        super(MaskKernelCrf, self).__init__(para, ext_data)
+        self.use_mask = para.use_mask
+        if self.use_mask:
+            logging.info('Running model with masking on empty slots.')
+        else:
+            logging.info('Running model without masking.')
+
+    def forward(self, h_packed_data):
+        mtx_e = h_packed_data['mtx_e']
+        ts_feature = h_packed_data['ts_feature']
+
+        if ts_feature.size()[-1] != self.node_feature_dim:
+            logging.error('feature shape: %s != feature dim [%d]',
+                          json.dumps(ts_feature.size()), self.node_feature_dim)
+        assert ts_feature.size()[-1] == self.node_feature_dim
+        if mtx_e.size()[:2] != ts_feature.size()[:2]:
+            logging.error(
+                'e mtx and feature tensor shape do not match: %s != %s',
+                json.dumps(mtx_e.size()), json.dumps(ts_feature.size()))
+        assert mtx_e.size()[:2] == ts_feature.size()[:2]
+
+        node_score = F.tanh(self.node_lr(ts_feature))
+
+        # frequency is the first dim of feature, always
+        # mtx_score = ts_feature.narrow(-1, 0, 1).squeeze(-1)
+        mtx_score = h_packed_data['mtx_score']
+
+        h_mid_data = {
+            "mtx_e": mtx_e,
+            "mtx_score": mtx_score
+        }
+
+        if self.use_mask:
+            mtx_e_mask = h_packed_data['masks']['mtx_e']
+            mtx_embedding = self.embedding(mtx_e)
+            mtx_masked_embedding = mtx_embedding * mtx_e_mask.unsqueeze(-1)
+            kp_mtx = self._kernel_scores(mtx_masked_embedding, mtx_score)
+            knrm_res = self.linear(kp_mtx).squeeze(-1)
+        else:
+            knrm_res = super(LinearKernelCRF, self).forward(h_mid_data)
+
+        mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), node_score), -1)
+        output = self.linear_combine(mixed_knrm).squeeze(-1)
+        return output
 
 
 class StructEventKernelCRF(MaskKNRM):
@@ -21,22 +74,15 @@ class StructEventKernelCRF(MaskKNRM):
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
         logging.info('node feature dim %d', self.node_feature_dim)
 
+        self.use_mask = para.use_mask
+
+        if self.use_mask:
+            logging.info('Running model with masking on empty slots.')
+        else:
+            logging.info('Running model without masking.')
+
         if use_cuda:
             self.node_lr.cuda()
-
-    # # If you load this, we add one in the input to shift the vocab.
-    # def _load_embedding(self, para, ext_data):
-    #     # Add one additional row to allow empty entity.
-    #     self.embedding = nn.Embedding(para.entity_vocab_size + 1,
-    #                                   para.embedding_dim)
-    #     if ext_data.entity_emb is not None:
-    #         zero = torch.zeros(1, para.embedding_dim).double()
-    #         emb = torch.from_numpy(ext_data.entity_emb)
-    #         weights = torch.cat([zero, emb], dim=0)
-    #         self.embedding.weight.data.copy_(weights)
-    #     logging.info('Additional row added at [0] for empty embedding.')
-    #     if use_cuda:
-    #         self.embedding.cuda()
 
     def forward(self, h_packed_data):
         ts_feature = h_packed_data['ts_feature']
@@ -53,6 +99,17 @@ class StructEventKernelCRF(MaskKNRM):
         return self.embedding(mtx_evm)
 
     def compute_score(self, h_packed_data):
+        combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score = self.get_features(h_packed_data)
+
+        if self.use_mask:
+            knrm_res = self._forward_kernel_with_mask_and_features(combined_mtx_e_mask,
+                                                                   combined_mtx_e,
+                                                                   mtx_score, node_score)
+        else:
+            knrm_res = self._forward_kernel_with_features(combined_mtx_e, mtx_score, node_score)
+        return knrm_res
+
+    def get_features(self, h_packed_data):
         ts_feature = h_packed_data['ts_feature']
         mtx_e = h_packed_data['mtx_e']
         mtx_evm = h_packed_data['mtx_evm']
@@ -80,10 +137,7 @@ class StructEventKernelCRF(MaskKNRM):
         node_score = F.tanh(self.node_lr(ts_feature))
         mtx_score = h_packed_data['mtx_score']
 
-        knrm_res = self._forward_kernel_with_features(combined_mtx_e_mask,
-                                                      combined_mtx_e,
-                                                      mtx_score, node_score)
-        return knrm_res
+        return combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score
 
     def _argument_sum(self, ts_args, ts_arg_mask):
         l_evm_embedding = []
@@ -103,8 +157,6 @@ class StructEventKernelCRF(MaskKNRM):
 
 
 class AverageEventKernelCRF(StructEventKernelCRF):
-    io_group = 'joint_graph'
-
     def __init__(self, para, ext_data=None):
         super(AverageEventKernelCRF, self).__init__(para, ext_data)
 
@@ -126,8 +178,6 @@ class AverageEventKernelCRF(StructEventKernelCRF):
 
 
 class AverageArgumentKernelCRF(StructEventKernelCRF):
-    io_group = 'joint_graph'
-
     def __init__(self, para, ext_data=None):
         super(AverageArgumentKernelCRF, self).__init__(para, ext_data)
         self.args_linear = nn.Linear(self.embedding_dim, self.embedding_dim)
@@ -170,36 +220,44 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
         super(GraphCNNKernelCRF, self).__init__(para, ext_data)
 
     def compute_score(self, h_packed_data):
-        ts_feature = h_packed_data['ts_feature']
-        mtx_e = h_packed_data['mtx_e']
-        mtx_evm = h_packed_data['mtx_evm']
-
-        ts_args = h_packed_data['ts_args']
-        mtx_arg_length = h_packed_data['mtx_arg_length']
-
         laplacian = h_packed_data['ts_laplacian']
+        combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score = self.get_features(h_packed_data)
 
-        masks = h_packed_data['masks']
-        mtx_e_mask = masks['mtx_e']
-        mtx_evm_mask = masks['mtx_evm']
-        ts_arg_mask = masks['ts_args']
-
-        mtx_e_embedding = self.embedding(mtx_e)
-        if mtx_evm is None:
-            # For documents without events.
-            combined_mtx_e = mtx_e_embedding
-            combined_mtx_e_mask = mtx_e_mask
+        if self.use_mask:
+            kp_mtx = self._masked_kernel_scores(combined_mtx_e_mask, combined_mtx_e, mtx_score)
         else:
-            mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
-                                                     mtx_arg_length,
-                                                     ts_arg_mask)
+            kp_mtx = self._kernel_scores(combined_mtx_e, mtx_score)
 
-            combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
-            combined_mtx_e_mask = torch.cat((mtx_e_mask, mtx_evm_mask), 1)
+        features = torch.cat((kp_mtx, node_score), -1)
+        gcnn_features = torch.bmm(laplacian, features)
+        output = self.linear(gcnn_features).squeeze(-1)
 
-        mtx_score = h_packed_data['mtx_score']
-        node_score = F.tanh(self.node_lr(ts_feature))
-        score = self._forward_with_gcnn(combined_mtx_e_mask,
-                                        combined_mtx_e,
-                                        mtx_score, node_score, laplacian)
-        return score
+        return output
+
+    def _feature_size(self):
+        return self.K + 1
+
+
+class ConcatGraphCNNKernelCRF(StructEventKernelCRF):
+    def __init__(self, para, ext_data=None):
+        super(ConcatGraphCNNKernelCRF, self).__init__(para, ext_data)
+
+    def compute_score(self, h_packed_data):
+        laplacian = h_packed_data['ts_laplacian']
+        combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score = self.get_features(h_packed_data)
+
+        if self.use_mask:
+            kp_mtx = self._masked_kernel_scores(combined_mtx_e_mask, combined_mtx_e, mtx_score)
+        else:
+            kp_mtx = self._kernel_scores(combined_mtx_e, mtx_score)
+
+        features = torch.cat((kp_mtx, node_score), -1)
+        gcnn_features = torch.bmm(laplacian, features)
+        full_features = torch.cat((features, gcnn_features), -1)
+
+        output = self.linear(full_features).squeeze(-1)
+
+        return output
+
+    def _feature_size(self):
+        return (self.K + 1) * 2

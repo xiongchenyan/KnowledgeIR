@@ -20,7 +20,7 @@ class MaskKNRM(SalienceBaseModel):
         self.K = len(l_mu)
         self.kp = KernelPooling(l_mu, l_sigma)
         self.dropout = nn.Dropout(p=para.dropout_rate)
-        self.linear = nn.Linear(self.K + 1, 1, bias=True)
+        self.linear = nn.Linear(self._feature_size(), 1, bias=True)
         self._load_embedding(para, ext_data)
         if use_cuda:
             logging.info('copying knrm parameter to cuda')
@@ -30,6 +30,9 @@ class MaskKNRM(SalienceBaseModel):
         self.layer = para.nb_hidden_layers
         return
 
+    def _feature_size(self):
+        raise NotImplementedError
+
     def _load_embedding(self, para, ext_data):
         self.embedding = nn.Embedding(para.entity_vocab_size,
                                       para.embedding_dim, padding_idx=0)
@@ -38,20 +41,14 @@ class MaskKNRM(SalienceBaseModel):
                 torch.from_numpy(ext_data.entity_emb))
 
     def forward(self, h_packed_data):
-        kp_mtx = self._forward_to_kernels(h_packed_data)
-        output = self.linear(kp_mtx)
-        output = output.squeeze(-1)
-        return output
-
-    def _knrm_opt(self, mask, mtx_embedding, mtx_score):
-        kp_mtx = self._masked_kernel_scores(mask, mtx_embedding, mtx_score)
-        output = self.linear(kp_mtx)
-        output = output.squeeze(-1)
-        return output
+        raise NotImplementedError
 
     def _masked_kernel_scores(self, mask, mtx_embedding, mtx_score):
         masked_embedding = mtx_embedding * mask.unsqueeze(-1)
         return self.__kernel_vote(masked_embedding, masked_embedding, mtx_score)
+
+    def _kernel_scores(self, mtx_embedding, mtx_score):
+        return self.__kernel_vote(mtx_embedding, mtx_embedding, mtx_score)
 
     def _masked_kernel_vote(self, target_emb, target_mask, voter_emb,
                             voter_mask, voter_score):
@@ -67,44 +64,18 @@ class MaskKNRM(SalienceBaseModel):
         trans_mtx = self.dropout(trans_mtx)
         return self.kp(trans_mtx, voter_score)
 
-    # def _forward_kernel_with_embedding(self, mask, mtx_embedding, mtx_score):
-    #     kp_mtx = self._masked_kernel_scores(mask, mtx_embedding, mtx_score)
-    #     output = self.linear(kp_mtx)
-    #     output = output.squeeze(-1)
-    #     return output
-
-    def _forward_kernel_with_features(self, mask, mtx_embedding,
+    def _forward_kernel_with_features(self, mtx_embedding,
                                       mtx_score, node_features):
-        kp_mtx = self._masked_kernel_scores(mask, mtx_embedding, mtx_score)
+        kp_mtx = self.__kernel_vote(mtx_embedding, mtx_embedding, mtx_score)
         # Combine with node features.
         features = torch.cat((kp_mtx, node_features), -1)
         output = self.linear(features).squeeze(-1)
         return output
 
-    def _forward_with_gcnn(self, mask, mtx_embedding, mtx_score, node_features,
-                           laplacian):
+    def _forward_kernel_with_mask_and_features(self, mask, mtx_embedding,
+                                               mtx_score, node_features):
         kp_mtx = self._masked_kernel_scores(mask, mtx_embedding, mtx_score)
         # Combine with node features.
         features = torch.cat((kp_mtx, node_features), -1)
-
-        # Do gcnn here.
-        print features
-        print laplacian
-        gcnn_features = torch.matmul(features, laplacian)
-        output = self.linear(gcnn_features).squeeze(-1)
-
-        import sys
-        sys.stdin.readline()
-
+        output = self.linear(features).squeeze(-1)
         return output
-
-    def _forward_to_kernels(self, h_packed_data):
-        mtx_e = h_packed_data['mtx_e']
-        mask = h_packed_data['mtx_mask']
-        mtx_score = h_packed_data['mtx_score']
-        mtx_embedding = self.embedding(mtx_e)
-        kp_mtx = self._masked_kernel_scores(mask, mtx_embedding, mtx_score)
-        return kp_mtx
-
-    def forward_intermediate(self, h_packed_data):
-        return self._forward_to_kernels(h_packed_data)
