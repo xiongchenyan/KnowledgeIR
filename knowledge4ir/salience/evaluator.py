@@ -220,15 +220,17 @@ if __name__ == '__main__':
     root.addHandler(ch)
 
     args = sys.argv
-    if len(args) < 5:
+    if len(args) < 4:
         print(
             "Usage: [this script] [joint|normal] [gold standard] [prediction] "
-            "[entity vocab size]")
+            "[Default: 723749 entity vocab size]")
         exit(1)
+
+    vocab_size = 723749 if len(args) < 5 else int(args[4])
 
     if args[1] == 'joint':
         print("Going to evaluate a joint result.")
-        evaluate_json_joint(args[2], args[3], int(args[4]))
+        evaluate_json_joint(args[2], args[3], vocab_size)
     else:
         print("Going to evaluate a normal result.")
-        evaluate_normal(args[2], args[3], int(args[4]))
+        evaluate_normal(args[2], args[3], vocab_size)
