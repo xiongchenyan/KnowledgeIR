@@ -15,6 +15,8 @@ def get_e_labels(predictions, s_e_label, entity_vocab_size):
         score = pred[1]
         if eid < entity_vocab_size:
             e_list.append((score, s_e_label[eid], eid))
+
+    e_list.sort(reverse=True)
     return zip(*e_list)
 
 
@@ -27,6 +29,7 @@ def get_evm_labels(predictions, s_evm_label, entity_vocab_size):
         if eid >= entity_vocab_size:
             evm_list.append((score, s_evm_label[eid - entity_vocab_size],
                              eid - entity_vocab_size))
+    evm_list.sort(reverse=True)
     return zip(*evm_list)
 
 
@@ -83,11 +86,36 @@ def load_pairs(docs, f_predict_1, f_predict_2, content_field,
 
 
 def compare_ranking(l_e_pack1, l_e_pack2):
-    pass
+    ranks1, wrongs1 = get_rank(l_e_pack1)
+    ranks2, wrongs2 = get_rank(l_e_pack2)
+
+    print ranks1
+    print ranks2
+
+    print wrongs1
+    print wrongs2
 
 
-def compare(docs, f_predict_1, f_predict_2, entity_vocab_size,
-            content_field='bodyText'):
+def get_rank(l_e_pack):
+    num_pos = sum(l_e_pack[1])
+    count = 0
+    ranks = []
+    wrongs = []
+
+    for rank, (score, label, id) in enumerate(zip(*l_e_pack)):
+        if label == 1:
+            count += 1
+            ranks.append((rank, score, id))
+        else:
+            wrongs.append((rank, score, id))
+
+        if count == num_pos:
+            break
+    return ranks, wrongs
+
+
+def compare(docs, f_predict_1, f_predict_2, entity_hash, event_hash,
+            entity_vocab_size, content_field='bodyText'):
     print("Comparing predictions [%s] from [%s]." % (f_predict_1, f_predict_2))
     evaluator = SalienceEva()  # evaluator with default values.
 
@@ -99,14 +127,18 @@ def compare(docs, f_predict_1, f_predict_2, entity_vocab_size,
 
         (l_e_pack1, l_evm_pack1), (l_e_pack2, l_evm_pack2) = res
 
-        h_e1 = evaluator.evaluate(l_e_pack1[0], l_e_pack1[1])
-        h_evm1 = evaluator.evaluate(l_evm_pack1[0], l_evm_pack1[1])
+        if l_evm_pack1 and l_evm_pack2:
+            h_evm1 = evaluator.evaluate(l_evm_pack1[0], l_evm_pack1[1])
+            h_evm2 = evaluator.evaluate(l_evm_pack2[0], l_evm_pack2[1])
 
-        h_e2 = evaluator.evaluate(l_e_pack2[0], l_e_pack2[1])
-        h_evm2 = evaluator.evaluate(l_evm_pack2[0], l_evm_pack2[1])
+            compare_ranking(l_evm_pack1, l_evm_pack2)
 
-        compare_ranking(l_e_pack1, l_e_pack2)
-        compare_ranking(l_evm_pack1, l_evm_pack2)
+        if l_e_pack1 and l_e_pack2:
+            h_e1 = evaluator.evaluate(l_e_pack1[0], l_e_pack1[1])
+            h_e2 = evaluator.evaluate(l_e_pack2[0], l_e_pack2[1])
+            compare_ranking(l_e_pack1, l_e_pack2)
+
+        sys.stdin.readline()
 
         sys.stdout.write('\rCompared %d files' % p)
     print('')
@@ -116,12 +148,13 @@ if __name__ == '__main__':
     import sys
 
     args = sys.argv
-    if len(args) < 4:
+    if len(args) < 6:
         print(
             "Usage: [this script] [gold standard] [prediction1] [prediction2] "
+            "[entity hash file] [event hash file]"
             "[Default: 723749, entity vocab size]")
         exit(1)
 
-    vocab_size = 723749 if len(args) < 5 else int(args[4])
+    vocab_size = 723749 if len(args) < 7 else int(args[6])
 
-    compare(args[1], args[2], args[3], vocab_size)
+    compare(args[1], args[2], args[3], args[4], args[5], vocab_size)
