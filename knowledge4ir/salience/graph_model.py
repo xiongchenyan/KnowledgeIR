@@ -238,18 +238,16 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
             gcnn_score = self.linear(gcnn_features).squeeze(-1)
 
             print "GCNN score"
-            print gcnn_score
+            print gcnn_score.cpu()
 
             origin_score = self.linear(features).squeeze(-1)
             print "Original score"
-            print origin_score
+            print origin_score.cpu()
 
             diff_score = gcnn_score - origin_score
             print 'Diff score'
-            print diff_score
+            print diff_score.cpu()
 
-            import sys
-            sys.stdin.readline()
 
         output = self.linear(gcnn_features).squeeze(-1)
 

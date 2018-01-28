@@ -105,6 +105,11 @@ class JointSalienceModelCenter(SalienceModelCenter):
             if h_out is None:
                 continue
             h_total_eva = add_svm_feature(h_total_eva, h_this_eva)
+            if debug:
+                print json.dumps(h_out)
+                import sys
+                sys.stdin.readline()
+
             print >> out, json.dumps(h_out)
             p += 1
             h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
