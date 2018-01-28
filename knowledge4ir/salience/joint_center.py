@@ -79,17 +79,20 @@ class JointSalienceModelCenter(SalienceModelCenter):
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
-    def predict(self, test_in_name, label_out_name):
+    def predict(self, test_in_name, label_out_name, debug=False):
         """
         predict the data in test_in,
         dump predict labels in label_out_name
         :param test_in_name:
         :param label_out_name:
+        :param debug:
         :return:
         """
         res_dir = os.path.dirname(label_out_name)
         if not os.path.exists(res_dir):
             os.makedirs(res_dir)
+
+        self.model.debug_mode(debug)
 
         out = open(label_out_name, 'w')
         logging.info('start predicting for [%s]', test_in_name)
@@ -187,6 +190,7 @@ if __name__ == '__main__':
         model_out = Unicode(help='model dump out name').tag(config=True)
         log_level = Unicode('INFO', help='log level').tag(config=True)
         skip_train = Bool(False, help='directly test').tag(config=True)
+        debug = Bool(False, help='Debug mode').tag(config=True)
 
 
     if 2 != len(sys.argv):
@@ -214,4 +218,4 @@ if __name__ == '__main__':
         print 'Start to run training.'
         model.train(para.train_in, para.valid_in, para.model_out)
 
-    model.predict(para.test_in, para.test_out)
+    model.predict(para.test_in, para.test_out, para.debug)

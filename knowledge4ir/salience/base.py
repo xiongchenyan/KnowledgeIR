@@ -155,6 +155,7 @@ class SalienceBaseModel(nn.Module):
         :param ext_data: external data to use, in ExtData
         """
         super(SalienceBaseModel, self).__init__()
+        self.debug = False
 
     def forward(self, h_packed_data):
         """
@@ -181,6 +182,9 @@ class SalienceBaseModel(nn.Module):
 
     def forward_intermediate(self, h_packed_data):
         return self.forward(h_packed_data)
+
+    def debug_mode(self, debug):
+        self.debug = debug
 
 
 class KernelPooling(nn.Module):

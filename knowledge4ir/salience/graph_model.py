@@ -74,7 +74,6 @@ class StructEventKernelCRF(MaskKNRM):
         logging.info('node feature dim %d', self.node_feature_dim)
 
         self.use_mask = para.use_mask
-        self.debug_mode = para.debug
 
         if self.use_mask:
             logging.info('Running model with masking on empty slots.')
@@ -234,12 +233,20 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
         features = torch.cat((kp_mtx, node_score), -1)
         gcnn_features = torch.bmm(laplacian, features)
 
-        if self.debug_mode:
-            print "Original score"
-            print self.linear(features).squeeze(-1)
+        if self.debug:
+
+            gcnn_score = self.linear(gcnn_features).squeeze(-1)
 
             print "GCNN score"
-            print self.linear(gcnn_features).squeeze(-1)
+            print gcnn_score
+
+            origin_score = self.linear(features).squeeze(-1)
+            print "Original score"
+            print origin_score
+
+            diff_score = gcnn_score - origin_score
+            print 'Diff score'
+            print diff_score
 
             import sys
             sys.stdin.readline()
