@@ -1,6 +1,9 @@
+from __future__ import print_function
 import gzip
 import json
 from knowledge4ir.salience.utils.evaluation import SalienceEva
+import logging
+import pickle
 
 
 def open_func(corpus_in):
@@ -33,7 +36,8 @@ def get_evm_labels(predictions, s_evm_label, entity_vocab_size):
     return zip(*evm_list)
 
 
-def get_predictions(predict_res, content_field, entity_vocab_size, s_e_label,
+def get_predictions(predict_res, content_field, entity_vocab_size,
+                    s_e_label,
                     s_evm_label):
     predictions = predict_res['predict'] if 'predict' in predict_res else \
         predict_res[content_field]['predict']
@@ -42,106 +46,140 @@ def get_predictions(predict_res, content_field, entity_vocab_size, s_e_label,
     return entities, events
 
 
-def load_pairs(docs, f_predict_1, f_predict_2, content_field,
-               entity_vocab_size):
-    with open_func(docs)(docs) as origin, open_func(f_predict_1)(
-            f_predict_1) as pred1, open_func(f_predict_2)(f_predict_2) as pred2:
-        while True:
-            try:
-                inline = origin.next()
-                pred_line1 = pred1.next()
-                pred_line2 = pred2.next()
+def invert_dict(d):
+    return dict([(v, k) for k, v in d.items()])
 
-                doc = json.loads(inline)
-                predict_res1 = json.loads(pred_line1)
-                predict_res2 = json.loads(pred_line2)
 
-                gold_doc = doc['docno']
-                pred_doc1 = predict_res1['docno']
-                pred_doc2 = predict_res2['docno']
+class ResultComparer():
+    def __init__(self, word_id_pickle_in, entity_id_pickle_in,
+                 event_id_pickle_in):
+        self.h_word = invert_dict(pickle.load(open(word_id_pickle_in)))
+        self.h_entity = invert_dict(pickle.load(open(entity_id_pickle_in)))
+        self.h_event = invert_dict(pickle.load(open(event_id_pickle_in)))
 
-                if not (gold_doc == pred_doc1 and gold_doc == pred_doc2):
-                    # Do not handle inconsistent lines.
-                    raise StopIteration
+        print('loaded [%d] word ids, [%d] entity ids, [%d] event ids.',
+              len(self.h_word), len(self.h_entity), len(self.h_event))
 
-                l_e = doc['spot']['bodyText']['entities']
-                l_label_e = doc['spot']['bodyText']['salience']
-                s_e_label = dict(zip(l_e, l_label_e))
+    def load_pairs(self, docs, f_predict_1, f_predict_2, content_field,
+                   entity_vocab_size):
+        with open_func(docs)(docs) as origin, \
+                open_func(f_predict_1)(f_predict_1) as pred1, \
+                open_func(f_predict_2)(f_predict_2) as pred2:
+            while True:
+                try:
+                    inline = origin.next()
+                    pred_line1 = pred1.next()
+                    pred_line2 = pred2.next()
 
-                l_evm = doc['event']['bodyText']['sparse_features'].get(
-                    'LexicalHead', [])
-                l_label_evm = doc['event']['bodyText']['salience']
-                s_evm_label = dict(zip(l_evm, l_label_evm))
+                    doc = json.loads(inline)
+                    predict_res1 = json.loads(pred_line1)
+                    predict_res2 = json.loads(pred_line2)
 
-                predictions1 = get_predictions(predict_res1, content_field,
-                                               entity_vocab_size, s_e_label,
-                                               s_evm_label)
-                predictions2 = get_predictions(predict_res2, content_field,
-                                               entity_vocab_size, s_e_label,
-                                               s_evm_label)
+                    gold_doc = doc['docno']
+                    pred_doc1 = predict_res1['docno']
+                    pred_doc2 = predict_res2['docno']
 
-                yield predictions1, predictions2
-            except StopIteration:
+                    if not (gold_doc == pred_doc1 and gold_doc == pred_doc2):
+                        # Do not handle inconsistent lines.
+                        raise StopIteration
+
+                    l_e = doc['spot']['bodyText']['entities']
+                    l_label_e = doc['spot']['bodyText']['salience']
+                    s_e_label = dict(zip(l_e, l_label_e))
+
+                    l_evm = doc['event']['bodyText']['sparse_features'].get(
+                        'LexicalHead', [])
+                    l_label_evm = doc['event']['bodyText']['salience']
+                    s_evm_label = dict(zip(l_evm, l_label_evm))
+
+                    predictions1 = get_predictions(predict_res1, content_field,
+                                                   entity_vocab_size, s_e_label,
+                                                   s_evm_label)
+                    predictions2 = get_predictions(predict_res2, content_field,
+                                                   entity_vocab_size, s_e_label,
+                                                   s_evm_label)
+
+                    yield doc, predictions1, predictions2
+                except StopIteration:
+                    break
+
+    def reveal(self, r_list, d):
+        return [(rank, score, d[id]) for (rank, score, id) in r_list]
+
+    def compare_ranking(self, l_e_pack1, l_e_pack2, e_ids):
+        ranks1, wrongs1 = self.get_rank(l_e_pack1)
+        ranks2, wrongs2 = self.get_rank(l_e_pack2)
+
+        print("Positive ranking positions.")
+        print(self.reveal(ranks1, e_ids))
+        print(self.reveal(ranks2, e_ids))
+
+        print("Errors high in rank list.")
+        print(self.reveal(wrongs1, e_ids))
+        print(self.reveal(wrongs2, e_ids))
+
+    def get_rank(self, l_e_pack):
+        num_pos = sum(l_e_pack[1])
+        count = 0
+        ranks = []
+        wrongs = []
+
+        for rank, (score, label, id) in enumerate(zip(*l_e_pack)):
+            if label == 1:
+                count += 1
+                ranks.append((rank, score, id))
+            else:
+                wrongs.append((rank, score, id))
+
+            if count == num_pos:
                 break
+        return ranks, wrongs
 
+    def get_targets(self, doc):
+        words = [self.h_word[w] for w in doc['bodyText']]
+        entities = [self.h_entity[e] for e in
+                    doc['spot']['bodyText']['entities']]
+        events = [self.h_event[e] for e in
+                  doc['event']['bodyText']['sparse_features']['LexicalHead']]
+        return words, entities, events
 
-def compare_ranking(l_e_pack1, l_e_pack2):
-    ranks1, wrongs1 = get_rank(l_e_pack1)
-    ranks2, wrongs2 = get_rank(l_e_pack2)
+    def compare(self, docs, f_predict_1, f_predict_2,
+                entity_vocab_size, content_field='bodyText'):
+        print("Comparing predictions [%s] from [%s]." % (
+            f_predict_1, f_predict_2))
+        evaluator = SalienceEva()  # evaluator with default values.
 
-    print ranks1
-    print ranks2
+        p = 0
 
-    print wrongs1
-    print wrongs2
+        for res in self.load_pairs(docs, f_predict_1, f_predict_2,
+                                   content_field, entity_vocab_size):
+            p += 1
 
+            doc, (l_e_pack1, l_evm_pack1), (l_e_pack2, l_evm_pack2) = res
+            words, entities, events = self.get_targets(doc)
 
-def get_rank(l_e_pack):
-    num_pos = sum(l_e_pack[1])
-    count = 0
-    ranks = []
-    wrongs = []
+            print('Comparing doc %s' % (doc['docno']))
 
-    for rank, (score, label, id) in enumerate(zip(*l_e_pack)):
-        if label == 1:
-            count += 1
-            ranks.append((rank, score, id))
-        else:
-            wrongs.append((rank, score, id))
+            print('Words are:')
+            print(' '.join(words))
+            print('Events are:')
+            print(', '.join(events))
 
-        if count == num_pos:
-            break
-    return ranks, wrongs
+            if l_evm_pack1 and l_evm_pack2:
+                print('comparing event ranking ')
+                # h_evm1 = evaluator.evaluate(l_evm_pack1[0], l_evm_pack1[1])
+                # h_evm2 = evaluator.evaluate(l_evm_pack2[0], l_evm_pack2[1])
+                self.compare_ranking(l_evm_pack1, l_evm_pack2, self.h_event)
 
+            if l_e_pack1 and l_e_pack2:
+                print('comparing entity ranking ')
+                # h_e1 = evaluator.evaluate(l_e_pack1[0], l_e_pack1[1])
+                # h_e2 = evaluator.evaluate(l_e_pack2[0], l_e_pack2[1])
+                self.compare_ranking(l_e_pack1, l_e_pack2, self.h_entity)
+            sys.stdin.readline()
 
-def compare(docs, f_predict_1, f_predict_2, entity_hash, event_hash,
-            entity_vocab_size, content_field='bodyText'):
-    print("Comparing predictions [%s] from [%s]." % (f_predict_1, f_predict_2))
-    evaluator = SalienceEva()  # evaluator with default values.
-
-    p = 0
-
-    for res in load_pairs(docs, f_predict_1, f_predict_2, content_field,
-                          entity_vocab_size):
-        p += 1
-
-        (l_e_pack1, l_evm_pack1), (l_e_pack2, l_evm_pack2) = res
-
-        if l_evm_pack1 and l_evm_pack2:
-            h_evm1 = evaluator.evaluate(l_evm_pack1[0], l_evm_pack1[1])
-            h_evm2 = evaluator.evaluate(l_evm_pack2[0], l_evm_pack2[1])
-
-            compare_ranking(l_evm_pack1, l_evm_pack2)
-
-        if l_e_pack1 and l_e_pack2:
-            h_e1 = evaluator.evaluate(l_e_pack1[0], l_e_pack1[1])
-            h_e2 = evaluator.evaluate(l_e_pack2[0], l_e_pack2[1])
-            compare_ranking(l_e_pack1, l_e_pack2)
-
-        sys.stdin.readline()
-
-        sys.stdout.write('\rCompared %d files' % p)
-    print('')
+        #     sys.stdout.write('\rCompared %d files' % p)
+        # print('')
 
 
 if __name__ == '__main__':
@@ -151,10 +189,13 @@ if __name__ == '__main__':
     if len(args) < 6:
         print(
             "Usage: [this script] [gold standard] [prediction1] [prediction2] "
-            "[entity hash file] [event hash file]"
+            "[word hash file] [entity hash file] [event hash file]"
             "[Default: 723749, entity vocab size]")
         exit(1)
 
-    vocab_size = 723749 if len(args) < 7 else int(args[6])
+    vocab_size = 723749 if len(args) < 8 else int(args[7])
 
-    compare(args[1], args[2], args[3], args[4], args[5], vocab_size)
+    gold, pred1, pred2, word_hash, entity_hash, event_hash = args[1:7]
+
+    comparer = ResultComparer(word_hash, entity_hash, event_hash)
+    comparer.compare(gold, pred1, pred2, vocab_size)

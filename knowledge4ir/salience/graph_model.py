@@ -68,13 +68,13 @@ class MaskKernelCrf(LinearKernelCRF):
 class StructEventKernelCRF(MaskKNRM):
     def __init__(self, para, ext_data=None):
         super(StructEventKernelCRF, self).__init__(para, ext_data)
-
         self.embedding_dim = para.embedding_dim
         self.node_feature_dim = para.node_feature_dim
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
         logging.info('node feature dim %d', self.node_feature_dim)
 
         self.use_mask = para.use_mask
+        self.debug_mode = para.debug
 
         if self.use_mask:
             logging.info('Running model with masking on empty slots.')
@@ -99,14 +99,15 @@ class StructEventKernelCRF(MaskKNRM):
         return self.embedding(mtx_evm)
 
     def compute_score(self, h_packed_data):
-        combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score = self.get_features(h_packed_data)
+        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_features(
+            h_packed_data)
 
         if self.use_mask:
-            knrm_res = self._forward_kernel_with_mask_and_features(combined_mtx_e_mask,
-                                                                   combined_mtx_e,
-                                                                   mtx_score, node_score)
+            knrm_res = self._forward_kernel_with_mask_and_features(
+                mtx_e_mask, mtx_e, mtx_score, node_score)
         else:
-            knrm_res = self._forward_kernel_with_features(combined_mtx_e, mtx_score, node_score)
+            knrm_res = self._forward_kernel_with_features(mtx_e, mtx_score,
+                                                          node_score)
         return knrm_res
 
     def get_features(self, h_packed_data):
@@ -221,15 +222,28 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
 
     def compute_score(self, h_packed_data):
         laplacian = h_packed_data['ts_laplacian']
-        combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score = self.get_features(h_packed_data)
+        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_features(
+            h_packed_data)
 
         if self.use_mask:
-            kp_mtx = self._masked_kernel_scores(combined_mtx_e_mask, combined_mtx_e, mtx_score)
+            kp_mtx = self._masked_kernel_scores(mtx_e_mask,
+                                                mtx_e, mtx_score)
         else:
-            kp_mtx = self._kernel_scores(combined_mtx_e, mtx_score)
+            kp_mtx = self._kernel_scores(mtx_e, mtx_score)
 
         features = torch.cat((kp_mtx, node_score), -1)
         gcnn_features = torch.bmm(laplacian, features)
+
+        if self.debug_mode:
+            print "Original score"
+            print self.linear(features).squeeze(-1)
+
+            print "GCNN score"
+            print self.linear(gcnn_features).squeeze(-1)
+
+            import sys
+            sys.stdin.readline()
+
         output = self.linear(gcnn_features).squeeze(-1)
 
         return output
@@ -244,12 +258,14 @@ class ConcatGraphCNNKernelCRF(StructEventKernelCRF):
 
     def compute_score(self, h_packed_data):
         laplacian = h_packed_data['ts_laplacian']
-        combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score = self.get_features(h_packed_data)
+        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_features(
+            h_packed_data)
 
         if self.use_mask:
-            kp_mtx = self._masked_kernel_scores(combined_mtx_e_mask, combined_mtx_e, mtx_score)
+            kp_mtx = self._masked_kernel_scores(mtx_e_mask,
+                                                mtx_e, mtx_score)
         else:
-            kp_mtx = self._kernel_scores(combined_mtx_e, mtx_score)
+            kp_mtx = self._kernel_scores(mtx_e, mtx_score)
 
         features = torch.cat((kp_mtx, node_score), -1)
         gcnn_features = torch.bmm(laplacian, features)
