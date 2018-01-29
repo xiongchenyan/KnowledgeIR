@@ -234,7 +234,6 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
         gcnn_features = torch.bmm(laplacian, features)
 
         if self.debug:
-
             gcnn_score = self.linear(gcnn_features).squeeze(-1)
 
             print "GCNN score"
@@ -247,7 +246,6 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
             diff_score = gcnn_score - origin_score
             print 'Diff score'
             print diff_score.cpu()
-
 
         output = self.linear(gcnn_features).squeeze(-1)
 

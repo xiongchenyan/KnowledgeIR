@@ -57,8 +57,8 @@ class ResultComparer():
         self.h_entity = invert_dict(pickle.load(open(entity_id_pickle_in)))
         self.h_event = invert_dict(pickle.load(open(event_id_pickle_in)))
 
-        print('loaded [%d] word ids, [%d] entity ids, [%d] event ids.',
-              len(self.h_word), len(self.h_entity), len(self.h_event))
+        print('loaded [%d] word ids, [%d] entity ids, [%d] event ids.' % (
+            len(self.h_word), len(self.h_entity), len(self.h_event)))
 
     def load_pairs(self, docs, f_predict_1, f_predict_2, content_field,
                    entity_vocab_size):
@@ -106,6 +106,23 @@ class ResultComparer():
     def reveal(self, r_list, d):
         return [(rank, score, d[id]) for (rank, score, id) in r_list]
 
+    def get_rank(self, l_e_pack):
+        num_pos = sum(l_e_pack[1])
+        count = 0
+        ranks = []
+        wrongs = []
+
+        for rank, (score, label, eid) in enumerate(zip(*l_e_pack)):
+            if label == 1:
+                count += 1
+                ranks.append((rank, score, eid))
+            else:
+                wrongs.append((rank, score, eid))
+
+            if count == num_pos:
+                break
+        return ranks, wrongs
+
     def compare_ranking(self, l_e_pack1, l_e_pack2, e_ids):
         ranks1, wrongs1 = self.get_rank(l_e_pack1)
         ranks2, wrongs2 = self.get_rank(l_e_pack2)
@@ -118,22 +135,20 @@ class ResultComparer():
         print(self.reveal(wrongs1, e_ids))
         print(self.reveal(wrongs2, e_ids))
 
-    def get_rank(self, l_e_pack):
-        num_pos = sum(l_e_pack[1])
-        count = 0
-        ranks = []
-        wrongs = []
-
-        for rank, (score, label, id) in enumerate(zip(*l_e_pack)):
+    def show_graph(self, l_e_pack, l_evm_pack, adjacent):
+        full_adj = zip(zip(*l_evm_pack), adjacent)
+        pos_entities = set([eid for score, label, eid in zip(*l_e_pack) if
+                            label == 1])
+        pos_event_adj = []
+        pos_entity_adj = []
+        for (score, label, evm), adj in full_adj:
+            saliences = [(self.h_entity[e], e in pos_entities) for e in adj]
+            if any(pos for e, pos in saliences):
+                pos_entity_adj.append((self.h_event[evm], label, saliences))
             if label == 1:
-                count += 1
-                ranks.append((rank, score, id))
-            else:
-                wrongs.append((rank, score, id))
+                pos_event_adj.append((self.h_event[evm], label, saliences))
 
-            if count == num_pos:
-                break
-        return ranks, wrongs
+        return pos_event_adj, pos_entity_adj
 
     def get_targets(self, doc):
         words = [self.h_word[w] for w in doc['bodyText']]
@@ -141,7 +156,8 @@ class ResultComparer():
                     doc['spot']['bodyText']['entities']]
         events = [self.h_event[e] for e in
                   doc['event']['bodyText']['sparse_features']['LexicalHead']]
-        return words, entities, events
+        adjacent = [l_adj for l_adj in doc['adjacent']]
+        return words, entities, events, adjacent
 
     def compare(self, docs, f_predict_1, f_predict_2,
                 entity_vocab_size, content_field='bodyText'):
@@ -156,7 +172,7 @@ class ResultComparer():
             p += 1
 
             doc, (l_e_pack1, l_evm_pack1), (l_e_pack2, l_evm_pack2) = res
-            words, entities, events = self.get_targets(doc)
+            words, entities, events, adjacent = self.get_targets(doc)
 
             print('Comparing doc %s' % (doc['docno']))
 
@@ -166,16 +182,28 @@ class ResultComparer():
             print(', '.join(events))
 
             if l_evm_pack1 and l_evm_pack2:
-                print('comparing event ranking ')
+                print('comparing event ranking.')
                 # h_evm1 = evaluator.evaluate(l_evm_pack1[0], l_evm_pack1[1])
                 # h_evm2 = evaluator.evaluate(l_evm_pack2[0], l_evm_pack2[1])
                 self.compare_ranking(l_evm_pack1, l_evm_pack2, self.h_event)
+                print('showing adjacent list.')
+                print([item for item in zip(events, adjacent) if item[1]])
 
             if l_e_pack1 and l_e_pack2:
-                print('comparing entity ranking ')
+                print('comparing entity ranking.')
                 # h_e1 = evaluator.evaluate(l_e_pack1[0], l_e_pack1[1])
                 # h_e2 = evaluator.evaluate(l_e_pack2[0], l_e_pack2[1])
                 self.compare_ranking(l_e_pack1, l_e_pack2, self.h_entity)
+
+            if l_e_pack1 and l_evm_pack1:
+                print('Showing graph.')
+                evm_adj, e_adj = self.show_graph(l_e_pack1, l_evm_pack1,
+                                                 adjacent)
+                print('Salient event adjacent:')
+                print(evm_adj)
+                print('Salient entity adjacent:')
+                print(e_adj)
+
             sys.stdin.readline()
 
         #     sys.stdout.write('\rCompared %d files' % p)
