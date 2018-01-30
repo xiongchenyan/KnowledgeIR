@@ -48,7 +48,11 @@ class EventDataIO(DataIO):
             'joint_raw': ['mtx_e', 'mtx_score', 'label'],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
-                            'mtx_score', 'ts_feature', 'label', 'ts_laplacian']
+                            'mtx_score', 'ts_feature', 'label', 'ts_laplacian'],
+            'joint_graph_simple': ['mtx_e', 'mtx_evm', 'ts_args',
+                                   'mtx_arg_length',
+                                   'mtx_score', 'ts_feature', 'label',
+                                   'ts_adjacent']
         }
         self.h_target_group.update(h_joint_target_group)
 
@@ -257,19 +261,22 @@ class EventDataIO(DataIO):
         else:
             ll_feat_all = []
 
-        mtx_adjacent = self._compute_laplacian(ll_args, l_e)
+        mtx_laplacian = self._compute_laplacian(ll_args, l_e)
 
         h_res = {
             'mtx_e': l_e,
             'mtx_evm': l_evm,
             'ts_args': ll_args,
-            'ts_laplacian': mtx_adjacent,
+            'ts_laplacian': mtx_laplacian,
             'mtx_arg_length': l_arg_length,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
         }
         return h_res
+
+    def _compute_adjacent(self, ll_args, l_e):
+        pass
 
     def _compute_laplacian(self, ll_args, l_e):
         h_e = dict([(e, i) for i, e in enumerate(l_e)])
