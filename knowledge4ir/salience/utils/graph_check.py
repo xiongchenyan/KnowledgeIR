@@ -31,7 +31,7 @@ class GraphChecker():
                 if label == 1:
                     self.num_pos_without_s_args += 1
                 else:
-                    self.num_pos_without_s_args += 1
+                    self.num_neg_without_s_args += 1
             self.num_events += 1
 
     def check(self, docs):
@@ -53,23 +53,29 @@ class GraphChecker():
                     continue
 
                 p += 1
-                self.num_events += len(l_evm_labels)
 
                 adjacent = [l_adj for l_adj in doc['adjacent']]
 
                 self.check_graph(l_e_labels, l_evm_labels, adjacent)
 
                 prec = 1.0 * self.num_pos_with_s_args / (
-                        self.num_pos_without_s_args + self.num_neg_with_s_args)
+                        self.num_pos_with_s_args + self.num_neg_with_s_args)
 
                 recall = 1.0 * self.num_pos_with_s_args / (
                         self.num_pos_with_s_args + self.num_pos_without_s_args)
 
+                if prec + recall == 0:
+                    f1 = 0
+                else:
+                    f1 = 2 * prec * recall / (prec + recall)
+
+                num_pos = self.num_pos_without_s_args + self.num_pos_with_s_args
+
                 sys.stdout.write(
                     "\rProcessed %d documents, positives:%d, "
-                    "all events: %d, prec: %.4f, recall: %.4f" % (
-                        p, self.num_pos_with_s_args, self.num_events, prec,
-                        recall))
+                    "all events: %d, prec: %.4f, recall: %.4f, "
+                    "f1: %.4f" % (
+                        p, num_pos, self.num_events, prec, recall, f1))
 
         print("\nResults:")
         print("\tWith entities\tWithout entities")
