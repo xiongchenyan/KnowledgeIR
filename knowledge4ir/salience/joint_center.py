@@ -330,6 +330,7 @@ if __name__ == '__main__':
         test_in = Unicode(help='testing data').tag(config=True)
         test_out = Unicode(help='test res').tag(config=True)
         valid_in = Unicode(help='validation in').tag(config=True)
+        model_in = Unicode(help='model to read from').tag(config=True)
         model_out = Unicode(help='model dump out name').tag(config=True)
         log_level = Unicode('INFO', help='log level').tag(config=True)
         skip_train = Bool(False, help='directly test').tag(config=True)
@@ -352,13 +353,16 @@ if __name__ == '__main__':
 
     model_loaded = False
     if para.skip_train:
-        print 'Trying to load existing model.'
-        if os.path.exists(para.model_out):
-            model.load_model(para.model_out)
+        logging.info('Trying to load existing model.')
+        if os.path.exists(para.model_in):
+            model.load_model(para.model_in)
             model_loaded = True
+        else:
+            logging.info("Cannot find model [%s], "
+                         "please set exact path." % para.model_in)
 
     if not model_loaded:
-        print 'Start to run training.'
+        logging.info('Start to run training.')
         model.train(para.train_in, para.valid_in, para.model_out)
 
     model.predict(para.test_in, para.test_out, para.debug)

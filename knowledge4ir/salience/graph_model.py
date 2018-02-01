@@ -16,6 +16,8 @@ import numpy as np
 
 use_cuda = torch.cuda.is_available()
 
+import pickle
+
 
 class MaskKernelCrf(LinearKernelCRF):
     def __init__(self, para, ext_data=None):
@@ -53,12 +55,91 @@ class MaskKernelCrf(LinearKernelCRF):
             "mtx_score": mtx_score
         }
 
+        # Temporary debug code.
+        if self.debug:
+            entity_ids = pickle.load(open(
+                "/media/hdd/hdd0/data/Annotated_NYT/vocab/joint_emb.entity.pickle"
+            ))
+
+            event_ids = pickle.load(open(
+                "/media/hdd/hdd0/data/Annotated_NYT/vocab/joint_emb.event.pickle"
+            ))
+
+            h_ent = dict([(v, k) for k, v in entity_ids.items()])
+            h_evm = dict([(v, k) for k, v in event_ids.items()])
+            entity_range = 723749
+        # Temporary debug code.
+
         if self.use_mask:
             mtx_e_mask = h_packed_data['masks']['mtx_e']
             mtx_embedding = self.embedding(mtx_e)
             mtx_masked_embedding = mtx_embedding * mtx_e_mask.unsqueeze(-1)
             kp_mtx = self._kernel_scores(mtx_masked_embedding, mtx_score)
             knrm_res = self.linear(kp_mtx).squeeze(-1)
+
+            # Temporary debug code.
+            if self.debug:
+                target_emb = nn.functional.normalize(mtx_masked_embedding, p=2,
+                                                     dim=-1)
+
+                trans_mtx = torch.matmul(target_emb,
+                                         target_emb.transpose(-2, -1))
+
+                import sys
+                for i in range(mtx_e.size()[0]):
+                    print 'Next document.'
+                    row = mtx_e[i]
+                    nodes = row.cpu().data.numpy().tolist()
+                    entities = [h_ent[n] for n in nodes if n < entity_range]
+                    events = [h_evm[n - entity_range] for n in nodes if
+                              n >= entity_range]
+                    num_ent = len(entities)
+                    voting_scores = trans_mtx[i]
+
+                    event_voting_scores = voting_scores[
+                                          num_ent:].cpu().data.numpy()
+                    event_kernel_scores = kp_mtx[i][
+                                          num_ent:].cpu().data.numpy().tolist()
+                    event_final_scores = knrm_res[i][
+                                         num_ent:].cpu().data.numpy()
+
+                    topk = event_final_scores.argpartition(-10)[-10:].tolist()
+                    topk.reverse()
+
+                    # print [events[k] for k in topk]
+                    # print [event_kernel_scores[k] for k in topk]
+                    # print [event_final_scores.tolist()[k] for k in topk]
+                    print event_final_scores[topk]
+                    for k in topk:
+                        print 'Showing: ' + events[k]
+                        print event_final_scores[k]
+                        print event_kernel_scores[k]
+                        votes = event_voting_scores[k]
+
+                        top_votes = votes.argpartition(-20)[-20:].tolist()
+                        bottom_votes = votes.argpartition(10)[:10].tolist()
+
+                        top_votes_node = [
+                            h_evm[nodes[n] - entity_range] if n >= num_ent else
+                            h_ent[nodes[n]] for n in top_votes
+                        ]
+
+                        bottom_votes_node = [
+                            h_evm[nodes[n] - entity_range] if n >= num_ent else
+                            h_ent[nodes[n]] for n in bottom_votes
+                        ]
+
+                        print 'top votes'
+                        print votes[top_votes]
+                        print top_votes_node
+
+                        print 'bottom votes'
+                        print bottom_votes_node
+                        print votes[bottom_votes]
+
+                        sys.stdin.readline()
+            # Temporary debug code.
+
         else:
             knrm_res = super(LinearKernelCRF, self).forward(h_mid_data)
 
