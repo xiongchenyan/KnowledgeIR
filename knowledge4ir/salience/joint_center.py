@@ -202,6 +202,9 @@ class JointSalienceModelCenter(SalienceModelCenter):
             open(label_out_name + '.eval', 'w'),
             indent=1
         )
+
+        ent_out.close()
+        evm_out.close()
         out.close()
         return
 
