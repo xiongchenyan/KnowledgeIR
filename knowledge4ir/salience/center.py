@@ -238,6 +238,7 @@ class SalienceModelCenter(Configurable):
         :return: keep the model
         """
         logging.info('training with data in [%s]', train_in_name)
+        self.model.train()
 
         if not model_out_name:
             model_out_name = train_in_name + '.model_%s' % self.model_name
@@ -289,12 +290,14 @@ class SalienceModelCenter(Configurable):
                             self.early_stopping_frequency)
                         es_cnt = 0
                         if validation_in_name:
+                            self.model.eval()
                             if self._early_stop(model_out_name):
                                 logging.info(
                                     'early stopped at [%d] epoch [%d] data',
                                     epoch, data_cnt)
                                 es_flag = True
                                 break
+                            self.model.train()
             if es_flag:
                 break
 
@@ -314,9 +317,11 @@ class SalienceModelCenter(Configurable):
 
             # validation
             if validation_in_name:
+                self.model.eval()
                 if self._early_stop(model_out_name):
                     logging.info('early stopped at [%d] epoch', epoch)
                     break
+                self.model.train()
 
         logging.info('[%d] epoch done with loss %s', self.nb_epochs,
                      json.dumps(l_epoch_loss))
@@ -408,6 +413,7 @@ class SalienceModelCenter(Configurable):
             os.makedirs(res_dir)
 
         self.model.debug_mode(debug)
+        self.model.eval()
 
         out = open(label_out_name, 'w')
         logging.info('start predicting for [%s]', test_in_name)

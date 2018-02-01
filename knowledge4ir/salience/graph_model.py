@@ -257,7 +257,7 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
 
     def gcnn_layer(self, laplacian, gcnn_input):
         gcnn_features = torch.bmm(laplacian, gcnn_input)
-        return F.relu(self.w_cnn(gcnn_features))
+        return F.dropout(F.relu(self.w_cnn(gcnn_features)))
 
     def _softmax_feature_size(self):
         return self.K + 1

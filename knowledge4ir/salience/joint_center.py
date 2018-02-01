@@ -113,6 +113,7 @@ class JointSalienceModelCenter(SalienceModelCenter):
             os.makedirs(res_dir)
 
         self.model.debug_mode(debug)
+        self.model.eval()
 
         name, ext = os.path.splitext(label_out_name)
         label_out_name = name + "_" + self.init_time + ext
