@@ -26,6 +26,7 @@ import os
 
 import numpy as np
 import torch
+import datetime
 from traitlets import (
     Unicode,
     Int,
@@ -44,6 +45,7 @@ from knowledge4ir.salience.graph_model import (
 
     GraphCNNKernelCRF,
     ConcatGraphCNNKernelCRF,
+    ResidualGraphCNNKernelCRF,
 )
 from knowledge4ir.salience.utils.joint_data_io import EventDataIO
 
@@ -66,9 +68,17 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
             'kcrf_event_gcnn': GraphCNNKernelCRF,
             'kcrf_event_gcnn_concat': ConcatGraphCNNKernelCRF,
+            'kcrf_event_gcnn_residual': ResidualGraphCNNKernelCRF,
         }
         self.h_model.update(joint_models)
+        self.init_time = datetime.datetime.now().strftime(
+            "%Y-%m-%d_%H:%M:%S")
         super(JointSalienceModelCenter, self).__init__(**kwargs)
+
+        # entity_vocab_size is the combined size used to compute matrix sizes,
+        # so it is actually the sum of two vocab sizes.
+        self.entity_range = self.para.entity_vocab_size - \
+                            self.para.event_vocab_size
 
     def _setup_io(self, **kwargs):
         self.io_parser = EventDataIO(**kwargs)
@@ -78,6 +88,16 @@ class JointSalienceModelCenter(SalienceModelCenter):
             self._merge_para()
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
+
+    def train(self, train_in_name, validation_in_name=None,
+              model_out_name=None):
+        if not model_out_name:
+            model_out_name = train_in_name + '.model_%s' % self.model_name
+        name, ext = os.path.splitext(model_out_name)
+        model_out_name = name + "_" + self.init_time + ext
+        super(JointSalienceModelCenter, self).train(train_in_name,
+                                                    validation_in_name,
+                                                    model_out_name)
 
     def predict(self, test_in_name, label_out_name, debug=False):
         """
@@ -94,33 +114,89 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
         self.model.debug_mode(debug)
 
+        name, ext = os.path.splitext(label_out_name)
+        label_out_name = name + "_" + self.init_time + ext
+        ent_label_out_name = name + "_entity_" + self.init_time + ext
+        evm_label_out_name = name + "_event_" + self.init_time + ext
+
         out = open(label_out_name, 'w')
+        ent_out = open(ent_label_out_name, 'w')
+        evm_out = open(evm_label_out_name, 'w')
+
         logging.info('start predicting for [%s]', test_in_name)
+        logging.info('Test output will be at [%s], [%s] and [%s]',
+                     label_out_name, ent_label_out_name, evm_label_out_name)
+
         p = 0
+        ent_p = 0
+        evm_p = 0
+
         h_total_eva = dict()
+        h_total_ent_eva = dict()
+        h_total_evm_eva = dict()
         for line in open(test_in_name):
             if self.io_parser.is_empty_line(line):
                 continue
-            h_out, h_this_eva = self._per_doc_predict(line)
-            if h_out is None:
+            h_out, h_ent_out, h_evm_out, h_this_eva, h_ent_eva, h_evm_eva = \
+                self._per_doc_predict(line)
+
+            if not h_out:
                 continue
-            h_total_eva = add_svm_feature(h_total_eva, h_this_eva)
-            if debug:
-                print json.dumps(h_out)
-                import sys
-                sys.stdin.readline()
 
             print >> out, json.dumps(h_out)
+
+            if h_ent_eva:
+                ent_p += 1
+                print >> ent_out, json.dumps(h_ent_out)
+
+            if h_evm_eva:
+                evm_p += 1
+                print >> evm_out, json.dumps(h_evm_out)
+
+            h_total_eva = add_svm_feature(h_total_eva, h_this_eva)
+            h_total_ent_eva = add_svm_feature(h_total_ent_eva, h_ent_eva)
+
+            h_total_evm_eva = add_svm_feature(h_total_evm_eva, h_evm_eva)
+
             p += 1
-            h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
+
             if not p % 1000:
+                h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
+
+                h_mean_ent_eva = mutiply_svm_feature(h_total_ent_eva,
+                                                     1.0 / max(ent_p, 1.0))
+
+                h_mean_evm_eva = mutiply_svm_feature(h_total_evm_eva,
+                                                     1.0 / max(evm_p, 1.0))
+
                 logging.info('predicted [%d] docs, eva %s', p,
                              json.dumps(h_mean_eva))
+                logging.info('[%d] with entities, eva %s', ent_p,
+                             json.dumps(h_mean_ent_eva))
+                logging.info('[%d] with events, eva %s', evm_p,
+                             json.dumps(h_mean_evm_eva))
+
         h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / max(p, 1.0))
-        l_mean_eva = h_mean_eva.items()
-        l_mean_eva.sort(key=lambda item: item[0])
+        h_mean_ent_eva = mutiply_svm_feature(h_total_ent_eva,
+                                             1.0 / max(ent_p, 1.0))
+        h_mean_evm_eva = mutiply_svm_feature(h_total_evm_eva,
+                                             1.0 / max(evm_p, 1.0))
+
+        l_mean_eva = sorted(h_mean_eva.items(), key=lambda item: item[0])
+        l_mean_ent_eva = sorted(h_mean_ent_eva.items(),
+                                key=lambda item: item[0])
+        l_mean_evm_eva = sorted(h_mean_evm_eva.items(),
+                                key=lambda item: item[0])
+
         logging.info('finished predicted [%d] docs, eva %s', p,
                      json.dumps(l_mean_eva))
+        logging.info('[%d] with entities, eva %s', ent_p,
+                     json.dumps(l_mean_ent_eva))
+        logging.info('[%d] with events, eva %s', evm_p,
+                     json.dumps(l_mean_evm_eva))
+
+        self.tab_scores(h_mean_eva, h_mean_ent_eva, h_mean_evm_eva)
+
         json.dump(
             l_mean_eva,
             open(label_out_name + '.eval', 'w'),
@@ -128,6 +204,28 @@ class JointSalienceModelCenter(SalienceModelCenter):
         )
         out.close()
         return
+
+    def tab_scores(self, h_all_mean_eva, h_e_mean_eva, h_evm_mean_eva):
+        logging.info("Results to copy to Excel:")
+
+        line1 = ["p@01", "p@05", "p@10", "p@20", "auc"]
+        line2 = ["r@01", "r@05", "r@10", "r@20"]
+
+        l1_evm_scores = ["%.4f" % h_evm_mean_eva[k] for k in line1]
+        l1_ent_scores = ["%.4f" % h_e_mean_eva[k] for k in line1]
+        l1_all_scores = ["%.4f" % h_all_mean_eva[k] for k in line1]
+
+        l2_evm_scores = ["%.4f" % h_evm_mean_eva[k] for k in line2]
+        l2_ent_scores = ["%.4f" % h_e_mean_eva[k] for k in line2]
+        l2_all_scores = ["%.4f" % h_all_mean_eva[k] for k in line2]
+
+        print "\t-\t".join(l1_evm_scores) + "\t-\t-\t" + \
+              "\t".join(l1_all_scores) + "\t-\t" + \
+              "\t".join(l1_ent_scores)
+
+        print "\t-\t".join(l2_evm_scores) + "\t-\t-\t-\t-\t" + \
+              "\t".join(l2_all_scores) + "\t-\t-\t" + \
+              "\t".join(l2_ent_scores)
 
     def _per_doc_predict(self, line):
         h_info = json.loads(line)
@@ -143,37 +241,73 @@ class JointSalienceModelCenter(SalienceModelCenter):
         v_label = v_label[0].cpu()
 
         mtx_e = h_packed_data['mtx_e']
-        v_e = mtx_e[0].cpu().data.numpy().tolist()
+        l_e = mtx_e[0].cpu().data.numpy().tolist()
 
-        v_evm = []
+        l_evm = []
         if 'mtx_evm' in h_packed_data:
             mtx_evm = h_packed_data['mtx_evm']
             if mtx_evm is not None:
-                v_evm = mtx_evm[0].cpu().data.numpy().tolist()
+                l_evm = mtx_evm[0].cpu().data.numpy().tolist()
 
         output = self.model(h_packed_data).cpu()[0]
 
         pre_label = output.data.sign().type(torch.LongTensor)
         l_score = output.data.numpy().tolist()
 
+        l_e_combined = l_e + l_evm
+
         h_out = dict()
         h_out[key_name] = docno
-        l_e = v_e + v_evm
-        # l_e = [e - 1 for e in l_e]
-        h_out[self.io_parser.content_field] = {'predict': zip(l_e, l_score)}
 
-        # if self.predict_with_intermediate_res:
-        #     middle_output = \
-        #         self.model.forward_intermediate(h_packed_data).cpu()[0]
-        #     l_middle_features = middle_output.data.numpy().tolist()
-        #     h_out[self.io_parser.content_field][
-        #         'predict_features'] = zip(l_e, l_middle_features)
+        h_e_out = dict()
+        h_e_out[key_name] = docno
+
+        h_evm_out = dict()
+        h_evm_out[key_name] = docno
 
         y = v_label.data.view_as(pre_label)
+
         l_label = y.numpy().tolist()
+
+        num_entities = sum(
+            [1 if e < self.entity_range else 0 for e in l_e]
+        )
+
+        l_label_e = l_label[:num_entities]
+        l_score_e = l_score[:num_entities]
+
+        l_label_evm = l_label[num_entities:]
+        l_score_evm = l_score[num_entities:]
+        l_evm_origin = [e - self.entity_range for e in l_evm]
+
+        # Add output.
+        h_out[self.io_parser.content_field] = {
+            'predict': zip(l_e_combined, l_score)}
+
+        h_e_out[self.io_parser.content_field] = {
+            'predict': zip(l_e, l_score_e)
+        }
+
+        h_evm_out[self.io_parser.content_field] = {
+            'predict': zip(l_evm_origin, l_score_evm)
+        }
+
         h_this_eva = self.evaluator.evaluate(l_score, l_label)
+
+        if l_label_e:
+            h_entity_eva = self.evaluator.evaluate(l_score_e, l_label_e)
+        else:
+            h_entity_eva = {}
+
+        if l_label_evm:
+            h_evm_eva = self.evaluator.evaluate(l_score_evm, l_label_evm)
+        else:
+            h_evm_eva = {}
+
         h_out['eval'] = h_this_eva
-        return h_out, h_this_eva
+        h_evm_out['eval'] = h_evm_eva
+
+        return h_out, h_e_out, h_evm_out, h_this_eva, h_entity_eva, h_evm_eva
 
     def _data_io(self, l_line):
         return self.model.data_io(l_line, self.io_parser)

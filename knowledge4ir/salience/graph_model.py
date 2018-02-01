@@ -21,6 +21,8 @@ class MaskKernelCrf(LinearKernelCRF):
     def __init__(self, para, ext_data=None):
         super(MaskKernelCrf, self).__init__(para, ext_data)
         self.use_mask = para.use_mask
+        self.event_labels_only = para.event_labels_only
+
         if self.use_mask:
             logging.info('Running model with masking on empty slots.')
         else:
@@ -62,6 +64,12 @@ class MaskKernelCrf(LinearKernelCRF):
 
         mixed_knrm = torch.cat((knrm_res.unsqueeze(-1), node_score), -1)
         output = self.linear_combine(mixed_knrm).squeeze(-1)
+
+        if self.event_labels_only:
+            # mask to keep only event outputs.
+            evm_mask = h_packed_data['mtx_evm_mask']
+            output = output * evm_mask
+
         return output
 
 
@@ -71,9 +79,11 @@ class StructEventKernelCRF(MaskKNRM):
         self.embedding_dim = para.embedding_dim
         self.node_feature_dim = para.node_feature_dim
         self.node_lr = nn.Linear(self.node_feature_dim, 1, bias=False)
+
         logging.info('node feature dim %d', self.node_feature_dim)
 
         self.use_mask = para.use_mask
+        self.event_labels_only = para.event_labels_only
 
         if self.use_mask:
             logging.info('Running model with masking on empty slots.')
@@ -92,6 +102,12 @@ class StructEventKernelCRF(MaskKNRM):
         assert ts_feature.size()[-1] == self.node_feature_dim
 
         output = self.compute_score(h_packed_data)
+
+        if self.event_labels_only:
+            # mask to keep only event outputs.
+            evm_mask = h_packed_data['mtx_evm_mask']
+            output = output * evm_mask
+
         return output
 
     def event_embedding(self, mtx_evm, ts_args, mtx_arg_length, ts_arg_mask):
@@ -218,65 +234,63 @@ class AverageArgumentKernelCRF(StructEventKernelCRF):
 class GraphCNNKernelCRF(StructEventKernelCRF):
     def __init__(self, para, ext_data=None):
         super(GraphCNNKernelCRF, self).__init__(para, ext_data)
+        self.w_cnn = nn.Linear(self.K + 1, self.K + 1, bias=True)
+        if use_cuda:
+            self.w_cnn.cuda()
 
     def compute_score(self, h_packed_data):
         laplacian = h_packed_data['ts_laplacian']
+        gcnn_input = self.gcnn_input(h_packed_data)
+        gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
+        output = self.linear(gcnn_out).squeeze(-1)
+        return output
+
+    def gcnn_input(self, h_packed_data):
         mtx_e, mtx_e_mask, mtx_score, node_score = self.get_features(
             h_packed_data)
-
         if self.use_mask:
             kp_mtx = self._masked_kernel_scores(mtx_e_mask,
                                                 mtx_e, mtx_score)
         else:
             kp_mtx = self._kernel_scores(mtx_e, mtx_score)
+        return torch.cat((kp_mtx, node_score), -1)
 
-        features = torch.cat((kp_mtx, node_score), -1)
-        gcnn_features = torch.bmm(laplacian, features)
+    def gcnn_layer(self, laplacian, gcnn_input):
+        gcnn_features = torch.bmm(laplacian, gcnn_input)
+        return F.relu(self.w_cnn(gcnn_features))
 
-        if self.debug:
-            gcnn_score = self.linear(gcnn_features).squeeze(-1)
-
-            print "GCNN score"
-            print gcnn_score.cpu()
-
-            origin_score = self.linear(features).squeeze(-1)
-            print "Original score"
-            print origin_score.cpu()
-
-            diff_score = gcnn_score - origin_score
-            print 'Diff score'
-            print diff_score.cpu()
-
-        output = self.linear(gcnn_features).squeeze(-1)
-
-        return output
-
-    def _feature_size(self):
+    def _softmax_feature_size(self):
         return self.K + 1
 
 
-class ConcatGraphCNNKernelCRF(StructEventKernelCRF):
+class ResidualGraphCNNKernelCRF(GraphCNNKernelCRF):
+    def __init__(self, para, ext_data=None):
+        super(ResidualGraphCNNKernelCRF, self).__init__(para, ext_data)
+
+    def compute_score(self, h_packed_data):
+        laplacian = h_packed_data['ts_laplacian']
+        gcnn_input = self.gcnn_input(h_packed_data)
+        gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
+        full_features = gcnn_input + gcnn_out
+        output = self.linear(full_features).squeeze(-1)
+        return output
+
+    def _softmax_feature_size(self):
+        return self.K + 1
+
+
+class ConcatGraphCNNKernelCRF(GraphCNNKernelCRF):
     def __init__(self, para, ext_data=None):
         super(ConcatGraphCNNKernelCRF, self).__init__(para, ext_data)
 
     def compute_score(self, h_packed_data):
         laplacian = h_packed_data['ts_laplacian']
-        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_features(
-            h_packed_data)
-
-        if self.use_mask:
-            kp_mtx = self._masked_kernel_scores(mtx_e_mask,
-                                                mtx_e, mtx_score)
-        else:
-            kp_mtx = self._kernel_scores(mtx_e, mtx_score)
-
-        features = torch.cat((kp_mtx, node_score), -1)
-        gcnn_features = torch.bmm(laplacian, features)
-        full_features = torch.cat((features, gcnn_features), -1)
-
+        gcnn_input = self.gcnn_input(h_packed_data)
+        gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
+        full_features = torch.cat((gcnn_input, gcnn_out), -1)
         output = self.linear(full_features).squeeze(-1)
 
         return output
 
-    def _feature_size(self):
+    def _softmax_feature_size(self):
         return (self.K + 1) * 2

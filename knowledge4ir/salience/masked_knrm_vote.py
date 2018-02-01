@@ -20,7 +20,7 @@ class MaskKNRM(SalienceBaseModel):
         self.K = len(l_mu)
         self.kp = KernelPooling(l_mu, l_sigma)
         self.dropout = nn.Dropout(p=para.dropout_rate)
-        self.linear = nn.Linear(self._feature_size(), 1, bias=True)
+        self.linear = nn.Linear(self._softmax_feature_size(), 1, bias=True)
         self._load_embedding(para, ext_data)
         if use_cuda:
             logging.info('copying knrm parameter to cuda')
@@ -30,7 +30,7 @@ class MaskKNRM(SalienceBaseModel):
         self.layer = para.nb_hidden_layers
         return
 
-    def _feature_size(self):
+    def _softmax_feature_size(self):
         raise NotImplementedError
 
     def _load_embedding(self, para, ext_data):

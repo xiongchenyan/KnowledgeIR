@@ -22,6 +22,7 @@ from traitlets import (
     Int,
     Unicode,
     List,
+    Bool
 )
 import math
 
@@ -29,28 +30,26 @@ use_cuda = torch.cuda.is_available()
 
 
 class EventDataIO(DataIO):
-    event_spot_field = Unicode(EVENT_SPOT_FIELD, help='event spot field').tag(
+    event_labels_only = Bool(False, help='only read event labels').tag(
         config=True)
-    adjacent_field = Unicode(adjacent_field, help='adjacent field').tag(
-        config=True)
-    max_e_per_d = Int(200, help='max entity per doc').tag(config=True)
-    entity_vocab_size = Int(help='vocabulary size of entity').tag(config=True)
-    e_feature_dim = Int(help='entity feature dimension').tag(config=True)
-    evm_feature_dim = Int(help='event feature dimension').tag(config=True)
 
     def __init__(self, **kwargs):
         super(EventDataIO, self).__init__(**kwargs)
+        if self.event_labels_only:
+            logging.info("Will only train on event labels.")
 
     def _data_config(self):
         h_joint_target_group = {
             'event_raw': ['mtx_e', 'mtx_score', 'label'],
             'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
-            'joint_raw': ['mtx_e', 'mtx_score', 'label'],
-            'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
+            'joint_raw': ['mtx_e', 'mtx_score', 'label', 'mtx_evm_mask'],
+            'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label',
+                              'mtx_evm_mask'],
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
-                            'mtx_score', 'ts_feature', 'label', 'ts_laplacian'],
+                            'mtx_score', 'ts_feature', 'label', 'ts_laplacian',
+                            'mtx_evm_mask'],
             'joint_graph_simple': ['mtx_e', 'mtx_evm', 'ts_args',
-                                   'mtx_arg_length',
+                                   'mtx_arg_length', 'mtx_evm_mask',
                                    'mtx_score', 'ts_feature', 'label',
                                    'ts_adjacent']
         }
@@ -62,6 +61,7 @@ class EventDataIO(DataIO):
             'ts_arg_mask': {'dim': 3, 'd_type': 'Float'},
             'mtx_arg_length': {'dim': 2, 'd_type': 'Int'},
             'ts_laplacian': {'dim': 3, 'd_type': 'Float'},
+            'mtx_evm_mask': {'dim': 2, 'd_type': 'Float'},
         }
         self.h_data_meta.update(h_joint_data_meta)
 
@@ -97,6 +97,7 @@ class EventDataIO(DataIO):
             l_data.append([])
 
         h_parsed_data = dict(zip(self.l_target_data, l_data))
+
         for line in l_line:
             h_info = json.loads(line)
             if self.group_name.startswith('event'):
@@ -110,6 +111,9 @@ class EventDataIO(DataIO):
                 logging.error("Input group is not event related.")
                 raise NotImplementedError
 
+            if self.event_labels_only:
+                self._event_labels(h_this_data)
+
             for key in h_parsed_data.keys():
                 assert key in h_this_data
                 h_parsed_data[key].append(h_this_data[key])
@@ -117,6 +121,11 @@ class EventDataIO(DataIO):
         h_parsed_data = self._canonicalize_data(h_parsed_data)
 
         return h_parsed_data, h_parsed_data['label']
+
+    def _event_labels(self, h_data):
+        # Mask out entity labels.
+        h_data['label'] = [l * m for l, m in
+                           zip(h_data['label'], h_data['mtx_evm_mask'])]
 
     def _canonicalize_data(self, h_parsed_data):
         for key in h_parsed_data:
@@ -240,6 +249,8 @@ class EventDataIO(DataIO):
         ll_evm_feat = h_event_res['ts_feature']
         ll_args = h_event_res['mtx_args']
 
+        event_mask = [0] * len(l_e) + [1] * len(l_evm)
+
         # Shift event index after entities.
         l_evm = [e + self.entity_vocab_size for e in l_evm]
 
@@ -272,6 +283,7 @@ class EventDataIO(DataIO):
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
+            'mtx_evm_mask': event_mask
         }
         return h_res
 
@@ -318,6 +330,8 @@ class EventDataIO(DataIO):
         l_evm_label = h_event_res['label']
         ll_evm_feat = h_event_res['ts_feature']
 
+        event_mask = [0] * len(l_e) + [1] * len(l_evm)
+
         # shift the event id by an offset so entity and event use different ids.
         l_e_all = l_e + [e + self.entity_vocab_size for e in l_evm]
         l_tf_all = l_e_tf + l_evm_tf
@@ -335,6 +349,7 @@ class EventDataIO(DataIO):
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
+            'mtx_evm_mask': event_mask
         }
         return h_res
 
