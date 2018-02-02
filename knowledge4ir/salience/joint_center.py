@@ -40,6 +40,8 @@ from knowledge4ir.salience.center import SalienceModelCenter
 from knowledge4ir.salience.graph_model import (
     MaskKernelCrf,
 
+    FeatureConcatKernelCRF,
+
     AverageEventKernelCRF,
     AverageArgumentKernelCRF,
 
@@ -62,6 +64,8 @@ class JointSalienceModelCenter(SalienceModelCenter):
     def __init__(self, **kwargs):
         joint_models = {
             'masked_linear_kcrf': MaskKernelCrf,
+
+            'concat_linear_kcrf': FeatureConcatKernelCRF,
 
             'kcrf_event_average': AverageEventKernelCRF,
             'kcrf_args_average': AverageArgumentKernelCRF,

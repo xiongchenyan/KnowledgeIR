@@ -195,7 +195,7 @@ class StructEventKernelCRF(MaskKNRM):
         return self.embedding(mtx_evm)
 
     def compute_score(self, h_packed_data):
-        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_features(
+        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
             h_packed_data)
 
         if self.use_mask:
@@ -206,7 +206,7 @@ class StructEventKernelCRF(MaskKNRM):
                                                           node_score)
         return knrm_res
 
-    def get_features(self, h_packed_data):
+    def get_raw_features(self, h_packed_data):
         ts_feature = h_packed_data['ts_feature']
         mtx_e = h_packed_data['mtx_e']
         mtx_evm = h_packed_data['mtx_evm']
@@ -253,6 +253,38 @@ class StructEventKernelCRF(MaskKNRM):
         super(StructEventKernelCRF, self).save_model(output_name)
 
 
+class FeatureConcatKernelCRF(StructEventKernelCRF):
+    io_group = 'joint_graph_simple'
+
+    def __init__(self, para, ext_data=None):
+        super(FeatureConcatKernelCRF, self).__init__(para, ext_data)
+
+    def compute_score(self, h_packed_data):
+        adjacent = h_packed_data['ts_adjacent']
+        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
+            h_packed_data)
+
+        if self.use_mask:
+            kp_mtx = self._masked_kernel_scores(mtx_e_mask,
+                                                mtx_e, mtx_score)
+        else:
+            kp_mtx = self._kernel_scores(mtx_e, mtx_score)
+
+        features = torch.cat((kp_mtx, node_score), -1)
+        edge_features = torch.bmm(adjacent, features)
+        full_features = torch.cat((features, edge_features), -1)
+
+        output = self.linear(full_features).squeeze(-1)
+
+        return output
+
+    def _softmax_feature_size(self):
+        # return self.K + 1
+        return (self.K + 1) * 2
+
+
+# Average models don't quite work.
+
 class AverageEventKernelCRF(StructEventKernelCRF):
     def __init__(self, para, ext_data=None):
         super(AverageEventKernelCRF, self).__init__(para, ext_data)
@@ -272,6 +304,9 @@ class AverageEventKernelCRF(StructEventKernelCRF):
                 mtx_evm_embedding_sum).unsqueeze(2)
             mtx_evm_embedding_aver = mtx_evm_embedding_sum / mtx_full_length
         return mtx_evm_embedding_aver
+
+    def _softmax_feature_size(self):
+        return self.K + 1
 
 
 class AverageArgumentKernelCRF(StructEventKernelCRF):
@@ -311,7 +346,11 @@ class AverageArgumentKernelCRF(StructEventKernelCRF):
         # Non linearly combine event and argument embeddings.
         return F.tanh(self.evm_arg_linear(mtx_evm_args_cat))
 
+    def _softmax_feature_size(self):
+        return self.K + 1
 
+
+# Graph models don't quite work.
 class GraphCNNKernelCRF(StructEventKernelCRF):
     def __init__(self, para, ext_data=None):
         super(GraphCNNKernelCRF, self).__init__(para, ext_data)
@@ -321,13 +360,13 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
 
     def compute_score(self, h_packed_data):
         laplacian = h_packed_data['ts_laplacian']
-        gcnn_input = self.gcnn_input(h_packed_data)
+        gcnn_input = self.combined_features(h_packed_data)
         gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
         output = self.linear(gcnn_out).squeeze(-1)
         return output
 
-    def gcnn_input(self, h_packed_data):
-        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_features(
+    def combined_features(self, h_packed_data):
+        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
             h_packed_data)
         if self.use_mask:
             kp_mtx = self._masked_kernel_scores(mtx_e_mask,
@@ -350,7 +389,7 @@ class ResidualGraphCNNKernelCRF(GraphCNNKernelCRF):
 
     def compute_score(self, h_packed_data):
         laplacian = h_packed_data['ts_laplacian']
-        gcnn_input = self.gcnn_input(h_packed_data)
+        gcnn_input = self.combined_features(h_packed_data)
         gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
         full_features = gcnn_input + gcnn_out
         output = self.linear(full_features).squeeze(-1)
@@ -366,7 +405,7 @@ class ConcatGraphCNNKernelCRF(GraphCNNKernelCRF):
 
     def compute_score(self, h_packed_data):
         laplacian = h_packed_data['ts_laplacian']
-        gcnn_input = self.gcnn_input(h_packed_data)
+        gcnn_input = self.combined_features(h_packed_data)
         gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
         full_features = torch.cat((gcnn_input, gcnn_out), -1)
         output = self.linear(full_features).squeeze(-1)

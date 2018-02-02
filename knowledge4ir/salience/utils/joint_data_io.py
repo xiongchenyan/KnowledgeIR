@@ -60,7 +60,8 @@ class EventDataIO(DataIO):
             'ts_args': {'dim': 3, 'd_type': 'Int'},
             'ts_arg_mask': {'dim': 3, 'd_type': 'Float'},
             'mtx_arg_length': {'dim': 2, 'd_type': 'Int'},
-            'ts_laplacian': {'dim': 3, 'd_type': 'Float'},
+            # 'ts_laplacian': {'dim': 3, 'd_type': 'Float'},
+            # 'ts_adjacent': {'dim': 3, 'd_type': 'Float'},
             'mtx_evm_mask': {'dim': 2, 'd_type': 'Float'},
         }
         self.h_data_meta.update(h_joint_data_meta)
@@ -69,11 +70,13 @@ class EventDataIO(DataIO):
             'joint_raw': ['mtx_e'],
             'joint_feature': ['mtx_e'],
             'joint_graph': ['ts_args', 'mtx_e', 'mtx_evm'],
+            'joint_graph_simple': ['ts_args', 'mtx_e', 'mtx_evm'],
         }
 
         # Natural NP data. Different padding; Different conversion.
         self.h_np_data = {
-            'ts_laplacian': {'dim': 2}
+            'ts_laplacian': {'dim': 2},
+            'ts_adjacent': {'dim': 2},
         }
 
     def is_empty_line(self, line):
@@ -105,6 +108,8 @@ class EventDataIO(DataIO):
             elif self.group_name.startswith('joint'):
                 if self.group_name == 'joint_graph':
                     h_this_data = self._parse_graph(h_info)
+                elif self.group_name == 'joint_graph_simple':
+                    h_this_data = self._parse_graph(h_info, adjacent_only=True)
                 else:
                     h_this_data = self._parse_joint(h_info)
             else:
@@ -229,7 +234,7 @@ class EventDataIO(DataIO):
                 mask[index].append([0 if e == pad_value else 1 for e in row])
         return mask
 
-    def _parse_graph(self, h_info):
+    def _parse_graph(self, h_info, adjacent_only=False):
         """
         io with events and entities with their corresponding feature matrices.
         This will combine the event and entity embedding
@@ -272,39 +277,54 @@ class EventDataIO(DataIO):
         else:
             ll_feat_all = []
 
-        mtx_laplacian = self._compute_laplacian(ll_args, l_e)
-
         h_res = {
             'mtx_e': l_e,
             'mtx_evm': l_evm,
             'ts_args': ll_args,
-            'ts_laplacian': mtx_laplacian,
             'mtx_arg_length': l_arg_length,
             'mtx_score': l_tf_all,
             'ts_feature': ll_feat_all,
             'label': l_label_all,
             'mtx_evm_mask': event_mask
         }
+
+        if adjacent_only:
+            mtx_adjacent = self._compute_adjacent(ll_args, l_e)
+            h_res['ts_adjacent'] = mtx_adjacent
+        else:
+            mtx_laplacian = self._compute_laplacian(ll_args, l_e)
+            h_res['ts_laplacian'] = mtx_laplacian
+
         return h_res
 
     def _compute_adjacent(self, ll_args, l_e):
-        pass
-
-    def _compute_laplacian(self, ll_args, l_e):
         h_e = dict([(e, i) for i, e in enumerate(l_e)])
         dim = len(l_e) + len(ll_args)
 
-        # Initialize with self loop graph.
-        adjacent = np.eye(dim)
+        adjacent = np.zeros((dim, dim))
 
         # Only add self link to entities.
-        ds = [1.0] * len(l_e)
         for index, l_args in enumerate(ll_args):
             row = index + len(l_e)
             for arg in l_args:
                 # Some error in data processing cause this.
                 if arg in h_e:
                     adjacent[row, h_e[arg]] = 1
+        return adjacent
+
+    def _compute_laplacian(self, ll_args, l_e):
+        dim = len(l_e) + len(ll_args)
+
+        adjacent = self._compute_adjacent(ll_args, l_e)
+
+        # Add self loop.
+        identity = np.eye(dim)
+
+        adjacent = adjacent + identity
+
+        # Only add self link to entities.
+        ds = [1.0] * len(l_e)
+        for index, l_args in enumerate(ll_args):
             ds.append(1.0 / math.sqrt(len(l_args) + 1))
 
         rcpr_sqrt_degree = np.diag(ds)
