@@ -14,6 +14,8 @@ import json
 import torch.nn.functional as F
 import numpy as np
 
+from knowledge4ir.salience.utils.debugger import Debugger
+
 use_cuda = torch.cuda.is_available()
 
 import pickle
@@ -57,12 +59,16 @@ class MaskKernelCrf(LinearKernelCRF):
 
         # Temporary debug code.
         if self.debug:
+            base = '/media/hdd/hdd0/data/Annotated_NYT/'
+            import os
+            if not os.path.exists(base):
+                base = '/usr1/home/hector/data/Annotated_NYT/'
             entity_ids = pickle.load(open(
-                "/media/hdd/hdd0/data/Annotated_NYT/vocab/joint_emb.entity.pickle"
+                base + "vocab/joint_emb.entity.pickle"
             ))
 
             event_ids = pickle.load(open(
-                "/media/hdd/hdd0/data/Annotated_NYT/vocab/joint_emb.event.pickle"
+                base + "vocab/joint_emb.event.pickle"
             ))
 
             h_ent = dict([(v, k) for k, v in entity_ids.items()])
@@ -79,65 +85,11 @@ class MaskKernelCrf(LinearKernelCRF):
 
             # Temporary debug code.
             if self.debug:
-                target_emb = nn.functional.normalize(mtx_masked_embedding, p=2,
-                                                     dim=-1)
-
-                trans_mtx = torch.matmul(target_emb,
-                                         target_emb.transpose(-2, -1))
-
-                import sys
-                for i in range(mtx_e.size()[0]):
-                    print 'Next document.'
-                    row = mtx_e[i]
-                    nodes = row.cpu().data.numpy().tolist()
-                    entities = [h_ent[n] for n in nodes if n < entity_range]
-                    events = [h_evm[n - entity_range] for n in nodes if
-                              n >= entity_range]
-                    num_ent = len(entities)
-                    voting_scores = trans_mtx[i]
-
-                    event_voting_scores = voting_scores[
-                                          num_ent:].cpu().data.numpy()
-                    event_kernel_scores = kp_mtx[i][
-                                          num_ent:].cpu().data.numpy().tolist()
-                    event_final_scores = knrm_res[i][
-                                         num_ent:].cpu().data.numpy()
-
-                    topk = event_final_scores.argpartition(-10)[-10:].tolist()
-                    topk.reverse()
-
-                    # print [events[k] for k in topk]
-                    # print [event_kernel_scores[k] for k in topk]
-                    # print [event_final_scores.tolist()[k] for k in topk]
-                    print event_final_scores[topk]
-                    for k in topk:
-                        print 'Showing: ' + events[k]
-                        print event_final_scores[k]
-                        print event_kernel_scores[k]
-                        votes = event_voting_scores[k]
-
-                        top_votes = votes.argpartition(-20)[-20:].tolist()
-                        bottom_votes = votes.argpartition(10)[:10].tolist()
-
-                        top_votes_node = [
-                            h_evm[nodes[n] - entity_range] if n >= num_ent else
-                            h_ent[nodes[n]] for n in top_votes
-                        ]
-
-                        bottom_votes_node = [
-                            h_evm[nodes[n] - entity_range] if n >= num_ent else
-                            h_ent[nodes[n]] for n in bottom_votes
-                        ]
-
-                        print 'top votes'
-                        print votes[top_votes]
-                        print top_votes_node
-
-                        print 'bottom votes'
-                        print bottom_votes_node
-                        print votes[bottom_votes]
-
-                        sys.stdin.readline()
+                Debugger.show_evidence(
+                    mtx_e, mtx_masked_embedding,
+                    h_ent, h_evm, entity_range,
+                    kp_mtx, knrm_res
+                )
             # Temporary debug code.
 
         else:
@@ -251,6 +203,65 @@ class StructEventKernelCRF(MaskKNRM):
         logging.info('saving knrm embedding and linear weights to [%s]',
                      output_name)
         super(StructEventKernelCRF, self).save_model(output_name)
+
+
+class StackedEventKernelCRF(StructEventKernelCRF):
+    def __init__(self, para, ext_data=None):
+        super(StackedEventKernelCRF, self).__init__(para, ext_data)
+
+    def compute_score(self, h_packed_data):
+        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
+            h_packed_data)
+
+        normalized_emb = nn.functional.normalize(mtx_e, p=2, dim=-1)
+        trans_mtx = torch.matmul(normalized_emb,
+                                 normalized_emb.transpose(-2, -1))
+
+
+
+        if self.use_mask:
+            kp_mtx = self._masked_kernel_scores(mtx_e_mask,
+                                                mtx_e, mtx_score)
+        else:
+            kp_mtx = self._kernel_scores(mtx_e, mtx_score)
+
+        if self.use_mask:
+            knrm_res = self._forward_kernel_with_mask_and_features(
+                mtx_e_mask, mtx_e, mtx_score, node_score)
+        else:
+            knrm_res = self._forward_kernel_with_features(mtx_e, mtx_score,
+                                                          node_score)
+        return knrm_res
+
+    def get_raw_features(self, h_packed_data):
+        ts_feature = h_packed_data['ts_feature']
+        mtx_e = h_packed_data['mtx_e']
+        mtx_evm = h_packed_data['mtx_evm']
+
+        masks = h_packed_data['masks']
+        mtx_e_mask = masks['mtx_e']
+        mtx_evm_mask = masks['mtx_evm']
+
+        mtx_e_embedding = self.embedding(mtx_e)
+        if mtx_evm is None:
+            # For documents without events.
+            combined_mtx_e = mtx_e_embedding
+            combined_mtx_e_mask = mtx_e_mask
+        else:
+            ts_args = h_packed_data['ts_args']
+            mtx_arg_length = h_packed_data['mtx_arg_length']
+            ts_arg_mask = masks['ts_args']
+            mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
+                                                     mtx_arg_length,
+                                                     ts_arg_mask)
+
+            combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
+            combined_mtx_e_mask = torch.cat((mtx_e_mask, mtx_evm_mask), 1)
+
+        node_score = F.tanh(self.node_lr(ts_feature))
+        mtx_score = h_packed_data['mtx_score']
+
+        return combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score
 
 
 class FeatureConcatKernelCRF(StructEventKernelCRF):
