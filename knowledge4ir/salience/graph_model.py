@@ -74,6 +74,7 @@ class MaskKernelCrf(LinearKernelCRF):
             h_ent = dict([(v, k) for k, v in entity_ids.items()])
             h_evm = dict([(v, k) for k, v in event_ids.items()])
             entity_range = 723749
+
         # Temporary debug code.
 
         if self.use_mask:
@@ -212,6 +213,10 @@ class StackedEventKernelCRF(StructEventKernelCRF):
     def compute_score(self, h_packed_data):
         mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
             h_packed_data)
+
+        adjacent = h_packed_data['ts_adjacent']
+
+
 
         normalized_emb = nn.functional.normalize(mtx_e, p=2, dim=-1)
         trans_mtx = torch.matmul(normalized_emb,
