@@ -206,6 +206,75 @@ class StructEventKernelCRF(MaskKNRM):
         super(StructEventKernelCRF, self).save_model(output_name)
 
 
+class DualSimilarityEventKernelCRF(StructEventKernelCRF):
+    def __init__(self, para, ext_data=None):
+        super(DualSimilarityEventKernelCRF, self).__init__(para, ext_data)
+        l_mu, l_sigma = para.form_kernels()
+        self.K_args = len(l_mu)
+        self.kp_args = KernelPooling(l_mu, l_sigma)
+        if use_cuda:
+            self.kp_args.cuda()
+
+    def compute_score(self, h_packed_data):
+        mtx_evm = h_packed_data['mtx_evm']
+
+        if mtx_evm is not None:
+            # Step 1, get argument embeddings.
+
+            masks = h_packed_data['masks']
+            ts_args = h_packed_data['ts_args']
+            mtx_arg_length = h_packed_data['mtx_arg_length']
+            ts_arg_mask = masks['ts_args']
+
+            mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
+                h_packed_data)
+
+            mtx_p_embedding = self.embedding(mtx_evm)
+            mtx_arg_emb = self.argument_vector(mtx_p_embedding, ts_args,
+                                               ts_arg_mask, mtx_arg_length)
+
+            # Step 2, get argument kernel matrix.
+            kp_arg_mtx = self.__arg_kernel_vote(mtx_arg_emb, mtx_arg_emb,
+                                                mtx_score)
+            kp_mtx = self.__kernel_vote(mtx_p_embedding, mtx_p_embedding,
+                                        mtx_score)
+
+            features = torch.cat((kp_mtx, kp_arg_mtx, node_score), -1)
+            output = self.linear(features).squeeze(-1)
+
+            return output
+
+    def argument_vector(self, mtx_p_embedding, ts_args, ts_arg_mask,
+                        mtx_arg_length):
+        if ts_args is None:
+            mtx_arg_emb = torch.zeros(mtx_p_embedding.size())
+            if use_cuda:
+                mtx_arg_emb = mtx_arg_emb.cuda()
+        else:
+            mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)
+
+            # Remove zero lengths.
+            mtx_arg_length[mtx_arg_length == 0] = 1
+
+            broadcast_length = mtx_arg_length.unsqueeze(2).type_as(
+                mtx_arg_embedding_sum)
+            # Average argument embedding.
+            mtx_arg_emb = mtx_arg_embedding_sum / broadcast_length
+
+        return mtx_arg_emb
+
+    def __arg_kernel_vote(self, target_emb, voter_emb, voter_score):
+        target_emb = nn.functional.normalize(target_emb, p=2, dim=-1)
+        voter_emb = nn.functional.normalize(voter_emb, p=2, dim=-1)
+
+        trans_mtx = torch.matmul(target_emb, voter_emb.transpose(-2, -1))
+        trans_mtx = self.dropout(trans_mtx)
+        return self.kp(trans_mtx, voter_score)
+
+    def _softmax_feature_size(self):
+        return self.K + self.K_args + 1
+
+
 class StackedEventKernelCRF(StructEventKernelCRF):
     def __init__(self, para, ext_data=None):
         super(StackedEventKernelCRF, self).__init__(para, ext_data)
@@ -216,13 +285,9 @@ class StackedEventKernelCRF(StructEventKernelCRF):
 
         adjacent = h_packed_data['ts_adjacent']
 
-
-
         normalized_emb = nn.functional.normalize(mtx_e, p=2, dim=-1)
         trans_mtx = torch.matmul(normalized_emb,
                                  normalized_emb.transpose(-2, -1))
-
-
 
         if self.use_mask:
             kp_mtx = self._masked_kernel_scores(mtx_e_mask,
@@ -299,7 +364,7 @@ class FeatureConcatKernelCRF(StructEventKernelCRF):
         return (self.K + 1) * 2
 
 
-# Average models don't quite work.
+# Average embedding models don't quite work.
 
 class AverageEventKernelCRF(StructEventKernelCRF):
     def __init__(self, para, ext_data=None):
