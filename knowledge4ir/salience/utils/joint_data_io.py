@@ -46,7 +46,7 @@ class EventDataIO(DataIO):
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label',
                               'mtx_evm_mask'],
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
-                            'mtx_score', 'ts_feature', 'label', 'ts_laplacian',
+                            'mtx_score', 'ts_feature', 'label', 'ts_adjacent',
                             'mtx_evm_mask'],
             'joint_graph_simple': ['mtx_e', 'mtx_evm', 'ts_args',
                                    'mtx_arg_length', 'mtx_evm_mask',
@@ -60,8 +60,6 @@ class EventDataIO(DataIO):
             'ts_args': {'dim': 3, 'd_type': 'Int'},
             'ts_arg_mask': {'dim': 3, 'd_type': 'Float'},
             'mtx_arg_length': {'dim': 2, 'd_type': 'Int'},
-            # 'ts_laplacian': {'dim': 3, 'd_type': 'Float'},
-            # 'ts_adjacent': {'dim': 3, 'd_type': 'Float'},
             'mtx_evm_mask': {'dim': 2, 'd_type': 'Float'},
         }
         self.h_data_meta.update(h_joint_data_meta)
@@ -75,7 +73,6 @@ class EventDataIO(DataIO):
 
         # Natural NP data. Different padding; Different conversion.
         self.h_np_data = {
-            'ts_laplacian': {'dim': 2},
             'ts_adjacent': {'dim': 2},
         }
 
@@ -107,9 +104,11 @@ class EventDataIO(DataIO):
                 h_this_data, _ = self._parse_event(h_info)
             elif self.group_name.startswith('joint'):
                 if self.group_name == 'joint_graph':
-                    h_this_data = self._parse_graph(h_info)
+                    h_this_data = self._parse_graph(h_info,
+                                                    adjacent_type='symmetric')
                 elif self.group_name == 'joint_graph_simple':
-                    h_this_data = self._parse_graph(h_info, adjacent_only=True)
+                    h_this_data = self._parse_graph(h_info,
+                                                    adjacent_type='average')
                 else:
                     h_this_data = self._parse_joint(h_info)
             else:
@@ -234,7 +233,7 @@ class EventDataIO(DataIO):
                 mask[index].append([0 if e == pad_value else 1 for e in row])
         return mask
 
-    def _parse_graph(self, h_info, adjacent_only=False):
+    def _parse_graph(self, h_info, adjacent_type='average'):
         """
         io with events and entities with their corresponding feature matrices.
         This will combine the event and entity embedding
@@ -288,12 +287,12 @@ class EventDataIO(DataIO):
             'mtx_evm_mask': event_mask
         }
 
-        if adjacent_only:
-            mtx_adjacent = self._compute_adjacent(ll_args, l_e)
-            h_res['ts_adjacent'] = mtx_adjacent
+        if adjacent_type == 'average':
+            mtx_adjacent = self._average_adjacent(ll_args, l_e)
         else:
-            mtx_laplacian = self._compute_laplacian(ll_args, l_e)
-            h_res['ts_laplacian'] = mtx_laplacian
+            mtx_adjacent = self._symmetric_self_loop_adjacent(ll_args, l_e)
+
+        h_res['ts_adjacent'] = mtx_adjacent
 
         return h_res
 
@@ -312,7 +311,22 @@ class EventDataIO(DataIO):
                     adjacent[row, h_e[arg]] = 1
         return adjacent
 
-    def _compute_laplacian(self, ll_args, l_e):
+    def _average_adjacent(self, ll_args, l_e):
+        # A_aver = D^-1 * A
+        dim = len(l_e) + len(ll_args)
+        adjacent = self._compute_adjacent(ll_args, l_e)
+
+        # The degree matrix contains at least 1 (not plus 1).
+        # This allow the average to work, and no zero divisions.
+        ds = [1.0] * len(l_e)
+        for index, l_args in enumerate(ll_args):
+            ds.append(1 / len(l_args) if l_args else 1)
+
+        rcpr_degree = np.diag(ds)
+        return rcpr_degree * adjacent
+
+    def _symmetric_self_loop_adjacent(self, ll_args, l_e):
+        # A_sym = D^-1/2 * A * D^-1/2
         dim = len(l_e) + len(ll_args)
 
         adjacent = self._compute_adjacent(ll_args, l_e)
@@ -322,12 +336,17 @@ class EventDataIO(DataIO):
 
         adjacent = adjacent + identity
 
-        # Only add self link to entities.
+        # Link degrees also consider self links, which ensures that the
+        # reciprocal exists.
+
+        # Part 1: the entities are only contains self links.
         ds = [1.0] * len(l_e)
+
+        # Part 2: the events have arguments.
         for index, l_args in enumerate(ll_args):
             ds.append(1.0 / math.sqrt(len(l_args) + 1))
-
         rcpr_sqrt_degree = np.diag(ds)
+
         return rcpr_sqrt_degree * adjacent * rcpr_sqrt_degree
 
     def _parse_joint(self, h_info):

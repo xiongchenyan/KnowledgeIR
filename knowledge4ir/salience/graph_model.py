@@ -271,6 +271,7 @@ class FeatureConcatKernelCRF(StructEventKernelCRF):
             kp_mtx = self._kernel_scores(mtx_e, mtx_score)
 
         features = torch.cat((kp_mtx, node_score), -1)
+
         edge_features = torch.bmm(adjacent, features)
         full_features = torch.cat((features, edge_features), -1)
 
@@ -279,7 +280,6 @@ class FeatureConcatKernelCRF(StructEventKernelCRF):
         return output
 
     def _softmax_feature_size(self):
-        # return self.K + 1
         return (self.K + 1) * 2
 
 
@@ -359,9 +359,9 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
             self.w_cnn.cuda()
 
     def compute_score(self, h_packed_data):
-        laplacian = h_packed_data['ts_laplacian']
+        adjacent = h_packed_data['ts_adjacent']
         gcnn_input = self.combined_features(h_packed_data)
-        gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
+        gcnn_out = self.gcnn_layer(adjacent, gcnn_input)
         output = self.linear(gcnn_out).squeeze(-1)
         return output
 
@@ -375,8 +375,8 @@ class GraphCNNKernelCRF(StructEventKernelCRF):
             kp_mtx = self._kernel_scores(mtx_e, mtx_score)
         return torch.cat((kp_mtx, node_score), -1)
 
-    def gcnn_layer(self, laplacian, gcnn_input):
-        gcnn_features = torch.bmm(laplacian, gcnn_input)
+    def gcnn_layer(self, adjacent, gcnn_input):
+        gcnn_features = torch.bmm(adjacent, gcnn_input)
         return F.dropout(F.relu(self.w_cnn(gcnn_features)))
 
     def _softmax_feature_size(self):
@@ -388,9 +388,9 @@ class ResidualGraphCNNKernelCRF(GraphCNNKernelCRF):
         super(ResidualGraphCNNKernelCRF, self).__init__(para, ext_data)
 
     def compute_score(self, h_packed_data):
-        laplacian = h_packed_data['ts_laplacian']
+        adjacent = h_packed_data['ts_adjacent']
         gcnn_input = self.combined_features(h_packed_data)
-        gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
+        gcnn_out = self.gcnn_layer(adjacent, gcnn_input)
         full_features = gcnn_input + gcnn_out
         output = self.linear(full_features).squeeze(-1)
         return output
@@ -404,9 +404,9 @@ class ConcatGraphCNNKernelCRF(GraphCNNKernelCRF):
         super(ConcatGraphCNNKernelCRF, self).__init__(para, ext_data)
 
     def compute_score(self, h_packed_data):
-        laplacian = h_packed_data['ts_laplacian']
+        adjacent = h_packed_data['ts_adjacent']
         gcnn_input = self.combined_features(h_packed_data)
-        gcnn_out = self.gcnn_layer(laplacian, gcnn_input)
+        gcnn_out = self.gcnn_layer(adjacent, gcnn_input)
         full_features = torch.cat((gcnn_input, gcnn_out), -1)
         output = self.linear(full_features).squeeze(-1)
 
