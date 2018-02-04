@@ -42,6 +42,8 @@ from knowledge4ir.salience.graph_model import (
 
     FeatureConcatKernelCRF,
 
+    DualSimilarityEventKernelCRF,
+
     AverageEventKernelCRF,
     AverageArgumentKernelCRF,
 
@@ -64,6 +66,8 @@ class JointSalienceModelCenter(SalienceModelCenter):
     def __init__(self, **kwargs):
         joint_models = {
             'masked_linear_kcrf': MaskKernelCrf,
+
+            'dual_similarity_kcrf': DualSimilarityEventKernelCRF,
 
             'concat_linear_kcrf': FeatureConcatKernelCRF,
 

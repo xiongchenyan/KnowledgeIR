@@ -190,15 +190,14 @@ class StructEventKernelCRF(MaskKNRM):
         return combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score
 
     def _argument_sum(self, ts_args, ts_arg_mask):
-        l_evm_embedding = []
+        l_arg_embedding = []
 
         for mtx_args, mask in zip(ts_args, ts_arg_mask):
             mtx_args_embedding = self.embedding(mtx_args)
             masked_embedding = mtx_args_embedding * mask.unsqueeze(-1)
             arg_embedding_sum = masked_embedding.sum(1)
-            l_evm_embedding.append(arg_embedding_sum)
-
-        return torch.stack(l_evm_embedding)
+            l_arg_embedding.append(arg_embedding_sum)
+        return torch.stack(l_arg_embedding)
 
     def save_model(self, output_name):
         logging.info('saving knrm embedding and linear weights to [%s]',
@@ -208,102 +207,14 @@ class StructEventKernelCRF(MaskKNRM):
 
 class DualSimilarityEventKernelCRF(StructEventKernelCRF):
     def __init__(self, para, ext_data=None):
-        super(DualSimilarityEventKernelCRF, self).__init__(para, ext_data)
         l_mu, l_sigma = para.form_kernels()
         self.K_args = len(l_mu)
+        super(DualSimilarityEventKernelCRF, self).__init__(para, ext_data)
         self.kp_args = KernelPooling(l_mu, l_sigma)
         if use_cuda:
             self.kp_args.cuda()
 
     def compute_score(self, h_packed_data):
-        mtx_evm = h_packed_data['mtx_evm']
-
-        if mtx_evm is not None:
-            # Step 1, get argument embeddings.
-
-            masks = h_packed_data['masks']
-            ts_args = h_packed_data['ts_args']
-            mtx_arg_length = h_packed_data['mtx_arg_length']
-            ts_arg_mask = masks['ts_args']
-
-            mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
-                h_packed_data)
-
-            mtx_p_embedding = self.embedding(mtx_evm)
-            mtx_arg_emb = self.argument_vector(mtx_p_embedding, ts_args,
-                                               ts_arg_mask, mtx_arg_length)
-
-            # Step 2, get argument kernel matrix.
-            kp_arg_mtx = self.__arg_kernel_vote(mtx_arg_emb, mtx_arg_emb,
-                                                mtx_score)
-            kp_mtx = self.__kernel_vote(mtx_p_embedding, mtx_p_embedding,
-                                        mtx_score)
-
-            features = torch.cat((kp_mtx, kp_arg_mtx, node_score), -1)
-            output = self.linear(features).squeeze(-1)
-
-            return output
-
-    def argument_vector(self, mtx_p_embedding, ts_args, ts_arg_mask,
-                        mtx_arg_length):
-        if ts_args is None:
-            mtx_arg_emb = torch.zeros(mtx_p_embedding.size())
-            if use_cuda:
-                mtx_arg_emb = mtx_arg_emb.cuda()
-        else:
-            mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)
-
-            # Remove zero lengths.
-            mtx_arg_length[mtx_arg_length == 0] = 1
-
-            broadcast_length = mtx_arg_length.unsqueeze(2).type_as(
-                mtx_arg_embedding_sum)
-            # Average argument embedding.
-            mtx_arg_emb = mtx_arg_embedding_sum / broadcast_length
-
-        return mtx_arg_emb
-
-    def __arg_kernel_vote(self, target_emb, voter_emb, voter_score):
-        target_emb = nn.functional.normalize(target_emb, p=2, dim=-1)
-        voter_emb = nn.functional.normalize(voter_emb, p=2, dim=-1)
-
-        trans_mtx = torch.matmul(target_emb, voter_emb.transpose(-2, -1))
-        trans_mtx = self.dropout(trans_mtx)
-        return self.kp(trans_mtx, voter_score)
-
-    def _softmax_feature_size(self):
-        return self.K + self.K_args + 1
-
-
-class StackedEventKernelCRF(StructEventKernelCRF):
-    def __init__(self, para, ext_data=None):
-        super(StackedEventKernelCRF, self).__init__(para, ext_data)
-
-    def compute_score(self, h_packed_data):
-        mtx_e, mtx_e_mask, mtx_score, node_score = self.get_raw_features(
-            h_packed_data)
-
-        adjacent = h_packed_data['ts_adjacent']
-
-        normalized_emb = nn.functional.normalize(mtx_e, p=2, dim=-1)
-        trans_mtx = torch.matmul(normalized_emb,
-                                 normalized_emb.transpose(-2, -1))
-
-        if self.use_mask:
-            kp_mtx = self._masked_kernel_scores(mtx_e_mask,
-                                                mtx_e, mtx_score)
-        else:
-            kp_mtx = self._kernel_scores(mtx_e, mtx_score)
-
-        if self.use_mask:
-            knrm_res = self._forward_kernel_with_mask_and_features(
-                mtx_e_mask, mtx_e, mtx_score, node_score)
-        else:
-            knrm_res = self._forward_kernel_with_features(mtx_e, mtx_score,
-                                                          node_score)
-        return knrm_res
-
-    def get_raw_features(self, h_packed_data):
         ts_feature = h_packed_data['ts_feature']
         mtx_e = h_packed_data['mtx_e']
         mtx_evm = h_packed_data['mtx_evm']
@@ -312,26 +223,73 @@ class StackedEventKernelCRF(StructEventKernelCRF):
         mtx_e_mask = masks['mtx_e']
         mtx_evm_mask = masks['mtx_evm']
 
+        mtx_score = h_packed_data['mtx_score']
+
         mtx_e_embedding = self.embedding(mtx_e)
+        node_score = F.tanh(self.node_lr(ts_feature))
+
         if mtx_evm is None:
             # For documents without events.
             combined_mtx_e = mtx_e_embedding
             combined_mtx_e_mask = mtx_e_mask
+            mtx_arg_emb = torch.zeros(combined_mtx_e.size())
+            if use_cuda:
+                mtx_arg_emb = mtx_arg_emb.cuda()
         else:
             ts_args = h_packed_data['ts_args']
             mtx_arg_length = h_packed_data['mtx_arg_length']
             ts_arg_mask = masks['ts_args']
-            mtx_evm_embedding = self.event_embedding(mtx_evm, ts_args,
-                                                     mtx_arg_length,
-                                                     ts_arg_mask)
+            mtx_evm_embedding = self.embedding(mtx_evm)
 
             combined_mtx_e = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
             combined_mtx_e_mask = torch.cat((mtx_e_mask, mtx_evm_mask), 1)
 
-        node_score = F.tanh(self.node_lr(ts_feature))
-        mtx_score = h_packed_data['mtx_score']
+            # get argument embeddings.
+            mtx_arg_emb = self.argument_vector(mtx_e_embedding,
+                                               ts_args,
+                                               ts_arg_mask,
+                                               mtx_arg_length)
 
-        return combined_mtx_e, combined_mtx_e_mask, mtx_score, node_score
+        # get two kernel matrix and combined.
+        if self.use_mask:
+            kp_mtx = self._masked_kernel_scores(combined_mtx_e_mask,
+                                                combined_mtx_e, mtx_score)
+            mtx_arg_emb = mtx_arg_emb * combined_mtx_e_mask.unsqueeze(-1)
+        else:
+            kp_mtx = self._kernel_scores(mtx_e, mtx_score)
+
+        kp_arg_mtx = self.__arg_kernel_vote(mtx_arg_emb, mtx_score)
+
+        features = torch.cat((kp_mtx, kp_arg_mtx, node_score), -1)
+        output = self.linear(features).squeeze(-1)
+
+        return output
+
+    def argument_vector(self, mtx_e_embedding, ts_args, ts_arg_mask, mtx_arg_length):
+        # We consider the entities are arguments of their own.
+
+        if ts_args is not None:
+            mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)
+
+            # Remove zero lengths before division.
+            mtx_arg_length[mtx_arg_length == 0] = 1
+
+            broadcast_length = mtx_arg_length.unsqueeze(2).type_as(
+                mtx_arg_embedding_sum)
+            # Average argument embedding.
+            mtx_arg_emb = mtx_arg_embedding_sum / broadcast_length
+            return torch.cat([mtx_e_embedding, mtx_arg_emb], 1)
+        else:
+            return mtx_e_embedding
+
+    def __arg_kernel_vote(self, arg_emb, voter_score):
+        arg_emb = nn.functional.normalize(arg_emb, p=2, dim=-1)
+        trans_mtx = torch.matmul(arg_emb, arg_emb.transpose(-2, -1))
+        trans_mtx = self.dropout(trans_mtx)
+        return self.kp_args(trans_mtx, voter_score)
+
+    def _softmax_feature_size(self):
+        return self.K + self.K_args + 1
 
 
 class FeatureConcatKernelCRF(StructEventKernelCRF):
@@ -353,6 +311,8 @@ class FeatureConcatKernelCRF(StructEventKernelCRF):
 
         features = torch.cat((kp_mtx, node_score), -1)
 
+        # These features are the kernelized voting to the related entities.
+        # I think putting them together with the events are making the kernels confusing.
         edge_features = torch.bmm(adjacent, features)
         full_features = torch.cat((features, edge_features), -1)
 
@@ -405,20 +365,18 @@ class AverageArgumentKernelCRF(StructEventKernelCRF):
         mtx_p_embedding = self.embedding(mtx_evm)
 
         if ts_args is None:
+            # This is actually wrong, you cannot simulate the embedding with zeros.
             mtx_arg = torch.zeros(mtx_p_embedding.size())
             if use_cuda:
                 mtx_arg = mtx_arg.cuda()
         else:
             mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)
-
             # Remove zero lengths.
             mtx_arg_length[mtx_arg_length == 0] = 1
-
             broadcast_length = mtx_arg_length.unsqueeze(2).type_as(
                 mtx_arg_embedding_sum)
             # Average argument embedding.
             mtx_arg_embedding_aver = mtx_arg_embedding_sum / broadcast_length
-
             # Non linearly map the argument embeddings.
             mtx_arg = F.tanh(self.args_linear(mtx_arg_embedding_aver))
 
