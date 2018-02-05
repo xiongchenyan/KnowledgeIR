@@ -48,19 +48,28 @@ class EventDataIO(DataIO):
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
                             'mtx_score', 'ts_feature', 'label', 'ts_adjacent',
                             'mtx_evm_mask'],
-            'joint_graph_simple': ['mtx_e', 'mtx_evm', 'ts_args',
-                                   'mtx_arg_length', 'mtx_evm_mask',
-                                   'mtx_score', 'ts_feature', 'label',
-                                   'ts_adjacent']
+            'joint_graph_symmetric': ['mtx_e', 'mtx_evm', 'ts_args',
+                                      'mtx_arg_length', 'mtx_evm_mask',
+                                      'mtx_score', 'ts_feature', 'label',
+                                      'ts_adjacent'],
+            'joint_graph_detail': ['mtx_e', 'mtx_evm', 'ts_args',
+                                   'mtx_arg_length', 'mtx_e_score',
+                                   'mtx_evm_score', 'ts_e_feature',
+                                   'ts_evm_feature', 'label', 'ts_adjacent'
+                                   ]
         }
         self.h_target_group.update(h_joint_target_group)
 
         h_joint_data_meta = {
             'mtx_evm': {'dim': 2, 'd_type': 'Int'},
+            'mtx_e_score': {'dim': 2, 'd_type': 'Float'},
+            'mtx_evm_score': {'dim': 2, 'd_type': 'Float'},
             'ts_args': {'dim': 3, 'd_type': 'Int'},
             'ts_arg_mask': {'dim': 3, 'd_type': 'Float'},
             'mtx_arg_length': {'dim': 2, 'd_type': 'Int'},
             'mtx_evm_mask': {'dim': 2, 'd_type': 'Float'},
+            'ts_e_feature': {'dim': 3, 'd_type': 'Float'},
+            'ts_evm_feature': {'dim': 3, 'd_type': 'Float'},
         }
         self.h_data_meta.update(h_joint_data_meta)
 
@@ -69,6 +78,7 @@ class EventDataIO(DataIO):
             'joint_feature': ['mtx_e'],
             'joint_graph': ['ts_args', 'mtx_e', 'mtx_evm'],
             'joint_graph_simple': ['ts_args', 'mtx_e', 'mtx_evm'],
+            'joint_graph_detail': ['ts_args', 'mtx_e', 'mtx_evm'],
         }
 
         # Natural NP data. Different padding; Different conversion.
@@ -109,6 +119,8 @@ class EventDataIO(DataIO):
                 elif self.group_name == 'joint_graph_simple':
                     h_this_data = self._parse_graph(h_info,
                                                     adjacent_type='average')
+                elif self.group_name == 'joint_graph_detail':
+                    h_this_data = self._parse_graph(h_info, detailed=True)
                 else:
                     h_this_data = self._parse_joint(h_info)
             else:
@@ -233,7 +245,7 @@ class EventDataIO(DataIO):
                 mask[index].append([0 if e == pad_value else 1 for e in row])
         return mask
 
-    def _parse_graph(self, h_info, adjacent_type='average'):
+    def _parse_graph(self, h_info, detailed=False, adjacent_type='average'):
         """
         io with events and entities with their corresponding feature matrices.
         This will combine the event and entity embedding
@@ -276,16 +288,29 @@ class EventDataIO(DataIO):
         else:
             ll_feat_all = []
 
-        h_res = {
-            'mtx_e': l_e,
-            'mtx_evm': l_evm,
-            'ts_args': ll_args,
-            'mtx_arg_length': l_arg_length,
-            'mtx_score': l_tf_all,
-            'ts_feature': ll_feat_all,
-            'label': l_label_all,
-            'mtx_evm_mask': event_mask
-        }
+        if detailed:
+            h_res = {
+                'mtx_e': l_e,
+                'mtx_evm': l_evm,
+                'ts_args': ll_args,
+                'mtx_arg_length': l_arg_length,
+                'mtx_e_score': l_e_tf,
+                'mtx_evm_score': l_evm_tf,
+                'ts_e_feature': ll_e_feat,
+                'ts_evm_feature': ll_evm_feat,
+                'label': l_label_all,
+            }
+        else:
+            h_res = {
+                'mtx_e': l_e,
+                'mtx_evm': l_evm,
+                'ts_args': ll_args,
+                'mtx_arg_length': l_arg_length,
+                'mtx_score': l_tf_all,
+                'ts_feature': ll_feat_all,
+                'label': l_label_all,
+                'mtx_evm_mask': event_mask
+            }
 
         if adjacent_type == 'average':
             mtx_adjacent = self._average_adjacent(ll_args, l_e)
