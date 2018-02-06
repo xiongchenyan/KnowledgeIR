@@ -104,7 +104,7 @@ class SalienceModelCenter(Configurable):
     max_e_per_doc = Int(200, help='max e per doc')
 
     # The following 3 configs should be deprecated with the old io.
-    event_model = Bool(False, help='Run event model').tag(config=True)
+    # event_model = Bool(False, help='Run event model').tag(config=True)
     joint_model = Bool(False, help='Run joint model').tag(config=True)
     # input_format = Unicode(help='overwrite input format: raw | featured').tag(
     #     config=True)
@@ -180,9 +180,9 @@ class SalienceModelCenter(Configurable):
         self.criterion = h_loss[self.loss_func]
         self.class_weight = torch.cuda.FloatTensor(self.l_class_weights)
 
-        if self.event_model and self.joint_model:
-            logging.error("Please specify one mode only.")
-            exit(1)
+        # if self.event_model and self.joint_model:
+        #     logging.error("Please specify one mode only.")
+        #     exit(1)
 
         self.evaluator = SalienceEva(**kwargs)
         self._init_model()
@@ -259,6 +259,8 @@ class SalienceModelCenter(Configurable):
         )
         l_epoch_loss = []
         for epoch in xrange(self.nb_epochs):
+            self._epoch_start()
+
             p = 0
             total_loss = 0
             data_cnt = 0
@@ -315,6 +317,8 @@ class SalienceModelCenter(Configurable):
                 epoch, total_loss / p, p, data_cnt)
             l_epoch_loss.append(total_loss / p)
 
+            self._epoch_end()
+
             # validation
             if validation_in_name:
                 self.model.eval()
@@ -331,6 +335,12 @@ class SalienceModelCenter(Configurable):
             logging.info('Torch saving model to [%s]', model_out_name)
             torch.save(self.model, model_out_name)
         return
+
+    def _epoch_start(self):
+        pass
+
+    def _epoch_end(self):
+        pass
 
     def _init_early_stopper(self, validation_in_name):
         self.patient_cnt = 0

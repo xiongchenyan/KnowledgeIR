@@ -59,6 +59,8 @@ class NNPara(Configurable):
                                 'to receive vote in edge sparse knrm'
                            ).tag(config=True)
 
+
+
     def form_kernels(self):
         l_mu = [1.0]
         l_sigma = [1e-3]

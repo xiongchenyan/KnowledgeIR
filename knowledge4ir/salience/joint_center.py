@@ -62,6 +62,9 @@ use_cuda = torch.cuda.is_available()
 
 
 class JointSalienceModelCenter(SalienceModelCenter):
+    multi_output = Bool(False, help='whether there are multiple output').tag(
+        config=True
+    )
 
     def __init__(self, **kwargs):
         joint_models = {
@@ -88,6 +91,18 @@ class JointSalienceModelCenter(SalienceModelCenter):
         self.entity_range = self.para.entity_vocab_size - \
                             self.para.event_vocab_size
 
+        self.loss_names = ['entity', 'event', 'joint']
+        self.train_losses = {}
+        self.batch_count = 0
+        self.epoch = 0
+        self.data_count = 0
+
+    def __init_batch_info(self):
+        for t in self.loss_names:
+            self.train_losses[t] = 0
+        self.batch_count = 0
+        self.data_count = 0
+
     def _setup_io(self, **kwargs):
         self.io_parser = EventDataIO(**kwargs)
 
@@ -106,6 +121,51 @@ class JointSalienceModelCenter(SalienceModelCenter):
         super(JointSalienceModelCenter, self).train(train_in_name,
                                                     validation_in_name,
                                                     model_out_name)
+
+    def _batch_train(self, l_line, criterion, optimizer):
+        if self.multi_output:
+            self.batch_count += 1
+            self.data_count += len(l_line)
+
+            h_packed_data, l_m_label = self._data_io(l_line)
+            optimizer.zero_grad()
+            l_output = self.model(h_packed_data)
+            assert len(l_output == l_m_label)
+
+            l_loss = [] * l_output
+            total_loss = 0
+            for index, (output, m_label) in enumerate(zip(l_output, l_m_label)):
+                loss = criterion(output, m_label)
+                total_loss += loss
+                l_loss[index] = loss
+
+            # Joint loss for information only.
+            joint_output = torch.cat(l_output, 0)
+            joint_label = torch.cat(l_m_label, 0)
+            joint_loss = criterion(joint_output, joint_label)
+            l_loss.append(joint_loss)
+
+            for n, loss in zip(self.loss_names, l_loss):
+                self.train_losses[n] += loss
+
+            total_loss.backward()
+            optimizer.step()
+            assert not math.isnan(total_loss.data[0])
+            return total_loss.data[0]
+        else:
+            return super(JointSalienceModelCenter, self)._batch_train(l_line,
+                                                                      criterion,
+                                                                      optimizer)
+
+    def _epoch_start(self):
+        self.__init_batch_info()
+
+    def _epoch_end(self):
+        for n, loss in self.train_losses.items():
+            logging.info(
+                'epoch [%d] finished with loss [%f] on [%d] batch [%d] doc',
+                self.epoch, loss / self.batch_count, self.batch_count,
+                self.data_count)
 
     def predict(self, test_in_name, label_out_name, debug=False):
         """
