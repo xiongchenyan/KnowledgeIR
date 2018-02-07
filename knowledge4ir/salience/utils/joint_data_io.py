@@ -40,22 +40,23 @@ class EventDataIO(DataIO):
 
     def _data_config(self):
         h_joint_target_group = {
-            'event_raw': ['mtx_e', 'mtx_score', 'label'],
-            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label'],
-            'joint_raw': ['mtx_e', 'mtx_score', 'label', 'mtx_evm_mask'],
+            'event_raw': ['mtx_e', 'mtx_score', 'label',],
+            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label',],
+            'joint_raw': ['mtx_e', 'mtx_score', 'label', 'mtx_evm_mask',],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label',
-                              'mtx_evm_mask'],
+                              'mtx_evm_mask',],
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
                             'mtx_score', 'ts_feature', 'label', 'ts_adjacent',
-                            'mtx_evm_mask'],
+                            'mtx_evm_mask',],
             'joint_graph_symmetric': ['mtx_e', 'mtx_evm', 'ts_args',
                                       'mtx_arg_length', 'mtx_evm_mask',
                                       'mtx_score', 'ts_feature', 'label',
-                                      'ts_adjacent'],
+                                      'ts_adjacent',],
             'joint_graph_detail': ['mtx_e', 'mtx_evm', 'ts_args',
                                    'mtx_arg_length', 'mtx_e_score',
                                    'mtx_evm_score', 'ts_e_feature',
-                                   'ts_evm_feature', 'label', 'ts_adjacent'
+                                   'ts_evm_feature', 'ts_adjacent',
+                                   'label_e', 'label_evm',
                                    ]
         }
         self.h_target_group.update(h_joint_target_group)
@@ -70,6 +71,8 @@ class EventDataIO(DataIO):
             'mtx_evm_mask': {'dim': 2, 'd_type': 'Float'},
             'ts_e_feature': {'dim': 3, 'd_type': 'Float'},
             'ts_evm_feature': {'dim': 3, 'd_type': 'Float'},
+            'label_e': {'dim': 2, 'd_type': 'Float'},
+            'label_evm': {'dim': 2, 'd_type': 'Float'},
         }
         self.h_data_meta.update(h_joint_data_meta)
 
@@ -135,6 +138,9 @@ class EventDataIO(DataIO):
                 h_parsed_data[key].append(h_this_data[key])
 
         h_parsed_data = self._canonicalize_data(h_parsed_data)
+
+        if self.group_name == 'joint_graph_detail':
+            return h_parsed_data, [h_parsed_data['label_e'], h_parsed_data['label_evm']]
 
         return h_parsed_data, h_parsed_data['label']
 
@@ -298,7 +304,8 @@ class EventDataIO(DataIO):
                 'mtx_evm_score': l_evm_tf,
                 'ts_e_feature': ll_e_feat,
                 'ts_evm_feature': ll_evm_feat,
-                'label': l_label_all,
+                'label_e': l_e_label,
+                'label_evm': l_evm_label,
             }
         else:
             h_res = {

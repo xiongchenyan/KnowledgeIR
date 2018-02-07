@@ -97,6 +97,9 @@ class JointSalienceModelCenter(SalienceModelCenter):
         self.epoch = 0
         self.data_count = 0
 
+        if self.multi_output:
+            logging.info('Using multi-task output.')
+
     def __init_batch_info(self):
         for t in self.loss_names:
             self.train_losses[t] = 0
@@ -130,23 +133,33 @@ class JointSalienceModelCenter(SalienceModelCenter):
             h_packed_data, l_m_label = self._data_io(l_line)
             optimizer.zero_grad()
             l_output = self.model(h_packed_data)
-            assert len(l_output == l_m_label)
+            assert len(l_output) == len(l_m_label)
 
-            l_loss = [] * l_output
-            total_loss = 0
-            for index, (output, m_label) in enumerate(zip(l_output, l_m_label)):
+            l_loss = [] * len(l_output)
+            for output, m_label in zip(l_output, l_m_label):
                 loss = criterion(output, m_label)
-                total_loss += loss
-                l_loss[index] = loss
+                l_loss.append(loss)
+
+            total_loss = sum(l_loss)
 
             # Joint loss for information only.
-            joint_output = torch.cat(l_output, 0)
-            joint_label = torch.cat(l_m_label, 0)
+            joint_output = torch.cat(l_output, -1)
+            joint_label = torch.cat(l_m_label, -1)
+
             joint_loss = criterion(joint_output, joint_label)
             l_loss.append(joint_loss)
 
             for n, loss in zip(self.loss_names, l_loss):
                 self.train_losses[n] += loss
+
+            print 'batch training'
+            import gc
+            num_tensors = 0
+            for obj in gc.get_objects():
+                if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                    # print(type(obj), obj.size())
+                    num_tensors += 1
+            print 'number of tensors %d' % num_tensors
 
             total_loss.backward()
             optimizer.step()
@@ -156,6 +169,18 @@ class JointSalienceModelCenter(SalienceModelCenter):
             return super(JointSalienceModelCenter, self)._batch_train(l_line,
                                                                       criterion,
                                                                       optimizer)
+
+    def _batch_test(self, l_lines):
+        h_packed_data, l_m_label = self._data_io(l_lines)
+        l_output = self.model(h_packed_data)
+
+        l_loss = []
+
+        for output, m_label in zip(l_output, l_m_label):
+            loss = self.criterion(output, m_label)
+            l_loss.append(loss)
+        total_loss = sum(l_loss)
+        return total_loss.data[0]
 
     def _epoch_start(self):
         self.__init_batch_info()

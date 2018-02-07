@@ -58,8 +58,10 @@ class NNPara(Configurable):
                            help='the minimum distance between two entities '
                                 'to receive vote in edge sparse knrm'
                            ).tag(config=True)
-
-
+    entity_event_kernel_type = Int(0, help='the type of kernel applying on '
+                                           'entity event joint similarity matrix'
+                                   ).tag(config=True)
+    arg_voting = Bool(False, help='whether to enable voting to event argument').tag(config=True)
 
     def form_kernels(self):
         l_mu = [1.0]
