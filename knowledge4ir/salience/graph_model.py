@@ -189,9 +189,9 @@ class MultiEventKernelCRF(StructEventKernelCRF):
         logging.info("Kernel type is %d", self.kernel_type)
 
         # Implementation note:
-        # 1. The 4 sections of similarities may have their own kernels or shared.
-        # 2. We add additional argument kernels (the 5th kernel)
-        # 3. Node LR is always shared since the features are on different dimensions.
+        # 1. The 4 sections of similarities may have their own kernels.
+        # 2. We add additional argument kernels (the 5th kernel).
+        # 3. Node LR is always shared.
 
         if self.kernel_type == 0:
             # Type 0, falling back to the basic one kernel mode.
@@ -244,12 +244,19 @@ class MultiEventKernelCRF(StructEventKernelCRF):
             self.evm_linear.cuda()
 
         if para.arg_voting:
-            # Argument voting always have its own kernel, to simplify experiments.
+            # Argument voting always have its own kernel, to simplify
+            # experiments.
             self.kp_args = KernelPooling(l_mu, l_sigma)
             if use_cuda:
                 self.kp_args.cuda()
 
         self.arg_voting = para.arg_voting
+
+    def forward(self, h_packed_data):
+        if self.kernel_type == 0:
+            return self.single_kernel_forward(h_packed_data)
+        else:
+            return self.multi_kernel_forward(h_packed_data)
 
     def combined_embedding(self, mtx_e, mtx_evm, mask_e, mask_evm):
         mtx_e_embedding = self.embedding(mtx_e)
@@ -294,7 +301,8 @@ class MultiEventKernelCRF(StructEventKernelCRF):
         combined_mtx_emb, combined_mtx_emb_mask = self.\
             combined_embedding(mtx_e, mtx_evm, mask_e, mask_evm)
         if self.use_mask:
-            masked_mtx_emb = combined_mtx_emb * combined_mtx_emb_mask.unsqueeze(-1)
+            masked_mtx_emb = combined_mtx_emb * \
+                             combined_mtx_emb_mask.unsqueeze(-1)
         else:
             masked_mtx_emb = combined_mtx_emb
 
@@ -302,6 +310,7 @@ class MultiEventKernelCRF(StructEventKernelCRF):
 
         output = self.compute_kernel_features_scores(self.kp, masked_mtx_emb,
                                                      mtx_score, node_features)
+
 
         entity_length = e_node_score.size()[1]
         e_output = output[:, :entity_length]
@@ -388,12 +397,6 @@ class MultiEventKernelCRF(StructEventKernelCRF):
         entity_output = self.e_linear(entity_features).squeeze(-1)
 
         return entity_output, event_output
-
-    def forward(self, h_packed_data):
-        if self.kernel_type == 0:
-            return self.single_kernel_forward(h_packed_data)
-        else:
-            return self.multi_kernel_forward(h_packed_data)
 
     def argument_vector(self, ts_args, ts_arg_mask, mtx_arg_length):
         mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)

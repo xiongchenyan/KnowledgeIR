@@ -91,18 +91,19 @@ class JointSalienceModelCenter(SalienceModelCenter):
         self.entity_range = self.para.entity_vocab_size - \
                             self.para.event_vocab_size
 
-        self.loss_names = ['entity', 'event', 'joint']
         self.train_losses = {}
         self.batch_count = 0
         self.epoch = 0
         self.data_count = 0
 
         if self.multi_output:
+            self.output_names = ['entity', 'event']
             logging.info('Using multi-task output.')
 
     def __init_batch_info(self):
-        for t in self.loss_names:
+        for t in self.output_names:
             self.train_losses[t] = 0
+        self.train_losses['joint'] = 0
         self.batch_count = 0
         self.data_count = 0
 
@@ -145,21 +146,12 @@ class JointSalienceModelCenter(SalienceModelCenter):
             # Joint loss for information only.
             joint_output = torch.cat(l_output, -1)
             joint_label = torch.cat(l_m_label, -1)
-
             joint_loss = criterion(joint_output, joint_label)
-            l_loss.append(joint_loss)
 
-            for n, loss in zip(self.loss_names, l_loss):
-                self.train_losses[n] += loss
+            for n, loss in zip(self.output_names, l_loss):
+                self.train_losses[n] += loss.data[0]
 
-            print 'batch training'
-            import gc
-            num_tensors = 0
-            for obj in gc.get_objects():
-                if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
-                    # print(type(obj), obj.size())
-                    num_tensors += 1
-            print 'number of tensors %d' % num_tensors
+            self.train_losses['joint'] += joint_loss.data[0]
 
             total_loss.backward()
             optimizer.step()
@@ -185,12 +177,12 @@ class JointSalienceModelCenter(SalienceModelCenter):
     def _epoch_start(self):
         self.__init_batch_info()
 
-    def _epoch_end(self):
+    def _train_info(self):
         for n, loss in self.train_losses.items():
             logging.info(
-                'epoch [%d] finished with loss [%f] on [%d] batch [%d] doc',
-                self.epoch, loss / self.batch_count, self.batch_count,
-                self.data_count)
+                'Loss [%s], epoch [%d] finished with loss [%f] on [%d] batch '
+                '[%d] doc', n, self.epoch, loss / self.batch_count,
+                self.batch_count, self.data_count)
 
     def predict(self, test_in_name, label_out_name, debug=False):
         """
@@ -323,6 +315,30 @@ class JointSalienceModelCenter(SalienceModelCenter):
         print "\t-\t".join(l2_evm_scores) + "\t-\t-\t-\t-\t" + \
               "\t".join(l2_all_scores) + "\t-\t-\t" + \
               "\t".join(l2_ent_scores)
+
+    def _parse_output(self, line, docno):
+        if self.multi_output:
+            h_packed_data, l_v_label = self._data_io([line])
+
+            h_out_by_name = [{}] * len(self.output_names)
+            l_output = [output.cpu()[0] for output in self.model(h_packed_data)]
+
+            for output, v_label, h_out in zip(l_output, l_v_label,
+                                              h_out_by_name):
+                pre_label = output.data.sign().type(torch.LongTensor)
+                l_score = output.data.numpy().tolist()
+                h_out['docno'] = docno
+
+            for output in l_output:
+                l_score = output.data.numpy().tolist()
+
+        else:
+            h_packed_data, v_label = self._data_io([line])
+            output = self.model(h_packed_data).cpu()[0]
+            if not v_label[0].size():
+                return None, None
+
+            v_label = v_label[0].cpu()
 
     def _per_doc_predict(self, line):
         h_info = json.loads(line)

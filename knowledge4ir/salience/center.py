@@ -284,6 +284,7 @@ class SalienceModelCenter(Configurable):
                     if not p % 100:
                         logging.info('batch [%d] [%d] data, average loss [%f]',
                                      p, data_cnt, total_loss / p)
+                        self._train_info()
                     l_this_batch_line = []
                     if es_cnt >= self.early_stopping_frequency:
                         logging.info(
@@ -317,7 +318,7 @@ class SalienceModelCenter(Configurable):
                 epoch, total_loss / p, p, data_cnt)
             l_epoch_loss.append(total_loss / p)
 
-            self._epoch_end()
+            self._train_info()
 
             # validation
             if validation_in_name:
@@ -335,6 +336,9 @@ class SalienceModelCenter(Configurable):
             logging.info('Torch saving model to [%s]', model_out_name)
             torch.save(self.model, model_out_name)
         return
+
+    def _train_info(self):
+        pass
 
     def _epoch_start(self):
         pass
