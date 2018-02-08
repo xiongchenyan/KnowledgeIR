@@ -254,9 +254,18 @@ class MultiEventKernelCRF(StructEventKernelCRF):
 
     def forward(self, h_packed_data):
         if self.kernel_type == 0:
-            return self.single_kernel_forward(h_packed_data)
+            e_output, evm_output = self.single_kernel_forward(h_packed_data)
         else:
-            return self.multi_kernel_forward(h_packed_data)
+            e_output, evm_output = self.multi_kernel_forward(h_packed_data)
+
+        if self.event_labels_only:
+            # mask to keep only event outputs.
+            mask = Variable(torch.zeros(e_output.size()))
+            if use_cuda:
+                mask = mask.cuda()
+            e_output = e_output * mask
+
+        return e_output, evm_output
 
     def combined_embedding(self, mtx_e, mtx_evm, mask_e, mask_evm):
         mtx_e_embedding = self.embedding(mtx_e)
@@ -267,12 +276,14 @@ class MultiEventKernelCRF(StructEventKernelCRF):
             combined_mtx_emb_mask = mask_e
         else:
             mtx_evm_embedding = self.embedding(mtx_evm)
-            combined_mtx_emb = torch.cat((mtx_e_embedding, mtx_evm_embedding), 1)
+            combined_mtx_emb = torch.cat((mtx_e_embedding, mtx_evm_embedding),
+                                         1)
             combined_mtx_emb_mask = torch.cat((mask_e, mask_evm), 1)
 
         return combined_mtx_emb, combined_mtx_emb_mask
 
-    def compute_kernel_features_scores(self, kp, mtx_emb, voter_score, node_features):
+    def compute_kernel_features_scores(self, kp, mtx_emb, voter_score,
+                                       node_features):
         norm_mtx_emb = nn.functional.normalize(mtx_emb, p=2, dim=-1)
         trans_mtx = torch.matmul(norm_mtx_emb, norm_mtx_emb.transpose(-2, -1))
         kp_mtx = kp(trans_mtx, voter_score)
@@ -294,11 +305,17 @@ class MultiEventKernelCRF(StructEventKernelCRF):
         ts_evm_feature = h_packed_data['ts_evm_feature']
 
         # Combine with node features.
-        e_node_score = F.tanh(self.node_lr(ts_e_feature))
-        evm_node_score = F.tanh(self.node_lr(ts_evm_feature))
-        node_features = torch.cat((e_node_score, evm_node_score), -2)
+        l_node_features = []
+        if ts_e_feature is not None:
+            e_node_score = F.tanh(self.node_lr(ts_e_feature))
+            l_node_features.append(e_node_score)
+        if ts_evm_feature is not None:
+            evm_node_score = F.tanh(self.node_lr(ts_evm_feature))
+            l_node_features.append(evm_node_score)
 
-        combined_mtx_emb, combined_mtx_emb_mask = self.\
+        node_features = torch.cat(l_node_features, 1)
+
+        combined_mtx_emb, combined_mtx_emb_mask = self. \
             combined_embedding(mtx_e, mtx_evm, mask_e, mask_evm)
         if self.use_mask:
             masked_mtx_emb = combined_mtx_emb * \
@@ -306,15 +323,32 @@ class MultiEventKernelCRF(StructEventKernelCRF):
         else:
             masked_mtx_emb = combined_mtx_emb
 
-        mtx_score = torch.cat((mtx_e_score, mtx_evm_score), -1)
+        l_mtx_score = []
+        if mtx_e_score is not None:
+            l_mtx_score.append(mtx_e_score)
+
+        if mtx_evm_score is not None:
+            l_mtx_score.append(mtx_evm_score)
+
+        mtx_score = torch.cat(l_mtx_score, -1)
 
         output = self.compute_kernel_features_scores(self.kp, masked_mtx_emb,
                                                      mtx_score, node_features)
 
+        if mtx_e_score is None:
+            entity_length = 0
+        else:
+            entity_length = mtx_e_score.size()[1]
 
-        entity_length = e_node_score.size()[1]
-        e_output = output[:, :entity_length]
-        evm_output = output[:, entity_length:]
+        if mtx_e_score is not None:
+            e_output = output[:, :entity_length]
+        else:
+            e_output = None
+
+        if mtx_evm_score is not None:
+            evm_output = output[:, entity_length:]
+        else:
+            evm_output = None
 
         return e_output, evm_output
 
@@ -336,65 +370,86 @@ class MultiEventKernelCRF(StructEventKernelCRF):
         mtx_arg_length = h_packed_data['mtx_arg_length']
         ts_arg_mask = masks['ts_args']
 
-        e_node_score = F.tanh(self.node_lr(ts_e_feature))
-        evm_node_score = F.tanh(self.node_lr(ts_evm_feature))
+        l_entity_features = []
+        l_event_features = []
 
-        mtx_e_embedding = self.embedding(mtx_e)
+        has_entities = mtx_e is not None
+        has_events = mtx_evm is not None
 
-        if self.use_mask:
-            mtx_e_embedding = mtx_e_embedding * mask_e
-        norm_entity_emb = nn.functional.normalize(mtx_e_embedding, p=2, dim=-1)
-
-        kp_e_mtx = self.__entity_kernel_vote(norm_entity_emb, mtx_e_score)
+        if has_entities:
+            mtx_e_embedding = self.embedding(mtx_e)
+            if self.use_mask:
+                mtx_e_embedding = mtx_e_embedding * mask_e.unsqueeze(-1)
+            norm_entity_emb = nn.functional.normalize(mtx_e_embedding, p=2,
+                                                      dim=-1)
+            kp_e_mtx = self.__entity_kernel_vote(norm_entity_emb, mtx_e_score)
+            l_entity_features.append(kp_e_mtx)
 
         # Event Section:
-        if mtx_evm is not None:
+        if has_events:
             mtx_evm_embedding = self.embedding(mtx_evm)
-            norm_event_emb = nn.functional.normalize(mtx_evm_embedding, p=2, dim=-1)
+            norm_event_emb = nn.functional.normalize(mtx_evm_embedding, p=2,
+                                                     dim=-1)
             if self.use_mask:
-                norm_event_emb = norm_event_emb * mask_evm
+                norm_event_emb = norm_event_emb * mask_evm.unsqueeze(-1)
 
             # Event vote from event: batch x len(evm) x K
             kp_evm_mtx = self.__evm_kernel_vote(norm_event_emb, mtx_evm_score)
 
-            entity_event_trans = self.__entity_event_trans(norm_entity_emb,
-                                                           norm_event_emb)
+            if has_entities:
+                entity_event_trans = self.__entity_event_trans(norm_entity_emb,
+                                                               norm_event_emb)
+                event_entity_trans = entity_event_trans.transpose(-2, -1)
 
-            event_entity_trans = entity_event_trans.transpose(-2, -1)
+                # Entity vote from event: batch x len(e) x K
+                kp_ent_event_mtx = self.__entity_event_kernel_vote(
+                    entity_event_trans, mtx_evm_score)
+                l_entity_features.append(kp_ent_event_mtx)
 
-            # Event vote from entity: batch x len(evm) x K
-            kp_event_ent_mtx = self.__entity_event_kernel_vote(entity_event_trans,
-                                                               mtx_e_score)
-            # Entity vote from event: batch x len(e) x K
-            kp_ent_event_mtx = self.__entity_event_kernel_vote(event_entity_trans,
-                                                               mtx_evm_score)
+                # Event vote from entity: batch x len(evm) x K
+                kp_event_ent_mtx = self.__entity_event_kernel_vote(
+                    event_entity_trans, mtx_e_score)
+                l_event_features.append(kp_event_ent_mtx)
+
+            # Add votes to event to events.
+            l_event_features.append(kp_evm_mtx)
 
             # Compute event features, size based on whether using arguments.
             if self.arg_voting:
                 # Now work on arguments:
                 mtx_arg_emb = self.argument_vector(ts_args, ts_arg_mask,
                                                    mtx_arg_length)
-                norm_args_emb = nn.functional.normalize(mtx_arg_emb, p=2, dim=-1)
-                norm_args_emb = norm_args_emb * mask_evm
+                norm_args_emb = nn.functional.normalize(mtx_arg_emb, p=2,
+                                                        dim=-1)
+                norm_args_emb = norm_args_emb * mask_evm.unsqueeze(-1)
                 # batch x len(evm) x K
-                kp_arg_mtx = self.__arg_kernel_vote(norm_args_emb, mtx_evm_score)
-                event_features = torch.cat((kp_event_ent_mtx, kp_evm_mtx, kp_arg_mtx,
-                                            evm_node_score), -1)
-            else:
-                event_features = torch.cat((kp_event_ent_mtx, kp_evm_mtx,
-                                            evm_node_score), -1)
-
-            # Compute entity features.
-            # batch x len(e) x K
-            entity_features = torch.cat((kp_e_mtx, kp_ent_event_mtx, e_node_score), -1)
-            event_output = self.evm_linear(event_features).squeeze(-1)
-
+                kp_arg_mtx = self.__arg_kernel_vote(norm_args_emb,
+                                                    mtx_evm_score)
+                l_event_features.append(kp_arg_mtx)
         else:
-            entity_features = torch.cat((kp_e_mtx, e_node_score), -1)
-            # how to output an empty result?
-            event_output = 0
+            if has_entities:
+                # Empty kernel features from events.
+                kp_ent_event_mtx = Variable(torch.zeros(kp_e_mtx.size()))
+                if use_cuda:
+                    kp_ent_event_mtx = kp_ent_event_mtx.cuda()
+                l_entity_features.append(kp_ent_event_mtx)
 
-        entity_output = self.e_linear(entity_features).squeeze(-1)
+        # Other feature section:
+        if has_entities:
+            e_node_score = F.tanh(self.node_lr(ts_e_feature))
+            l_entity_features.append(e_node_score)
+            entity_features = torch.cat(l_entity_features, -1)
+            entity_output = self.e_linear(entity_features).squeeze(-1)
+        else:
+            entity_output = None
+
+        if has_events:
+            evm_node_score = F.tanh(self.node_lr(ts_evm_feature))
+            l_event_features.append(evm_node_score)
+            event_features = torch.cat(l_event_features, -1)
+            event_output = self.evm_linear(event_features).squeeze(-1)
+        else:
+            event_output = None
 
         return entity_output, event_output
 
@@ -430,7 +485,7 @@ class MultiEventKernelCRF(StructEventKernelCRF):
     def __evm_kernel_vote(self, evm_emb, voter_score):
         # Block (2,2)
         trans_mtx = torch.matmul(evm_emb, evm_emb.transpose(-2, -1))
-        return self.kp_args(trans_mtx, voter_score)
+        return self.kp_evm(trans_mtx, voter_score)
 
     def __arg_kernel_vote(self, arg_emb, voter_score):
         trans_mtx = torch.matmul(arg_emb, arg_emb.transpose(-2, -1))

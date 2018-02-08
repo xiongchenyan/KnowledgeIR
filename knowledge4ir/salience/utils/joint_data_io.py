@@ -40,18 +40,18 @@ class EventDataIO(DataIO):
 
     def _data_config(self):
         h_joint_target_group = {
-            'event_raw': ['mtx_e', 'mtx_score', 'label',],
-            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label',],
-            'joint_raw': ['mtx_e', 'mtx_score', 'label', 'mtx_evm_mask',],
+            'event_raw': ['mtx_e', 'mtx_score', 'label', ],
+            'event_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label', ],
+            'joint_raw': ['mtx_e', 'mtx_score', 'label', 'mtx_evm_mask', ],
             'joint_feature': ['mtx_e', 'mtx_score', 'ts_feature', 'label',
-                              'mtx_evm_mask',],
+                              'mtx_evm_mask', ],
             'joint_graph': ['mtx_e', 'mtx_evm', 'ts_args', 'mtx_arg_length',
                             'mtx_score', 'ts_feature', 'label', 'ts_adjacent',
-                            'mtx_evm_mask',],
+                            'mtx_evm_mask', ],
             'joint_graph_symmetric': ['mtx_e', 'mtx_evm', 'ts_args',
                                       'mtx_arg_length', 'mtx_evm_mask',
                                       'mtx_score', 'ts_feature', 'label',
-                                      'ts_adjacent',],
+                                      'ts_adjacent', ],
             'joint_graph_detail': ['mtx_e', 'mtx_evm', 'ts_args',
                                    'mtx_arg_length', 'mtx_e_score',
                                    'mtx_evm_score', 'ts_e_feature',
@@ -131,7 +131,11 @@ class EventDataIO(DataIO):
                 raise NotImplementedError
 
             if self.event_labels_only:
-                self._event_labels(h_this_data)
+                # Mask out entity labels.
+                if 'label' in h_this_data:
+                    h_this_data['label'] = [l * m for l, m in
+                                            zip(h_this_data['label'],
+                                                h_this_data['mtx_evm_mask'])]
 
             for key in h_parsed_data.keys():
                 assert key in h_this_data
@@ -140,14 +144,17 @@ class EventDataIO(DataIO):
         h_parsed_data = self._canonicalize_data(h_parsed_data)
 
         if self.group_name == 'joint_graph_detail':
-            return h_parsed_data, [h_parsed_data['label_e'], h_parsed_data['label_evm']]
+            if self.event_labels_only:
+                label_e = h_parsed_data['label_e']
+                label_e[label_e != 0] = 0
+                h_parsed_data['label_e'] = label_e
+                return h_parsed_data, [h_parsed_data['label_e'],
+                                       h_parsed_data['label_evm']]
+            else:
+                return h_parsed_data, [h_parsed_data['label_e'],
+                                       h_parsed_data['label_evm']]
 
         return h_parsed_data, h_parsed_data['label']
-
-    def _event_labels(self, h_data):
-        # Mask out entity labels.
-        h_data['label'] = [l * m for l, m in
-                           zip(h_data['label'], h_data['mtx_evm_mask'])]
 
     def _canonicalize_data(self, h_parsed_data):
         for key in h_parsed_data:

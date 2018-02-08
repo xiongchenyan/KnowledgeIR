@@ -137,9 +137,12 @@ class JointSalienceModelCenter(SalienceModelCenter):
             assert len(l_output) == len(l_m_label)
 
             l_loss = [] * len(l_output)
-            for output, m_label in zip(l_output, l_m_label):
-                loss = criterion(output, m_label)
-                l_loss.append(loss)
+            for output, m_label, n in zip(l_output, l_m_label,
+                                          self.output_names):
+                if output is not None:
+                    loss = criterion(output, m_label)
+                    l_loss.append(loss)
+                    self.train_losses[n] += loss.data[0]
 
             total_loss = sum(l_loss)
 
@@ -147,9 +150,6 @@ class JointSalienceModelCenter(SalienceModelCenter):
             joint_output = torch.cat(l_output, -1)
             joint_label = torch.cat(l_m_label, -1)
             joint_loss = criterion(joint_output, joint_label)
-
-            for n, loss in zip(self.output_names, l_loss):
-                self.train_losses[n] += loss.data[0]
 
             self.train_losses['joint'] += joint_loss.data[0]
 
@@ -201,100 +201,92 @@ class JointSalienceModelCenter(SalienceModelCenter):
         self.model.eval()
 
         name, ext = os.path.splitext(label_out_name)
-        label_out_name = name + "_" + self.init_time + ext
         ent_label_out_name = name + "_entity_" + self.init_time + ext
         evm_label_out_name = name + "_event_" + self.init_time + ext
 
-        out = open(label_out_name, 'w')
         ent_out = open(ent_label_out_name, 'w')
         evm_out = open(evm_label_out_name, 'w')
 
+        outs = [ent_out, evm_out]
+
         logging.info('start predicting for [%s]', test_in_name)
-        logging.info('Test output will be at [%s], [%s] and [%s]',
-                     label_out_name, ent_label_out_name, evm_label_out_name)
+        logging.info('Test output will be at [%s] and [%s]',
+                     ent_label_out_name, evm_label_out_name)
 
         p = 0
         ent_p = 0
         evm_p = 0
 
-        h_total_eva = dict()
         h_total_ent_eva = dict()
         h_total_evm_eva = dict()
         for line in open(test_in_name):
             if self.io_parser.is_empty_line(line):
                 continue
-            h_out, h_ent_out, h_evm_out, h_this_eva, h_ent_eva, h_evm_eva = \
-                self._per_doc_predict(line)
+            l_h_out = self._per_doc_predict(line)
 
-            if not h_out:
+            if not l_h_out:
                 continue
 
-            print >> out, json.dumps(h_out)
-
-            if h_ent_eva:
-                ent_p += 1
-                print >> ent_out, json.dumps(h_ent_out)
-
-            if h_evm_eva:
-                evm_p += 1
-                print >> evm_out, json.dumps(h_evm_out)
-
-            h_total_eva = add_svm_feature(h_total_eva, h_this_eva)
-            h_total_ent_eva = add_svm_feature(h_total_ent_eva, h_ent_eva)
-
-            h_total_evm_eva = add_svm_feature(h_total_evm_eva, h_evm_eva)
+            for h_out, name, out in zip(l_h_out, self.output_names, outs):
+                print >> out, json.dumps(h_out)
+                eva = h_out['eval']
+                if name == 'entity':
+                    ent_p += 1
+                    h_total_ent_eva = add_svm_feature(h_total_ent_eva, eva)
+                if name == 'event':
+                    evm_p += 1
+                    h_total_evm_eva = add_svm_feature(h_total_evm_eva, eva)
 
             p += 1
 
             if not p % 1000:
-                h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / p)
-
                 h_mean_ent_eva = mutiply_svm_feature(h_total_ent_eva,
                                                      1.0 / max(ent_p, 1.0))
 
                 h_mean_evm_eva = mutiply_svm_feature(h_total_evm_eva,
                                                      1.0 / max(evm_p, 1.0))
 
-                logging.info('predicted [%d] docs, eva %s', p,
-                             json.dumps(h_mean_eva))
-                logging.info('[%d] with entities, eva %s', ent_p,
-                             json.dumps(h_mean_ent_eva))
-                logging.info('[%d] with events, eva %s', evm_p,
-                             json.dumps(h_mean_evm_eva))
+                logging.info('predicted [%d] docs: [%d] with entities, eva %s;'
+                             '[%d] with events, eva %s',
+                             p, ent_p, json.dumps(h_mean_ent_eva),
+                             evm_p, json.dumps(h_mean_evm_eva),
+                             )
 
-        h_mean_eva = mutiply_svm_feature(h_total_eva, 1.0 / max(p, 1.0))
         h_mean_ent_eva = mutiply_svm_feature(h_total_ent_eva,
                                              1.0 / max(ent_p, 1.0))
         h_mean_evm_eva = mutiply_svm_feature(h_total_evm_eva,
                                              1.0 / max(evm_p, 1.0))
 
-        l_mean_eva = sorted(h_mean_eva.items(), key=lambda item: item[0])
         l_mean_ent_eva = sorted(h_mean_ent_eva.items(),
                                 key=lambda item: item[0])
         l_mean_evm_eva = sorted(h_mean_evm_eva.items(),
                                 key=lambda item: item[0])
 
-        logging.info('finished predicted [%d] docs, eva %s', p,
-                     json.dumps(l_mean_eva))
-        logging.info('[%d] with entities, eva %s', ent_p,
-                     json.dumps(l_mean_ent_eva))
-        logging.info('[%d] with events, eva %s', evm_p,
+        logging.info('finished predicted [%d] docs, [%d] with entities, eva %s'
+                     '[%d] with events, eva %s', p, ent_p,
+                     json.dumps(l_mean_ent_eva), evm_p,
                      json.dumps(l_mean_evm_eva))
 
-        self.tab_scores(h_mean_eva, h_mean_ent_eva, h_mean_evm_eva)
+        self.tab_scores(h_mean_ent_eva, h_mean_evm_eva)
 
         json.dump(
-            l_mean_eva,
-            open(label_out_name + '.eval', 'w'),
+            l_mean_ent_eva,
+            open(ent_label_out_name + '.eval', 'w'),
+            indent=1
+        )
+
+        json.dump(
+            l_mean_evm_eva,
+            open(evm_label_out_name + '.eval', 'w'),
             indent=1
         )
 
         ent_out.close()
         evm_out.close()
-        out.close()
         return
 
-    def tab_scores(self, h_all_mean_eva, h_e_mean_eva, h_evm_mean_eva):
+    @staticmethod
+    def tab_scores(h_e_mean_eva, h_evm_mean_eva):
         logging.info("Results to copy to Excel:")
 
         line1 = ["p@01", "p@05", "p@10", "p@20", "auc"]
@@ -302,11 +294,11 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
         l1_evm_scores = ["%.4f" % h_evm_mean_eva[k] for k in line1]
         l1_ent_scores = ["%.4f" % h_e_mean_eva[k] for k in line1]
-        l1_all_scores = ["%.4f" % h_all_mean_eva[k] for k in line1]
+        l1_all_scores = ['-' for _ in line1]
 
         l2_evm_scores = ["%.4f" % h_evm_mean_eva[k] for k in line2]
         l2_ent_scores = ["%.4f" % h_e_mean_eva[k] for k in line2]
-        l2_all_scores = ["%.4f" % h_all_mean_eva[k] for k in line2]
+        l2_all_scores = ['-' for _ in line2]
 
         print "\t-\t".join(l1_evm_scores) + "\t-\t-\t" + \
               "\t".join(l1_all_scores) + "\t-\t" + \
@@ -316,41 +308,61 @@ class JointSalienceModelCenter(SalienceModelCenter):
               "\t".join(l2_all_scores) + "\t-\t-\t" + \
               "\t".join(l2_ent_scores)
 
-    def _parse_output(self, line, docno):
-        if self.multi_output:
-            h_packed_data, l_v_label = self._data_io([line])
+    def _multi_output(self, line, key_name, docno):
+        h_packed_data, l_v_label = self._data_io([line])
 
-            h_out_by_name = [{}] * len(self.output_names)
-            l_output = [output.cpu()[0] for output in self.model(h_packed_data)]
+        l_h_out = [{}] * len(self.output_names)
 
-            for output, v_label, h_out in zip(l_output, l_v_label,
-                                              h_out_by_name):
-                pre_label = output.data.sign().type(torch.LongTensor)
-                l_score = output.data.numpy().tolist()
-                h_out['docno'] = docno
+        l_output = []
+        for output in self.model(h_packed_data):
+            if output is None:
+                l_output.append([])
+            else:
+                l_output.append(output.cpu()[0])
 
-            for output in l_output:
-                l_score = output.data.numpy().tolist()
+        for output, v_label, h_out, name in zip(l_output, l_v_label,
+                                                l_h_out, self.output_names):
+            if v_label is None or not v_label[0].size():
+                continue
 
-        else:
-            h_packed_data, v_label = self._data_io([line])
-            output = self.model(h_packed_data).cpu()[0]
-            if not v_label[0].size():
-                return None, None
+            pre_label = output.data.sign().type(torch.LongTensor)
+            l_score = output.data.numpy().tolist()
+            h_out[key_name] = docno
+            l_label = v_label[0].cpu().data.view_as(
+                pre_label).numpy().tolist()
 
-            v_label = v_label[0].cpu()
+            if name == 'entity':
+                mtx_e = h_packed_data['mtx_e']
+                l_e = mtx_e[0].cpu().data.numpy().tolist()
+            else:
+                mtx_e = h_packed_data['mtx_evm']
+                l_e = mtx_e[0].cpu().data.numpy().tolist()
+                l_e = [e - self.entity_range for e in l_e]
 
-    def _per_doc_predict(self, line):
-        h_info = json.loads(line)
-        key_name = 'docno'
-        if key_name not in h_info:
-            key_name = 'qid'
-            assert key_name in h_info
-        docno = h_info[key_name]
+            # Add output.
+            h_out[self.io_parser.content_field] = {
+                'predict': zip(l_e, l_score)
+            }
+
+            if l_label:
+                h_this_eva = self.evaluator.evaluate(l_score, l_label)
+            else:
+                h_this_eva = {}
+            h_out['eval'] = h_this_eva
+        return l_h_out
+
+    def _merged_output(self, line, key_name, docno):
+        l_h_out = [{}] * len(self.output_names)
+
+        h_combined = {key_name: docno}
+        l_h_out[0][key_name] = docno
+        l_h_out[1][key_name] = docno
+
         h_packed_data, v_label = self._data_io([line])
 
-        if not v_label[0].size():
-            return None, None
+        if v_label is None or not v_label[0].size():
+            return None
+
         v_label = v_label[0].cpu()
 
         mtx_e = h_packed_data['mtx_e']
@@ -369,18 +381,7 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
         l_e_combined = l_e + l_evm
 
-        h_out = dict()
-        h_out[key_name] = docno
-
-        h_e_out = dict()
-        h_e_out[key_name] = docno
-
-        h_evm_out = dict()
-        h_evm_out[key_name] = docno
-
-        y = v_label.data.view_as(pre_label)
-
-        l_label = y.numpy().tolist()
+        l_label = v_label.data.view_as(pre_label).numpy().tolist()
 
         num_entities = sum(
             [1 if e < self.entity_range else 0 for e in l_e]
@@ -393,19 +394,20 @@ class JointSalienceModelCenter(SalienceModelCenter):
         l_score_evm = l_score[num_entities:]
         l_evm_origin = [e - self.entity_range for e in l_evm]
 
-        # Add output.
-        h_out[self.io_parser.content_field] = {
-            'predict': zip(l_e_combined, l_score)}
-
-        h_e_out[self.io_parser.content_field] = {
+        l_h_out[0][self.io_parser.content_field] = {
             'predict': zip(l_e, l_score_e)
         }
 
-        h_evm_out[self.io_parser.content_field] = {
+        l_h_out[1][self.io_parser.content_field] = {
             'predict': zip(l_evm_origin, l_score_evm)
         }
 
+        h_combined[self.io_parser.content_field] = {
+            'predict': zip(l_e_combined, l_score)
+        }
+
         h_this_eva = self.evaluator.evaluate(l_score, l_label)
+        h_combined['eval'] = h_this_eva
 
         if l_label_e:
             h_entity_eva = self.evaluator.evaluate(l_score_e, l_label_e)
@@ -417,10 +419,23 @@ class JointSalienceModelCenter(SalienceModelCenter):
         else:
             h_evm_eva = {}
 
-        h_out['eval'] = h_this_eva
-        h_evm_out['eval'] = h_evm_eva
+        l_h_out[0]['eval'] = h_entity_eva
+        l_h_out[1]['eval'] = h_evm_eva
 
-        return h_out, h_e_out, h_evm_out, h_this_eva, h_entity_eva, h_evm_eva
+        return l_h_out
+
+    def _per_doc_predict(self, line):
+        h_info = json.loads(line)
+        key_name = 'docno'
+        if key_name not in h_info:
+            key_name = 'qid'
+            assert key_name in h_info
+        docno = h_info[key_name]
+
+        if self.multi_output:
+            return self._multi_output(line, key_name, docno)
+        else:
+            return self._merged_output(line, key_name, docno)
 
     def _data_io(self, l_line):
         return self.model.data_io(l_line, self.io_parser)
