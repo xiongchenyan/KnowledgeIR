@@ -311,7 +311,7 @@ class JointSalienceModelCenter(SalienceModelCenter):
     def _multi_output(self, line, key_name, docno):
         h_packed_data, l_v_label = self._data_io([line])
 
-        l_h_out = [{}] * len(self.output_names)
+        l_h_out = [dict() for _ in range(len(self.output_names))]
 
         l_output = []
         for output in self.model(h_packed_data):
@@ -320,14 +320,16 @@ class JointSalienceModelCenter(SalienceModelCenter):
             else:
                 l_output.append(output.cpu()[0])
 
-        for output, v_label, h_out, name in zip(l_output, l_v_label,
-                                                l_h_out, self.output_names):
+        for i, name in enumerate(self.output_names):
+            output = l_output[i]
+            v_label = l_v_label[i]
+
             if v_label is None or not v_label[0].size():
                 continue
 
             pre_label = output.data.sign().type(torch.LongTensor)
             l_score = output.data.numpy().tolist()
-            h_out[key_name] = docno
+            l_h_out[i][key_name] = docno
             l_label = v_label[0].cpu().data.view_as(
                 pre_label).numpy().tolist()
 
@@ -340,7 +342,7 @@ class JointSalienceModelCenter(SalienceModelCenter):
                 l_e = [e - self.entity_range for e in l_e]
 
             # Add output.
-            h_out[self.io_parser.content_field] = {
+            l_h_out[i][self.io_parser.content_field] = {
                 'predict': zip(l_e, l_score)
             }
 
@@ -348,7 +350,8 @@ class JointSalienceModelCenter(SalienceModelCenter):
                 h_this_eva = self.evaluator.evaluate(l_score, l_label)
             else:
                 h_this_eva = {}
-            h_out['eval'] = h_this_eva
+
+            l_h_out[i]['eval'] = h_this_eva
         return l_h_out
 
     def _merged_output(self, line, key_name, docno):
