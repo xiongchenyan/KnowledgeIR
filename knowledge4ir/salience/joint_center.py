@@ -228,7 +228,11 @@ class JointSalienceModelCenter(SalienceModelCenter):
                 continue
 
             for h_out, name, out in zip(l_h_out, self.output_names, outs):
+                if not h_out:
+                    continue
+
                 print >> out, json.dumps(h_out)
+
                 eva = h_out['eval']
                 if name == 'entity':
                     ent_p += 1
