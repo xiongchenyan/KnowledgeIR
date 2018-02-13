@@ -127,7 +127,8 @@ class EventDataIO(DataIO):
                 else:
                     h_this_data = self._parse_joint(h_info)
             else:
-                logging.error("Input group is not event related.")
+                logging.error(
+                    "Input group is not event related: [%s]" % self.group_name)
                 raise NotImplementedError
 
             if self.event_labels_only:
@@ -169,7 +170,8 @@ class EventDataIO(DataIO):
 
         # Compute masks from the padded value.
         mask_data = {}
-        for key in self.h_data_mask[self.group_name]:
+
+        for key in self.h_data_mask.get(self.group_name, []):
             data = h_parsed_data[key]
             if not self._is_empty(data, self.h_data_meta[key]['dim']):
                 mask = self._pad_mask(data, key)
