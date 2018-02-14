@@ -32,6 +32,8 @@ use_cuda = torch.cuda.is_available()
 class EventDataIO(DataIO):
     event_labels_only = Bool(False, help='only read event labels').tag(
         config=True)
+    omit_feature = Int(-1, help='Omit the feature at this index, negative'
+                                ' means no omission.').tag(config=True)
 
     def __init__(self, **kwargs):
         super(EventDataIO, self).__init__(**kwargs)
@@ -449,6 +451,10 @@ class EventDataIO(DataIO):
         # headcount, sentence loc, event voting, entity voting,
         # ss entity vote aver, ss entity vote max, ss entity vote min
         ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
+
+        if self.omit_feature >= 0:
+            for l in ll_feature:
+                l.pop(self.omit_feature)
 
         z = float(sum([item[0] for item in ll_feature]))
         l_tf = [item[0] / z for item in ll_feature]

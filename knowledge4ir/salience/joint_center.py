@@ -62,6 +62,8 @@ use_cuda = torch.cuda.is_available()
 
 
 class JointSalienceModelCenter(SalienceModelCenter):
+    event_only = Bool(False, help='whether to run event model only').tag(
+        config=True)
     multi_output = Bool(False, help='whether there are multiple output').tag(
         config=True
     )
@@ -101,8 +103,9 @@ class JointSalienceModelCenter(SalienceModelCenter):
             logging.info('Using multi-task output.')
 
     def __init_batch_info(self):
-        for t in self.output_names:
-            self.train_losses[t] = 0
+        if self.multi_output:
+            for t in self.output_names:
+                self.train_losses[t] = 0
         self.train_losses['joint'] = 0
         self.batch_count = 0
         self.data_count = 0
@@ -112,7 +115,8 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
     def _init_model(self):
         if self.model_name:
-            self._merge_para()
+            if not self.event_only:
+                self._merge_para()
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
@@ -127,10 +131,10 @@ class JointSalienceModelCenter(SalienceModelCenter):
                                                     model_out_name)
 
     def _batch_train(self, l_line, criterion, optimizer):
-        if self.multi_output:
-            self.batch_count += 1
-            self.data_count += len(l_line)
+        self.batch_count += 1
+        self.data_count += len(l_line)
 
+        if self.multi_output:
             h_packed_data, l_m_label = self._data_io(l_line)
             optimizer.zero_grad()
             l_output = self.model(h_packed_data)
@@ -163,26 +167,30 @@ class JointSalienceModelCenter(SalienceModelCenter):
                                                                       optimizer)
 
     def _batch_test(self, l_lines):
-        h_packed_data, l_m_label = self._data_io(l_lines)
-        l_output = self.model(h_packed_data)
+        if self.multi_output:
+            h_packed_data, l_m_label = self._data_io(l_lines)
+            l_output = self.model(h_packed_data)
 
-        l_loss = []
+            l_loss = []
 
-        for output, m_label in zip(l_output, l_m_label):
-            loss = self.criterion(output, m_label)
-            l_loss.append(loss)
-        total_loss = sum(l_loss)
-        return total_loss.data[0]
+            for output, m_label in zip(l_output, l_m_label):
+                loss = self.criterion(output, m_label)
+                l_loss.append(loss)
+            total_loss = sum(l_loss)
+            return total_loss.data[0]
+        else:
+            return super(JointSalienceModelCenter, self)._batch_test(l_lines)
 
     def _epoch_start(self):
         self.__init_batch_info()
 
     def _train_info(self):
-        for n, loss in self.train_losses.items():
-            logging.info(
-                'Loss [%s], epoch [%d] finished with loss [%f] on [%d] batch '
-                '[%d] doc', n, self.epoch, loss / self.batch_count,
-                self.batch_count, self.data_count)
+        if self.multi_output:
+            for n, loss in self.train_losses.items():
+                logging.info(
+                    'Loss [%s], epoch [%d] finished with loss [%f] on [%d] '
+                    'batch [%d] doc', n, self.epoch, loss / self.batch_count,
+                    self.batch_count, self.data_count)
 
     def predict(self, test_in_name, label_out_name, debug=False):
         """
