@@ -98,9 +98,15 @@ class JointSalienceModelCenter(SalienceModelCenter):
         self.epoch = 0
         self.data_count = 0
 
+        assert not (self.multi_output and self.event_only)
+
         if self.multi_output:
             self.output_names = ['entity', 'event']
             logging.info('Using multi-task output.')
+
+        if self.event_only:
+            self.output_names = ['event']
+            logging.info('Event only model.')
 
     def __init_batch_info(self):
         if self.multi_output:
@@ -304,12 +310,15 @@ class JointSalienceModelCenter(SalienceModelCenter):
         line1 = ["p@01", "p@05", "p@10", "p@20", "auc"]
         line2 = ["r@01", "r@05", "r@10", "r@20"]
 
-        l1_evm_scores = ["%.4f" % h_evm_mean_eva[k] for k in line1]
-        l1_ent_scores = ["%.4f" % h_e_mean_eva[k] for k in line1]
+        def get(h, k):
+            return "%.4f" % h[k] if k in h else "-"
+
+        l1_evm_scores = [get(h_evm_mean_eva, k) for k in line1]
+        l1_ent_scores = [get(h_e_mean_eva, k) for k in line1]
         l1_all_scores = ['-' for _ in line1]
 
-        l2_evm_scores = ["%.4f" % h_evm_mean_eva[k] for k in line2]
-        l2_ent_scores = ["%.4f" % h_e_mean_eva[k] for k in line2]
+        l2_evm_scores = [get(h_evm_mean_eva, k) for k in line2]
+        l2_ent_scores = [get(h_e_mean_eva, k) for k in line2]
         l2_all_scores = ['-' for _ in line2]
 
         print "\t-\t".join(l1_evm_scores) + "\t-\t-\t" + \
@@ -366,6 +375,29 @@ class JointSalienceModelCenter(SalienceModelCenter):
             l_h_out[i]['eval'] = h_this_eva
         return l_h_out
 
+    def _single_output(self, line, key_name, docno):
+        l_h_out = [dict()]
+
+        h_packed_data, v_label = self._data_io([line])
+
+        if v_label is None or not v_label[0].size():
+            return None
+        mtx_e = h_packed_data['mtx_e']
+        l_e = mtx_e[0].cpu().data.numpy().tolist()
+        output = self.model(h_packed_data).cpu()[0]
+        pre_label = output.data.sign().type(torch.LongTensor)
+        l_score = output.data.numpy().tolist()
+
+        l_label = v_label[0].cpu().data.view_as(pre_label).numpy().tolist()
+        h_this_eva = self.evaluator.evaluate(l_score, l_label)
+
+        l_h_out[0][key_name] = docno
+        l_h_out[0]['eval'] = h_this_eva
+        l_h_out[0][self.io_parser.content_field] = {
+            'predict': zip(l_e, l_score)
+        }
+        return l_h_out
+
     def _merged_output(self, line, key_name, docno):
         l_h_out = [{}] * len(self.output_names)
 
@@ -377,8 +409,6 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
         if v_label is None or not v_label[0].size():
             return None
-
-        v_label = v_label[0].cpu()
 
         mtx_e = h_packed_data['mtx_e']
         l_e = mtx_e[0].cpu().data.numpy().tolist()
@@ -396,7 +426,7 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
         l_e_combined = l_e + l_evm
 
-        l_label = v_label.data.view_as(pre_label).numpy().tolist()
+        l_label = v_label[0].cpu().data.view_as(pre_label).numpy().tolist()
 
         num_entities = sum(
             [1 if e < self.entity_range else 0 for e in l_e]
@@ -449,6 +479,8 @@ class JointSalienceModelCenter(SalienceModelCenter):
 
         if self.multi_output:
             return self._multi_output(line, key_name, docno)
+        elif self.event_only:
+            return self._single_output(line, key_name, docno)
         else:
             return self._merged_output(line, key_name, docno)
 
