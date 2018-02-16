@@ -352,6 +352,7 @@ class EventDataIO(DataIO):
                 # Some error in data processing cause this.
                 if arg in h_e:
                     adjacent[row, h_e[arg]] = 1
+
         return adjacent
 
     def _average_adjacent(self, ll_args, l_e):
@@ -363,10 +364,11 @@ class EventDataIO(DataIO):
         # This allow the average to work, and no zero divisions.
         ds = [1.0] * len(l_e)
         for index, l_args in enumerate(ll_args):
-            ds.append(1 / len(l_args) if l_args else 1)
+            ds.append(1.0 / len(l_args) if l_args else 1)
 
         rcpr_degree = np.diag(ds)
-        return rcpr_degree * adjacent
+
+        return np.matmul(rcpr_degree, adjacent)
 
     def _symmetric_self_loop_adjacent(self, ll_args, l_e):
         # A_sym = D^-1/2 * A * D^-1/2
@@ -390,7 +392,8 @@ class EventDataIO(DataIO):
             ds.append(1.0 / math.sqrt(len(l_args) + 1))
         rcpr_sqrt_degree = np.diag(ds)
 
-        return rcpr_sqrt_degree * adjacent * rcpr_sqrt_degree
+        return np.matmul(np.matmul(rcpr_sqrt_degree, adjacent),
+                         rcpr_sqrt_degree)
 
     def _parse_joint(self, h_info):
         """

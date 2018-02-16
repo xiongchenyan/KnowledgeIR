@@ -49,6 +49,11 @@ def select_pack(h_packed_data, l_v_label, inds_e, inds_evm):
     inds_e_ts = torch.from_numpy(inds_e).cuda()
     inds_evm_ts = torch.from_numpy(inds_evm).cuda()
 
+    num_entities = len(inds_e[0])
+    adjacent = h_packed_data['ts_adjacent']
+    evm_args = adjacent[:, num_entities:, :]
+
+
     evm_keys = {'mtx_evm_score', 'mtx_evm', 'label_evm', 'ts_evm_feature',
                 'ts_adjacent', 'mtx_arg_length', 'ts_args'}
 
