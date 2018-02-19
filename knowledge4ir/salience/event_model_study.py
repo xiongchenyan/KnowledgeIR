@@ -468,10 +468,17 @@ def kernel_word_counting(model, h_packed_data):
 
     w_around_03 = zip(*np.nonzero(
         np.logical_and(trans_data > 0.2, trans_data < 0.4)))
-    w_around_n03 = zip(np.nonzero(
+    w_around_n03 = zip(*np.nonzero(
         np.logical_and(trans_data < -0.2, trans_data > -0.4)))
 
     return w_around_03, w_around_n03
+
+
+def sort_pair(a, b):
+    if a > b:
+        return b, a
+    else:
+        return a, b
 
 
 def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
@@ -482,8 +489,11 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    out = open(os.path.join(out_dir, 'near_03.tsv'), 'w')
-    counts = {}
+    out_03 = open(os.path.join(out_dir, 'near_03.tsv'), 'w')
+    out_n03 = open(os.path.join(out_dir, 'near_neg_03.tsv'), 'w')
+
+    near_03_counts = {}
+    near_n03_counts = {}
 
     with open(test_in_path) as test_in:
         limit = 1000
@@ -509,35 +519,47 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
             all_items = l_e + l_h
 
             for x, y in w_around_03:
-                left = l_h[x]
-                right = all_items[y]
+                l, r = sort_pair(l_h[x], all_items[y])
+                try:
+                    near_03_counts[(l, r)] += 1
+                except KeyError:
+                    near_03_counts[(l, r)] = 1
 
-                if left > right:
-                    middle = left
-                    left = right
-                    right = middle
-
-                    try:
-                        counts[(left, right)] += 1
-                    except KeyError:
-                        counts[(left, right)] = 1
+            for x, y in w_around_n03:
+                l, r = sort_pair(l_h[x], all_items[y])
+                try:
+                    near_n03_counts[(l, r)] += 1
+                except KeyError:
+                    near_n03_counts[(l, r)] = 1
 
             count += 1
+
+            if count % 1000 == 0:
+                logging.info("Processed %d file." % count)
+
             # if count == limit:
             #     break
 
     import operator
-    sorted_counts = sorted(counts.items(), key=operator.itemgetter(1),
-                           reverse=True)
+    sorted_03_counts = sorted(near_03_counts.items(),
+                              key=operator.itemgetter(1), reverse=True)
+    sorted_n03_counts = sorted(near_n03_counts.items(),
+                               key=operator.itemgetter(1), reverse=True)
 
-    print sorted_counts[:100]
+    print sorted_03_counts[:100]
+
+    print sorted_n03_counts[:100]
     # Could check freebase from googld trends:
     # https://trends.google.com/trends/explore?q=%2Fm%2F0d0vp3
 
-    for (left, right), count in sorted_counts:
-        out.write("%s\t%s\t%d\n" % (left, right, count))
+    for (left, right), count in sorted_03_counts:
+        out_03.write("%s\t%s\t%d\n" % (left, right, count))
 
-    out.close()
+    for (left, right), count in sorted_n03_counts:
+        out_n03.write("%s\t%s\t%d\n" % (left, right, count))
+
+    out_03.close()
+    out_n03.close()
 
 
 if __name__ == '__main__':
