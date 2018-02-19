@@ -13,6 +13,9 @@ import os
 import torch
 import numpy as np
 from torch.autograd import Variable
+import torch.nn.functional as F
+import torch.nn as nn
+import sys
 
 from knowledge4ir.salience.joint_center import JointSalienceModelCenter
 
@@ -79,12 +82,12 @@ def select_pack(h_packed_data, l_v_label, selected_args, indices_evm):
     return h_packed_data_selected, l_v_label_selected
 
 
-def select_pack_ordered(h_packed_data, l_v_label, reverse=True):
+def select_pack_ordered(h_packed_data, l_v_label):
     # Selected events.
     indices_evm = l_v_label[1].cpu().data.numpy().argsort()[0][::-1]
 
-    if reverse:
-        indices_evm = indices_evm[::-1]
+    num_positives = sum(
+        [1 if v == 1 else 0 for v in l_v_label[1].cpu().data.numpy()[0]])
 
     e_labels = l_v_label[0].cpu().data.numpy()[0]
     num_entities = len(e_labels)
@@ -92,9 +95,10 @@ def select_pack_ordered(h_packed_data, l_v_label, reverse=True):
 
     evm_adjacent = adjacent[0, num_entities:, :]
 
-    endings = range(1, indices_evm.size + 1)
-    if reverse:
-        endings.reverse()
+    assert num_positives * 5 <= indices_evm.size
+
+    # We add at most 3x non-salient events to see the outcome.
+    endings = range(1, num_positives * 5 + 1)
 
     for end in endings:
         ts_arg_selector = Variable(torch.zeros(evm_adjacent.size()).cuda())
@@ -129,53 +133,70 @@ def mix(h_packed_data_1, h_packed_data_2, l_v_label_1, l_v_label_2):
     return h_packed_data_mixed, l_v_label_mixed, org_size, ext_size
 
 
-def mix_all(org_line, ext_line):
+def mix_good_first(org_line, ext_line):
     h_packed_data_org, l_v_label_org = org_line
     h_packed_data_ext, l_v_label_ext = ext_line
 
     for h_packed_data_ext_sel, l_v_label_ext_sel in select_pack_ordered(
-            h_packed_data_ext, l_v_label_ext, False):
+            h_packed_data_ext, l_v_label_ext):
         yield mix(h_packed_data_org, h_packed_data_ext_sel, l_v_label_org,
                   l_v_label_ext_sel)
 
-    for h_packed_data_org_sel, l_v_label_org_sel in select_pack_ordered(
-            h_packed_data_org, l_v_label_org, True):
-        yield mix(h_packed_data_org_sel, h_packed_data_ext, l_v_label_org_sel,
-                  l_v_label_ext)
 
-
-def kernel_word_counting(model, test_in_path):
-    pass
-
-
-def analyze_intrusion(l_score, l_label, org_size):
+def analyze_intrusion(l_score, l_label, org_size, ext_size,
+                      num_origin_positives):
     import operator
     sorted_scores = sorted(zip(l_score, enumerate(l_label)), reverse=True,
                            key=operator.itemgetter(0))
 
-    o_mrr = 0
-    e_mrr = 0
+    origin_lowers = [0] * ext_size
+    origin_salience_lowers = [0] * ext_size
 
-    oc = 0
-    ec = 0
+    num_origin_seen = 0
+    num_salient_origin_seen = 0
 
     for rank, (score, (index, label)) in enumerate(sorted_scores):
+        if index >= org_size:
+            # These are intruders
+            origin_lowers[index - org_size] = (
+                label, org_size - num_origin_seen)
+            origin_salience_lowers[index - org_size] = (
+                label, num_origin_positives - num_salient_origin_seen)
+        else:
+            # These are origins
+            if label == 1:
+                num_salient_origin_seen += 1
+            num_origin_seen += 1
+
+    aver_position = 0
+    aver_salient_positions = 0
+
+    aver_position_in_salient = 0
+    aver_salient_positions_in_salient = 0
+
+    intruder_salience_count = 0
+    for label, num_origin_lower in origin_lowers:
+        aver_position += 1.0 * num_origin_lower / org_size
         if label == 1:
-            if index >= org_size:
-                e_mrr += 1.0 / (rank + 1)
-                ec += 1
-            else:
-                o_mrr += 1.0 / (rank + 1)
-                oc += 1
+            intruder_salience_count += 1
+            aver_salient_positions += 1.0 * num_origin_lower / org_size
+    aver_position /= len(origin_lowers)
+    aver_salient_positions = aver_salient_positions / intruder_salience_count
 
-    o_mrr = o_mrr / len(l_label)
-    e_mrr = e_mrr / len(l_label)
+    intruder_salience_count = 0
+    for label, num_origin_s_lower in origin_salience_lowers:
+        aver_position_in_salient += 1.0 * num_origin_s_lower / num_origin_positives
+        if label == 1:
+            intruder_salience_count += 1
+            aver_salient_positions_in_salient += 1.0 * num_origin_s_lower / num_origin_positives
+    aver_position_in_salient /= len(origin_salience_lowers)
+    aver_salient_positions_in_salient /= intruder_salience_count
 
-    return o_mrr, e_mrr
+    return aver_position, aver_salient_positions, aver_position_in_salient, \
+           aver_salient_positions_in_salient
 
 
-def intrusion_test(predictor, test_in_path, num_tests=1,
-                   num_intruder_per=10):
+def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
     test_count = 0
     intruder_set_count = 0
     intruder_count = 0
@@ -183,6 +204,17 @@ def intrusion_test(predictor, test_in_path, num_tests=1,
     test_threshold = 20
 
     test_data = [[] for _ in range(num_tests)]
+
+    import os
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    salience_in_s_out = open(os.path.join(out_dir, 'salient_in_salient.tsv'),
+                             'w')
+    all_in_s_out = open(os.path.join(out_dir, 'all_in_salient.tsv'), 'w')
+
+    salience_out = open(os.path.join(out_dir, 'salient.tsv'), 'w')
+    all_out = open(os.path.join(out_dir, 'all.tsv'), 'w')
 
     print 'Loading some test files'
     with open(test_in_path) as test_in:
@@ -193,19 +225,32 @@ def intrusion_test(predictor, test_in_path, num_tests=1,
             h_packed_data, l_v_label = predictor.io_parser.parse_data([line])
 
             event_labels = l_v_label[1]
+
+            if event_labels is None:
+                continue
+
             num_events = event_labels.size()[1]
             if num_events < test_threshold:
                 continue
 
-            if not np.any([l == 1 for l in event_labels.cpu().data.numpy()]):
+            num_salient = sum(
+                [1 if l == 1 else 0 for l in
+                 event_labels.cpu().data.numpy()[0]])
+
+            if num_salient < 5:
+                continue
+
+            if num_salient * 5 > num_events:
                 continue
 
             if test_count < num_tests:
-                test_data[test_count] = ((h_packed_data, l_v_label), [])
+                # test_data[test_count] = ((h_packed_data, l_v_label), [])
+                test_data[test_count] = (line, [])
                 test_count += 1
             elif intruder_set_count < num_tests:
-                test_data[intruder_set_count][1].append(
-                    (h_packed_data, l_v_label))
+                # test_data[intruder_set_count][1].append(
+                #     (h_packed_data, l_v_label))
+                test_data[intruder_set_count][1].append(line)
                 intruder_count += 1
             else:
                 break
@@ -217,61 +262,282 @@ def intrusion_test(predictor, test_in_path, num_tests=1,
     print 'Loaded %d test pairs, each with %d intruders.' % (
         len(test_data), len(test_data[0][1]))
 
-    for origin, intruders in test_data:
+    # print [len(intruder[1]) for intruder in test_data]
+
+    histo_size = 10
+    aver_position_histo = []
+    aver_position_in_s_histo = []
+
+    aver_salient_position_histo = []
+    aver_salient_position_in_s_histo = []
+
+    progress = 0
+    total_pairs = 0
+    for origin_line, intruder_lines in test_data:
+        origin = predictor.io_parser.parse_data([origin_line])
+
         origin_labels = origin[1][1].cpu().data.numpy()[0]
         num_origin_positives = sum(
             [1 if l == 1 else 0 for l in origin_labels])
-        num_origin = len(origin_labels)
 
-        for intruder in intruders:
-            intruder_labels = intruder[1][1].cpu().data.numpy()[0]
-            num_intruder_positives = sum(
-                [1 if l == 1 else 0 for l in intruder_labels])
-            num_intruder = len(intruder_labels)
+        progress += 1
+        if progress % 10 == 0:
+            print 'Processing training data %d' % progress
 
-            l_o_mrr = []
-            l_e_mrr = []
-            totals = []
-            for h_packed_data, l_v_label, org_sizes, \
-                ext_sizes in mix_all(origin, intruder):
+        for intruder_line in intruder_lines:
+            total_pairs += 1
 
-                l_output = []
-                for output in predictor.model(h_packed_data):
-                    if output is None:
-                        l_output.append([])
-                    else:
-                        l_output.append(output.cpu()[0])
+            intruder = predictor.io_parser.parse_data([intruder_line])
+            l_aver_position, l_aver_salient_position, l_aver_position_in_s, \
+            l_aver_salient_position_in_s = test_intruder(
+                mix_good_first(origin, intruder), num_origin_positives)
 
-                for i, name in enumerate(predictor.output_names):
-                    if name == 'event':
-                        output = l_output[i]
-                        v_label = l_v_label[i]
+            # print 'showing histo for all items'
+            # print histo(l_aver_position)
+            # print histo(l_aver_position_in_s)
+            #
+            # print 'showing histor for salient items'
+            # print histo(l_aver_salient_position)
+            # print histo(l_aver_salient_position_in_s)
 
-                        org_size = org_sizes[i]
+            aver_position_histo = accumulate(aver_position_histo,
+                                             histo(l_aver_position, histo_size))
+            aver_position_in_s_histo = accumulate(aver_position_in_s_histo,
+                                                  histo(l_aver_position_in_s,
+                                                        histo_size))
 
-                        l_score = output.data.numpy().tolist()
-                        l_label = v_label[0].cpu().data.numpy().tolist()
+            aver_salient_position_histo = accumulate(
+                aver_salient_position_histo,
+                histo(l_aver_salient_position, histo_size))
 
-                        o_mrr, e_mrr = analyze_intrusion(l_score,
-                                                         l_label,
-                                                         org_size)
+            aver_salient_position_in_s_histo = accumulate(
+                aver_salient_position_in_s_histo,
+                histo(l_aver_salient_position_in_s, histo_size)
+            )
 
-                        totals.append(len(l_label))
+            all_out.write(tab_list(histo(l_aver_position)))
+            all_in_s_out.write(tab_list(histo(l_aver_position_in_s)))
 
-                        l_o_mrr.append(o_mrr)
-                        l_e_mrr.append(e_mrr)
+            salience_out.write(tab_list(histo(l_aver_salient_position)))
+            salience_in_s_out.write(
+                tab_list(histo(l_aver_salient_position_in_s)))
 
-            print "Number of origin %d, number of intruder %d, number of " \
-                  "origin positives %d, number of intruder " \
-                  "positives %d." % (
-                      num_origin, num_intruder, num_origin_positives,
-                      num_intruder_positives)
+    m = 1.0 / total_pairs
+    aver_position_histo = multiply_list(aver_position_histo, m)
+    aver_position_in_s_histo = multiply_list(aver_position_in_s_histo, m)
 
-            print totals
-            print l_o_mrr
-            print l_e_mrr
-            import sys
-            sys.stdin.readline()
+    aver_salient_position_histo = multiply_list(aver_salient_position_histo, m)
+    aver_salient_position_in_s_histo = multiply_list(
+        aver_salient_position_in_s_histo, m)
+
+    print 'Number of paris processed : %d' % total_pairs
+
+    print 'showing histo for all items'
+    print aver_position_histo
+    print aver_position_in_s_histo
+
+    print 'show histo for salient items'
+    print aver_salient_position_histo
+    print aver_salient_position_in_s_histo
+
+    all_out.write(tab_list(aver_position_histo))
+    all_in_s_out.write(tab_list(aver_position_in_s_histo))
+
+    salience_out.write(tab_list(aver_salient_position_histo))
+    salience_in_s_out.write(tab_list(aver_salient_position_in_s_histo))
+
+    all_out.close()
+    all_in_s_out.close()
+    salience_out.close()
+    salience_in_s_out.close()
+
+
+def tab_list(l):
+    return '\t'.join(["%.6f" % v for v in l]) + '\n'
+
+
+def accumulate(l_all, l):
+    if len(l_all) == 0:
+        return l
+    else:
+        return [a + b for a, b in zip(l_all, l)]
+
+
+def multiply_list(l, multiplier):
+    return [e * multiplier for e in l]
+
+
+def histo(l, k=10):
+    interval = len(l) / k
+    end = interval * k
+
+    chunks = [l[i:i + interval] for i in xrange(0, end, interval)]
+
+    values = [sum(chunk) / len(chunk) for chunk in chunks]
+
+    return values
+
+
+def test_intruder(mixed_data, num_origin_positives):
+    l_aver_position = []
+    l_aver_salient_position = []
+    l_aver_position_in_s = []
+    l_aver_salient_position_in_s = []
+    totals = []
+
+    for h_packed_data, l_v_label, org_sizes, ext_sizes in mixed_data:
+        l_output = []
+        for output in predictor.model(h_packed_data):
+            if output is None:
+                l_output.append([])
+            else:
+                l_output.append(output.cpu()[0])
+
+        for i, name in enumerate(predictor.output_names):
+            if name == 'event':
+                output = l_output[i]
+                v_label = l_v_label[i]
+
+                org_size = org_sizes[i]
+                ext_size = ext_sizes[i]
+
+                l_score = output.data.numpy().tolist()
+                l_label = v_label[0].cpu().data.numpy().tolist()
+
+                aver_position, aver_salient_positions, \
+                aver_position_in_salient, aver_salient_positions_in_salient = \
+                    analyze_intrusion(l_score, l_label, org_size, ext_size,
+                                      num_origin_positives)
+
+                totals.append(len(l_label))
+
+                l_aver_position.append(aver_position)
+                l_aver_salient_position.append(aver_salient_positions)
+                l_aver_position_in_s.append(aver_position_in_salient)
+                l_aver_salient_position_in_s.append(
+                    aver_salient_positions_in_salient)
+
+    return l_aver_position, l_aver_salient_position, l_aver_position_in_s, \
+           l_aver_salient_position_in_s
+
+
+def kernel_word_counting(model, h_packed_data):
+    mtx_e = h_packed_data['mtx_e']
+    mtx_evm = h_packed_data['mtx_evm']
+
+    masks = h_packed_data['masks']
+    mask_e = masks['mtx_e']
+    mask_evm = masks['mtx_evm']
+
+    mtx_e_score = h_packed_data['mtx_e_score']
+    mtx_evm_score = h_packed_data['mtx_evm_score']
+
+    ts_e_feature = h_packed_data['ts_e_feature']
+    ts_evm_feature = h_packed_data['ts_evm_feature']
+
+    # Combine with node features.
+    l_node_features = []
+    if ts_e_feature is not None:
+        e_node_score = F.tanh(model.node_lr(ts_e_feature))
+        l_node_features.append(e_node_score)
+    if ts_evm_feature is not None:
+        evm_node_score = F.tanh(model.node_lr(ts_evm_feature))
+        l_node_features.append(evm_node_score)
+
+    combined_mtx_emb, combined_mtx_emb_mask = model. \
+        combined_embedding(mtx_e, mtx_evm, mask_e, mask_evm)
+    if model.use_mask:
+        masked_mtx_emb = combined_mtx_emb * \
+                         combined_mtx_emb_mask.unsqueeze(-1)
+    else:
+        masked_mtx_emb = combined_mtx_emb
+
+    l_mtx_score = []
+    if mtx_e_score is not None:
+        l_mtx_score.append(mtx_e_score)
+
+    if mtx_evm_score is not None:
+        l_mtx_score.append(mtx_evm_score)
+
+    num_entities = mtx_e.size()[1]
+
+    norm_mtx_emb = nn.functional.normalize(masked_mtx_emb, p=2, dim=-1)
+    trans_mtx = torch.matmul(norm_mtx_emb, norm_mtx_emb.transpose(-2, -1))
+
+    trans_data = trans_mtx.cpu().data.squeeze(0).numpy()[num_entities:, :]
+
+    w_around_03 = zip(*np.nonzero(
+        np.logical_and(trans_data > 0.2, trans_data < 0.4)))
+    w_around_n03 = zip(np.nonzero(
+        np.logical_and(trans_data < -0.2, trans_data > -0.4)))
+
+    return w_around_03, w_around_n03
+
+
+def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
+    print 'linear weights'
+    print predictor.model.linear.weight
+
+    import os
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    out = open(os.path.join(out_dir, 'near_03.tsv'), 'w')
+    counts = {}
+
+    with open(test_in_path) as test_in:
+        limit = 1000
+        count = 0
+        for line in test_in:
+            if predictor.io_parser.is_empty_line(line):
+                continue
+
+            h_packed_data, l_v_label = predictor.io_parser.parse_data([line])
+            w_around_03, w_around_n03 = kernel_word_counting(predictor.model,
+                                                             h_packed_data)
+
+            h_info = json.loads(line)
+            event_spots = h_info.get('event', {}).get('bodyText', {})
+            l_h_ids = event_spots.get('sparse_features', {}
+                                      ).get('LexicalHead', [])
+            l_h = [h_id_event[id] for id in l_h_ids]
+
+            entity_spots = h_info.get('spot', {}).get('bodyText', {})
+            l_e_ids = entity_spots.get('entities', [])
+            l_e = [h_id_entity[id] for id in l_e_ids]
+
+            all_items = l_e + l_h
+
+            for x, y in w_around_03:
+                left = l_h[x]
+                right = all_items[y]
+
+                if left > right:
+                    middle = left
+                    left = right
+                    right = middle
+
+                    try:
+                        counts[(left, right)] += 1
+                    except KeyError:
+                        counts[(left, right)] = 1
+
+            count += 1
+            # if count == limit:
+            #     break
+
+    import operator
+    sorted_counts = sorted(counts.items(), key=operator.itemgetter(1),
+                           reverse=True)
+
+    print sorted_counts[:100]
+    # Could check freebase from googld trends:
+    # https://trends.google.com/trends/explore?q=%2Fm%2F0d0vp3
+
+    for (left, right), count in sorted_counts:
+        out.write("%s\t%s\t%d\n" % (left, right, count))
+
+    out.close()
 
 
 if __name__ == '__main__':
@@ -283,20 +549,21 @@ if __name__ == '__main__':
 
 
     class Main(Configurable):
-        train_in = Unicode(help='training data').tag(config=True)
         test_in = Unicode(help='testing data').tag(config=True)
-        test_out = Unicode(help='test res').tag(config=True)
-        valid_in = Unicode(help='validation in').tag(config=True)
         model_in = Unicode(help='model to read from').tag(config=True)
-        model_out = Unicode(help='model dump out name').tag(config=True)
         log_level = Unicode('INFO', help='log level').tag(config=True)
-        skip_train = Bool(False, help='directly test').tag(config=True)
-        debug = Bool(False, help='Debug mode').tag(config=True)
+        study_out = Unicode(help='output dir of the study result').tag(
+            config=True)
+        num_origins = Int(help='Number origin to study').tag(config=True)
+        num_intruders = Int(help='Number intruders for each origin').tag(
+            config=True)
+        event_id_pickle = Unicode(help='Event id pickle').tag(config=True)
+        entity_id_pickle = Unicode(help='Entity id pickle').tag(config=True)
 
 
     if 3 != len(sys.argv):
         print "[Usage] [this script] [config] " \
-              "[study mode(1=intruder, 2=kernel)]"
+              "[study mode(intruder, kernel)]"
 
         JointSalienceModelCenter.class_print_help()
         Main.class_print_help()
@@ -320,4 +587,22 @@ if __name__ == '__main__':
                      "please set exact path." % para.model_in)
         exit(1)
 
-    intrusion_test(predictor, para.test_in)
+    if mode == 'intruder':
+        logging.info("Mode is %s, running intrusion test", mode)
+        intrusion_test(para.test_in, para.study_out,
+                       para.num_origins, para.num_intruders)
+        # intrusion_test(predictor, para.test_in, para.study_out, 10, 100)
+    elif mode == 'kernel':
+        logging.info("Mode is %s, running kernel analysis", mode)
+        logging.info("Loading event ids.")
+        import pickle
+
+        h_event_id = pickle.load(open(para.event_id_pickle))
+        h_id_event = dict([(v, k) for k, v in h_event_id.items()])
+
+        h_entity_id = pickle.load(open(para.entity_id_pickle))
+        h_id_entity = dict([(v, k) for k, v in h_entity_id.items()])
+
+        check_kernel(para.test_in, para.study_out, h_id_entity, h_id_event)
+    else:
+        logging.info("Unkown mode %s", mode)
