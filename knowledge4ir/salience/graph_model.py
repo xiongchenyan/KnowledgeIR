@@ -188,15 +188,33 @@ class MultiEventKernelCRF(StructEventKernelCRF):
         self.kernel_type = para.entity_event_kernel_type
         logging.info("Kernel type is %d", self.kernel_type)
 
+        if self.kernel_type == 0:
+            # For Type 0, falling back to the basic one kernel mode.
+            # We only use the default kernel pooling layer and linear.
+            if para.arg_voting:
+                # If arguments are used, we override the Linear to include
+                # argument output.
+                self.linear = nn.Linear(self.K * 2 + 1, 1, bias=True)
+                if use_cuda:
+                    self.linear.cuda()
+        else:
+            self.setup_multi_kernel(para, l_mu, l_sigma)
+
+        if para.arg_voting:
+            # Argument voting always have its own kernel, to simplify
+            # experiments.
+            logging.info("Initializing argument kernels.")
+            self.kp_args = KernelPooling(l_mu, l_sigma)
+            if use_cuda:
+                self.kp_args.cuda()
+
+        self.arg_voting = para.arg_voting
+
+    def setup_multi_kernel(self, para, l_mu, l_sigma):
         # Implementation note:
         # 1. The 4 sections of similarities may have their own kernels.
         # 2. We add additional argument kernels (the 5th kernel).
         # 3. Node LR is always shared.
-
-        if self.kernel_type == 0:
-            # Type 0, falling back to the basic one kernel mode.
-            # We only use the default kernel pooling layer and linear.
-            return
 
         if self.kernel_type == 1:
             # Type 1, the kernels are shared, but the sections
@@ -242,15 +260,6 @@ class MultiEventKernelCRF(StructEventKernelCRF):
             self.kp_evm_ent.cuda()
             self.e_linear.cuda()
             self.evm_linear.cuda()
-
-        if para.arg_voting:
-            # Argument voting always have its own kernel, to simplify
-            # experiments.
-            self.kp_args = KernelPooling(l_mu, l_sigma)
-            if use_cuda:
-                self.kp_args.cuda()
-
-        self.arg_voting = para.arg_voting
 
     def forward(self, h_packed_data):
         if self.kernel_type == 0:
@@ -332,8 +341,31 @@ class MultiEventKernelCRF(StructEventKernelCRF):
 
         mtx_score = torch.cat(l_mtx_score, -1)
 
-        output = self.compute_kernel_features_scores(self.kp, masked_mtx_emb,
-                                                     mtx_score, node_features)
+        l_all_features = []
+
+        norm_mtx_emb = nn.functional.normalize(masked_mtx_emb, p=2, dim=-1)
+        trans_mtx = torch.matmul(norm_mtx_emb, norm_mtx_emb.transpose(-2, -1))
+        kp_mtx = self.kp(trans_mtx, mtx_score)
+
+        l_all_features.append(kp_mtx)
+        l_all_features.append(node_features)
+
+        # Compute arg features if specified.
+        if self.arg_voting:
+            # batch x len(evm) x K
+            kp_arg_mtx = self.argument_scores(h_packed_data, mask_evm,
+                                              mtx_evm_score)
+            # pad to len(evm) + len(entity)
+            left_pads = Variable(
+                torch.zeros(mtx_e.size()[0], mtx_e.size()[1], self.K))
+            if use_cuda:
+                left_pads = left_pads.cuda()
+
+            kp_arg_mtx_padded = torch.cat([left_pads, kp_arg_mtx], 1)
+            l_all_features.append(kp_arg_mtx_padded)
+
+        features = torch.cat(l_all_features, -1)
+        output = self.linear(features).squeeze(-1)
 
         if mtx_e_score is None:
             entity_length = 0
@@ -365,10 +397,6 @@ class MultiEventKernelCRF(StructEventKernelCRF):
 
         mtx_e_score = h_packed_data['mtx_e_score']
         mtx_evm_score = h_packed_data['mtx_evm_score']
-
-        ts_args = h_packed_data['ts_args']
-        mtx_arg_length = h_packed_data['mtx_arg_length']
-        ts_arg_mask = masks['ts_args']
 
         l_entity_features = []
         l_event_features = []
@@ -416,15 +444,9 @@ class MultiEventKernelCRF(StructEventKernelCRF):
 
             # Compute event features, size based on whether using arguments.
             if self.arg_voting:
-                # Now work on arguments:
-                mtx_arg_emb = self.argument_vector(ts_args, ts_arg_mask,
-                                                   mtx_arg_length)
-                norm_args_emb = nn.functional.normalize(mtx_arg_emb, p=2,
-                                                        dim=-1)
-                norm_args_emb = norm_args_emb * mask_evm.unsqueeze(-1)
                 # batch x len(evm) x K
-                kp_arg_mtx = self.__arg_kernel_vote(norm_args_emb,
-                                                    mtx_evm_score)
+                kp_arg_mtx = self.argument_scores(h_packed_data, mask_evm,
+                                                  mtx_evm_score)
                 l_event_features.append(kp_arg_mtx)
         else:
             if has_entities:
@@ -452,6 +474,22 @@ class MultiEventKernelCRF(StructEventKernelCRF):
             event_output = None
 
         return entity_output, event_output
+
+    def argument_scores(self, h_packed_data, mask_evm, mtx_evm_score):
+        ts_args = h_packed_data['ts_args']
+        mtx_arg_length = h_packed_data['mtx_arg_length']
+        masks = h_packed_data['masks']
+        ts_arg_mask = masks['ts_args']
+
+        mtx_arg_emb = self.argument_vector(ts_args, ts_arg_mask,
+                                           mtx_arg_length)
+        norm_args_emb = nn.functional.normalize(mtx_arg_emb, p=2,
+                                                dim=-1)
+        norm_args_emb = norm_args_emb * mask_evm.unsqueeze(-1)
+        # batch x len(evm) x K
+        kp_arg_mtx = self.__arg_kernel_vote(norm_args_emb,
+                                            mtx_evm_score)
+        return kp_arg_mtx
 
     def argument_vector(self, ts_args, ts_arg_mask, mtx_arg_length):
         mtx_arg_embedding_sum = self._argument_sum(ts_args, ts_arg_mask)

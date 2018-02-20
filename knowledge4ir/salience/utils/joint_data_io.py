@@ -32,13 +32,23 @@ use_cuda = torch.cuda.is_available()
 class EventDataIO(DataIO):
     event_labels_only = Bool(False, help='only read event labels').tag(
         config=True)
-    omit_feature = Int(-1, help='Omit the feature at this index, negative'
-                                ' means no omission.').tag(config=True)
+    # omit_feature = Int(-1, help='Omit the feature at this index, negative'
+    #                             ' means no omission.').tag(config=True)
+    including_features = List(Int,
+                              default_value=[],
+                              help='List of features to include'
+                              ).tag(config=True)
 
     def __init__(self, **kwargs):
         super(EventDataIO, self).__init__(**kwargs)
         if self.event_labels_only:
             logging.info("Will only train on event labels.")
+
+        if self.including_features:
+            self.including_features.sort()
+            logging.info("Will include features %s" % self.including_features)
+            # Ensure the first feature is kept.
+            assert self.including_features[0] == 0
 
     def _data_config(self):
         h_joint_target_group = {
@@ -455,9 +465,14 @@ class EventDataIO(DataIO):
         # ss entity vote aver, ss entity vote max, ss entity vote min
         ll_feature = [l[-2:] + l[-3:-2] + l[9:13] for l in ll_feature]
 
-        if self.omit_feature >= 0:
-            for l in ll_feature:
-                l.pop(self.omit_feature)
+        # if self.omit_feature >= 0:
+        #     for l in ll_feature:
+        #         l.pop(self.omit_feature)
+
+        if not len(self.including_features) == 0:
+            # We pick some specific features
+            ll_feature = [[l[idx] for idx in self.including_features] for l in
+                          ll_feature]
 
         z = float(sum([item[0] for item in ll_feature]))
         l_tf = [item[0] / z for item in ll_feature]
