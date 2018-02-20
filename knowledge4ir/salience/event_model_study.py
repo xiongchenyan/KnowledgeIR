@@ -466,12 +466,17 @@ def kernel_word_counting(model, h_packed_data):
 
     trans_data = trans_mtx.cpu().data.squeeze(0).numpy()[num_entities:, :]
 
+    w_around_07 = zip(*np.nonzero(
+        np.logical_and(trans_data > 0.6, trans_data < 0.8)))
+    w_around_09 = zip(*np.nonzero(
+        np.logical_and(trans_data > 0.8, trans_data < 1)))
+
     w_around_03 = zip(*np.nonzero(
         np.logical_and(trans_data > 0.2, trans_data < 0.4)))
     w_around_n03 = zip(*np.nonzero(
         np.logical_and(trans_data < -0.2, trans_data > -0.4)))
 
-    return w_around_03, w_around_n03
+    return w_around_07, w_around_09, w_around_03, w_around_n03
 
 
 def sort_pair(a, b):
@@ -491,9 +496,13 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
 
     out_03 = open(os.path.join(out_dir, 'near_03.tsv'), 'w')
     out_n03 = open(os.path.join(out_dir, 'near_neg_03.tsv'), 'w')
+    out_07 = open(os.path.join(out_dir, 'near_07.tsv'),'w')
+    out_09 = open(os.path.join(out_dir, 'near_09.tsv'), 'w')
 
     near_03_counts = {}
     near_n03_counts = {}
+    near_07_counts = {}
+    near_09_counts = {}
 
     with open(test_in_path) as test_in:
         limit = 1000
@@ -503,8 +512,8 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
                 continue
 
             h_packed_data, l_v_label = predictor.io_parser.parse_data([line])
-            w_around_03, w_around_n03 = kernel_word_counting(predictor.model,
-                                                             h_packed_data)
+            w_around_07, w_around_09, w_around_03, w_around_n03 = \
+                kernel_word_counting(predictor.model, h_packed_data)
 
             h_info = json.loads(line)
             event_spots = h_info.get('event', {}).get('bodyText', {})
@@ -532,6 +541,20 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
                 except KeyError:
                     near_n03_counts[(l, r)] = 1
 
+            for x, y in w_around_07:
+                l, r = sort_pair(l_h[x], all_items[y])
+                try:
+                    near_07_counts[(l, r)] += 1
+                except KeyError:
+                    near_07_counts[(l, r)] = 1
+
+            for x, y in w_around_09:
+                l, r = sort_pair(l_h[x], all_items[y])
+                try:
+                    near_09_counts[(l, r)] += 1
+                except KeyError:
+                    near_09_counts[(l, r)] = 1
+
             count += 1
 
             if count % 1000 == 0:
@@ -545,10 +568,14 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
                               key=operator.itemgetter(1), reverse=True)
     sorted_n03_counts = sorted(near_n03_counts.items(),
                                key=operator.itemgetter(1), reverse=True)
+    sorted_07_counts = sorted(near_07_counts.items,
+                              key=operator.itemgetter(1), reverse=True)
+    sorted_09_counts = sorted(near_09_counts.items,
+                              key=operator.itemgetter(1), reverse=True)
 
-    print sorted_03_counts[:100]
-
-    print sorted_n03_counts[:100]
+    # print sorted_03_counts[:100]
+    #
+    # print sorted_n03_counts[:100]
     # Could check freebase from googld trends:
     # https://trends.google.com/trends/explore?q=%2Fm%2F0d0vp3
 
@@ -558,8 +585,17 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
     for (left, right), count in sorted_n03_counts:
         out_n03.write("%s\t%s\t%d\n" % (left, right, count))
 
+    for (left, right), count in sorted_07_counts:
+        out_07.write("%s\t%s\t%d\n" % (left, right, count))
+
+    for (left, right), count in sorted_09_counts:
+        out_09.write("%s\t%s\t%d\n" % (left, right, count))
+
+
     out_03.close()
     out_n03.close()
+    out_07.close()
+    out_09.close()
 
 
 if __name__ == '__main__':
