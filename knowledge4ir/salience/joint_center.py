@@ -103,10 +103,11 @@ class JointSalienceModelCenter(SalienceModelCenter):
         if self.multi_output:
             self.output_names = ['entity', 'event']
             logging.info('Using multi-task output.')
-
-        if self.event_only:
+        elif self.event_only:
             self.output_names = ['event']
             logging.info('Event only model.')
+        else:
+            self.output_names = ['entity', 'event']
 
     def __init_batch_info(self):
         if self.multi_output:
