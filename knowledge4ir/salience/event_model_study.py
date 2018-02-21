@@ -421,7 +421,7 @@ def test_intruder(mixed_data, num_origin_positives):
            l_aver_salient_position_in_s
 
 
-def kernel_word_counting(model, h_packed_data):
+def kernel_word_counting(model, h_packed_data, kernels):
     mtx_e = h_packed_data['mtx_e']
     mtx_evm = h_packed_data['mtx_evm']
 
@@ -466,17 +466,23 @@ def kernel_word_counting(model, h_packed_data):
 
     trans_data = trans_mtx.cpu().data.squeeze(0).numpy()[num_entities:, :]
 
-    w_around_07 = zip(*np.nonzero(
-        np.logical_and(trans_data > 0.6, trans_data < 0.8)))
-    w_around_09 = zip(*np.nonzero(
-        np.logical_and(trans_data > 0.8, trans_data < 1)))
+    words_around = []
+    for k in kernels:
+        w_around = zip(*np.nonzero(
+            np.logical_and(trans_data > k - 0.1, trans_data < k + 0.1)))
+        words_around.append(w_around)
 
-    w_around_03 = zip(*np.nonzero(
-        np.logical_and(trans_data > 0.2, trans_data < 0.4)))
-    w_around_n03 = zip(*np.nonzero(
-        np.logical_and(trans_data < -0.2, trans_data > -0.4)))
+    # w_around_07 = zip(*np.nonzero(
+    #     np.logical_and(trans_data > 0.6, trans_data < 0.8)))
+    # w_around_09 = zip(*np.nonzero(
+    #     np.logical_and(trans_data > 0.8, trans_data < 1)))
+    #
+    # w_around_03 = zip(*np.nonzero(
+    #     np.logical_and(trans_data > 0.2, trans_data < 0.4)))
+    # w_around_n03 = zip(*np.nonzero(
+    #     np.logical_and(trans_data < -0.2, trans_data > -0.4)))
 
-    return w_around_07, w_around_09, w_around_03, w_around_n03
+    return words_around
 
 
 def sort_pair(a, b):
@@ -486,7 +492,21 @@ def sort_pair(a, b):
         return a, b
 
 
-def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
+def cosine(word1, word2, entity_embedding, event_embedding):
+    def emb(word):
+        if word.startswith('/m/'):
+            return entity_embedding[h_entity_id[word]]
+        else:
+            return event_embedding[h_event_id[word]]
+
+    embedding1 = emb(word1)
+    embedding2 = emb(word2)
+
+    from scipy import spatial
+    return 1 - spatial.distance.cosine(embedding1, embedding2)
+
+
+def check_kernel(test_in_path, out_dir, entity_embedding, event_embedding):
     print 'linear weights'
     print predictor.model.linear.weight
 
@@ -494,26 +514,29 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    out_03 = open(os.path.join(out_dir, 'near_03.tsv'), 'w')
-    out_n03 = open(os.path.join(out_dir, 'near_neg_03.tsv'), 'w')
-    out_07 = open(os.path.join(out_dir, 'near_07.tsv'),'w')
-    out_09 = open(os.path.join(out_dir, 'near_09.tsv'), 'w')
+    entity_emb = np.load(entity_embedding)
+    event_emb = np.load(event_embedding)
 
-    near_03_counts = {}
-    near_n03_counts = {}
-    near_07_counts = {}
-    near_09_counts = {}
+    kernels = [-0.3, 0.3, 0.7, 0.9]
+
+    near_counts = [{} for _ in kernels]
+
+    outputs = []
+    for kernel in kernels:
+        out = open(os.path.join(out_dir, 'kernel_near_%.1f.tsv' % kernel), 'w')
+        outputs.append(out)
 
     with open(test_in_path) as test_in:
-        limit = 1000
+        limit = 100
         count = 0
         for line in test_in:
             if predictor.io_parser.is_empty_line(line):
                 continue
 
             h_packed_data, l_v_label = predictor.io_parser.parse_data([line])
-            w_around_07, w_around_09, w_around_03, w_around_n03 = \
-                kernel_word_counting(predictor.model, h_packed_data)
+            # w_around_07, w_around_09, w_around_03, w_around_n03 = \
+            words_around = kernel_word_counting(predictor.model, h_packed_data,
+                                                kernels)
 
             h_info = json.loads(line)
             event_spots = h_info.get('event', {}).get('bodyText', {})
@@ -527,33 +550,13 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
 
             all_items = l_e + l_h
 
-            for x, y in w_around_03:
-                l, r = sort_pair(l_h[x], all_items[y])
-                try:
-                    near_03_counts[(l, r)] += 1
-                except KeyError:
-                    near_03_counts[(l, r)] = 1
-
-            for x, y in w_around_n03:
-                l, r = sort_pair(l_h[x], all_items[y])
-                try:
-                    near_n03_counts[(l, r)] += 1
-                except KeyError:
-                    near_n03_counts[(l, r)] = 1
-
-            for x, y in w_around_07:
-                l, r = sort_pair(l_h[x], all_items[y])
-                try:
-                    near_07_counts[(l, r)] += 1
-                except KeyError:
-                    near_07_counts[(l, r)] = 1
-
-            for x, y in w_around_09:
-                l, r = sort_pair(l_h[x], all_items[y])
-                try:
-                    near_09_counts[(l, r)] += 1
-                except KeyError:
-                    near_09_counts[(l, r)] = 1
+            for w_around, n_count in zip(words_around, near_counts):
+                for x, y in w_around:
+                    l, r = sort_pair(l_h[x], all_items[y])
+                    try:
+                        n_count[(l, r)] += 1
+                    except KeyError:
+                        n_count[(l, r)] = 1
 
             count += 1
 
@@ -564,38 +567,15 @@ def check_kernel(test_in_path, out_dir, h_id_entity, h_id_event):
             #     break
 
     import operator
-    sorted_03_counts = sorted(near_03_counts.items(),
-                              key=operator.itemgetter(1), reverse=True)
-    sorted_n03_counts = sorted(near_n03_counts.items(),
+
+    for n_count, output in zip(near_counts, outputs):
+        sorted_counts = sorted(n_count.items(),
                                key=operator.itemgetter(1), reverse=True)
-    sorted_07_counts = sorted(near_07_counts.items,
-                              key=operator.itemgetter(1), reverse=True)
-    sorted_09_counts = sorted(near_09_counts.items,
-                              key=operator.itemgetter(1), reverse=True)
-
-    # print sorted_03_counts[:100]
-    #
-    # print sorted_n03_counts[:100]
-    # Could check freebase from googld trends:
-    # https://trends.google.com/trends/explore?q=%2Fm%2F0d0vp3
-
-    for (left, right), count in sorted_03_counts:
-        out_03.write("%s\t%s\t%d\n" % (left, right, count))
-
-    for (left, right), count in sorted_n03_counts:
-        out_n03.write("%s\t%s\t%d\n" % (left, right, count))
-
-    for (left, right), count in sorted_07_counts:
-        out_07.write("%s\t%s\t%d\n" % (left, right, count))
-
-    for (left, right), count in sorted_09_counts:
-        out_09.write("%s\t%s\t%d\n" % (left, right, count))
-
-
-    out_03.close()
-    out_n03.close()
-    out_07.close()
-    out_09.close()
+        print sorted_counts[:10]
+        for (left, right), count in sorted_counts:
+            sim = cosine(left, right, entity_emb, event_emb)
+            output.write("%s\t%s\t%d\t%.4f\n" % (left, right, count, sim))
+        output.close()
 
 
 if __name__ == '__main__':
@@ -617,6 +597,8 @@ if __name__ == '__main__':
             config=True)
         event_id_pickle = Unicode(help='Event id pickle').tag(config=True)
         entity_id_pickle = Unicode(help='Entity id pickle').tag(config=True)
+        entity_emb_in = Unicode(help='Entity embedding').tag(config=True)
+        event_emb_in = Unicode(help='Event embedding').tag(config=True)
 
 
     if 3 != len(sys.argv):
@@ -661,6 +643,7 @@ if __name__ == '__main__':
         h_entity_id = pickle.load(open(para.entity_id_pickle))
         h_id_entity = dict([(v, k) for k, v in h_entity_id.items()])
 
-        check_kernel(para.test_in, para.study_out, h_id_entity, h_id_event)
+        check_kernel(para.test_in, para.study_out,
+                     para.entity_emb_in, para.event_emb_in)
     else:
         logging.info("Unkown mode %s", mode)
