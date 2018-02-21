@@ -28,7 +28,6 @@ def random_swap(l_target, l_base):
 
 
 def win_tie_loss(l_target, l_base):
-    win, tie, loss = 0, 0, 0
     l_a = [round(a, 3) for a in l_target]
     l_b = [round(b, 3) for b in l_base]
     l_ab = zip(l_a, l_b)
