@@ -568,6 +568,9 @@ def check_kernel(test_in_path, out_dir, entity_embedding, event_embedding):
 
     import operator
 
+    # Could check freebase from google trends:
+    # https://trends.google.com/trends/explore?q=%2Fm%2F0d0vp3
+
     for n_count, output in zip(near_counts, outputs):
         sorted_counts = sorted(n_count.items(),
                                key=operator.itemgetter(1), reverse=True)
