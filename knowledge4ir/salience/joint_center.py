@@ -412,20 +412,15 @@ class JointSalienceModelCenter(SalienceModelCenter):
             return None
 
         mtx_e = h_packed_data['mtx_e']
-        l_e = mtx_e[0].cpu().data.numpy().tolist()
+        l_combined = mtx_e[0].cpu().data.numpy().tolist()
 
-        l_evm = []
-        if 'mtx_evm' in h_packed_data:
-            mtx_evm = h_packed_data['mtx_evm']
-            if mtx_evm is not None:
-                l_evm = mtx_evm[0].cpu().data.numpy().tolist()
+        l_e = [e for e in l_combined if e < self.entity_range]
+        l_evm = [e for e in l_combined if e >= self.entity_range]
 
         output = self.model(h_packed_data).cpu()[0]
 
         pre_label = output.data.sign().type(torch.LongTensor)
         l_score = output.data.numpy().tolist()
-
-        l_e_combined = l_e + l_evm
 
         l_label = v_label[0].cpu().data.view_as(pre_label).numpy().tolist()
 
@@ -449,7 +444,7 @@ class JointSalienceModelCenter(SalienceModelCenter):
         }
 
         h_combined[self.io_parser.content_field] = {
-            'predict': zip(l_e_combined, l_score)
+            'predict': zip(l_combined, l_score)
         }
 
         h_this_eva = self.evaluator.evaluate(l_score, l_label)
