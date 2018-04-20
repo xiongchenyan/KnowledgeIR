@@ -520,6 +520,7 @@ if __name__ == '__main__':
 
     para = Main(config=conf)
     assert para.test_in
+    assert para.test_out
 
     set_basic_log(logging.getLevelName(para.log_level))
 
