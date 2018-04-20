@@ -5,6 +5,7 @@ import sys
 import logging
 import logging.handlers
 from traitlets.config import PyFileConfigLoader
+from traitlets.config.loader import KeyValueConfigLoader
 from knowledge4ir.utils.base_conf import ROOT_PATH
 import os
 import json
@@ -262,6 +263,11 @@ def load_py_config(in_name):
     reader.load_config()
     # logging.info('load from [%s] conf: %s', in_name, reader.config)
     return reader.config
+
+
+def load_command_line_config(args):
+    cl_loader = KeyValueConfigLoader()
+    return cl_loader.load_config(args)
 
 
 def load_svm_feature(in_name):
@@ -673,6 +679,7 @@ def exp_feature(h_feature):
     for key in h_feature.keys():
         h_feature[key] = math.exp(h_feature[key])
     return h_feature
+
 
 def add_feature_prefix(h_feature, prefix):
     h_new = dict(

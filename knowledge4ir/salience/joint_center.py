@@ -18,6 +18,7 @@ hyper-parameters:
     embedding dim
 
 """
+from __future__ import print_function
 
 import json
 import logging
@@ -322,13 +323,15 @@ class JointSalienceModelCenter(SalienceModelCenter):
         l2_ent_scores = [get(h_e_mean_eva, k) for k in line2]
         l2_all_scores = ['-' for _ in line2]
 
-        print "\t-\t".join(l1_evm_scores) + "\t-\t-\t" + \
-              "\t".join(l1_all_scores) + "\t-\t" + \
-              "\t".join(l1_ent_scores)
+        print
+        "\t-\t".join(l1_evm_scores) + "\t-\t-\t" + \
+        "\t".join(l1_all_scores) + "\t-\t" + \
+        "\t".join(l1_ent_scores)
 
-        print "\t-\t".join(l2_evm_scores) + "\t-\t-\t-\t-\t" + \
-              "\t".join(l2_all_scores) + "\t-\t-\t" + \
-              "\t".join(l2_ent_scores)
+        print
+        "\t-\t".join(l2_evm_scores) + "\t-\t-\t-\t-\t" + \
+        "\t".join(l2_all_scores) + "\t-\t-\t" + \
+        "\t".join(l2_ent_scores)
 
     def _multi_output(self, line, key_name, docno):
         h_packed_data, l_v_label = self._data_io([line])
@@ -489,7 +492,10 @@ if __name__ == '__main__':
     from knowledge4ir.utils import (
         set_basic_log,
         load_py_config,
+        load_command_line_config,
     )
+
+    from traitlets.config.loader import KeyValueConfigLoader
 
 
     class Main(Configurable):
@@ -504,15 +510,18 @@ if __name__ == '__main__':
         debug = Bool(False, help='Debug mode').tag(config=True)
 
 
-    if 2 != len(sys.argv):
-        print "unit test model train test"
-        print "1 para, config"
+    if len(sys.argv) < 2:
+        print("Please provide setting file: [this script] [setting]")
         JointSalienceModelCenter.class_print_help()
         Main.class_print_help()
         sys.exit(-1)
 
     conf = load_py_config(sys.argv[1])
+    cl_conf = load_command_line_config(sys.argv[2:])
+    conf.merge(cl_conf)
+
     para = Main(config=conf)
+    assert para.test_in
 
     set_basic_log(logging.getLevelName(para.log_level))
 
