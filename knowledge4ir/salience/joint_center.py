@@ -323,15 +323,13 @@ class JointSalienceModelCenter(SalienceModelCenter):
         l2_ent_scores = [get(h_e_mean_eva, k) for k in line2]
         l2_all_scores = ['-' for _ in line2]
 
-        print
-        "\t-\t".join(l1_evm_scores) + "\t-\t-\t" + \
-        "\t".join(l1_all_scores) + "\t-\t" + \
-        "\t".join(l1_ent_scores)
+        print("\t-\t".join(l1_evm_scores) + "\t-\t-\t" +
+              "\t".join(l1_all_scores) + "\t-\t" +
+              "\t".join(l1_ent_scores))
 
-        print
-        "\t-\t".join(l2_evm_scores) + "\t-\t-\t-\t-\t" + \
-        "\t".join(l2_all_scores) + "\t-\t-\t" + \
-        "\t".join(l2_ent_scores)
+        print("\t-\t".join(l2_evm_scores) + "\t-\t-\t-\t-\t" +
+              "\t".join(l2_all_scores) + "\t-\t-\t" +
+              "\t".join(l2_ent_scores))
 
     def _multi_output(self, line, key_name, docno):
         h_packed_data, l_v_label = self._data_io([line])
