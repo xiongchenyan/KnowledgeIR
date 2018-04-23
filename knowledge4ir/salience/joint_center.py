@@ -200,7 +200,8 @@ class JointSalienceModelCenter(SalienceModelCenter):
                     'batch [%d] doc', n, self.epoch, loss / self.batch_count,
                     self.batch_count, self.data_count)
 
-    def predict(self, test_in_name, label_out_name, debug=False):
+    def predict(self, test_in_name, label_out_name, debug=False,
+                timestamp=True):
         """
         predict the data in test_in,
         dump predict labels in label_out_name
@@ -217,8 +218,12 @@ class JointSalienceModelCenter(SalienceModelCenter):
         self.model.eval()
 
         name, ext = os.path.splitext(label_out_name)
-        ent_label_out_name = name + "_entity_" + self.init_time + ext
-        evm_label_out_name = name + "_event_" + self.init_time + ext
+        if timestamp:
+            ent_label_out_name = name + "_entity_" + self.init_time + ext
+            evm_label_out_name = name + "_event_" + self.init_time + ext
+        else:
+            ent_label_out_name = name + "_entity" + ext
+            evm_label_out_name = name + "_event" + ext
 
         ent_out = open(ent_label_out_name, 'w')
         evm_out = open(evm_label_out_name, 'w')
@@ -506,6 +511,8 @@ if __name__ == '__main__':
         log_level = Unicode('INFO', help='log level').tag(config=True)
         skip_train = Bool(False, help='directly test').tag(config=True)
         debug = Bool(False, help='Debug mode').tag(config=True)
+        time_stamp = Bool(True, help='Add time stamp to output.').tag(
+            config=True)
 
 
     if len(sys.argv) < 2:
@@ -540,4 +547,4 @@ if __name__ == '__main__':
         logging.info('Start to run training.')
         model.train(para.train_in, para.valid_in, para.model_out)
 
-    model.predict(para.test_in, para.test_out, para.debug)
+    model.predict(para.test_in, para.test_out, para.debug, para.time_stamp)

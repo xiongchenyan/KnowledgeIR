@@ -146,7 +146,10 @@ class CorpusHasher(Configurable):
     def _hash_events(self, h_info, h_hashed):
         h_hashed['event'] = dict()
         for field, l_ana in h_info['event'].items():
-            l_event_frames = [ana['frame_name'] for ana in l_ana]
+            l_event_frames = [
+                ana['frame_name'] if 'frame_name' in ana else 'General' for ana
+                in l_ana
+            ]
             if not l_event_frames:
                 this_field_data = {
                     "sparse_features": {},
@@ -346,7 +349,8 @@ if __name__ == '__main__':
     import sys
     from knowledge4ir.utils import (
         load_py_config,
-        set_basic_log
+        set_basic_log,
+        load_command_line_config,
     )
 
     set_basic_log(logging.INFO)
@@ -355,11 +359,15 @@ if __name__ == '__main__':
         CorpusHasher.class_print_help()
         sys.exit(-1)
 
-    hasher = CorpusHasher(config=load_py_config(sys.argv[1]))
-    if len(sys.argv) >= 3:
-        hasher.corpus_in = sys.argv[2]
-        logging.info('corpus in set to [%s]', sys.argv[2])
-    if len(sys.argv) >= 4:
-        hasher.out_name = sys.argv[3]
-        logging.info('output set to [%s]', sys.argv[3])
+    conf = load_py_config(sys.argv[1])
+    cl_conf = load_command_line_config(sys.argv[2:])
+    conf.merge(cl_conf)
+
+    hasher = CorpusHasher(config=conf)
+    # if len(sys.argv) >= 3:
+    #     hasher.corpus_in = sys.argv[2]
+    #     logging.info('corpus in set to [%s]', sys.argv[2])
+    # if len(sys.argv) >= 4:
+    #     hasher.out_name = sys.argv[3]
+    #     logging.info('output set to [%s]', sys.argv[3])
     hasher.process()
