@@ -128,6 +128,13 @@ class JointSalienceModelCenter(SalienceModelCenter):
             self.model = self.h_model[self.model_name](self.para, self.ext_data)
             logging.info('use model [%s]', self.model_name)
 
+    def load_model(self, model_out_name):
+        super(JointSalienceModelCenter, self).load_model(model_out_name)
+        # Hacking: fix some version incompatible.
+        if isinstance(self.model, MultiEventKernelCRF):
+            # Old trained model does not have this variable set.
+            self.model.arg_voting = self.para.arg_voting
+
     def train(self, train_in_name, validation_in_name=None,
               model_out_name=None):
         if not model_out_name:

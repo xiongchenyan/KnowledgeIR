@@ -1,3 +1,13 @@
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
 from traitlets import (
     Unicode,
     Int,
@@ -82,9 +92,14 @@ def select_pack(h_packed_data, l_v_label, selected_args, indices_evm):
     return h_packed_data_selected, l_v_label_selected
 
 
-def select_pack_ordered(h_packed_data, l_v_label):
-    # Selected events.
-    indices_evm = l_v_label[1].cpu().data.numpy().argsort()[0][::-1]
+def select_pack_ordered(h_packed_data, l_v_label, good_first=True):
+    # Sort the event using the labels.
+    if good_first:
+        indices_evm = l_v_label[1].cpu().data.numpy().argsort()[0][::-1]
+    else:
+        indices_evm = l_v_label[1].cpu().data.numpy().argsort()[0]
+        # Take one of the positive up, so Tensor index won't break.
+        # indices_evm = np.concatenate((indices_evm[-1:], indices_evm[:-1]))
 
     num_positives = sum(
         [1 if v == 1 else 0 for v in l_v_label[1].cpu().data.numpy()[0]])
@@ -97,13 +112,22 @@ def select_pack_ordered(h_packed_data, l_v_label):
 
     assert num_positives * 5 <= indices_evm.size
 
-    # We add at most 3x non-salient events to see the outcome.
-    endings = range(1, num_positives * 5 + 1)
+    # We add at most 5x non-salient events to see the outcome.
+    if good_first:
+        endings = range(1, num_positives * 5 + 1)
+        begins = [0] * len(endings)
+        selection_range = zip(begins, endings)
+    else:
+        total = len(indices_evm)
+        cutoff = max(0, total - num_positives * 5)
+        endings = range(cutoff + 1, total)
+        begins = [cutoff] * len(endings)
+        selection_range = zip(begins, endings)
 
-    for end in endings:
+    for begin, end in selection_range:
+        # Need to select subset from the adjacent matrix.
         ts_arg_selector = Variable(torch.zeros(evm_adjacent.size()).cuda())
-
-        for i in indices_evm[:end]:
+        for i in indices_evm[begin:end]:
             ts_arg_selector[i, :] = 1
 
         selected_adjacent = evm_adjacent * ts_arg_selector
@@ -122,23 +146,24 @@ def select_pack_ordered(h_packed_data, l_v_label):
                           selected_events)
 
 
-def mix(h_packed_data_1, h_packed_data_2, l_v_label_1, l_v_label_2):
+def mix(h_packed_data_org, h_packed_data_ext, l_v_label_org, l_v_label_ext):
     l_v_label_mixed = [torch.cat((v_label_org, v_label_ext), 1) for
                        v_label_org, v_label_ext in
-                       zip(l_v_label_1, l_v_label_2)]
-    h_packed_data_mixed = merge_pack(h_packed_data_1,
-                                     h_packed_data_2)
-    org_size = [v.size()[1] for v in l_v_label_1]
-    ext_size = [v.size()[1] for v in l_v_label_2]
+                       zip(l_v_label_org, l_v_label_ext)]
+    h_packed_data_mixed = merge_pack(h_packed_data_org,
+                                     h_packed_data_ext)
+    org_size = [v.size()[1] for v in l_v_label_org]
+    ext_size = [v.size()[1] for v in l_v_label_ext]
+
     return h_packed_data_mixed, l_v_label_mixed, org_size, ext_size
 
 
-def mix_good_first(org_line, ext_line):
+def mix_with_preference(org_line, ext_line, good_first=True):
     h_packed_data_org, l_v_label_org = org_line
     h_packed_data_ext, l_v_label_ext = ext_line
 
     for h_packed_data_ext_sel, l_v_label_ext_sel in select_pack_ordered(
-            h_packed_data_ext, l_v_label_ext):
+            h_packed_data_ext, l_v_label_ext, good_first):
         yield mix(h_packed_data_org, h_packed_data_ext_sel, l_v_label_org,
                   l_v_label_ext_sel)
 
@@ -180,8 +205,12 @@ def analyze_intrusion(l_score, l_label, org_size, ext_size,
         if label == 1:
             intruder_salience_count += 1
             aver_salient_positions += 1.0 * num_origin_lower / org_size
+
     aver_position /= len(origin_lowers)
-    aver_salient_positions = aver_salient_positions / intruder_salience_count
+    if intruder_salience_count:
+        aver_salient_positions /= intruder_salience_count
+    else:
+        aver_salient_positions = 0
 
     intruder_salience_count = 0
     for label, num_origin_s_lower in origin_salience_lowers:
@@ -190,33 +219,26 @@ def analyze_intrusion(l_score, l_label, org_size, ext_size,
             intruder_salience_count += 1
             aver_salient_positions_in_salient += 1.0 * num_origin_s_lower / num_origin_positives
     aver_position_in_salient /= len(origin_salience_lowers)
-    aver_salient_positions_in_salient /= intruder_salience_count
+
+    if intruder_salience_count:
+        aver_salient_positions_in_salient /= intruder_salience_count
+    else:
+        aver_salient_positions_in_salient = 0
 
     return aver_position, aver_salient_positions, aver_position_in_salient, \
            aver_salient_positions_in_salient
 
 
-def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
+def __load_intruder_data(test_in_path, num_tests, num_intruder_per):
+    test_data = [[] for _ in range(num_tests)]
+
     test_count = 0
     intruder_set_count = 0
     intruder_count = 0
 
     test_threshold = 20
 
-    test_data = [[] for _ in range(num_tests)]
-
-    import os
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-
-    salience_in_s_out = open(os.path.join(out_dir, 'salient_in_salient.tsv'),
-                             'w')
-    all_in_s_out = open(os.path.join(out_dir, 'all_in_salient.tsv'), 'w')
-
-    salience_out = open(os.path.join(out_dir, 'salient.tsv'), 'w')
-    all_out = open(os.path.join(out_dir, 'all.tsv'), 'w')
-
-    print 'Loading some test files'
+    print('Loading some test files')
     with open(test_in_path) as test_in:
         for line in test_in:
             if predictor.io_parser.is_empty_line(line):
@@ -259,12 +281,14 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
                 intruder_count = 0
                 intruder_set_count += 1
 
-    print 'Loaded %d test pairs, each with %d intruders.' % (
-        len(test_data), len(test_data[0][1]))
+    print('Loaded %d test pairs, each with %d intruders.' % (
+        len(test_data), len(test_data[0][1])))
 
-    # print [len(intruder[1]) for intruder in test_data]
+    return test_data
 
-    histo_size = 10
+
+def __collect_intruder_result(test_data, good_first, all_out, all_in_s_out,
+                              salience_out, salience_in_s_out):
     aver_position_histo = []
     aver_position_in_s_histo = []
 
@@ -273,6 +297,8 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
 
     progress = 0
     total_pairs = 0
+    histo_size = 10
+
     for origin_line, intruder_lines in test_data:
         origin = predictor.io_parser.parse_data([origin_line])
 
@@ -282,45 +308,40 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
 
         progress += 1
         if progress % 10 == 0:
-            print 'Processing training data %d' % progress
+            print('Processing training data %d' % progress)
 
         for intruder_line in intruder_lines:
             total_pairs += 1
 
             intruder = predictor.io_parser.parse_data([intruder_line])
-            l_aver_position, l_aver_salient_position, l_aver_position_in_s, \
-            l_aver_salient_position_in_s = test_intruder(
-                mix_good_first(origin, intruder), num_origin_positives)
+            l_aver_posi, l_aver_salient_posi, l_aver_posi_in_s, l_aver_salient_posi_in_s = test_intruder(
+                mix_with_preference(origin, intruder, good_first),
+                num_origin_positives
+            )
 
-            # print 'showing histo for all items'
-            # print histo(l_aver_position)
-            # print histo(l_aver_position_in_s)
-            #
-            # print 'showing histor for salient items'
-            # print histo(l_aver_salient_position)
-            # print histo(l_aver_salient_position_in_s)
-
-            aver_position_histo = accumulate(aver_position_histo,
-                                             histo(l_aver_position, histo_size))
-            aver_position_in_s_histo = accumulate(aver_position_in_s_histo,
-                                                  histo(l_aver_position_in_s,
-                                                        histo_size))
+            aver_position_histo = accumulate(
+                aver_position_histo, histo(l_aver_posi, histo_size)
+            )
+            aver_position_in_s_histo = accumulate(
+                aver_position_in_s_histo, histo(l_aver_posi_in_s, histo_size)
+            )
 
             aver_salient_position_histo = accumulate(
                 aver_salient_position_histo,
-                histo(l_aver_salient_position, histo_size))
+                histo(l_aver_salient_posi, histo_size)
+            )
 
             aver_salient_position_in_s_histo = accumulate(
                 aver_salient_position_in_s_histo,
-                histo(l_aver_salient_position_in_s, histo_size)
+                histo(l_aver_salient_posi_in_s, histo_size)
             )
 
-            all_out.write(tab_list(histo(l_aver_position)))
-            all_in_s_out.write(tab_list(histo(l_aver_position_in_s)))
+            all_out.write(tab_list(histo(l_aver_posi)))
+            all_in_s_out.write(tab_list(histo(l_aver_posi_in_s)))
 
-            salience_out.write(tab_list(histo(l_aver_salient_position)))
+            salience_out.write(tab_list(histo(l_aver_salient_posi)))
             salience_in_s_out.write(
-                tab_list(histo(l_aver_salient_position_in_s)))
+                tab_list(histo(l_aver_salient_posi_in_s)))
 
     m = 1.0 / total_pairs
     aver_position_histo = multiply_list(aver_position_histo, m)
@@ -330,15 +351,16 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
     aver_salient_position_in_s_histo = multiply_list(
         aver_salient_position_in_s_histo, m)
 
-    print 'Number of paris processed : %d' % total_pairs
+    print('Number of paris processed : %d' % total_pairs)
+    print('Ordering is good first: %s' % good_first)
 
-    print 'showing histo for all items'
-    print aver_position_histo
-    print aver_position_in_s_histo
+    print('showing histo for all items')
+    print(aver_position_histo)
+    print(aver_position_in_s_histo)
 
-    print 'show histo for salient items'
-    print aver_salient_position_histo
-    print aver_salient_position_in_s_histo
+    print('show histo for salient items')
+    print(aver_salient_position_histo)
+    print(aver_salient_position_in_s_histo)
 
     all_out.write(tab_list(aver_position_histo))
     all_in_s_out.write(tab_list(aver_position_in_s_histo))
@@ -346,10 +368,28 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
     salience_out.write(tab_list(aver_salient_position_histo))
     salience_in_s_out.write(tab_list(aver_salient_position_in_s_histo))
 
-    all_out.close()
-    all_in_s_out.close()
-    salience_out.close()
-    salience_in_s_out.close()
+
+def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
+    import os
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    test_data = __load_intruder_data(test_in_path, num_tests, num_intruder_per)
+
+    bases = ['all', 'all_in_salient', 'salient', 'salient_in_salient']
+    outputs = [open(os.path.join(out_dir, b + '.tsv'), 'w') for b in bases]
+    bad_first_outputs = [
+        open(os.path.join(out_dir, b + '.bf.' + '.tsv'), 'w') for b in bases
+    ]
+
+    __collect_intruder_result(test_data, True, *outputs)
+    __collect_intruder_result(test_data, False, *bad_first_outputs)
+
+    for out in outputs:
+        out.close()
+
+    for out in bad_first_outputs:
+        out.close()
 
 
 def tab_list(l):
@@ -379,10 +419,10 @@ def histo(l, k=10):
 
 
 def test_intruder(mixed_data, num_origin_positives):
-    l_aver_position = []
-    l_aver_salient_position = []
-    l_aver_position_in_s = []
-    l_aver_salient_position_in_s = []
+    l_aver_posi = []
+    l_aver_salient_posi = []
+    l_aver_posi_in_s = []
+    l_aver_salient_posi_in_s = []
     totals = []
 
     for h_packed_data, l_v_label, org_sizes, ext_sizes in mixed_data:
@@ -411,14 +451,13 @@ def test_intruder(mixed_data, num_origin_positives):
 
                 totals.append(len(l_label))
 
-                l_aver_position.append(aver_position)
-                l_aver_salient_position.append(aver_salient_positions)
-                l_aver_position_in_s.append(aver_position_in_salient)
-                l_aver_salient_position_in_s.append(
+                l_aver_posi.append(aver_position)
+                l_aver_salient_posi.append(aver_salient_positions)
+                l_aver_posi_in_s.append(aver_position_in_salient)
+                l_aver_salient_posi_in_s.append(
                     aver_salient_positions_in_salient)
 
-    return l_aver_position, l_aver_salient_position, l_aver_position_in_s, \
-           l_aver_salient_position_in_s
+    return l_aver_posi, l_aver_salient_posi, l_aver_posi_in_s, l_aver_salient_posi_in_s
 
 
 def kernel_word_counting(model, h_packed_data, kernels):
@@ -472,16 +511,6 @@ def kernel_word_counting(model, h_packed_data, kernels):
             np.logical_and(trans_data > k - 0.1, trans_data < k + 0.1)))
         words_around.append(w_around)
 
-    # w_around_07 = zip(*np.nonzero(
-    #     np.logical_and(trans_data > 0.6, trans_data < 0.8)))
-    # w_around_09 = zip(*np.nonzero(
-    #     np.logical_and(trans_data > 0.8, trans_data < 1)))
-    #
-    # w_around_03 = zip(*np.nonzero(
-    #     np.logical_and(trans_data > 0.2, trans_data < 0.4)))
-    # w_around_n03 = zip(*np.nonzero(
-    #     np.logical_and(trans_data < -0.2, trans_data > -0.4)))
-
     return words_around
 
 
@@ -507,8 +536,10 @@ def cosine(word1, word2, entity_embedding, event_embedding):
 
 
 def check_kernel(test_in_path, out_dir, entity_embedding, event_embedding):
-    print 'linear weights'
-    print predictor.model.linear.weight
+    print
+    'linear weights'
+    print
+    predictor.model.linear.weight
 
     import os
     if not os.path.exists(out_dir):
@@ -574,7 +605,8 @@ def check_kernel(test_in_path, out_dir, entity_embedding, event_embedding):
     for n_count, output in zip(near_counts, outputs):
         sorted_counts = sorted(n_count.items(),
                                key=operator.itemgetter(1), reverse=True)
-        print sorted_counts[:10]
+        print
+        sorted_counts[:10]
         for (left, right), count in sorted_counts:
             sim = cosine(left, right, entity_emb, event_emb)
             output.write("%s\t%s\t%d\t%.4f\n" % (left, right, count, sim))
@@ -605,8 +637,9 @@ if __name__ == '__main__':
 
 
     if 3 != len(sys.argv):
-        print "[Usage] [this script] [config] " \
-              "[study mode(intruder, kernel)]"
+        print
+        "[Usage] [this script] [config] " \
+        "[study mode(intruder, kernel)]"
 
         JointSalienceModelCenter.class_print_help()
         Main.class_print_help()
