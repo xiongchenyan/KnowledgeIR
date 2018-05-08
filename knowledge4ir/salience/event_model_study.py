@@ -129,9 +129,7 @@ def select_pack_ordered(h_packed_data, l_v_label, good_first=True):
         ts_arg_selector = Variable(torch.zeros(evm_adjacent.size()).cuda())
         for i in indices_evm[begin:end]:
             ts_arg_selector[i, :] = 1
-
         selected_adjacent = evm_adjacent * ts_arg_selector
-
         nonzeros = torch.nonzero(selected_adjacent)
 
         if not nonzeros.size():
@@ -140,7 +138,7 @@ def select_pack_ordered(h_packed_data, l_v_label, good_first=True):
             selected_args = np.unique(torch.nonzero(selected_adjacent)[:, 1]
                                       .cpu().data.numpy())
 
-        selected_events = indices_evm[:end].copy()
+        selected_events = indices_evm[begin:end].copy()
 
         yield select_pack(h_packed_data, l_v_label, selected_args,
                           selected_events)
@@ -307,8 +305,10 @@ def __collect_intruder_result(test_data, good_first, all_out, all_in_s_out,
             [1 if l == 1 else 0 for l in origin_labels])
 
         progress += 1
+        print("Processed:", end='')
         if progress % 10 == 0:
-            print('Processing training data %d' % progress)
+            print(' %d,' % progress, end='')
+        print()
 
         for intruder_line in intruder_lines:
             total_pairs += 1
@@ -379,10 +379,12 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
     bases = ['all', 'all_in_salient', 'salient', 'salient_in_salient']
     outputs = [open(os.path.join(out_dir, b + '.tsv'), 'w') for b in bases]
     bad_first_outputs = [
-        open(os.path.join(out_dir, b + '.bf.' + '.tsv'), 'w') for b in bases
+        open(os.path.join(out_dir, b + '.bf' + '.tsv'), 'w') for b in bases
     ]
 
+    print("Processing test data from salience first")
     __collect_intruder_result(test_data, True, *outputs)
+    print("Processing test data from non-salience first")
     __collect_intruder_result(test_data, False, *bad_first_outputs)
 
     for out in outputs:
