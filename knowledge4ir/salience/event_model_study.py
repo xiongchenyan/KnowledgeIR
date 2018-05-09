@@ -312,7 +312,7 @@ def __collect_intruder_result(test_data, good_first, all_out, all_in_sa_out,
             total_pairs += 1
 
             intruder = predictor.io_parser.parse_data([intruder_line])
-            intruder_labels = intruder[1]
+            intruder_labels = intruder[1][1].cpu().data.numpy()[0]
 
             num_intruder_sal = sum(
                 [1 if v == 1 else 0 for v in intruder_labels]
