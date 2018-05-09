@@ -17,6 +17,8 @@ from traitlets.config import Configurable
 import math
 from knowledge4ir.salience.joint_center import JointSalienceModelCenter
 import sys
+import operator
+from sklearn.metrics import roc_auc_score
 
 
 def merge_pack(h_packed_data_org, h_packed_data_ext):
@@ -159,7 +161,6 @@ def mix_with_preference(org_line, ext_line, good_first=True):
 
 
 def analyze_intrusion(l_score, l_label, org_size, ext_size):
-    import operator
     sorted_scores = sorted(
         zip(l_score, enumerate(l_label)), reverse=True,
         key=operator.itemgetter(0)
@@ -284,20 +285,25 @@ def __load_intruder_data(test_in_path, num_tests, num_intruder_per):
 
 
 def __collect_intruder_result(test_data, good_first, all_out, all_in_sa_out,
-                              sa_out, sa_in_sa_out):
+                              sa_out, sa_in_sa_out, auc_out, sa_auc_out,
+                              leading_auc_out):
     aver_rank_histo = []
     aver_rank_in_s_histo = []
 
     aver_sa_rank_histo = []
     aver_sa_rank_in_s_histo = []
 
+    aver_auc = []
+    aver_sa_auc = []
+    aver_leading_auc = []
+
     progress = 0
     total_pairs = 0
-    histo_size = 10
 
     print("Processed:", end='')
     for origin_line, intruder_lines in test_data:
         origin = predictor.io_parser.parse_data([origin_line])
+
         progress += 1
         if progress % 10 == 0:
             print(' %d,' % progress, end='')
@@ -306,33 +312,67 @@ def __collect_intruder_result(test_data, good_first, all_out, all_in_sa_out,
             total_pairs += 1
 
             intruder = predictor.io_parser.parse_data([intruder_line])
+            intruder_labels = intruder[1]
+
+            num_intruder_sal = sum(
+                [1 if v == 1 else 0 for v in intruder_labels]
+            )
+            num_intruder_non_sal = len(intruder_labels) - num_intruder_sal
 
             (l_aver_rank, l_aver_sa_rank, l_aver_rank_in_sa,
-             l_aver_sa_rank_in_sa, l_sa_origin, l_sa_intruder) = test_intruder(
+             l_aver_sa_rank_in_sa, l_sa_origin, l_sa_intruder, l_auc, l_sa_auc
+             ) = test_intruder(
                 mix_with_preference(origin, intruder, good_first)
             )
 
             aver_rank_histo = accumulate(
-                aver_rank_histo, histo(l_aver_rank, histo_size)
+                aver_rank_histo, histo(l_aver_rank)
             )
+
             aver_rank_in_s_histo = accumulate(
-                aver_rank_in_s_histo, histo(l_aver_rank_in_sa, histo_size)
+                aver_rank_in_s_histo, histo(l_aver_rank_in_sa)
             )
 
             aver_sa_rank_histo = accumulate(
                 aver_sa_rank_histo,
-                histo(l_aver_sa_rank, histo_size)
+                histo(l_aver_sa_rank)
             )
 
             aver_sa_rank_in_s_histo = accumulate(
                 aver_sa_rank_in_s_histo,
-                histo(l_aver_sa_rank_in_sa, histo_size)
+                histo(l_aver_sa_rank_in_sa)
             )
 
             all_out.write(tab_list(histo(l_aver_rank)))
             all_in_sa_out.write(tab_list(histo(l_aver_rank_in_sa)))
             sa_out.write(tab_list(histo(l_aver_sa_rank)))
             sa_in_sa_out.write(tab_list(histo(l_aver_sa_rank_in_sa)))
+
+            if good_first:
+                cutoff = min(len(l_auc), num_intruder_sal)
+                leading_auc = l_auc[:cutoff]
+            else:
+                cutoff = min(len(l_auc), num_intruder_non_sal)
+                leading_auc = l_auc[:cutoff]
+
+            auc_out.write(tab_list(histo(l_auc)))
+            sa_auc_out.write(tab_list(histo(l_sa_auc)))
+            leading_auc_out.write(tab_list(histo(leading_auc)))
+
+            aver_leading_auc = accumulate(
+                aver_leading_auc,
+                histo(leading_auc)
+            )
+
+            aver_auc = accumulate(
+                aver_auc,
+                histo(l_auc)
+            )
+
+            aver_sa_auc = accumulate(
+                aver_sa_auc,
+                histo(l_sa_auc)
+            )
 
     print()
 
@@ -342,6 +382,10 @@ def __collect_intruder_result(test_data, good_first, all_out, all_in_sa_out,
 
     aver_sa_rank_histo = multiply_list(aver_sa_rank_histo, m)
     aver_sa_rank_in_s_histo = multiply_list(aver_sa_rank_in_s_histo, m)
+
+    aver_auc = multiply_list(aver_auc, m)
+    aver_sa_auc = multiply_list(aver_sa_auc, m)
+    aver_leading_auc = multiply_list(aver_leading_auc, m)
 
     print('Number of paris processed : %d' % total_pairs)
     print('Ordering is good first: %s' % good_first)
@@ -363,6 +407,10 @@ def __collect_intruder_result(test_data, good_first, all_out, all_in_sa_out,
     sa_out.write(tab_list(aver_sa_rank_histo))
     sa_in_sa_out.write(tab_list(aver_sa_rank_in_s_histo))
 
+    auc_out.write(tab_list(aver_auc))
+    sa_auc_out.write(tab_list(aver_sa_auc))
+    leading_auc_out.write(tab_list(aver_leading_auc))
+
 
 def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
     import os
@@ -372,7 +420,7 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
     test_data = __load_intruder_data(test_in_path, num_tests, num_intruder_per)
 
     bases = ['all_in_all', 'all_in_salient', 'salient_in_all',
-             'salient_in_salient']
+             'salient_in_salient', 'auc', 'salience_auc', 'leading_auc']
     outputs = [open(os.path.join(out_dir, b + '.tsv'), 'w') for b in bases]
     bad_first_outputs = [
         open(os.path.join(out_dir, b + '.bf' + '.tsv'), 'w') for b in bases
@@ -433,6 +481,12 @@ def histo(l, k=10):
     return values
 
 
+def __intruder_auc(org_scores, ext_scores):
+    intrusion_label = [1] * len(org_scores) + [0] * len(ext_scores)
+    l_score = org_scores + ext_scores
+    return roc_auc_score(intrusion_label, l_score)
+
+
 def test_intruder(mixed_data):
     l_aver_rank = []
     l_aver_sa_rank = []
@@ -442,6 +496,9 @@ def test_intruder(mixed_data):
     l_sa_origin = []
     l_sa_intruder = []
     totals = []
+
+    l_auc = []
+    l_sa_auc = []
 
     for h_packed_data, l_v_label, org_sizes, ext_sizes in mixed_data:
         l_output = []
@@ -462,6 +519,28 @@ def test_intruder(mixed_data):
                 l_score = output.data.numpy().tolist()
                 l_label = v_label[0].cpu().data.numpy().tolist()
 
+                ext_all_scores = l_score[:org_size]
+                org_all_scores = l_score[org_size:]
+
+                org_sa_scores = []
+                ext_sa_scores = []
+
+                num_sa_intruder = 0
+                for index, label in enumerate(l_label):
+                    if index < org_size:
+                        if label == 1:
+                            org_sa_scores.append(l_score[index])
+                    else:
+                        if label == 1:
+                            ext_sa_scores.append(l_score[index])
+                            num_sa_intruder += 1
+
+                # AUC score among all origins.
+                auc = __intruder_auc(org_all_scores, ext_all_scores)
+
+                # AUC score among salient origins.
+                sa_auc = __intruder_auc(org_sa_scores, ext_all_scores)
+
                 (aver_rank, sa_aver_rank, aver_rank_in_sa, sa_aver_rank_in_sa,
                  num_sa_origin, num_sa_intruder) = \
                     analyze_intrusion(l_score, l_label, org_size, ext_size)
@@ -475,8 +554,11 @@ def test_intruder(mixed_data):
                 l_sa_origin.append(num_sa_origin)
                 l_sa_intruder.append(num_sa_intruder)
 
+                l_auc.append(auc)
+                l_sa_auc.append(sa_auc)
+
     return (l_aver_rank, l_aver_sa_rank, l_aver_rank_in_sa,
-            l_aver_sa_rank_in_sa, l_sa_origin, l_sa_intruder)
+            l_aver_sa_rank_in_sa, l_sa_origin, l_sa_intruder, l_auc, l_sa_auc)
 
 
 def kernel_word_counting(model, h_packed_data, kernels):
