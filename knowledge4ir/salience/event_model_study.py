@@ -407,11 +407,12 @@ def histo(l, k=10):
 
             mass = sum(l[start_int: end_int])
 
-            if start_res > 0:
+            if start_res > 0.0000001:
                 mass += l[start_int - 1] * start_res
 
-            if end_res > 0 and end_int + 1 < len(l):
-                mass += l[end_int + 1] * end_res
+            if end_res > 0.000001:
+                mass += l[end_int] * end_res
+
         else:
             slot = end_int
             portion = end - start
