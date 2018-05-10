@@ -177,6 +177,8 @@ def analyze_intrusion(l_score, l_label, org_size, ext_size):
     num_intruder = 0
     num_intruder_sa = 0
 
+    org_sa_scores = []
+
     for rank, (score, (index, label)) in enumerate(sorted_scores):
         if index >= org_size:
             # These are intruders.
@@ -191,6 +193,7 @@ def analyze_intrusion(l_score, l_label, org_size, ext_size):
             # These are origins.
             if label == 1:
                 num_sa_origin_seen += 1
+                org_sa_scores.append(score)
             num_origin_seen += 1
 
     aver_rank = 0
@@ -219,11 +222,24 @@ def analyze_intrusion(l_score, l_label, org_size, ext_size):
         sa_aver_rank_in_sa = 0
         sa_aver_rank = 0
 
-    origin_sa_ratio = 1.0 * num_sa_origin_seen / total_origin_sa
-    intruder_sa_ratio = 1.0 * num_intruder_sa / num_intruder
+    org_all_scores = l_score[:org_size]
+    ext_all_scores = l_score[org_size:]
 
-    return (aver_rank, sa_aver_rank, aver_rank_in_sa, sa_aver_rank_in_sa,
-            origin_sa_ratio, intruder_sa_ratio)
+    auc = __intruder_auc(org_all_scores, ext_all_scores)
+
+    # AUC score among salient origins.
+    sa_auc = __intruder_auc(org_sa_scores, ext_all_scores)
+
+    results = {
+        'average_rank': aver_rank,
+        'average_rank_in_salience': aver_rank_in_sa,
+        'average_salience_rank': sa_aver_rank,
+        'average_salience_rank_in_salience': sa_aver_rank_in_sa,
+        'auc': auc,
+        'salience_auc': sa_auc,
+    }
+
+    return results
 
 
 def __load_intruder_data(test_in_path, num_tests, num_intruder_per):
@@ -284,18 +300,23 @@ def __load_intruder_data(test_in_path, num_tests, num_intruder_per):
     return test_data
 
 
-def __collect_intruder_result(test_data, good_first, all_out, all_in_sa_out,
-                              sa_out, sa_in_sa_out, auc_out, sa_auc_out,
-                              leading_auc_out):
-    aver_rank_histo = []
-    aver_rank_in_s_histo = []
+def __collect_intruder_result(test_data, good_first, out_dir):
+    histograms = {
+        'average_rank': [],
+        'average_rank_in_salience': [],
+        'average_salience_rank': [],
+        'average_salience_rank_in_salience': [],
+        'auc': [],
+        'salience_auc': [],
+        'leading_auc': [],
+        'leading_salience_auc': [],
+    }
 
-    aver_sa_rank_histo = []
-    aver_sa_rank_in_s_histo = []
+    order = 'sa_first' if good_first else 'sa_last'
 
-    aver_auc = []
-    aver_sa_auc = []
-    aver_leading_auc = []
+    outputs = dict(
+        [(k, open(os.path.join(out_dir, '%s.%s.tsv' % (k, order)), 'w')) for k
+         in histograms.keys()])
 
     progress = 0
     total_pairs = 0
@@ -312,104 +333,32 @@ def __collect_intruder_result(test_data, good_first, all_out, all_in_sa_out,
             total_pairs += 1
 
             intruder = predictor.io_parser.parse_data([intruder_line])
-            intruder_labels = intruder[1][1].cpu().data.numpy()[0]
 
-            num_intruder_sal = sum(
-                [1 if v == 1 else 0 for v in intruder_labels]
-            )
-            num_intruder_non_sal = len(intruder_labels) - num_intruder_sal
-
-            (l_aver_rank, l_aver_sa_rank, l_aver_rank_in_sa,
-             l_aver_sa_rank_in_sa, l_sa_origin, l_sa_intruder, l_auc, l_sa_auc
-             ) = test_intruder(
+            results = test_intruder(
                 mix_with_preference(origin, intruder, good_first)
             )
 
-            aver_rank_histo = accumulate(
-                aver_rank_histo, histo(l_aver_rank)
-            )
-
-            aver_rank_in_s_histo = accumulate(
-                aver_rank_in_s_histo, histo(l_aver_rank_in_sa)
-            )
-
-            aver_sa_rank_histo = accumulate(
-                aver_sa_rank_histo,
-                histo(l_aver_sa_rank)
-            )
-
-            aver_sa_rank_in_s_histo = accumulate(
-                aver_sa_rank_in_s_histo,
-                histo(l_aver_sa_rank_in_sa)
-            )
-
-            all_out.write(tab_list(histo(l_aver_rank)))
-            all_in_sa_out.write(tab_list(histo(l_aver_rank_in_sa)))
-            sa_out.write(tab_list(histo(l_aver_sa_rank)))
-            sa_in_sa_out.write(tab_list(histo(l_aver_sa_rank_in_sa)))
-
-            if good_first:
-                cutoff = min(len(l_auc), num_intruder_sal)
-                leading_auc = l_auc[:cutoff]
-            else:
-                cutoff = min(len(l_auc), num_intruder_non_sal)
-                leading_auc = l_auc[:cutoff]
-
-            auc_out.write(tab_list(histo(l_auc)))
-            sa_auc_out.write(tab_list(histo(l_sa_auc)))
-            leading_auc_out.write(tab_list(histo(leading_auc)))
-
-            aver_leading_auc = accumulate(
-                aver_leading_auc,
-                histo(leading_auc)
-            )
-
-            aver_auc = accumulate(
-                aver_auc,
-                histo(l_auc)
-            )
-
-            aver_sa_auc = accumulate(
-                aver_sa_auc,
-                histo(l_sa_auc)
-            )
+            for key, l_res in results.items():
+                res_histo = histo(l_res)
+                histograms[key] = accumulate(
+                    histograms[key], res_histo
+                )
+                outputs[key].write(tab_list(res_histo))
 
     print()
 
     m = 1.0 / total_pairs
-    aver_rank_histo = multiply_list(aver_rank_histo, m)
-    aver_rank_in_s_histo = multiply_list(aver_rank_in_s_histo, m)
 
-    aver_sa_rank_histo = multiply_list(aver_sa_rank_histo, m)
-    aver_sa_rank_in_s_histo = multiply_list(aver_sa_rank_in_s_histo, m)
+    for key, h in histograms.items():
+        aver_h = multiply_list(h, m)
+        outputs[key].write("Final line shows average:\n")
+        outputs[key].write(tab_list(aver_h))
 
-    aver_auc = multiply_list(aver_auc, m)
-    aver_sa_auc = multiply_list(aver_sa_auc, m)
-    aver_leading_auc = multiply_list(aver_leading_auc, m)
+    for out in outputs.values():
+        out.close()
 
     print('Number of paris processed : %d' % total_pairs)
     print('Ordering is good first: %s' % good_first)
-
-    print('showing histo for all items')
-    print('Average rank in all:')
-    print(aver_rank_histo)
-    print('Average rank in salience:')
-    print(aver_rank_in_s_histo)
-
-    print('show histo for salient items')
-    print('Average rank in all:')
-    print(aver_sa_rank_histo)
-    print('Average rank in salience:')
-    print(aver_sa_rank_in_s_histo)
-
-    all_out.write(tab_list(aver_rank_histo))
-    all_in_sa_out.write(tab_list(aver_rank_in_s_histo))
-    sa_out.write(tab_list(aver_sa_rank_histo))
-    sa_in_sa_out.write(tab_list(aver_sa_rank_in_s_histo))
-
-    auc_out.write(tab_list(aver_auc))
-    sa_auc_out.write(tab_list(aver_sa_auc))
-    leading_auc_out.write(tab_list(aver_leading_auc))
 
 
 def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
@@ -419,24 +368,11 @@ def intrusion_test(test_in_path, out_dir, num_tests=1, num_intruder_per=10):
 
     test_data = __load_intruder_data(test_in_path, num_tests, num_intruder_per)
 
-    bases = ['all_in_all', 'all_in_salient', 'salient_in_all',
-             'salient_in_salient', 'auc', 'salience_auc', 'leading_auc']
-    outputs = [open(os.path.join(out_dir, b + '.tsv'), 'w') for b in bases]
-    bad_first_outputs = [
-        open(os.path.join(out_dir, b + '.bf' + '.tsv'), 'w') for b in bases
-    ]
-
     print("Processing test data from salience first")
-    __collect_intruder_result(test_data, True, *outputs)
-
-    for out in outputs:
-        out.close()
+    __collect_intruder_result(test_data, True, out_dir)
 
     print("Processing test data from non-salience first")
-    __collect_intruder_result(test_data, False, *bad_first_outputs)
-
-    for out in bad_first_outputs:
-        out.close()
+    __collect_intruder_result(test_data, False, out_dir)
 
 
 def tab_list(l):
@@ -465,16 +401,22 @@ def histo(l, k=10):
         start_int = int(math.ceil(start))
         end_int = int(math.floor(end))
 
-        start_res = start_int - start
-        end_res = end - end_int
+        if end_int >= start_int:
+            start_res = start_int - start
+            end_res = end - end_int
 
-        mass = sum(l[start_int: end_int])
+            mass = sum(l[start_int: end_int])
 
-        if start_res > 0:
-            mass += l[start_int - 1] * start_res
+            if start_res > 0:
+                mass += l[start_int - 1] * start_res
 
-        if end_res > 0 and end_int + 1 < len(l):
-            mass += l[end_int + 1] * end_res
+            if end_res > 0 and end_int + 1 < len(l):
+                mass += l[end_int + 1] * end_res
+        else:
+            slot = end_int
+            portion = end - start
+
+            mass = l[slot] * portion
 
         values.append(mass / interval)
 
@@ -484,21 +426,21 @@ def histo(l, k=10):
 def __intruder_auc(org_scores, ext_scores):
     intrusion_label = [1] * len(org_scores) + [0] * len(ext_scores)
     l_score = org_scores + ext_scores
+
     return roc_auc_score(intrusion_label, l_score)
 
 
 def test_intruder(mixed_data):
-    l_aver_rank = []
-    l_aver_sa_rank = []
-    l_aver_rank_in_sa = []
-    l_aver_sa_rank_in_sa = []
-
-    l_sa_origin = []
-    l_sa_intruder = []
-    totals = []
-
-    l_auc = []
-    l_sa_auc = []
+    results = {
+        'average_rank': [],
+        'average_rank_in_salience': [],
+        'average_salience_rank': [],
+        'average_salience_rank_in_salience': [],
+        'auc': [],
+        'salience_auc': [],
+        'leading_auc': [],
+        'leading_salience_auc': []
+    }
 
     for h_packed_data, l_v_label, org_sizes, ext_sizes in mixed_data:
         l_output = []
@@ -519,46 +461,21 @@ def test_intruder(mixed_data):
                 l_score = output.data.numpy().tolist()
                 l_label = v_label[0].cpu().data.numpy().tolist()
 
-                ext_all_scores = l_score[:org_size]
-                org_all_scores = l_score[org_size:]
+                this_results = analyze_intrusion(l_score, l_label, org_size,
+                                                 ext_size)
 
-                org_sa_scores = []
-                ext_sa_scores = []
+                for key in this_results:
+                    results[key].append(this_results[key])
 
-                num_sa_intruder = 0
-                for index, label in enumerate(l_label):
-                    if index < org_size:
-                        if label == 1:
-                            org_sa_scores.append(l_score[index])
-                    else:
-                        if label == 1:
-                            ext_sa_scores.append(l_score[index])
-                            num_sa_intruder += 1
+                ext_labels = l_label[org_size:]
 
-                # AUC score among all origins.
-                auc = __intruder_auc(org_all_scores, ext_all_scores)
+                label_set = set([l for l in ext_labels])
 
-                # AUC score among salient origins.
-                sa_auc = __intruder_auc(org_sa_scores, ext_all_scores)
+                if len(label_set) == 1:
+                    for key in ['auc', 'salience_auc']:
+                        results['leading_' + key].append(this_results[key])
 
-                (aver_rank, sa_aver_rank, aver_rank_in_sa, sa_aver_rank_in_sa,
-                 num_sa_origin, num_sa_intruder) = \
-                    analyze_intrusion(l_score, l_label, org_size, ext_size)
-
-                totals.append(len(l_label))
-
-                l_aver_rank.append(aver_rank)
-                l_aver_sa_rank.append(sa_aver_rank)
-                l_aver_rank_in_sa.append(aver_rank_in_sa)
-                l_aver_sa_rank_in_sa.append(sa_aver_rank_in_sa)
-                l_sa_origin.append(num_sa_origin)
-                l_sa_intruder.append(num_sa_intruder)
-
-                l_auc.append(auc)
-                l_sa_auc.append(sa_auc)
-
-    return (l_aver_rank, l_aver_sa_rank, l_aver_rank_in_sa,
-            l_aver_sa_rank_in_sa, l_sa_origin, l_sa_intruder, l_auc, l_sa_auc)
+    return results
 
 
 def kernel_word_counting(model, h_packed_data, kernels):
