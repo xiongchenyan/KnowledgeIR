@@ -19,6 +19,7 @@ from knowledge4ir.salience.joint_center import JointSalienceModelCenter
 import sys
 import operator
 from sklearn.metrics import roc_auc_score
+from collections import Counter
 
 
 def merge_pack(h_packed_data_org, h_packed_data_ext):
@@ -48,6 +49,57 @@ def merge_pack(h_packed_data_org, h_packed_data_ext):
     return h_packed_data_mixed
 
 
+def __recover_events(mtx_feature):
+    l_features = mtx_feature.cpu().data.numpy()[0]
+
+    groups = []
+    group_ids = []
+
+    def pick(f):
+        picked = f[:]
+        picked[7] = 0
+        picked[10] = 0
+        picked[11] = 0
+        picked[12] = 0
+        return picked
+
+    for features in l_features:
+        picked_feature = pick(features)
+        for gid, existing in enumerate(groups):
+            if np.array_equal(existing, picked_feature):
+                group_ids.append(gid)
+                break
+        else:
+            groups.append(picked_feature)
+            group_ids.append(len(group_ids))
+
+    return group_ids
+
+
+def __filter_features(mtx_feature, event_selector, events):
+    rows = event_selector.cpu().numpy()
+    l_features = mtx_feature.cpu().data.numpy()[0]
+
+    event_counts = Counter()
+    for r in rows:
+        event_counts[events[r]] += 1
+
+    for r in rows:
+        event_id = events[r]
+        count = event_counts[event_id]
+        l_features[r][6] = count
+        # for k in range(7, 13):
+        #     l_features[r][k] = 0
+
+    masked_features = l_features[event_selector]
+
+    ext_masked_res = Variable(
+        torch.from_numpy(masked_features).unsqueeze(0).cuda()
+    )
+
+    return ext_masked_res
+
+
 def select_pack(h_packed_data, l_v_label, selected_args, indices_evm):
     h_packed_data_selected = {}
 
@@ -60,8 +112,14 @@ def select_pack(h_packed_data, l_v_label, selected_args, indices_evm):
 
     e_keys = {'mtx_e_score', 'ts_e_feature', 'mtx_e', 'label_e'}
 
+    # evm_recovered = __recover_events(h_packed_data['ts_evm_feature'])
+
     for key, data in h_packed_data.items():
         if key in evm_keys:
+            # if key == 'ts_evm_feature':
+            #     h_packed_data_selected[key] = __filter_features(
+            #         data, inds_evm_ts, evm_recovered)
+            # else:
             h_packed_data_selected[key] = data[:, inds_evm_ts]
         elif key in e_keys:
             h_packed_data_selected[key] = data[:, inds_e_ts]
