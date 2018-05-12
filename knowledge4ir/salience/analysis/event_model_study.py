@@ -112,14 +112,8 @@ def select_pack(h_packed_data, l_v_label, selected_args, indices_evm):
 
     e_keys = {'mtx_e_score', 'ts_e_feature', 'mtx_e', 'label_e'}
 
-    # evm_recovered = __recover_events(h_packed_data['ts_evm_feature'])
-
     for key, data in h_packed_data.items():
         if key in evm_keys:
-            # if key == 'ts_evm_feature':
-            #     h_packed_data_selected[key] = __filter_features(
-            #         data, inds_evm_ts, evm_recovered)
-            # else:
             h_packed_data_selected[key] = data[:, inds_evm_ts]
         elif key in e_keys:
             h_packed_data_selected[key] = data[:, inds_e_ts]
