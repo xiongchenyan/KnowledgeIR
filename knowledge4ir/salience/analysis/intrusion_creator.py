@@ -132,13 +132,12 @@ def mix(origin_doc, intruding_doc):
     return add_meta(origin_doc, sa_set), add_meta(origin_doc, non_sa_set)
 
 
-def create_intruders(hashed_corpus, output_path, num_origin, num_interder_per):
+def create_intruders(hashed_corpus, output_path, num_origin, num_intruder_per):
     count = 0
 
     origins = []
-    intruders = []
 
-    num_intruders = num_interder_per * num_origin
+    num_intruders = num_intruder_per * num_origin
 
     with open(hashed_corpus) as data_in, open(output_path, 'w') as data_out:
         for line in data_in:
@@ -150,12 +149,30 @@ def create_intruders(hashed_corpus, output_path, num_origin, num_interder_per):
             if num_salience < 5:
                 continue
 
+            l_test_pack = []
+
             if count < num_origin:
                 origins.append(doc_info)
             elif count < num_intruders + num_origin:
                 for origin in origins:
                     sa_docs, non_sa_docs = mix(origin, doc_info)
+                    l_test_pack.append(
+                        {
+                            'salient_test': sa_docs,
+                            'non_salient_test': non_sa_docs,
+                        }
+                    )
             else:
                 break
 
             count += 1
+
+            data_out.write(json.dumps(l_test_pack) + '\n')
+
+
+if __name__ == '__main__':
+    import sys
+
+    corpus_path, output_path, num_origin, num_intruder = sys.argv[1:5]
+
+    create_intruders(corpus_path, output_path, num_origin, num_intruder)
