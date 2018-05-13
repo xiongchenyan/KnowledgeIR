@@ -2,6 +2,8 @@ from __future__ import print_function
 import json
 from collections import Counter
 import sys
+import itertools
+from collections import defaultdict
 
 
 def apply_selector(events, selections):
@@ -29,6 +31,7 @@ def apply_selector(events, selections):
 
 def increment_merge(origin_events, intruder_events, adjuster):
     l_merged_events = []
+    selected_until = []
 
     for until in range(1, len(intruder_events['salience']) + 1):
         merged_events = {
@@ -74,16 +77,59 @@ def increment_merge(origin_events, intruder_events, adjuster):
         )
 
         l_merged_events.append(merged_events)
+        selected_until.append(until)
 
-    return l_merged_events
+    return l_merged_events, selected_until
 
 
-def add_meta(origin_doc, events, selector=None):
-    new_doc = {'bodyText': [], 'abstract': [], 'spot': [], 'event': events}
+def merge_entities(origin_doc, intruding_doc, events, selector=None):
+    new_doc = {
+        'bodyText': [],
+        'abstract': [],
+        'spot': {
+            'bodyText': {
+                'entities': [],
+                'salience': {
+
+                },
+                'features': {
+
+                }
+            },
+        },
+        'event': {
+            'bodyText': events,
+        }
+    }
+
+    for key in new_doc['spot']['bodyText']:
+        new_doc['spot']['bodyText'][
+            key] = origin_doc['spot']['bodyText'][key][:]
+
+    adjacent_map = intruding_doc['adjacent']
 
     if selector:
-        adjacent = [origin_doc['adjacent'][index] for index in selector]
+        eid2indices = defaultdict(list)
+        intruding_entities = intruding_doc['spot']['bodyText']['entities']
+        for index, eid in enumerate(intruding_entities):
+            eid2indices[eid].append(index)
+
+        selected_entity_indices = set()
+        adjacent = []
+        for index in selector:
+            adjacent.append(adjacent_map[index])
+            # selected_entities.update(adjacent_map[index])
+            for eid in adjacent_map[index]:
+                selected_entity_indices.update(eid2indices[eid])
+
+        sorted_indices = sorted(selected_entity_indices)
+
         new_doc['adjacent'] = adjacent
+
+        for key in new_doc['spot']['bodyText']:
+            for index in sorted_indices:
+                new_doc['spot']['bodyText'][key].append(
+                    intruding_doc['spot']['bodyText'][key][index])
     else:
         new_doc['adjacent'] = origin_doc['adjacent']
 
@@ -120,17 +166,28 @@ def mix(origin_doc, intruding_doc):
             non_sa_adjuster.append(count_adjuster[index])
 
     sa_events = apply_selector(intruder_events, salient_indices)
-
     non_sa_events = apply_selector(intruder_events, non_salient_indices)
 
     origin_events = origin_doc['event']['bodyText']
-    sa_set = increment_merge(origin_events, sa_events, sa_adjuster)
-    non_sa_set = increment_merge(origin_events, non_sa_events, non_sa_adjuster)
+    sa_set, sa_until = increment_merge(origin_events, sa_events, sa_adjuster)
+    non_sa_set, non_sa_until = increment_merge(origin_events, non_sa_events,
+                                               non_sa_adjuster)
 
-    meta_sa_set = [add_meta(origin_doc, doc) for doc in sa_set]
-    meta_non_sa_set = [add_meta(origin_doc, doc) for doc in non_sa_set]
+    full_sa_set = []
+    for events, until in zip(sa_set, sa_until):
+        full_sa_set.append(
+            merge_entities(origin_doc, intruding_doc, events,
+                           salient_indices[:until])
+        )
 
-    return meta_sa_set, meta_non_sa_set
+    full_non_sa_set = []
+    for events, until in zip(non_sa_set, non_sa_until):
+        full_non_sa_set.append(
+            merge_entities(origin_doc, intruding_doc, events,
+                           non_salient_indices[:until])
+        )
+
+    return full_sa_set, full_non_sa_set
 
 
 def create_intruders(hashed_corpus, output_path, num_origin, num_intruder_per):
