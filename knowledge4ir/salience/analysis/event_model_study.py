@@ -20,6 +20,7 @@ import sys
 import operator
 from sklearn.metrics import roc_auc_score
 from collections import Counter
+from knowledge4ir.salience.utils.evaluation import histo
 
 
 def merge_pack(h_packed_data_org, h_packed_data_ext):
@@ -440,40 +441,6 @@ def accumulate(l_all, l):
 
 def multiply_list(l, multiplier):
     return [e * multiplier for e in l]
-
-
-def histo(l, k=10):
-    interval = len(l) * 1.0 / k
-
-    values = []
-    for i in range(k):
-        start = interval * i
-        end = start + interval
-
-        start_int = int(math.ceil(start))
-        end_int = int(math.floor(end))
-
-        if end_int >= start_int:
-            start_res = start_int - start
-            end_res = end - end_int
-
-            mass = sum(l[start_int: end_int])
-
-            if start_res > 0.0000001:
-                mass += l[start_int - 1] * start_res
-
-            if end_res > 0.000001:
-                mass += l[end_int] * end_res
-
-        else:
-            slot = end_int
-            portion = end - start
-
-            mass = l[slot] * portion
-
-        values.append(mass / interval)
-
-    return values
 
 
 def __intruder_auc(org_scores, ext_scores):

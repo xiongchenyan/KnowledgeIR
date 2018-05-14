@@ -67,7 +67,7 @@ def increment_merge(origin_events, intruder_events, adjuster):
         adjusted_features = []
 
         for index, features in enumerate(intruder_features):
-            freq = features[-2] - adjuster[index]
+            freq = features[-2] + adjuster[index]
             new_f = [0] * len(features)
             new_f[-2] = freq
             adjusted_features.append(new_f)
@@ -84,22 +84,18 @@ def increment_merge(origin_events, intruder_events, adjuster):
 
 def merge_entities(origin_doc, intruding_doc, events, selector=None):
     new_doc = {
+        'origin': origin_doc['docno'],
+        'intruder': origin_doc['docno'],
         'bodyText': [],
         'abstract': [],
         'spot': {
             'bodyText': {
                 'entities': [],
-                'salience': {
-
-                },
-                'features': {
-
-                }
+                'salience': {},
+                'features': {}
             },
         },
-        'event': {
-            'bodyText': events,
-        }
+        'event': {'bodyText': events, }
     }
 
     for key in new_doc['spot']['bodyText']:
@@ -118,7 +114,6 @@ def merge_entities(origin_doc, intruding_doc, events, selector=None):
         adjacent = []
         for index in selector:
             adjacent.append(adjacent_map[index])
-            # selected_entities.update(adjacent_map[index])
             for eid in adjacent_map[index]:
                 selected_entity_indices.update(eid2indices[eid])
 
@@ -146,8 +141,17 @@ def mix(origin_doc, intruding_doc):
         head_count[head] += 1
         count_till_here.append(head_count[head])
 
-    indiced_count = [head_count[head] for head in intruder_heads]
-    count_adjuster = [x - y for (x, y) in zip(indiced_count, count_till_here)]
+    origin_events = origin_doc['event']['bodyText']
+    origin_freq = [f[-2] for f in origin_events['features']]
+    origin_heads = origin_events['sparse_features']['LexicalHead']
+
+    origin_hc = dict(zip(origin_heads, origin_freq))
+
+    intruder_hc = [head_count[head] for head in intruder_heads]
+    intruder_origin_hc = [origin_hc.get(head, 0) for head in intruder_heads]
+
+    freq_adjuster = [fc - fi + fo for (fi, fo, fc) in
+                     zip(intruder_hc, intruder_origin_hc, count_till_here)]
 
     intruder_saliency = intruder_events['salience']
 
@@ -160,10 +164,10 @@ def mix(origin_doc, intruding_doc):
     for index, s in enumerate(intruder_saliency):
         if s == 1:
             salient_indices.append(index)
-            sa_adjuster.append(count_adjuster[index])
+            sa_adjuster.append(freq_adjuster[index])
         else:
             non_salient_indices.append(index)
-            non_sa_adjuster.append(count_adjuster[index])
+            non_sa_adjuster.append(freq_adjuster[index])
 
     sa_events = apply_selector(intruder_events, salient_indices)
     non_sa_events = apply_selector(intruder_events, non_salient_indices)
@@ -204,6 +208,12 @@ def create_intruders(hashed_corpus, output_path, num_origin, num_intruder_per):
             num_salience = sum(salience_labels)
 
             if num_salience < 5:
+                # Skip documents less than 5 salient ones.
+                continue
+
+            if len(salience_labels) > 100:
+                # Skip documents with more than 100 events
+                # (to avoid large mixed doc).
                 continue
 
             if count < num_origin:

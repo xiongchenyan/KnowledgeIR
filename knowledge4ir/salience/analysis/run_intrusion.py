@@ -10,54 +10,123 @@ import logging
 import os
 import json
 from sklearn.metrics import roc_auc_score
+from knowledge4ir.salience.utils.evaluation import histo
 
 
-def compute_metric(raw_test_docs):
-    l_sa_output = []
+def run_tests(raw_test_docs):
+    l_model_auc = []
+    l_freq_auc = []
+
+    event_index = predictor.output_names.index('event')
 
     for test_doc in raw_test_docs:
-        salience_labels = test_doc['event']['bodyText']['salience']
+        # print("Processing ", test_doc['origin'], test_doc['intruder'])
         parsed_test, parsed_gold = predictor.io_parser.parse_data(
             [json.dumps(test_doc)]
         )
 
+        event_gold = parsed_gold[event_index].cpu().data[0].numpy()
+        event_gold = [1 if v == 1 else 0 for v in event_gold]
+
+        ts_evm_feats = parsed_test['ts_evm_feature'].cpu().data[0].numpy()
+        freq_feats = ts_evm_feats[:, 6]
+
+        l_sa_output = []
         for output in predictor.model(parsed_test):
             if output is None:
                 l_sa_output.append([])
             else:
                 l_sa_output.append(output.cpu()[0].data.numpy())
 
-        event_index = predictor.output_names.index('event')
         output = l_sa_output[event_index]
 
-        print(output, len(output))
-        print(salience_labels, len(salience_labels))
+        auc = roc_auc_score(event_gold, output)
+        freq_auc = roc_auc_score(event_gold, freq_feats)
 
-        auc = roc_auc_score(salience_labels, output)
-        print(auc)
+        l_model_auc.append(auc)
+        l_freq_auc.append(freq_auc)
+    return l_model_auc, l_freq_auc
 
-        sys.stdin.readline()
+
+def accumulate(l_all, l):
+    if len(l_all) == 0:
+        return l
+    else:
+        return [a + b for a, b in zip(l_all, l)]
+
+
+def multiply_list(l, multiplier):
+    return [e * multiplier for e in l]
+
+
+def tab_list(l):
+    return '\t'.join(["%.6f" % v for v in l]) + '\n'
 
 
 def intrusion_test(test_path, study_out):
     if not os.path.exists(study_out):
         os.makedirs(study_out)
 
+    results = {
+        'salience_model_auc': [],
+        'salience_freq_auc': [],
+        'non_salience_model_auc': [],
+        'non_salience_freq_auc': [],
+    }
+
+    outs = {}
+    for key in results:
+        outs[key] = open(os.path.join(study_out, key), 'w')
+
     progress = 0
+
     with open(test_path) as test_data:
         for line in test_data:
             tests = json.loads(line)
             sa_tests = tests['salient_test']
             non_sa_tests = tests['non_salient_test']
 
-            compute_metric(sa_tests)
-            compute_metric(non_sa_tests)
+            sa_aucs, sa_freq_aucs = run_tests(sa_tests)
+            non_sa_aucs, non_sa_freq_aucs = run_tests(non_sa_tests)
+
+            key = 'salience_model_auc'
+            res = sa_aucs
+            results[key] = accumulate(
+                results[key], histo(res)
+            )
+            outs[key].write(tab_list(histo(res)))
+
+            key = 'salience_freq_auc'
+            res = sa_freq_aucs
+            results[key] = accumulate(
+                results[key], histo(res)
+            )
+            outs[key].write(tab_list(histo(res)))
+
+            key = 'non_salience_model_auc'
+            res = non_sa_aucs
+            results[key] = accumulate(
+                results[key], histo(res)
+            )
+            outs[key].write(tab_list(histo(res)))
+
+            key = 'non_salience_freq_auc'
+            res = non_sa_freq_aucs
+            results[key] = accumulate(
+                results[key], histo(res)
+            )
+            outs[key].write(tab_list(histo(res)))
 
             progress += 1
             if progress % 10 == 0:
                 print(' %d,' % progress, end='')
 
     print()
+
+    for key in results:
+        multiply_list(results[key], 1.0 / progress)
+        outs[key].write(results[key])
+        outs[key].close()
 
 
 if __name__ == '__main__':
