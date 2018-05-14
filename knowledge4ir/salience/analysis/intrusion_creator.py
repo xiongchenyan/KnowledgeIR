@@ -41,6 +41,7 @@ def increment_merge(origin_events, intruder_events, adjuster):
             },
             'salience': [1] * len(origin_events['salience']) + [0] * until,
             'features': [],
+            'origin_salience': origin_events['salience']
         }
 
         merged_events['sparse_features']['LexicalHead'].extend(

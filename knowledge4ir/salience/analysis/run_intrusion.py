@@ -15,18 +15,30 @@ from knowledge4ir.salience.utils.evaluation import histo
 
 def run_tests(raw_test_docs):
     l_model_auc = []
+    l_model_sa_auc = []
+
     l_freq_auc = []
+    l_freq_sa_auc = []
 
     event_index = predictor.output_names.index('event')
 
     for test_doc in raw_test_docs:
         # print("Processing ", test_doc['origin'], test_doc['intruder'])
+
+        origin_saliences = test_doc['event']['bodyText']['origin_salience']
+
         parsed_test, parsed_gold = predictor.io_parser.parse_data(
             [json.dumps(test_doc)]
         )
 
         event_gold = parsed_gold[event_index].cpu().data[0].numpy()
+
         event_gold = [1 if v == 1 else 0 for v in event_gold]
+
+        num_origin = len(origin_saliences)
+        num_salient = sum(origin_saliences)
+
+        sa_event_gold = [1] * num_salient + [0] * (len(event_gold) - num_origin)
 
         ts_evm_feats = parsed_test['ts_evm_feature'].cpu().data[0].numpy()
         freq_feats = ts_evm_feats[:, 6]
@@ -40,12 +52,30 @@ def run_tests(raw_test_docs):
 
         output = l_sa_output[event_index]
 
+        # Select output by salience.
+        osa_indices = [i for (i, s) in enumerate(origin_saliences) if s == 1]
+        selection = osa_indices + range(num_origin, len(event_gold))
+        selected_output = [output[i] for i in selection]
+        selected_freq = [freq_feats[i] for i in selection]
+
         auc = roc_auc_score(event_gold, output)
+        sa_auc = roc_auc_score(sa_event_gold, selected_output)
+
         freq_auc = roc_auc_score(event_gold, freq_feats)
+        sa_freq_auc = roc_auc_score(sa_event_gold, selected_freq)
 
         l_model_auc.append(auc)
+        l_model_sa_auc.append(sa_auc)
+
         l_freq_auc.append(freq_auc)
-    return l_model_auc, l_freq_auc
+        l_freq_sa_auc.append(sa_freq_auc)
+
+    return {
+        'model_auc': l_model_auc,
+        'freq_auc': l_freq_auc,
+        'model_sa_auc': l_model_sa_auc,
+        'freq_sa_auc': l_freq_sa_auc,
+    }
 
 
 def accumulate(l_all, l):
@@ -67,16 +97,29 @@ def intrusion_test(test_path, study_out):
     if not os.path.exists(study_out):
         os.makedirs(study_out)
 
-    results = {
-        'salience_model_auc': [],
-        'salience_freq_auc': [],
-        'non_salience_model_auc': [],
-        'non_salience_freq_auc': [],
+    sa_results = {
+        'model_auc': [],
+        'freq_auc': [],
+        'model_sa_auc': [],
+        'freq_sa_auc': [],
     }
 
-    outs = {}
-    for key in results:
-        outs[key] = open(os.path.join(study_out, key), 'w')
+    non_sa_results = {
+        'model_auc': [],
+        'freq_auc': [],
+        'model_sa_auc': [],
+        'freq_sa_auc': [],
+    }
+
+    sa_outs = {}
+    for key in sa_results:
+        sa_outs[key] = open(os.path.join(study_out, 'salience_test_' + key),
+                            'w')
+
+    nsa_outs = {}
+    for key in non_sa_results:
+        nsa_outs[key] = open(
+            os.path.join(study_out, 'non_salience_test_' + key), 'w')
 
     progress = 0
 
@@ -86,36 +129,16 @@ def intrusion_test(test_path, study_out):
             sa_tests = tests['salient_test']
             non_sa_tests = tests['non_salient_test']
 
-            sa_aucs, sa_freq_aucs = run_tests(sa_tests)
-            non_sa_aucs, non_sa_freq_aucs = run_tests(non_sa_tests)
+            sa_test_res = run_tests(sa_tests)
+            for key, value in sa_test_res.items():
+                sa_results[key] = accumulate(sa_results[key], histo(value))
+                sa_outs[key].write(tab_list(histo(value)))
 
-            key = 'salience_model_auc'
-            res = sa_aucs
-            results[key] = accumulate(
-                results[key], histo(res)
-            )
-            outs[key].write(tab_list(histo(res)))
-
-            key = 'salience_freq_auc'
-            res = sa_freq_aucs
-            results[key] = accumulate(
-                results[key], histo(res)
-            )
-            outs[key].write(tab_list(histo(res)))
-
-            key = 'non_salience_model_auc'
-            res = non_sa_aucs
-            results[key] = accumulate(
-                results[key], histo(res)
-            )
-            outs[key].write(tab_list(histo(res)))
-
-            key = 'non_salience_freq_auc'
-            res = non_sa_freq_aucs
-            results[key] = accumulate(
-                results[key], histo(res)
-            )
-            outs[key].write(tab_list(histo(res)))
+            non_sa_test_res = run_tests(non_sa_tests)
+            for key, value in non_sa_test_res.items():
+                non_sa_results[key] = accumulate(non_sa_results[key],
+                                                 histo(value))
+                nsa_outs[key].write(tab_list(histo(value)))
 
             progress += 1
             if progress % 10 == 0:
@@ -123,10 +146,13 @@ def intrusion_test(test_path, study_out):
 
     print()
 
-    for key in results:
-        multiply_list(results[key], 1.0 / progress)
-        outs[key].write(results[key])
-        outs[key].close()
+    for key, value in sa_results.items():
+        sa_outs[key].write(tab_list(multiply_list(value, 1.0 / progress)))
+        sa_outs[key].close()
+
+    for key, value in non_sa_results.items():
+        nsa_outs[key].write(tab_list(multiply_list(value, 1.0 / progress)))
+        nsa_outs[key].close()
 
 
 if __name__ == '__main__':
@@ -136,7 +162,6 @@ if __name__ == '__main__':
     )
 
     print("Script started")
-
 
     class Main(Configurable):
         test_in = Unicode(help='testing data').tag(config=True)
