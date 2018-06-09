@@ -493,6 +493,15 @@ class EventDataIO(DataIO):
         assert len(l_h) == len(l_tf)
         assert len(l_h) == len(l_label)
 
+        if len(l_label) == 0:
+            # Early version of Pytorch does not support empty tensor. We add a
+            # dummy event if the events set is empty.
+            l_h = [0]
+            l_tf = [0]
+            ll_feature = [[0] * self.evm_feature_dim]
+            l_label = [0]
+            m_args_masked = [[]]
+
         h_res = {
             'mtx_e': l_h,
             'mtx_score': l_tf,

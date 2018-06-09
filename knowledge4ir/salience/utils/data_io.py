@@ -166,6 +166,14 @@ class DataIO(Configurable):
         ll_kept_feature = [h_e_feature[e] for e in l_kept_e]
         l_label = [h_labels[e] for e in l_kept_e]
 
+        if len(l_label) == 0:
+            # Early version of Pytorch does not support empty tensor. We add a
+            # dummy entity if the document is empty.
+            l_label = [0]
+            l_kept_e_tf = [0]
+            ll_kept_feature = [[0] * self.e_feature_dim]
+            l_kept_e = [0]
+
         h_res = {
             'mtx_e': l_kept_e,
             'mtx_score': l_kept_e_tf,
