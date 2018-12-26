@@ -7,4 +7,8 @@ single pipe line is
 multiple qsub pipeline is:
     python run_mul_kfolds.py example_run_mul_kfold_conf.txt
 
+RankLib is available at https://sourceforge.net/p/lemur/wiki/RankLib/
+RankSVM is available at http://svmlight.joachims.org/
+
+
 """
